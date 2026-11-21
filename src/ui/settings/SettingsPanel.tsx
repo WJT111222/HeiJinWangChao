@@ -131,7 +131,7 @@ export function SettingsPanel({
   function back(){if(variablesDirty||(tab==='AI 连接'&&aiDirty)||(tab==='记忆'&&summaryDirty)){setPendingTab('home');return;}setMobileHome(true);requestAnimationFrame(()=>{const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=homeScroll.current;host.current?.querySelector<HTMLButtonElement>(`[data-settings-category="${lastCategory.current}"]`)?.focus({preventScroll:true});});}
   return (
     <div ref={host} data-tab={tab} className={`settings-layout st-wrap ${tab === '提示词管理' ? 'prompt-settings-layout' : ''}`}>
-      <nav aria-label="设置分类" className="settings-nav" hidden={!desktop&&!mobileHome}>
+      {(!desktop || tab !== '变量管理') && <nav aria-label="设置分类" className="settings-nav" hidden={!desktop&&!mobileHome}>
         {!desktop&&<p className="muted">本地偏好与 AI 渠道</p>}
         {tabs.filter(name=>name!=='变量管理'||Boolean(variableSaveId)).map((name) => (
           <button
@@ -146,8 +146,9 @@ export function SettingsPanel({
           </button>
         ))}
         {onOpenNotice && <NoticeLinks onOpen={onOpenNotice} />}
-      </nav>
+      </nav>}
       {(desktop||!mobileHome)&&<div className="settings-content">
+        {desktop && tab === '变量管理' && <button className="vm-back" onClick={() => variablesDirty ? setPendingTab('AI 连接') : showCategory('AI 连接')}>‹ 返回设置分类</button>}
         {!desktop&&<button className="paper-back" aria-label="返回设置" onClick={back}>‹ 设置</button>}
         <h3 ref={categoryHeading} tabIndex={!desktop?-1:undefined}>{tab}</h3>
         {tab === '变量管理' && variableSaveId && repository && onVariablesSaved && <VariableManager key={variableSaveId} saveId={variableSaveId} instance={variableInstance} companion={companion} repository={repository} onSaved={onVariablesSaved} onDirtyChange={variablesDirtyChanged}/>}

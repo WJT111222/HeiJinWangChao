@@ -13,85 +13,24 @@ import {
 import type { SaveRepository, VariableSnapshot } from '../../services/storage/saveRepository';
 import './variable-manager.css';
 
-const names: Record<string, string> = {
-  protagonist: '主角',
-  npc: '人物',
-  items: '物品',
-  locations: '地点',
-  organizations: '组织',
-  tasks: '任务',
-  events: '事件',
-  economy: '财务',
-  timeline: '时间线',
-  journal: '正式回合',
-  memories: '记忆',
-  contactNpcIds: '联系人',
-  retiredEvents: '已归档事件',
-  title: '存档标题',
-  weatherText: '天气',
-  environmentText: '环境',
-  dormantNpcProfiles: '休眠人物档案',
-  addressing: '双向称呼',
-  playerToNpc: '主角称呼此人',
-  npcToPlayer: '此人称呼主角',
-};
-const json = (value: unknown) => JSON.stringify(value, null, 2) ?? '';
-const typeName = (v: unknown) =>
-  v === undefined ? '未设置' : v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v;
-function Node({
-  path,
-  value,
-  choose,
-}: {
-  path: string[];
-  value: unknown;
-  choose: (path: string[]) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const key = path.at(-1)!;
-  const title = names[key] ? `${names[key]} (${key})` : key;
-  const object = value !== null && typeof value === 'object';
-  const kind = typeName(value);
-  const editable = editableVariablePath(path);
-  if (!object)
-    return (
-      <li>
-        {editable ? (
-          <button title={pointer(path)} onClick={() => choose(path)}>
-            {title} · {kind}
-          </button>
-        ) : (
-          <span title={pointer(path)}>
-            {title} · {kind}（只读）
-          </span>
-        )}{' '}
-        <span>{json(value) || '尚无固定值'}</span>
-      </li>
-    );
-  const children = Object.entries(value);
-  if (path[0] === 'npc' && path.length === 2 && !Object.hasOwn(value, 'addressing'))
-    children.push(['addressing', undefined]);
-  return (
-    <li>
-      <details onToggle={(e) => setOpen(e.currentTarget.open)}>
-        <summary>
-          {title} · {kind} ({children.length})
-        </summary>
-        {open && (
-          <>
-            {editable && <button onClick={() => choose(path)}>编辑 {title} JSON</button>}
-            <ul>
-              {children.map(([name, child]) => (
-                <Node key={name} path={[...path, name]} value={child} choose={choose} />
-              ))}
-            </ul>
-          </>
-        )}
-      </details>
-    </li>
-  );
-}
+import { VariableTree } from './VariableTree';
+import {
+  json,
+  registeredPaths,
+  revisePath,
+  rootsFor,
+  sections,
+  type Operation,
+} from './variableSections';
 
+const modes = ['结构树', '分区 JSON', '路径修订', '变量登记表'] as const;
+type Mode = (typeof modes)[number];
+type Editor = {
+  path: string;
+  value: string;
+  initial: string;
+  format: 'string' | 'number' | 'boolean' | 'json';
+};
 type Props = {
   repository: SaveRepository;
   saveId: string;
@@ -110,8 +49,12 @@ export function VariableManager({
 }: Props) {
   const [base, setBase] = useState<VariableSnapshot>();
   const [working, setWorking] = useState<GameState>();
-  const [section, setSection] = useState('protagonist');
-  const [editor, setEditor] = useState<{ path: string; value: string; initial: string }>();
+  const [section, setSection] = useState('主角');
+  const [mode, setMode] = useState<Mode>('结构树');
+  const [editor, setEditor] = useState<Editor>();
+  const [operation, setOperation] = useState<Operation>('set');
+  const [query, setQuery] = useState('');
+  const [limit, setLimit] = useState(40);
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [reload, setReload] = useState(0);
@@ -127,6 +70,7 @@ export function VariableManager({
         }
         setBase(s);
         setWorking(s.state);
+        setMode('结构树');
         setEditor(undefined);
       })
       .catch(() => {
@@ -146,34 +90,94 @@ export function VariableManager({
     onDirtyChange(dirty);
     return () => onDirtyChange(false);
   }, [dirty, onDirtyChange]);
-  function choose(path: string[]) {
-    if (typing) {
-      setMessage('请先加入或取消正在编辑的值。');
-      return;
-    }
-    const value = atPath(working, path);
-    const initial = value === undefined && path.at(-1) === 'addressing' ? '{}' : json(value);
-    setEditor({ path: pointer(path), value: initial, initial });
+  const registry = useMemo(
+    () => (working && mode === '变量登记表' ? registeredPaths(working, query, limit) : []),
+    [working, mode, query, limit],
+  );
+  function canNavigate() {
+    if (!typing) return true;
+    setMessage('请先加入或取消正在编辑的值。');
+    return false;
+  }
+  function startEditor(path: string, initial: string, format: Editor['format'] = 'json') {
+    setEditor({ path, initial, value: initial, format });
     setMessage('');
+  }
+  function choose(path: string[]) {
+    if (!canNavigate()) return;
+    const value = atPath(working, path);
+    const optionalDirection = path[0] === 'npc' && path.length === 4 && path[2] === 'addressing';
+    const kind = optionalDirection ? 'string' : typeof value;
+    const format = kind === 'string' || kind === 'number' || kind === 'boolean' ? kind : 'json';
+    startEditor(
+      pointer(path),
+      format === 'json' ? json(value) || '{}' : String(value ?? ''),
+      format,
+    );
+  }
+  function navigate(nextSection: string, nextMode: Mode, path?: string) {
+    if (!working || !canNavigate()) return;
+    setSection(nextSection);
+    setMode(nextMode);
+    setOperation('set');
+    setMessage('');
+    const roots = rootsFor(working, nextSection);
+    if (nextMode === '分区 JSON') {
+      const sectionValue = Object.fromEntries(roots.map((key) => [key, atPath(working, [key])]));
+      startEditor('', json(sectionValue));
+    } else if (nextMode === '路径修订') {
+      const target = path ?? pointer([roots[0]]);
+      startEditor(target, json(atPath(working, parsePointer(target))));
+    } else setEditor(undefined);
   }
   function stage() {
     if (!working || !editor) return;
     try {
       let value: unknown;
-      try {
-        value = JSON.parse(editor.value);
-      } catch {
-        throw new Error('JSON 格式无效。文本值需要双引号。');
+      if (editor.format === 'string') value = editor.value;
+      else if (mode !== '路径修订' || operation !== 'delete') {
+        try {
+          value = JSON.parse(editor.value);
+        } catch {
+          throw new Error('JSON 格式无效。请检查输入后再加入修改。');
+        }
       }
-      setWorking(editAtPath(working, editor.path, value));
+      let next = working;
+      if (mode === '分区 JSON') {
+        const roots = rootsFor(working, section);
+        if (
+          !value ||
+          typeof value !== 'object' ||
+          Array.isArray(value) ||
+          Object.keys(value).length !== roots.length ||
+          !roots.every((key) => Object.hasOwn(value, key))
+        )
+          throw new Error('请保留当前分区的根字段；其他分区请分别编辑。');
+        next = { ...working, ...value };
+      } else {
+        const path = parsePointer(editor.path);
+        if (!editableVariablePath(path)) throw new Error('此路径由专用事务维护，仅供查看。');
+        if (
+          mode === '结构树' &&
+          path.length === 4 &&
+          path[0] === 'npc' &&
+          path[2] === 'addressing' &&
+          atPath(working, path.slice(0, 3)) === undefined
+        )
+          next = editAtPath(working, pointer(path.slice(0, 3)), { [path[3]]: value });
+        else
+          next = revisePath(working, editor.path, mode === '路径修订' ? operation : 'set', value);
+      }
+      setWorking(next);
       setEditor(undefined);
+      setMode('结构树');
       setMessage('');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '路径或数值无效。');
     }
   }
   async function save() {
-    if (!working || !base || saving || editor) return;
+    if (!working || !base || saving || typing) return;
     setSaving(true);
     try {
       const result = await repository.savePlayerVariables(
@@ -182,6 +186,8 @@ export function VariableManager({
       );
       setBase(result);
       setWorking(result.state);
+      setMode('结构树');
+      setEditor(undefined);
       setMessage('已保存。下一次生成将读取当前变量。');
       onSaved(result);
     } catch (error) {
@@ -208,130 +214,246 @@ export function VariableManager({
         {readAgain}
       </div>
     );
-  const current = atPath(working, [section]);
-  return (
-    <section className="variable-manager">
-      <p>
-        <strong>{base.state.title}</strong> · 第 {base.state.turnNumber} 回合
-      </p>
-      <p>
-        这里编辑当前正式资料。初始同伴的创角原始档案与历史节点保留当时的记录。身份键、账本、回合历史等由专用事务维护。
-      </p>
-      {companion && (
-        <details>
-          <summary>初始同伴创角资料（只读）</summary>
-          <pre>{json({ name: companion.name, ...companion.profile })}</pre>
-        </details>
-      )}
-      <fieldset disabled={saving}>
-        <label>
-          变量分区
-          <select
-            value={section}
-            disabled={typing}
-            onChange={(e) => {
-              setSection(e.target.value);
-              setEditor(undefined);
-            }}
-          >
-            {Object.keys(working).map((key) => (
-              <option key={key} value={key}>
-                {names[key] ?? key}
-              </option>
-            ))}
-          </select>
-        </label>
-        <ul className="variable-tree">
-          <Node key={section} path={[section]} value={current} choose={choose} />
-        </ul>
-        <button disabled={!editableVariablePath([section])} onClick={() => choose([section])}>
-          编辑分区 JSON
-        </button>
-        <button
-          disabled={typing}
-          onClick={() => setEditor({ path: pointer([section]), value: '', initial: '' })}
-        >
-          按路径修改
-        </button>
-        {editor && (
-          <div className="variable-editor">
-            <label>
-              变量路径
-              <input
-                value={editor.path}
-                onChange={(e) => setEditor({ ...editor, path: e.target.value })}
-              />
-            </label>
-            <button
+  const roots = rootsFor(working, section);
+  const readOnlySection = mode === '分区 JSON' && !roots.some((key) => editableVariablePath([key]));
+  const changeText = (value: string) => editor && setEditor({ ...editor, value });
+  const editForm = editor && (
+    <div className="variable-editor">
+      {mode === '路径修订' ? (
+        <>
+          <label>
+            变量路径
+            <input
               disabled={typing}
-              onClick={() => {
-                try {
-                  choose(parsePointer(editor.path));
-                } catch {
-                  setMessage('变量路径无效。');
-                }
+              value={editor.path}
+              onChange={(e) =>
+                setEditor({ ...editor, path: e.target.value, value: '', initial: '' })
+              }
+            />
+          </label>
+          <label>
+            修订操作
+            <select
+              disabled={typing}
+              value={operation}
+              onChange={(e) => {
+                const op = e.target.value as Operation;
+                setOperation(op);
+                setEditor({ ...editor, value: '', initial: '' });
               }}
             >
-              读取路径当前值
-            </button>
-            <label>
-              变量值（JSON）
-              <textarea
-                rows={5}
-                value={editor.value}
-                onChange={(e) => setEditor({ ...editor, value: e.target.value })}
-              />
-            </label>
-            {editor.path.endsWith('/addressing') && (
-              <small>
-                playerToNpc 是主角称呼此人，npcToPlayer
-                是此人称呼主角。删除某个键可取消该方向的固定称呼。
-              </small>
-            )}
-            <div>
-              <button onClick={stage}>加入待保存修改</button>
-              <button onClick={() => setEditor(undefined)}>取消编辑</button>
-            </div>
-          </div>
-        )}
-        {changes.length > 0 && (
-          <div aria-label="修改差异">
-            <h4>待保存修改</h4>
-            {changes.map((c) => (
-              <div key={pointer(c.path)}>
-                <code>{pointer(c.path)}</code>
-                <pre>
-                  {json(c.before) || '未设置'} → {json(c.after) || '移除'}
-                </pre>
-              </div>
-            ))}
-            <p>
-              保存后保留本轮行动，清除基于旧变量的未结算正文和候选。撤回或恢复历史节点时，将读取该时点的变量。
-            </p>
-          </div>
-        )}
-        <div>
+              <option value="set">设置值</option>
+              <option value="add">数值增减</option>
+              <option value="push">追加数组元素</option>
+              <option value="delete">删除字段或元素</option>
+            </select>
+          </label>
           <button
-            className="primary"
-            disabled={!changes.length || Boolean(editor)}
-            onClick={() => void save()}
-          >
-            保存变量修改
-          </button>
-          <button
-            disabled={!dirty && !editor}
+            disabled={typing || operation !== 'set'}
             onClick={() => {
-              setWorking(base.state);
-              setEditor(undefined);
-              setMessage('');
+              try {
+                startEditor(editor.path, json(atPath(working, parsePointer(editor.path))));
+              } catch {
+                setMessage('变量路径无效。');
+              }
             }}
           >
-            放弃修改
+            读取路径当前值
           </button>
-          {readAgain}
+        </>
+      ) : (
+        mode === '结构树' && <code>{editor.path}</code>
+      )}
+      {(mode !== '路径修订' || operation !== 'delete') && (
+        <label>
+          {mode === '分区 JSON'
+            ? '原始分区 JSON'
+            : editor.format === 'json'
+              ? '变量值（JSON）'
+              : '变量值'}
+          {editor.format === 'boolean' ? (
+            <select value={editor.value} onChange={(e) => changeText(e.target.value)}>
+              <option>true</option>
+              <option>false</option>
+            </select>
+          ) : editor.format === 'number' ? (
+            <input
+              type="number"
+              step="any"
+              value={editor.value}
+              onChange={(e) => changeText(e.target.value)}
+            />
+          ) : (
+            <textarea
+              readOnly={readOnlySection}
+              rows={mode === '分区 JSON' ? 12 : editor.format === 'json' ? 5 : 2}
+              value={editor.value}
+              onChange={(e) => changeText(e.target.value)}
+            />
+          )}
+        </label>
+      )}
+      {editor.path.endsWith('/addressing') && (
+        <small>
+          playerToNpc 是主角称呼此人，npcToPlayer 是此人称呼主角。省略某个键可取消该方向的固定称呼。
+        </small>
+      )}
+      {readOnlySection && <small>这个分区由专用事务维护，仅供查阅。</small>}
+      {message && <p role="status">{message}</p>}
+      <div className="vm-actions">
+        <button disabled={readOnlySection} onClick={stage}>
+          加入待保存修改
+        </button>
+        <button
+          onClick={() => {
+            setEditor(undefined);
+            setMode('结构树');
+            setMessage('');
+          }}
+        >
+          取消编辑
+        </button>
+      </div>
+    </div>
+  );
+  return (
+    <section className="variable-manager">
+      <header className="vm-header">
+        <strong>{base.state.title}</strong>
+        <span>第 {base.state.turnNumber} 回合</span>
+      </header>
+      <fieldset disabled={saving} className="vm-workspace">
+        <nav className="vm-domains" aria-label="变量分区">
+          {sections.map((name) => (
+            <button key={name} aria-pressed={section === name} onClick={() => navigate(name, mode)}>
+              {name}
+            </button>
+          ))}
+        </nav>
+        <div className="vm-content">
+          <h4>{section}</h4>
+          <div className="vm-modes" role="group" aria-label="编辑方式">
+            {modes.map((name) => (
+              <button
+                key={name}
+                aria-pressed={mode === name}
+                onClick={() => navigate(section, name)}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+          {mode === '结构树' && (
+            <ul className="variable-tree">
+              {roots.map((key) => (
+                <VariableTree
+                  key={key}
+                  path={[key]}
+                  value={atPath(working, [key])}
+                  initialOpen={key === 'protagonist' || key === 'npc'}
+                  editor={editForm}
+                  editorPath={editor?.path}
+                  choose={choose}
+                />
+              ))}
+            </ul>
+          )}
+          {(mode === '分区 JSON' || mode === '路径修订') && editForm}
+          {mode === '变量登记表' && (
+            <div className="vm-registry">
+              <label>
+                检索全档路径
+                <input
+                  type="search"
+                  placeholder="/npc/"
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setLimit(40);
+                  }}
+                />
+              </label>
+              <ul>
+                {registry.slice(0, limit).map((row) => {
+                  const path = pointer(row.path);
+                  return (
+                    <li key={path}>
+                      <code>{path}</code>
+                      <small>{row.type}</small>
+                      {editableVariablePath(row.path) ? (
+                        <button
+                          aria-label={`修订 ${path}`}
+                          onClick={() =>
+                            navigate(
+                              sections.find((name) =>
+                                rootsFor(working, name).includes(row.path[0]),
+                              )!,
+                              '路径修订',
+                              path,
+                            )
+                          }
+                        >
+                          修订
+                        </button>
+                      ) : (
+                        <small>只读</small>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {!registry.length && <p>没有匹配的变量路径。</p>}
+              {registry.length > limit && (
+                <button onClick={() => setLimit(limit + 40)}>显示更多路径</button>
+              )}
+            </div>
+          )}
+          {section === '人物' && companion && (
+            <details>
+              <summary>初始同伴创角资料（只读）</summary>
+              <pre>{json({ name: companion.name, ...companion.profile })}</pre>
+            </details>
+          )}
         </div>
       </fieldset>
-      <p role="status">{message}</p>
+      {changes.length > 0 && (
+        <section aria-label="修改差异" className="vm-diff">
+          <h4>待保存修改 · {changes.length}</h4>
+          {changes.map((c) => (
+            <div key={pointer(c.path)}>
+              <code>{pointer(c.path)}</code>
+              <pre>
+                {json(c.before) || '未设置'} → {json(c.after) || '移除'}
+              </pre>
+            </div>
+          ))}
+          <p>
+            保存后保留本轮行动，清除基于旧变量的未结算正文和候选。撤回或恢复历史节点时，将读取该时点的变量。
+          </p>
+        </section>
+      )}
+      {!editor && <p role="status">{message}</p>}
+      <footer className="vm-actions">
+        <button
+          className="primary"
+          disabled={!changes.length || typing || saving}
+          onClick={() => void save()}
+        >
+          保存变量修改
+        </button>
+        <button
+          disabled={saving || (!dirty && !editor)}
+          onClick={() => {
+            setWorking(base.state);
+            setEditor(undefined);
+            setMode('结构树');
+            setMessage('');
+          }}
+        >
+          放弃修改
+        </button>
+        {readAgain}
+      </footer>
     </section>
   );
 }
