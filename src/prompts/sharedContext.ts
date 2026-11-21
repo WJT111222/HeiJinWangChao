@@ -3,6 +3,7 @@ import { npcContext } from './npcContext';
 import { recallJournal } from '../domain/memories/recall';
 import type { RecallCues } from '../domain/memories/recall';
 import { talentContext } from './talentContext';
+import { factionContext } from './factionContext';
 
 /** 普通笔记只供当轮 Variables。旧草稿保留原有结构化上下文。 */
 export function storyForSubsequentStages(story: GameState['journal'][number]['story']) {
@@ -27,8 +28,10 @@ export function sharedContext(state: GameState, windowSize: number, query: strin
   const sources=new Set([...recent.map(t=>t.turnId),...memory.recalledTurns.map(t=>t.turnId)]);
   const people=npcContext(state,cues,sources);
   const talent = talentContext(state.protagonist.talentId, cues.stage);
+  const faction = factionContext(state, cues.stage);
   return {
     ...(talent ? { PROTAGONIST_TALENT: talent } : {}),
+    ...(faction ? { PROTAGONIST_FACTION: faction } : {}),
     SAVE_STATE: { ...snapshot, npc:people.npc, memories:{...memories,npcSummaries:people.npcSummaries}, worldClock: state.openingTimePending ? null : state.worldClock },
     MEMORY_CONTEXT: {
       ...memory,

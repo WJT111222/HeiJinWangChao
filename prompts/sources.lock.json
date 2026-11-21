@@ -834,6 +834,11 @@
       "partialSettlement": {
         "notes": "三段输出、可执行命令隔离和正式提交的局部容错契约。",
         "sha256": "90ae47a9fd56db1e30266c465f7b11444f80e228260bcc48d5799630890f5fc2"
+      },
+      "protagonistFactionV1": {
+        "baseCommit": "4e14d92",
+        "notes": "World 可按白名单更新组织部门、成员及补齐的公开字段；主势力绑定与主角已知列表只读。原始来源及历次适配记录保留。",
+        "sha256": "e20e8c8317de8c3cb4a20abf567d58dee46000c1aec5734b75f049c2cd0ca861"
       }
     },
     "stages/opening/variables.md": {
@@ -1138,6 +1143,11 @@
         "previousTreatment": "text-protocol-adaptation",
         "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
         "sha256": "f04073536a6b71cfa2c916834ffe5fde4fcadf8a85bec21cf12de73b00d74f85"
+      },
+      "protagonistFactionV1": {
+        "baseCommit": "4e14d92",
+        "notes": "Variables 仅在玩家剧情中明确入伙时绑定唯一主势力（开局孤身一人），并逐条记录主角真实得知的组织据点与内情。原始来源及历次适配记录保留。",
+        "sha256": "07e54f135c0590f0b86030181ac4c9cc0d41833fa4e002c07d7ddd0b5ff601d1"
       }
     },
     "variableGroups/org_gang/offscreen.md": {
@@ -1193,6 +1203,11 @@
         "previousTreatment": "text-protocol-adaptation",
         "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
         "sha256": "5e04e3c1f458c0c08b491b4ce9bb1d06220082816bfd00a5c7b37fb8055bb235"
+      },
+      "protagonistFactionV1": {
+        "baseCommit": "4e14d92",
+        "notes": "Variables 仅在玩家剧情中明确入伙时绑定唯一主势力（开局孤身一人），并逐条记录主角真实得知的组织据点与内情。原始来源及历次适配记录保留。",
+        "sha256": "4c0fa1ed7f236570e0418a760a83fb2d3ea389fa8899abf85d06495b285c4a37"
       }
     },
     "variableGroups/org_government/offscreen.md": {
@@ -1252,6 +1267,11 @@
         "previousTreatment": "text-protocol-adaptation",
         "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
         "sha256": "c47f73547d1a34d2e9d77895dd51fb59376693fe9b70e7925b49804575947775"
+      },
+      "protagonistFactionV1": {
+        "baseCommit": "4e14d92",
+        "notes": "Variables 仅在玩家剧情中明确入伙时绑定唯一主势力（开局孤身一人），并逐条记录主角真实得知的组织据点与内情。原始来源及历次适配记录保留。",
+        "sha256": "9f16e8520278c4cbb7a1e34962fe57d821fbb83f823a1406c11f7115ae555a0f"
       }
     },
     "variableGroups/org_civil/offscreen.md": {
@@ -1307,6 +1327,11 @@
         "previousTreatment": "text-protocol-adaptation",
         "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
         "sha256": "f5aab17b9dacd2f67cd8badd2c5bd6fd766d8234587af73fda5ceeeba6ff9023"
+      },
+      "protagonistFactionV1": {
+        "baseCommit": "4e14d92",
+        "notes": "Variables 仅在玩家剧情中明确入伙时绑定唯一主势力（开局孤身一人），并逐条记录主角真实得知的组织据点与内情。原始来源及历次适配记录保留。",
+        "sha256": "f80381e0c73e906a26a447245be6028a1b446cd4f8b389136f596e37f7ea824a"
       }
     },
     "variableGroups/org_business/offscreen.md": {

@@ -2,6 +2,7 @@
 普通回合可以创建首次遇到的重要组织，已有组织按稳定ID更新关系，不重建。机构遵守法定职权和管辖，不强迫填写黑帮式资金/地盘字段。
 创建set organizations[id]使用原government类完整对象去掉id；四类不同字段保持独立。name/description/protagonistRelation及relationHistory、keyNpcIds、currentTaskIds是共通字段；NPC和任务引用须存在，未创建后台任务不虚构ID。
 遵守共享“势力组织当前状态”：已有组织用set organizations[id].state局部更新jurisdictionText/lawfulPowers/cases/administrativeAffairs/enforcementCapacityText/publicTrustText/internalStatus及共通字段；不重新set整个已有实体。只有实际变化才更新；无变化不输出命令。管理层、稀疏关系、明确NPC关联与金额依据遵守共享协议。与主角关系仍用set organizations[id].protagonistRelation={relation,reason}，未接触可为闻所未闻。
+主势力：只有玩家在剧情里明确入伙、拜码头、接受任命或自己拉起队伍时，才在protagonistRelation同值内加faction={"action":"bind","position","bondText","departmentId"?}；职业、背景、普通雇佣、合作或听说都不构成绑定，开局一律孤身一人。主角在剧情里真实得知该组织据点/产业或内情时，push organizations[id].protagonistKnown={category:holding|intel,text,source,knowledgeKind:observed|reported,locationId?,statusText?}，id和时间由程序填写。
 示例：
 <命令>
 set organizations[org_local] = {"kind":"government","name":"地方官方机构","description":"本幕涉及的组织","protagonistRelation":"闻所未闻","relationHistory":[],"keyNpcIds":[],"currentTaskIds":[],"lawfulPowers":[],"cases":[],"administrativeAffairs":[]}

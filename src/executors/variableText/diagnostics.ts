@@ -32,7 +32,7 @@ const allowedPatterns = [
   /^items\[id\](?:\.(?:conditionText|locationId|quantity|purchase|transfer|loss|description|referenceValue|itemDetails|category|questItem))?$/,
   /^items\[id\](?:\.purchase)?\.ownerRef$/,
   /^locations\[id\]$/,
-  /^organizations\[id\](?:\.protagonistRelation)?$/,
+  /^organizations\[id\](?:\.(?:protagonistRelation|protagonistKnown))?$/,
   /^events\[id\]\.sceneState$/,
   /^tasks\[id\]$/,
   /^economy\.(?:incomes|debts|vehicles)\[id\](?:\.(?:repayments|purchase))?$/,

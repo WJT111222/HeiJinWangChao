@@ -84,6 +84,10 @@ export function inlineCommandCatalog(stage: CatalogStage) {
             }];
           }
         }
+        if (stage === 'world' && option.shape.type.value === 'RecordOrgRelation' && schema.properties?.faction) {
+          // 主势力绑定只属于Variables；World目录不展示该可选字段。
+          delete schema.properties.faction;
+        }
         if (stage === 'world' && option.shape.type.value === 'CreateOrganization') {
           const organization = schema.properties?.organization;
           if (organization && typeof organization === 'object') {
@@ -92,7 +96,7 @@ export function inlineCommandCatalog(stage: CatalogStage) {
               const history = variant.properties.relationHistory;
               if (history && typeof history === 'object') history.maxItems = 0;
               // 仅描述既有 World 创建权限，不改变正式 OrganizationSchema。
-              for (const field of ['funds', 'assetsEstimate', 'liquidityEstimate'])
+              for (const field of ['funds', 'assetsEstimate', 'liquidityEstimate', 'protagonistKnown'])
                 if (field in variant.properties) variant.properties[field] = false;
             }
           }

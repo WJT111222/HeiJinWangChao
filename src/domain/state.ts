@@ -7,7 +7,7 @@ import { ProtagonistSchema } from './protagonist/schema';
 import { NpcSchema, SpecialNpcSchema, DormantNpcProfileSchema, SpecialProfileSchema } from './npc/schema';
 import { ImportantItemSchema } from './items/schema';
 import { EconomySchema } from './economy/schema';
-import { OrganizationSchema } from './organizations/schema';
+import { OrganizationSchema, ProtagonistFactionSchema } from './organizations/schema';
 import { TimelineEntrySchema, StoredWorldEventSchema, WorldTaskSchema, RetiredEventSchema, EventInteractionSchema } from './events/schema';
 import { eventById, validateEventLinks } from './events/lifecycle';
 import { MemoryStateSchema, npcKnowledgeKind } from './memories/schema';
@@ -41,6 +41,8 @@ export const SaveShape = {
   npcManagementRevision: CountSchema.optional(),
   protagonist: ProtagonistSchema, initialCompanionId: IdSchema.optional(),
   contactNpcIds: IdsSchema,
+  // 主角唯一的主势力绑定；缺省（含全部旧档）表示孤身一人。只能由Variables依剧情明确绑定。
+  protagonistFaction: ProtagonistFactionSchema.optional(),
   npc: entityTable(NpcSchema), items: entityTable(ImportantItemSchema), economy: EconomySchema,
   dormantNpcProfiles: entityTable(DormantNpcProfileSchema).optional(),
   organizations: entityTable(OrganizationSchema), locations: entityTable(LocationSchema),
@@ -167,6 +169,21 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       check(relation.organizationId !== org.id && Object.hasOwn(s.organizations, relation.organizationId), '组织关系目标不存在或为自身', ['organizations', org.id, 'relations', index, 'organizationId'], 'actor_reference');
     for (const id of org.currentTaskIds) check(s.tasks[id]?.actorRef.kind === 'organization'
       && s.tasks[id]?.actorRef.id === org.id, '组织任务归属错误');
+    const departmentIds = new Set((org.departments ?? []).map(row => row.id));
+    for (const [index, row] of (org.departments ?? []).entries()) if (row.headNpcId)
+      check(Object.hasOwn(s.npc, row.headNpcId), '部门负责人不存在', ['organizations', org.id, 'departments', index, 'headNpcId'], 'actor_reference');
+    for (const [index, row] of (org.members ?? []).entries()) {
+      check(Object.hasOwn(s.npc, row.npcId), '组织成员不存在', ['organizations', org.id, 'members', index, 'npcId'], 'actor_reference');
+      if (row.departmentId) check(departmentIds.has(row.departmentId), '成员所属部门不存在', ['organizations', org.id, 'members', index, 'departmentId'], 'organization_department');
+    }
+    for (const [index, row] of (org.protagonistKnown ?? []).entries())
+      location(row.locationId, ['organizations', org.id, 'protagonistKnown', index, 'locationId']);
+  }
+  if (s.protagonistFaction) {
+    const faction = s.protagonistFaction, org = s.organizations[faction.organizationId];
+    check(org, '主角势力不存在', ['protagonistFaction', 'organizationId'], 'actor_reference');
+    if (org && faction.departmentId) check((org.departments ?? []).some(row => row.id === faction.departmentId),
+      '主角所属部门不存在', ['protagonistFaction', 'departmentId'], 'organization_department');
   }
   for (const event of Object.values(s.events)) {
     const path = (field: string) => ['events', event.id, field];

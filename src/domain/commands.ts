@@ -6,7 +6,7 @@ import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, Mon
 import { EquipmentSchema } from './protagonist/schema';
 import { OwnedItemInputSchema } from './items/schema';
 import { NpcCreationSchema, NpcSchema } from './npc/schema';
-import { FinancialBasisSchema, OrganizationChangesSchema, OrganizationSchema, organizationChangeFields } from './organizations/schema';
+import { FactionBindingSchema, FinancialBasisSchema, OrganizationChangesSchema, OrganizationSchema, ProtagonistOrgKnowledgeSchema, organizationChangeFields } from './organizations/schema';
 import { StoredWorldEventSchema, WorldTaskSchema, HistoryRecordSchema } from './events/schema';
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
@@ -39,7 +39,8 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('SaveTask'), task: WorldTaskSchema }),
   z.strictObject({ ...base, type: z.literal('CreateOrganization'), organization: OrganizationSchema }),
   z.strictObject({ ...base, type: z.literal('UpdateOrganization'), organizationId: IdSchema, expectedRevision: CountSchema, changes: OrganizationChangesSchema, financialBasis: FinancialBasisSchema.optional() }),
-  z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema }),
+  z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema, faction: FactionBindingSchema.optional() }),
+  z.strictObject({ ...base, type: z.literal('RecordOrgKnowledge'), organizationId: IdSchema, entry: ProtagonistOrgKnowledgeSchema }),
   z.strictObject({ ...base, type: z.literal('RegisterContact'), npcId: IdSchema, reason: TextSchema }),
   // Parse historical drafts/receipts, but never authorize a fresh deletion.
   ...variableCommandSchemas,
@@ -167,6 +168,7 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
     }
     case 'CreateOrganization':
       newEntity(s, c.organization.id);
+      requireData(!c.organization.protagonistKnown?.length, 'ORGANIZATION_KNOWLEDGE', '主角已知条目只能用RecordOrgKnowledge逐条记录');
       requireData(!Object.values(s.organizations).some(org => org.kind === c.organization.kind && org.name === c.organization.name), 'DUPLICATE_ORGANIZATION', '同类组织名称已存在，应复用稳定ID');
       s.organizations[c.organization.id] = c.organization; break;
     case 'UpdateOrganization': {
@@ -185,10 +187,40 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
     case 'RecordOrgRelation': {
       const org = s.organizations[c.organizationId];
       requireData(org, 'NOT_FOUND', '组织不存在');
-      org.protagonistRelation = c.relation; org.relationHistory.push(c.reason); break;
+      org.protagonistRelation = c.relation; org.relationHistory.push(c.reason);
+      if (c.faction) applyFactionBinding(s, org.id, c.faction);
+      break;
+    }
+    case 'RecordOrgKnowledge': {
+      const org = s.organizations[c.organizationId];
+      requireData(org, 'NOT_FOUND', '组织不存在');
+      requireData(!(org.protagonistKnown ?? []).some(row => row.id === c.entry.id), 'DUPLICATE_ORGANIZATION_KNOWLEDGE', '已知条目ID重复');
+      requireData(Date.parse(c.entry.learnedAt) <= Date.parse(s.worldClock), 'ORGANIZATION_KNOWLEDGE', '得知时间不能晚于当前游戏时间');
+      org.protagonistKnown = [...(org.protagonistKnown ?? []), c.entry];
+      break;
     }
     default: applyVariableCommand(s, c, turnId, (id) => newEntity(s, id), (account, amount) => balance(s, account, -amount));
   }
+}
+
+/** 主势力绑定只有一份：绑定新势力即解除旧势力，旧组织关系历史留一条程序记录。 */
+function applyFactionBinding(s: GameState, organizationId: string, binding: z.infer<typeof FactionBindingSchema>) {
+  const current = s.protagonistFaction, org = s.organizations[organizationId];
+  if (binding.action === 'bind') {
+    if (current && current.organizationId !== organizationId)
+      s.organizations[current.organizationId]?.relationHistory.push(`主角改以「${org.name}」为主势力，不再以本组织为主势力`);
+    s.protagonistFaction = { organizationId, position: binding.position, bondText: binding.bondText,
+      ...(binding.departmentId ? { departmentId: binding.departmentId } : {}),
+      joinedAt: current?.organizationId === organizationId ? current.joinedAt : s.worldClock };
+    return;
+  }
+  requireData(current?.organizationId === organizationId, 'FACTION_BINDING', '主角当前不以该组织为主势力');
+  if (binding.action === 'unbind') { delete s.protagonistFaction; return; }
+  const { departmentId, ...rest } = current;
+  s.protagonistFaction = { ...rest,
+    ...(binding.position !== undefined ? { position: binding.position } : {}),
+    ...(binding.bondText !== undefined ? { bondText: binding.bondText } : {}),
+    ...(binding.departmentId === null ? {} : binding.departmentId !== undefined ? { departmentId: binding.departmentId } : departmentId ? { departmentId } : {}) };
 }
 
 export function commitCommands(state: GameState, turnId: string, expectedRevision: number,
