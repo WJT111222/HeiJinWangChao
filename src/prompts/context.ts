@@ -169,6 +169,9 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
     if (original.openingTimePending && !selected)
       throw new AiError('time_data', undefined, { storyRule: 'opening_missing', fieldPath: 'worldClock' });
     const variablePending = !draft?.variables || draft.variables.validation !== 'validated';
+    const candidate = variablePending ? undefined : draft!.variables;
+    const worldVariables = candidate?.result.commands.some(c=>c.type==='ApplyHaremChanges')
+      ? {...candidate,result:{...candidate.result,commands:candidate.result.commands.filter(c=>c.type!=='ApplyHaremChanges')}} : candidate;
     let temporary = original.openingTimePending ? projectTurn(original, draft!) : state;
     if (!variablePending) {
       try {
@@ -197,11 +200,11 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       variablePending,
       PLAYER_ACTION: draft!.userInput,
       STORY_RESULT: { ...storyForSubsequentStages(draft!.story!), eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction), eventNarrations: draft!.story!.variableGuide.filter(guide=>guide.eventNarration) },
-      VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
+      VARIABLE_RESULT: worldVariables,
       // 投影提供候选内容，不产生新的正式版本；模型的expectedRevision仍须使用正式基线。
       ...sharedContext({ ...temporary, revision: original.revision }, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
         stage: 'world', playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: storyForSubsequentStages(draft!.story!).variableGuide,
-        validatedVariables: variablePending ? undefined : draft!.variables!.result, from: state.worldClock,
+        validatedVariables: worldVariables?.result, from: state.worldClock,
       }),
       PROTAGONIST_PROFILE: temporary.protagonist,
       PROTECTED_SCENE: {

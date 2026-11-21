@@ -1,3 +1,4 @@
+import { HaremChangesSchema } from '../../domain/harem/schema';
 import { compileSourceOperation, normalizeSourcePath, sourceValues, trackSourceValues } from './sourceSemantics';
 import { SceneEventStateSchema } from '../../domain/events/schema';
 import { OpeningInitialStateSchema } from '../../domain/openingInitialization';
@@ -146,6 +147,12 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       const value = SaveShape[root.name].safeParse(command.value);
       if (!value.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, value.error));
       mapped = { ...common, type: 'SetSceneDescription', field: root.name, value: value.data };
+    } else if (command.path.nodes.length === 2 && root.name === 'harem' && node?.kind === 'field' && node.name === 'changes') {
+      if (command.operation !== 'set') return failed('unsupported_operation', origin);
+      const changes = HaremChangesSchema.safeParse(command.value);
+      if (!changes.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, changes.error));
+      if (commands.some(c => c.type === 'ApplyHaremChanges')) return failed('duplicate_or_conflicting_command', origin);
+      mapped = {...common,type:'ApplyHaremChanges',expectedRevision:context.expectedRevision,changes:changes.data};
     } else if (sceneEvent && node.kind==='id') {
       if(command.operation!=='set')return failed('unsupported_operation',origin);
       const old=sceneEvents.get(node.id),delta=SceneEventStateSchema.safeParse(command.value);

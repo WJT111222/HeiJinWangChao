@@ -1,3 +1,4 @@
+import { householdContext } from '../domain/harem/projection';
 import type { GameState } from '../domain/state';
 import { npcContext } from './npcContext';
 import { recallJournal } from '../domain/memories/recall';
@@ -18,7 +19,7 @@ export function storyForSubsequentStages(story: GameState['journal'][number]['st
 /** 三阶段共用的模型只读背景。调用方决定正式基线或合法 Variables 投影；
  * 阅读范围不参与任何命令授权。永久 journal 保持现有窗口/检索，幂等凭据不注入。 */
 export function sharedContext(state: GameState, windowSize: number, query: string, recall: boolean, cues: RecallCues = { stage: 'story', playerInput: query }) {
-  const { journal, appliedCommands, dormantNpcProfiles, npc, memories, ...snapshot } = state;
+  const { harem, journal, appliedCommands, dormantNpcProfiles, npc, memories, ...snapshot } = state;
   void npc;
   void appliedCommands;
   void dormantNpcProfiles; // Persistence-only: not author context, knowledge, retrieval or summary input.
@@ -29,7 +30,7 @@ export function sharedContext(state: GameState, windowSize: number, query: strin
   const talent = talentContext(state.protagonist.talentId, cues.stage);
   return {
     ...(talent ? { PROTAGONIST_TALENT: talent } : {}),
-    SAVE_STATE: { ...snapshot, npc:people.npc, memories:{...memories,npcSummaries:people.npcSummaries}, worldClock: state.openingTimePending ? null : state.worldClock },
+    SAVE_STATE: { ...snapshot, ...(harem && cues.stage !== 'world' ? {harem:householdContext(harem,state.npc,cues.stage==='variables',query)} : {}), npc:people.npc, memories:{...memories,npcSummaries:people.npcSummaries}, worldClock: state.openingTimePending ? null : state.worldClock },
     MEMORY_CONTEXT: {
       ...memory,
       immediateWindowSize: windowSize,

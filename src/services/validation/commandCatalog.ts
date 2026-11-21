@@ -39,7 +39,7 @@ export function commandCatalog(stage: CatalogStage) {
 export function inlineCommandCatalog(stage: CatalogStage) {
   const options = DomainCommandSchema.options.filter(
     (option) =>
-      (stage === 'variables' && !['DeleteEvent','RecordHistory'].includes(option.shape.type.value)) ||
+      (stage === 'variables' && !['DeleteEvent','RecordHistory','ApplyHaremChanges'].includes(option.shape.type.value)) ||
       (stage === 'world' && [...worldTypes, 'SaveTask', 'SaveEvent','DeleteEvent'].includes(option.shape.type.value)),
   );
   return {

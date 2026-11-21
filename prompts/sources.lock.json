@@ -237,6 +237,11 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "1b32f888a7e000f65c715c15ce7e63e4b2d6de8010690029e543c8dac3f7a2ba"
+      },
+      "haremV1": {
+        "baseCommit": "4e14d924b75ffedcf95b876cda000ad90d0d8d78",
+        "notes": "H0 后宫 Variables 单批事务、成员资格及家庭事实；原来源记录保留。",
+        "sha256": "90d017846ea2be8acbfe305c1eb5f1e383ae21c6a04640388c2b596a1eefa41a"
       }
     },
     "variableGroups/npc_ordinary/update.md": {
@@ -286,6 +291,11 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "dd75c9bd7bfdb3bc503dc71f830c6987e542175d379369eb85104ffacd1a3a54"
+      },
+      "haremV1": {
+        "baseCommit": "4e14d924b75ffedcf95b876cda000ad90d0d8d78",
+        "notes": "H0 后宫 Variables 单批事务、成员资格及家庭事实；原来源记录保留。",
+        "sha256": "fc5bed7765b95bfabeffb260912ddf1ca966b30dbdb86e21db36cdbe3a780e1b"
       }
     },
     "variableGroups/npc_ordinary/offscreen.md": {
@@ -1472,6 +1482,11 @@
       "partialSettlement": {
         "notes": "三段输出、可执行命令隔离和正式提交的局部容错契约。",
         "sha256": "c4137e9b29c3241b1840c685fc827ec1e9e060cf8c346892aa3295d4eb88c083"
+      },
+      "haremV1": {
+        "baseCommit": "4e14d924b75ffedcf95b876cda000ad90d0d8d78",
+        "notes": "追加后宫文本协议及事务边界。",
+        "sha256": "c9cf0a0226a26122d15d9b51f5423eb19df302303c33df7aee58a7a46432ac23"
       }
     },
     "docs/ASSEMBLY.md": {

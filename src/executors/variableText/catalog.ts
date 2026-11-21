@@ -1,3 +1,4 @@
+import { HaremChangesSchema } from '../../domain/harem/schema';
 import { PromotionProfileSchema } from '../../domain/npc/schema';
 import { z } from 'zod';
 import { OpeningInitialStateSchema } from '../../domain/openingInitialization';
@@ -22,6 +23,7 @@ const heroChanges = variableCommandSchemas[0].shape.changes.shape;
 interface Entry { operation:VariableOperation; path:string; commandType:DomainCommand['type']; value:z.ZodType }
 const slotFields = ['topItemId','bottomItemId','shoesItemId','primaryWeaponItemId','secondaryWeaponItemId','currentVehicleAssetId'];
 const entries:Entry[] = [
+  {operation:'set',path:'harem.changes',commandType:'ApplyHaremChanges',value:HaremChangesSchema},
   {operation:'set',path:'opening.initialState',commandType:'InitializeOpeningState',value:OpeningInitialStateSchema},
   {operation:'set',path:'protagonist',commandType:'UpdateProtagonist',value:variableCommandSchemas[0].shape.changes},
   {operation:'push',path:'protagonist.skills',commandType:'UpdateProtagonist',value:TextSchema},

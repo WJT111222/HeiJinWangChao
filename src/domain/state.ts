@@ -1,3 +1,5 @@
+import { HaremSchema } from './harem/schema';
+import { householdIssue } from './harem/validation';
 import { JournalSettlementSchema } from './updateSettlement';
 import { z } from 'zod';
 import { validateChronicles } from './history/validation';
@@ -45,6 +47,7 @@ export const SaveShape = {
   dormantNpcProfiles: entityTable(DormantNpcProfileSchema).optional(),
   organizations: entityTable(OrganizationSchema), locations: entityTable(LocationSchema),
   events: entityTable(StoredWorldEventSchema), retiredEvents: entityTable(RetiredEventSchema), tasks: entityTable(WorldTaskSchema), memories: MemoryStateSchema,
+  harem: HaremSchema.optional(),
   timeline: z.array(TimelineEntrySchema),
   journal: z.array(z.strictObject({
     turnId: IdSchema, revision: CountSchema, story: StorySchema, relatedActorRefs: z.array(ActorRefSchema),
@@ -59,6 +62,10 @@ export const SaveShape = {
 export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) => {
   function check(ok: unknown, message: string, path: (string | number)[] = [], integrityRule = 'domain_state') {
     if (!ok) ctx.addIssue({ code: 'custom', message, path, params: { integrityRule } });
+  }
+  if (s.harem) {
+    const issue = householdIssue(s.harem,s.npc,s.worldClock);
+    if (issue) check(false,issue,['harem'],'harem_integrity');
   }
   // Absence means unavailable, including all older saves. Never infer this right from turnNumber.
   if (s.openingInitializationPending) check(s.revision === 0 && s.turnNumber === 0

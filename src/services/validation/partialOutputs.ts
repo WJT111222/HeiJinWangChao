@@ -116,6 +116,17 @@ function variableUnit(input: VariableStatement, commandIndex: number, hasLooseBa
   const category: SkippedUpdate['category'] = name === 'items' ? 'item' : name === 'economy' ? 'economy'
     : name === 'npc' ? 'person' : name === 'tasks' ? 'task' : name === 'events' ? 'event' : 'state';
   const atomicKeys: string[] = [];
+  if (name === 'harem') {
+    atomicKeys.push('harem-transaction');
+    // Link a new person's creation to their registration even if a different field is invalid.
+    for (const edit of Array.isArray(ast?.value) ? ast.value : []) {
+      if (!edit || typeof edit !== 'object' || Array.isArray(edit)) continue;
+      const raw = edit.value;
+      const value = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : undefined;
+      for (const personId of [edit.npcId, edit.childNpcId, value?.childNpcId, value?.parentNpcId, value?.leftNpcId, value?.rightNpcId])
+        if (typeof personId === 'string') atomicRefs.push(personId);
+    }
+  }
   if (hasLooseBalanceChange && (name === 'economy' ||
     (name === 'items' && (!action || (action.kind === 'field' && action.name === 'purchase')))))
     atomicKeys.push('loose-balance-and-inventory');
@@ -191,6 +202,14 @@ export async function parsePartialVariables(text: string, state: GameState, draf
   const hasLooseBalanceChange = statements.value.some(unit =>
     /^\s*[^\s=]+\s+(?:gameState\.)?economy\.(?:cash|onlineBalance)\s*=/iu.test(unit.text));
   const units = statements.value.map((statement,index) => variableUnit(statement,index,hasLooseBalanceChange,state));
+  // An unreadable household operation cannot identify its newborns. Keep same-batch
+  // new NPCs with that failed operation instead of persisting an unlinked birth.
+  if (units.some(unit => unit.atomicKeys?.includes('harem-transaction') &&
+    (!Array.isArray(unit.input.ast?.value) || unit.input.ast.value.some(edit =>
+      !edit || typeof edit !== 'object' || Array.isArray(edit) || !('op' in edit) ||
+      (edit.op === 'child' && (!edit.value || typeof edit.value !== 'object' || !('childNpcId' in edit.value)))))))
+    for (const unit of units) if (variablePath(unit.input).some((node,i) => i === 0 && 'name' in node && node.name === 'npc') && unit.writes.length)
+      unit.atomicKeys = [...(unit.atomicKeys ?? []),'harem-transaction'];
   addSceneDependencies(state, units);
   // A world-clock statement is the temporal basis shared by application groups.
   const clocks = units.filter(unit => unit.input.ast?.path.nodes.some(node => (node.kind === 'root' || node.kind === 'field') && node.name === 'worldClock') && unit.position.category === 'state');
