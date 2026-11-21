@@ -134,7 +134,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         case 'CreateNpc': {
           const npc = command.npc;
           const invalidField = [
-            ['onScene',npc.onScene], ['lastInteractionAt',npc.lastInteractionAt],
+            ['addressing',npc.addressing], ['onScene',npc.onScene], ['lastInteractionAt',npc.lastInteractionAt],
             ['affinity',npc.affinity !== 0], ['affinityConfirmed',npc.affinityConfirmed],
             ['memories',npc.memories.length], ['knownInformation',npc.knownInformation.length],
             ['longTermMemories',npc.kind === 'special' && npc.longTermMemories?.length],
