@@ -1,3 +1,4 @@
+import type { TurnDraft } from '../domain/drafts';
 import { contextMessage } from '../prompts/contextMessage';
 import type { AiMessage } from '../services/ai/protocols';
 import { AiError } from '../services/ai/errors';
@@ -8,34 +9,54 @@ const end = '[[WAVE_CONTEXT_END_07_8d2c91]]';
 
 export const nativeOutputTool = 'actual_content';
 
-export function deliveryContext(context: Record<string, unknown>): AiMessage[] {
-  const { NPC_CONTEXT, MEMORY_CONTEXT, PLAYER_ACTION, ...current } = context;
-  const { policy, ...npcIndex } = NPC_CONTEXT as Record<string, unknown>;
-  const { recalledTurns, recallDiagnostics, ...memory } = MEMORY_CONTEXT as Record<string, unknown>;
+const referenceTool = 'wave_context_reference';
+const scriptActionHint = '回应其中最新的真实用户输入';
+const nativeActionHint = '以资料数组末项 GAME_CONTEXT 中的 PLAYER_ACTION 为本回合行动，CURRENT_TURN 标明来源。历史记录和时间预检只作参考；行动为空时遵循原有开局或回合规则';
+
+export function deliveryContext(context: Record<string, unknown>, draft?: TurnDraft): AiMessage[] {
+  const { SAVE_STATE, NPC_CONTEXT, CREATION_PROFILE, MEMORY_CONTEXT, OPENING_TIME, PLAYER_ACTION, ...instructions } = context;
+  if (draft && draft.userInput !== PLAYER_ACTION)
+    throw new AiError('configuration', undefined, { fieldPath: 'tavern.native_delivery.action' });
+  const { summaryPolicy, ...memories } = MEMORY_CONTEXT as Record<string, unknown>;
+  // A pending opening's playerPreference also contains the verbatim input. Keep its clock rules in messages.
+  const { playerPreference, ...openingRules } = (OPENING_TIME ?? {}) as Record<string, unknown>;
+  const currentTurn = draft
+    ? { source: 'draft.userInput', turnId: draft.turnId, draftRevision: draft.draftRevision, turnKind: draft.turnKind }
+    : { source: 'preview' };
   return [
-    { role: 'user', content: contextMessage({ ...current, NPC_CONTEXT: { policy }, MEMORY_CONTEXT: memory }) },
+    { role: 'user', content: contextMessage({ ...instructions, MEMORY_CONTEXT: { summaryPolicy },
+      OPENING_TIME: OPENING_TIME ? openingRules : undefined }) },
     { role: 'user', content: begin },
-    { role: 'user', content: contextMessage({ NPC_CONTEXT: npcIndex, MEMORY_CONTEXT: { recalledTurns, recallDiagnostics } }) },
+    { role: 'user', content: contextMessage({ SAVE_STATE, NPC_CONTEXT, CREATION_PROFILE, MEMORY_CONTEXT: memories,
+      OPENING_TIME: OPENING_TIME ? { playerPreference } : undefined }) },
+    { role: 'user', content: contextMessage({ CURRENT_TURN: currentTurn, PLAYER_ACTION }) },
     { role: 'user', content: end },
-    { role: 'user', content: contextMessage({ PLAYER_ACTION }) },
   ];
 }
 
-/** Called after the page script has appended its delivery instructions, before protocol conversion. */
-export function finalizeNativeDelivery(messages: AiMessage[], tools: ReadonlySet<string>, action: string): AiMessage[] {
-  if (!tools.has('wave_context_reference') || !tools.has(nativeOutputTool))
+/** Keep the composed records before any page-script hooks run. Only this request can use them. */
+export function nativeReferenceRecords(messages: readonly AiMessage[]) {
+  const start = messages.findIndex(m => m.content === begin);
+  const stop = messages.findIndex(m => m.content === end);
+  if (start < 0 || stop <= start + 1)
+    throw new AiError('configuration', undefined, { fieldPath: 'tavern.context_boundary' });
+  return messages.slice(start + 1, stop);
+}
+
+export function finalizeNativeDelivery(messages: AiMessage[], tools: readonly { function: { name: string; description?: string } }[],
+  expected: readonly AiMessage[]): AiMessage[] {
+  const reference = tools.find(tool => tool.function.name === referenceTool);
+  const closing = messages.at(-1);
+  if (!reference || !tools.some(tool => tool.function.name === nativeOutputTool) || closing?.role !== 'user' ||
+    !closing.content.includes(scriptActionHint) || !closing.content.includes(nativeOutputTool))
     throw new AiError('unsupported', undefined, { fieldPath: 'tavern.native_delivery.tools' });
-  const content = contextMessage({ PLAYER_ACTION: action });
-  const others = messages.filter(message => !(message.role === 'user' && message.content === content));
-  if (others.length !== messages.length - 1)
+
+  // transformRequest serializes the moved array on the last line, after its own description header.
+  if (!expected.length || !reference.function.description?.endsWith('\n' + JSON.stringify(expected)) ||
+    messages.some(m => m.role === 'user' && expected.some(record => m.content.includes(record.content))))
     throw new AiError('configuration', undefined, { fieldPath: 'tavern.native_delivery.action' });
-  const closing = others.pop();
-  if (!closing || closing !== messages.at(-1) || closing.role !== 'user' || !closing.content.includes(nativeOutputTool))
-    throw new AiError('unsupported', undefined, { fieldPath: 'tavern.native_delivery.tools' });
-  // The pinned script refers to an action inside its reference tool. Native Story keeps that action here.
-  const delivery = closing.content.replace('回应其中最新的真实用户输入', '回应本消息 PLAYER_ACTION 中的玩家行动');
-  const binding = '本回合玩家行动以以下 PLAYER_ACTION 为准。资料工具只补充背景，时间预检只判断时间安排。按既定正文协议回应。';
-  return [...others, { role: 'user', content: [binding, content, delivery].join('\n\n') }];
+
+  return [...messages.slice(0, -1), { ...closing, content: closing.content.replace(scriptActionHint, nativeActionHint) }];
 }
 
 export function checkDeliveryBoundaries(messages: readonly AiMessage[]) {

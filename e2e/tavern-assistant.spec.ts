@@ -624,11 +624,17 @@ test('独立主脚本处理普通回合，截断参数不能覆盖原候选', as
   expect(wires).toHaveLength(3);
   for (const wire of wires) {
     const { messages, tools } = JSON.parse(wire);
-    expect(messages.at(-1)).toMatchObject({role:'user',content:expect.stringContaining('我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。')});
+    const action = '我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。';
+    expect(messages.at(-1)).toMatchObject({role:'user',content:expect.stringContaining('PLAYER_ACTION')});
+    expect(JSON.stringify(messages)).not.toContain(action);
     const world = messages.find((m: {role: string; content: string}) => m.role === 'user' && m.content.startsWith('<GAME_CONTEXT>'));
     const facts = JSON.parse(world.content.slice('<GAME_CONTEXT>'.length, -'</GAME_CONTEXT>'.length));
-    expect(facts.TIME_PREFLIGHT.actionKind).toBe('none'); // Only classifies explicit passage of time.
-    expect(facts.MEMORY_CONTEXT.recentTurns.map((t: {turnId: string}) => t.turnId)).toContain('talent-history-0');
-    expect(tools[0].function.description).toContain('NPC_CONTEXT');
+    expect(facts.TIME_PREFLIGHT.actionKind).toBe('none');
+    const description = tools[0].function.description;
+    const [background, current] = JSON.parse(description.slice(description.lastIndexOf('\n') + 1))
+      .map((m: {content: string}) => JSON.parse(m.content.slice('<GAME_CONTEXT>'.length, -'</GAME_CONTEXT>'.length)));
+    expect(current.PLAYER_ACTION).toBe(action);
+    expect(current.CURRENT_TURN.turnId).toBe('native-delivery-turn');
+    expect(background.MEMORY_CONTEXT.recentTurns.map((t: {turnId: string}) => t.turnId)).toContain('talent-history-0');
   }
 });

@@ -108,27 +108,36 @@ describe.each(['openai', 'deepseek', 'gemini', 'anthropic'] as const)('%s 虚拟
   });
 });
 const action = '联系仓库负责人，核对“手机”与 <货单>。\n 保留空格 ';
-const actionMessage = {role: 'user' as const, content: contextMessage({PLAYER_ACTION: action})};
+const currentTurn = { source: 'draft.userInput', turnId: 'turn-two', turnKind: 'regular', draftRevision: 1 };
+const actionMessage = { role: 'user' as const, content: contextMessage({CURRENT_TURN: currentTurn, PLAYER_ACTION: action}) };
+const background = { role: 'user' as const, content: contextMessage({ SAVE_STATE: { revision: 2 } }) };
+const reference = [background, actionMessage];
 const deliveryNames = ['wave_context_reference', 'actual_content'];
-function nativeHook(names: string[], choice: 'auto' | 'none' = 'auto') {
+function nativeHook(names: string[], choice: 'auto' | 'none' = 'auto', leak = false) {
   return tavernEvents.on('chat_completion_settings_ready', data => {
-    data.tools = names.map(name => ({type: 'function', function: {...tool.function, name}}));
+    const records = data.messages.splice(0);
+    data.tools = names.map(name => ({ type: 'function', function: { ...tool.function, name,
+      description: name === deliveryNames[0] ? '测试资料\n' + JSON.stringify(records) : tool.function.description } }));
+    if (leak) data.messages.push(actionMessage);
     data.tool_choice = choice;
-    data.messages.push({role: 'user', content: '测试交付说明：请使用 actual_content 提交本回合正文。'});
+    data.messages.push({role: 'user', content: '回应其中最新的真实用户输入。请使用 actual_content 提交本回合正文。'});
   });
 }
 
 it.each([
-  { names: ['actual_content'], action, path: 'tools' },
-  { names: ['wave_context_reference'], action, path: 'tools' },
-  { names: deliveryNames, action, path: 'tools', disabled: true },
-  { names: deliveryNames, action: '另一草稿', path: 'action' },
-])('独立交付缺声明或行动不匹配时在传输前拒绝 $path', async row => {
+  { names: ['actual_content'], expected: reference, path: 'tools' },
+  { names: ['wave_context_reference'], expected: reference, path: 'tools' },
+  { names: deliveryNames, expected: reference, path: 'tools', disabled: true },
+  { names: deliveryNames, expected: [actionMessage], path: 'action' },
+  { names: deliveryNames, expected: [background, {...actionMessage, content: actionMessage.content.replace('turn-two', 'turn-one')}], path: 'action' },
+  { names: deliveryNames, expected: [background, {...actionMessage, content: actionMessage.content.replace('联系', '通知')}], path: 'action' },
+  { names: deliveryNames, expected: reference, path: 'action', leak: true },
+])('独立交付缺声明、错绑、缺资料或普通消息泄漏行动块时在传输前拒绝 $path', async row => {
   const fetcher = vi.fn<typeof fetch>();
-  const hook = nativeHook(row.names, row.disabled ? 'none' : 'auto');
+  const hook = nativeHook(row.names, row.disabled ? 'none' : 'auto', row.leak);
   try {
-    await expect(new AiClient(fetcher).generate(snapshot('openai'), [actionMessage], {
-      tavernType: 'normal', nativeDeliveryAction: row.action,
+    await expect(new AiClient(fetcher).generate(snapshot('openai'), reference, {
+      tavernType: 'normal', nativeDeliveryReference: row.expected,
     })).rejects.toMatchObject({details: {fieldPath: 'tavern.native_delivery.' + row.path}});
     expect(fetcher).not.toHaveBeenCalled();
   } finally { hook.stop(); }
@@ -143,8 +152,8 @@ it.each([false, true])('独立交付只接受可核对的上游正文；stream=%
     return Response.json({choices: [{message: {content: text}, finish_reason: 'stop'}]});
   });
   try {
-    const run = () => new AiClient(fetcher).generate(snapshot('openai'), [actionMessage], {
-      tavernType: 'regenerate', stream, nativeDeliveryAction: action,
+    const run = () => new AiClient(fetcher).generate(snapshot('openai'), reference, {
+      tavernType: 'regenerate', stream, nativeDeliveryReference: reference,
     });
     for (const [name, carried, expected] of [
       [undefined, undefined, false], ['other', text, false], ['actual_content', '不同正文', false],
@@ -161,7 +170,8 @@ it.each([false, true])('独立交付只接受可核对的上游正文；stream=%
     for (const [, init] of fetcher.mock.calls) {
       const last = JSON.parse(String(init?.body)).messages.at(-1);
       expect(last.role).toBe('user');
-      expect(last.content).toContain(actionMessage.content);
+      expect(last.content).toContain('PLAYER_ACTION');
+      expect(last.content).not.toContain(actionMessage.content);
     }
   } finally { hook.stop(); }
 });

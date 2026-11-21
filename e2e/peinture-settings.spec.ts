@@ -15,9 +15,18 @@ const playerAction = '我立即拿起手机，联系仓库负责人，询问货�
 const warehouseStory = '林舟拨通仓库负责人的电话，核对发货单上的“货号 A”，确认货物的具体位置。'.repeat(320) + '最后一行。';
 const warehouseEnvelope = '<正文>' + warehouseStory + '</正文><短期记忆>林舟致电仓库</短期记忆><变量规划>[]</变量规划>';
 
+const museumAction = '我去市博物馆，向馆员核对展品编号。';
+const museumStory = '林舟来到市博物馆，向馆员逐项核对展品编号。'.repeat(1200) + '编号一致。';
+const museumEnvelope = '<正文>' + museumStory + '</正文><短期记忆>林舟核对展品</短期记忆><变量规划>[]</变量规划>';
+
+function readReference(description: string) {
+  const records = JSON.parse(description.slice(description.lastIndexOf('\n') + 1)) as { role: string; content: string }[];
+  return records.map(m => JSON.parse(m.content.slice('<GAME_CONTEXT>\n'.length, -'\n</GAME_CONTEXT>'.length)));
+}
+
 function upstream(protocol: Protocol, stream: boolean, content = envelope) {
   const args = { content };
-  const longDelivery = content === warehouseEnvelope;
+  const longDelivery = content === warehouseEnvelope || content === museumEnvelope;
   const serialized = JSON.stringify(args);
   const fragments = longDelivery
     ? serialized.match(/[\s\S]{1,127}/gu)!
@@ -80,7 +89,7 @@ function upstream(protocol: Protocol, stream: boolean, content = envelope) {
 }
 
 // Synthetic save and opening draft produced with game() and createTurnDraft(); no production test hooks.
-async function prepare(page: Page, protocol: Protocol, stream: boolean, active: boolean, actionOptions = false, action?: string) {
+async function prepare(page: Page, protocol: Protocol, stream: boolean, active: boolean, actionOptions = false, action?: string, regular = false) {
   const sent: string[] = [];
   await page.route('**/*', (route) => {
     const u = new URL(route.request().url());
@@ -104,7 +113,18 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
             ],
           },
         });
-      return route.fulfill(upstream(protocol, stream, action === playerAction ? warehouseEnvelope : envelope));
+      if (action !== undefined) {
+        if (regular && sent.length === 1) return route.fulfill({json: {error: {type: 'synthetic_failure'}}});
+        const body = route.request().postDataJSON();
+        const tools = protocol === 'gemini' ? body.tools[0].functionDeclarations
+          : protocol === 'anthropic' ? body.tools : body.tools.map((t: {function: unknown}) => t.function);
+        const description = tools.find((t: {name: string}) => t.name === 'wave_context_reference')?.description;
+        const current = description && readReference(description).at(-1);
+        // The Mock selects its reply from the received current record, even when history describes the other action.
+        const replies = new Map([[playerAction, warehouseEnvelope], [museumAction, museumEnvelope]]);
+        return route.fulfill(upstream(protocol, stream, replies.get(current?.PLAYER_ACTION) ?? envelope));
+      }
+      return route.fulfill(upstream(protocol, stream));
     }
     return ['localhost', '127.0.0.1'].includes(u.hostname) || u.protocol === 'blob:'
       ? route.continue()
@@ -113,7 +133,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).first().waitFor();
   await page.evaluate(
-    async ({ fixture, protocol, stream, active, pack, actionOptions, action }) => {
+    async ({ fixture, protocol, stream, active, pack, actionOptions, action, regular, historicalAction }) => {
       const db = await new Promise<IDBDatabase>((ok, fail) => {
         const request = indexedDB.open('heijinwangchao');
         request.onsuccess = () => ok(request.result);
@@ -124,8 +144,13 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
         for (const { name, records } of fixture.rows)
           for (const value of records) {
             if ('userInput' in value && action !== undefined) value.userInput = action;
-            tx.objectStore(name).put(value);
-            const other = structuredClone(value);
+            const seeded = !regular ? value : 'userInput' in value
+              ? { ...value, turnKind: 'regular', turnId: 'museum-turn', baseSaveRevision: 1 }
+              : { ...value, revision: 1, turnNumber: 1, journal: [{ turnId: 'previous-turn', revision: 1,
+                story: { turnKind: 'opening', narrative: historicalAction, summary: '此前询问仓库', variableGuide: [] },
+                relatedActorRefs: [] }] };
+            tx.objectStore(name).put(seeded);
+            const other = structuredClone(seeded);
             other.saveId = 'peinture-second';
             if ('protagonist' in other) other.protagonist.name = '顾乙';
             tx.objectStore(name).put(other);
@@ -149,15 +174,15 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
           JSON.stringify({ enabled: true, selected: pack, packages: {} }),
         );
     },
-    { fixture, protocol, stream, active, pack, actionOptions, action },
+    { fixture, protocol, stream, active, pack, actionOptions, action, regular, historicalAction: playerAction },
   );
   await page.reload();
   return sent;
 }
-async function generate(page: Page, id = 'peinture-smoke', expected = '船靠岸了，林舟沿着石阶往上走。') {
+async function generate(page: Page, id = 'peinture-smoke', expected = '船靠岸了，林舟沿着石阶往上走。', button = '生成开局正文') {
   await page.goto('/#game/' + id);
   await openGameTools(page);
-  await page.getByRole('button', { name: '生成开局正文', exact: true }).click();
+  await page.getByRole('button', { name: button, exact: true }).click();
   await expect
     .poll(() =>
       page.evaluate(async (id) => {
@@ -168,7 +193,7 @@ async function generate(page: Page, id = 'peinture-smoke', expected = '船靠岸
         try {
           return await new Promise<string>((ok) => {
             const r = db.transaction('drafts').objectStore('drafts').get(id);
-            r.onsuccess = () => ok(r.result?.story?.narrative ?? r.result?.failures?.at(-1)?.code ?? '');
+            r.onsuccess = () => ok(r.result?.story?.narrative ?? r.result?.failures?.at(-1)?.errorCode ?? '');
           });
         } finally {
           db.close();
@@ -224,7 +249,8 @@ async function applyMode(page: Page, dialog: Locator) {
   await Promise.all([page.waitForNavigation(), dialog.getByRole('button', { name: '保存预设并刷新' }).click()]);
 }
 for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
-  for (const stream of [false, true]) test('原生交付使用渠道参数并保存正文 ' + protocol + (stream ? ' SSE' : ' JSON'), async ({ page }, info) => {
+  for (const stream of [false, true]) test('原生交付使用渠道参数并保存正文 ' + protocol + (stream ? ' SSE' : ' JSON'), async ({ page, context }, info) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     const sent = await prepare(page, protocol, stream, false, false, playerAction);
     await page.evaluate(() => {
       const config = JSON.parse(localStorage.getItem('heijin.ai.v1')!);
@@ -241,6 +267,8 @@ for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
     expect(sent).toHaveLength(0);
     await generate(page, 'peinture-smoke', warehouseStory);
     expect(sent).toHaveLength(1);
+    expect(await copyStoryReport(page)).toMatchObject({storyValidated: true, candidateSaved: true,
+      tavern: {calls: 1, restored: true, complete: true}});
     const body = JSON.parse(sent[0]);
     const tools = protocol === 'gemini' ? body.tools[0].functionDeclarations
       : protocol === 'anthropic' ? body.tools : body.tools.map((t: {function: unknown}) => t.function);
@@ -254,19 +282,15 @@ for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
     const last = outgoing.at(-1);
     expect(last.role).toBe('user');
     const lastText = last.parts?.[0].text ?? last.content;
-    expect(lastText).toContain(playerAction);
     const control = 'Call the `actual_content` function exactly once';
     expect(lastText).not.toContain('回应其中最新的真实用户输入');
-    expect(lastText.indexOf(control)).toBeGreaterThan(lastText.indexOf(playerAction));
+    expect(lastText).toContain('PLAYER_ACTION');
+    expect(lastText.indexOf(control)).toBeGreaterThan(lastText.indexOf('PLAYER_ACTION'));
     expect(JSON.stringify(outgoing).split(control)).toHaveLength(2);
-    const actionJson = lastText.match(/<GAME_CONTEXT>\s*([\s\S]*?)\s*<\/GAME_CONTEXT>/u)?.[1];
-    expect(JSON.parse(actionJson)).toEqual({ PLAYER_ACTION: playerAction });
-    expect(tools[0].description).not.toContain(playerAction);
-    expect(tools[0].description).toContain('NPC_CONTEXT');
-    const current = outgoing.find((m: {role: string; content?: string; parts?: {text:string}[]}) =>
-      m.role === 'user' && (m.parts?.[0]?.text ?? m.content)?.startsWith('<GAME_CONTEXT>'));
-    const currentText = current.parts?.[0].text ?? current.content;
-    const facts = JSON.parse(currentText.slice('<GAME_CONTEXT>'.length, -'</GAME_CONTEXT>'.length));
+    expect(JSON.stringify(outgoing)).not.toContain(playerAction);
+    const [facts, current] = readReference(tools[0].description);
+    expect(current).toEqual({ CURRENT_TURN: { source: 'draft.userInput', turnId: 'fixture-turn',
+      draftRevision: 0, turnKind: 'opening' }, PLAYER_ACTION: playerAction });
     expect(facts.SAVE_STATE.protagonist.name).toBe('林舟');
     expect(facts.CREATION_PROFILE.protagonist).toEqual(facts.SAVE_STATE.protagonist);
     expect(facts.MEMORY_CONTEXT.recentTurns).toEqual([]);
@@ -281,8 +305,35 @@ for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
     expect(maxOutput).toBe(8192);
     await info.attach('native-delivery-wire', { contentType: 'application/json',
       body: JSON.stringify({ protocol, stream, names, choice, calls: sent.length, temperature, maxOutput,
-        lastRole: last.role, boundActionMatches: JSON.parse(actionJson).PLAYER_ACTION === playerAction,
-        ordinaryWorldState: Boolean(facts.SAVE_STATE), candidate: 'saved' }) });
+        lastRole: last.role, boundActionMatches: current.PLAYER_ACTION === playerAction,
+        referenceWorldState: Boolean(facts.SAVE_STATE), candidate: 'saved' }) });
+  });
+}
+
+for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
+  for (const stream of [false, true]) test(`普通回合与显式重生成读取本轮资料 ${protocol} ${stream ? 'SSE' : 'JSON'}`, async ({page, context}) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const sent = await prepare(page, protocol, stream, false, false, museumAction, true);
+    const dialog = await runtimeSettings(page);
+    await dialog.getByLabel('防截断破甲模式').check();
+    await applyMode(page, dialog);
+    await generate(page, 'peinture-smoke', 'rejected', '生成本回合正文');
+    expect(sent).toHaveLength(1);
+    await generate(page, 'peinture-smoke', museumStory, '生成本回合正文');
+    expect(sent).toHaveLength(2);
+    expect(await copyStoryReport(page)).toMatchObject({storyValidated: true, candidateSaved: true,
+      tavern: {calls: 1, restored: true, complete: true}});
+    for (const [index, wire] of sent.entries()) {
+      const body = JSON.parse(wire);
+      const tools = protocol === 'gemini' ? body.tools[0].functionDeclarations
+        : protocol === 'anthropic' ? body.tools : body.tools.map((t: {function: unknown}) => t.function);
+      const [facts, current] = readReference(tools[0].description);
+      expect(facts.MEMORY_CONTEXT.recentTurns[0].narrative).toBe(playerAction);
+      expect(current.PLAYER_ACTION).toBe(museumAction);
+      expect(current.CURRENT_TURN).toMatchObject({turnId: 'museum-turn', source: 'draft.userInput', turnKind: 'regular'});
+      expect(current.CURRENT_TURN.draftRevision).toBe(index);
+      expect(JSON.stringify(body.messages ?? body.contents)).not.toContain(museumAction);
+    }
   });
 }
 

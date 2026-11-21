@@ -132,7 +132,7 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
         PROMPT_SETTINGS: promptSettings,
         CURRENT_TIME: { worldClock: replacements.worldClock, worldWeekday: replacements.worldWeekday },
       });
-    if (nativeDelivery && input.stage === 'story') messages.push(...deliveryContext(ordered));
+    if (nativeDelivery && input.stage === 'story') messages.push(...deliveryContext(ordered, input.draft));
     else messages.push({ role: 'user', content: contextMessage(ordered) });
   }
   // 最终格式提醒紧贴生成点：有确认历史时并入收尾 user 消息；否则作为末尾独立 user 消息。

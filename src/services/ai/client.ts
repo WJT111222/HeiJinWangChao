@@ -33,8 +33,8 @@ export interface RequestOptions {
   storyClock?: import('../../presets/tavern/timing').StoryClock;
   presetSampling?: Sampling;
   tavernType?: GenerationType;
-  /** Frozen player input; an empty opening action still selects native delivery. */
-  nativeDeliveryAction?: string;
+  /** Frozen reference records for checking the bundled script’s final tool declaration. */
+  nativeDeliveryReference?: readonly AiMessage[];
   /** Internal Story-only handoff: caller must strictly validate received content. */
   validateStoryOutputLimit?: boolean;
   onResponseDiagnostics?: (diagnostics: ResponseDiagnostics) => void;
@@ -209,8 +209,8 @@ export class AiClient {
             wire.presetSamplingInspection !== undefined, trace);
         };
         const response = trace && cleanup && options.tavernType
-          ? await sendTavern(snapshot, options.tavernType, [...messages], options.nativeDeliveryAction !== undefined ? undefined : options.presetSampling ?? {}, options.stream === true,
-            AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryAction)
+          ? await sendTavern(snapshot, options.tavernType, [...messages], options.nativeDeliveryReference !== undefined ? undefined : options.presetSampling ?? {}, options.stream === true,
+            AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryReference)
           : await send(wireRequest(snapshot, messages, options.stream === true, options.presetSampling), signal);
         const protocol = trace ? 'openai' : snapshot.channel.protocol;
         if (!signal.aborted) observe({ httpStatus: response.status, complete: false });
@@ -337,7 +337,7 @@ export class AiClient {
           if (unhandledTool) throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.unhandled_tool' });
           usage = trace.usage;
           outputLimited ||= ['length', 'max_tokens'].includes(trace.finish?.toLowerCase() ?? '');
-          if (options.nativeDeliveryAction !== undefined && !trace.matchesDelivery?.(text))
+          if (options.nativeDeliveryReference !== undefined && !trace.matchesDelivery?.(text))
             throw new AiError(outputLimited ? 'output_limit' : 'unsupported', undefined,
               outputLimited ? undefined : { fieldPath: 'tavern.native_delivery.response' });
         }

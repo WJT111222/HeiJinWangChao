@@ -1,3 +1,4 @@
+import { nativeReferenceRecords } from '../../presets/nativeDelivery';
 import { captureAssistantPreferences, ensureNativeDeliveryHost, withTavernRequest } from '../../presets/tavern/hostState';
 import { promptReady, tavernGeneration, type GenerationType } from '../../presets/tavern/events';
 import { nativeDeliveryId } from '../../presets/settings';
@@ -129,11 +130,14 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   let addition: string | undefined;
   try {
   const scripted = captured.stage === 'story' && !!presetSelection;
+  if (presetSelection === nativeDeliveryId && !captured.draft)
+    throw new AiError('configuration', undefined, { fieldPath: 'tavern.native_delivery.action' });
+  const nativeDeliveryReference = presetSelection === nativeDeliveryId ? nativeReferenceRecords(messages) : undefined;
   const response = await client.generate(snapshot, scripted ? await promptReady(messages, false) : messages, {
     ...options,
     tavernType: scripted ? type : undefined,
     presetSampling: prompt.preset?.sampling,
-    nativeDeliveryAction: presetSelection === nativeDeliveryId ? captured.userInput : undefined,
+    nativeDeliveryReference,
     // Only Story may evaluate a complete limit response; other stages remain strict.
     validateStoryOutputLimit: captured.stage === 'story',
     onResponseDiagnostics: (value) => {

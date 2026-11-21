@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { isOpenAiCompatible } from '../../services/ai/configuration';
 import { AiError } from '../../services/ai/errors';
-import { wireRequest } from '../../services/ai/protocols';
+import { type AiMessage, wireRequest } from '../../services/ai/protocols';
 import type { RequestSnapshot } from '../../services/ai/snapshot';
 import { finalizeNativeDelivery } from '../nativeDelivery';
 import { packageOverride } from '../package';
@@ -22,7 +22,7 @@ const request = z.object({
 });
 function unsupported(fieldPath: string): never { throw new AiError('unsupported', undefined, { fieldPath: 'tavern.' + fieldPath }); }
 
-export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeAction?: string) {
+export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeReference?: readonly AiMessage[]) {
   const parsed = request.safeParse(raw);
   if (!parsed.success) unsupported('request');
   const { messages, tools = [], tool_choice: choice, parallel_tool_calls: parallel, stream, temperature, top_p, frequency_penalty, presence_penalty } = parsed.data;
@@ -30,14 +30,14 @@ export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeAction
   const protocol = snapshot.channel.protocol;
   let conversation = false;
   const names = new Set(tools.map(t => t.function.name));
-  if (nativeAction !== undefined && choice !== 'auto') unsupported('native_delivery.tools');
-  const ordered = nativeAction === undefined ? messages : finalizeNativeDelivery(messages, names, nativeAction);
+  if (nativeReference !== undefined && choice !== 'auto') unsupported('native_delivery.tools');
+  const ordered = nativeReference === undefined ? messages : finalizeNativeDelivery(messages, tools, nativeReference);
   const adapted = ordered.map(message => {
     if (message.role !== 'system') conversation = true;
     if (!conversation || message.role !== 'system' || isOpenAiCompatible(protocol)) return message;
     return { role: 'user' as const, content: '[system]\n' + message.content };
   });
-  const wire = wireRequest(snapshot, adapted, stream, nativeAction !== undefined ? undefined : { temperature, top_p, frequency_penalty, presence_penalty });
+  const wire = wireRequest(snapshot, adapted, stream, nativeReference !== undefined ? undefined : { temperature, top_p, frequency_penalty, presence_penalty });
   const body = JSON.parse(wire.init.body) as Record<string, unknown>;
   const selected = typeof choice === 'object' ? choice.function.name : undefined;
   if (names.size !== tools.length || (selected && !names.has(selected)) || (!tools.length && (choice && choice !== 'none' || parallel !== undefined)))
