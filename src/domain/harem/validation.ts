@@ -70,6 +70,9 @@ export function householdIssue(h: Harem, people: Record<string, NPC>, clock: str
       (c.bornAt && Date.parse(c.bornAt) > Date.parse(c.at))
     )
       return '子嗣必须是已出生、无重复且引用有效的独立人物';
+    const person = people[c.childNpcId];
+    if (person.kind === 'special' && person.privateProfile && (person.age === undefined || person.age < 18))
+      return '未确认成年子女不得关联成人私密资料';
     if (
       c.disclosure &&
       (c.visibility !== 'player_known' ||

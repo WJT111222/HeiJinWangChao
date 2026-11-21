@@ -204,12 +204,23 @@ export async function parsePartialVariables(text: string, state: GameState, draf
   const units = statements.value.map((statement,index) => variableUnit(statement,index,hasLooseBalanceChange,state));
   // An unreadable household operation cannot identify its newborns. Keep same-batch
   // new NPCs with that failed operation instead of persisting an unlinked birth.
-  if (units.some(unit => unit.atomicKeys?.includes('harem-transaction') &&
-    (!Array.isArray(unit.input.ast?.value) || unit.input.ast.value.some(edit =>
-      !edit || typeof edit !== 'object' || Array.isArray(edit) || !('op' in edit) ||
-      (edit.op === 'child' && (!edit.value || typeof edit.value !== 'object' || !('childNpcId' in edit.value)))))))
-    for (const unit of units) if (variablePath(unit.input).some((node,i) => i === 0 && 'name' in node && node.name === 'npc') && unit.writes.length)
-      unit.atomicKeys = [...(unit.atomicKeys ?? []),'harem-transaction'];
+  const unknownFamilySource = units.some(unit => {
+    if (!unit.atomicKeys?.includes('harem-transaction')) return false;
+    const edits = unit.input.ast?.value;
+    return !Array.isArray(edits) || edits.some(edit => {
+      if (!edit || typeof edit !== 'object' || Array.isArray(edit) || typeof edit.op !== 'string') return true;
+      if (edit.op !== 'child') return false;
+      const value = edit.value;
+      return !value || typeof value !== 'object' || Array.isArray(value) || typeof value.childNpcId !== 'string';
+    });
+  });
+  if (unknownFamilySource) {
+    for (const unit of units) {
+      const [root, target] = variablePath(unit.input);
+      if ((root?.kind === 'root' || root?.kind === 'field') && root.name === 'npc' && target?.kind === 'id' && !Object.hasOwn(state.npc,target.id) && unit.writes.length)
+        unit.atomicKeys = [...(unit.atomicKeys ?? []),'harem-transaction'];
+    }
+  }
   addSceneDependencies(state, units);
   // A world-clock statement is the temporal basis shared by application groups.
   const clocks = units.filter(unit => unit.input.ast?.path.nodes.some(node => (node.kind === 'root' || node.kind === 'field') && node.name === 'worldClock') && unit.position.category === 'state');

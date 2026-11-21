@@ -1,3 +1,4 @@
+import { householdFixture } from './fixtures/harem';
 import { activeMembers } from '../domain/harem/schema';
 import { householdContext } from '../domain/harem/projection';
 import { describe, expect, it } from 'vitest';
@@ -201,4 +202,24 @@ it('亲子事实可在之后被主角知悉，保留原登记来源且不重复�
   expect(householdContext(revealed.harem!, revealed.npc, false, '').children).toHaveLength(1);
   expect(revealed.harem?.children[0]).toMatchObject({ turnId: 'turn-0', disclosure: { turnId: 'turn-1' } });
   expect(() => apply(revealed, [edit])).toThrow();
+});
+
+it('多成员档案按当前行动选取 Story 资料，旧地位依据不会进入任何请求', () => {
+  const s = householdFixture(40);
+  const named = s.npc['family-39'];
+  named.name = '周岚';
+  const projection = householdContext(s.harem!, s.npc, false, '联系' + named.name);
+  expect(projection.members).toHaveLength(12);
+  expect(projection.members[0].npcId).toBe(named.id);
+  const variables = householdContext(s.harem!, s.npc, true, '');
+  expect(variables.members).toHaveLength(40);
+  const bytes = (v: unknown) => new TextEncoder().encode(JSON.stringify(v)).length;
+  const before = bytes(variables);
+  const changes = s.harem!.members[named.id].changes;
+  const initial = changes[0].to!;
+  for (let i = 0; i < 200; i++) {
+    changes.push({ ...changes[0], turnId: 'adjust-' + i, from: initial + (i % 2), to: initial + 1 - (i % 2), reason: '历史变更说明'.repeat(20) });
+  }
+  expect(bytes(householdContext(s.harem!, s.npc, true, '')) - before).toBeLessThan(2);
+  expect(JSON.stringify(projection)).not.toContain('双方决定');
 });

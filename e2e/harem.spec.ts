@@ -54,6 +54,7 @@ for (const build of ['development', 'production'] as const) {
     const opener = panel.locator('button[data-person-id="family-5"]');
     await opener.scrollIntoViewIfNeeded();
     await opener.focus();
+    await panel.screenshot({ path: info.outputPath('cards-' + build + '.png') });
     const top = await opener.evaluate((el) => el.getBoundingClientRect().top);
     await opener.press('Enter');
     const profile = page.getByRole('dialog', { name: 'NPC 人物档案', exact: true });
