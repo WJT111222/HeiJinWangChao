@@ -23,6 +23,37 @@ async function execute(body: string) {
   expect(d).toEqual(before);
   return { ...d, plan, after };
 }
+describe('普通回合天气与环境', () => {
+  const weather = '雾';
+  const environment = '街边新添了一排摊位，来往的人停下脚步。'.repeat(5);
+  it.each([
+    ['只写天气', { weatherText: weather }],
+    ['只写环境', { environmentText: environment }],
+    ['两项同时写入', { weatherText: weather, environmentText: environment }],
+    ['无变化', {}],
+  ] as const)('%s，未指定的值逐字保留', async (_name, changes) => {
+    const commands = Object.entries(changes).map(([field, value]) => `set ${field} = ${JSON.stringify(value)}`);
+    const d = setup(commands.join('\n'));
+    const initial = { weatherText: '晴', environmentText: '清晨的老街' };
+    Object.assign(d.state, initial);
+    const result = await resultFor(d);
+    expect(unwrap(result)).toMatchObject({ ...initial, ...changes });
+    expect(d.state).toMatchObject(initial);
+  });
+
+  it.each(['set weatherText = 123', 'delete environmentText', 'set weatherText.extra = "雾"'])(
+    '拒绝不符合结构的命令 %s', async command => {
+      const result = await resultFor(setup(command));
+      expect(result.ok).toBe(false);
+    },
+  );
+
+  it('开局仍须走受保护的初始化路径', async () => {
+    const d = opening('set weatherText = "雾"');
+    expect((await resultFor(d)).ok).toBe(false);
+  });
+});
+
 const move = 'set protagonist.locationId = "clinic"\nset npc[follow].locationId = "clinic"\nset npc[stay].onScene = false';
 describe('M8-P0C-3C1 现场文本变量', () => {
   it('普通回合可推进结构化时间，不读设备日期', async () => {

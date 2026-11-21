@@ -6,7 +6,7 @@ import type { DomainCommand } from '../../domain/commands';
 import { DataError, GameTimeSchema, IdSchema } from '../../domain/common';
 import { aggregateDomainDiagnostic } from './aggregateDiagnostics';
 import { variableCommandSchemas } from '../../domain/variableCommands';
-import { GameStateSchema, LocationSchema } from '../../domain/state';
+import { GameStateSchema, LocationSchema, SaveShape } from '../../domain/state';
 import type { GameState } from '../../domain/state';
 import { openingTimeBase, openingTimeSelection } from '../../domain/openingTime';
 import { variableCommandsForTurn } from '../../domain/turnProjection';
@@ -140,6 +140,12 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       const changes = OpeningInitialStateSchema.safeParse(command.value);
       if (!changes.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, changes.error));
       mapped = { ...common, type: 'InitializeOpeningState', changes: changes.data };
+    } else if (command.path.nodes.length === 1 && (root.name === 'weatherText' || root.name === 'environmentText')) {
+      if (command.operation !== 'set') return failed('unsupported_operation', origin);
+      if (draft.turnKind !== 'regular') return failed('permission_denied', origin);
+      const value = SaveShape[root.name].safeParse(command.value);
+      if (!value.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, value.error));
+      mapped = { ...common, type: 'SetSceneDescription', field: root.name, value: value.data };
     } else if (sceneEvent && node.kind==='id') {
       if(command.operation!=='set')return failed('unsupported_operation',origin);
       const old=sceneEvents.get(node.id),delta=SceneEventStateSchema.safeParse(command.value);

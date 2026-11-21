@@ -57,6 +57,7 @@
 | SetEquipment | equipment |
 | TransferItem | itemId、from、to |
 | SetWorldClock | worldClock |
+| SetSceneDescription | 普通回合 Variables 使用 `set weatherText = "…"` 或 `set environmentText = "…"`；每条只写指定的字符串，未指定项保留原值 |
 | SaveEvent | event |
 | SaveTask | task |
 | CreateOrganization | organization |

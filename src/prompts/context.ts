@@ -162,7 +162,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         ...(variableGuideRawTruncated ? { VARIABLE_GUIDE_NOTES_TRUNCATED: true } : {}) } : {}),
       VARIABLE_GUIDE: draft!.story!.variableGuide,
       ...(variableGuideReferences ? { VARIABLE_GUIDE_REFERENCES: variableGuideReferences } : {}),
-      TEXT_COMMAND_CATALOG: textVariableCatalog(),
+      TEXT_COMMAND_CATALOG: textVariableCatalog(input.mode),
       NPC_IMPORTANCE: Object.values(state.npc).map(npc=>({npcId:npc.id,identityKey:npc.identityKey,kind:npc.kind,playerPreference:npc.importancePreference??'automatic',profilePending:npc.kind==='special'&&Boolean(npc.profilePending),canRestoreProfile:Boolean(state.dormantNpcProfiles?.[npc.id])})),
     };
   if (stage === 'world') {
