@@ -5,21 +5,6 @@ import type { DomainCommand } from '../../domain/commands';
 import type { TurnDraft } from '../../domain/drafts';
 import type { GameState } from '../../domain/state';
 
-/** A new fixed address must occur in the selected Story. Recalled dialogue and old
- * journal entries are never evidence for overwriting the current relationship. */
-export function validateAddressing(state: GameState, draft: TurnDraft, command: DomainCommand) {
-  const npc = command.type === 'UpdateNpc' ? state.npc[command.npcId] : undefined;
-  const addressing = command.type === 'UpdateNpc' ? command.changes.addressing
-    : command.type === 'CreateNpc' ? command.npc.addressing : undefined;
-  if (!addressing) return;
-  for (const direction of ['playerToNpc', 'npcToPlayer'] as const) {
-    const value = addressing[direction];
-    if (value && value !== npc?.addressing?.[direction]) {
-      requireData(draft.story?.narrative.includes(value), 'WORK_CONTEXT', '新增固定称呼需要本幕已选正文中的称呼原文。');
-    }
-  }
-}
-
 export function validateVariableWork(state: GameState, draft: TurnDraft, projected: GameState, command: DomainCommand) {
   if (command.type !== 'SaveTask' && command.type !== 'SaveEvent') return;
   const task = command.type === 'SaveTask' ? command.task : undefined;

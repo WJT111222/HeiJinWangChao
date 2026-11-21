@@ -4,10 +4,11 @@ import { SaveRepository } from '../services/storage/saveRepository';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
 import { editAtPath } from '../domain/playerVariables';
 import { reserveStageSession } from '../workflows/stageGuard';
-import { parseTextVariables, parseWorld } from '../services/validation/aiOutputs';
+import { parseTextVariables, parseVariables, parseWorld } from '../services/validation/aiOutputs';
 import { composePrompt } from '../prompts/composer';
 import { defaultSettings } from '../ui/settings/model';
 import { worldState, worldDraft, worldResult } from './fixtures/world';
+import { npc } from './fixtures/game';
 import { completeDraft, elapsedVariables, submission } from './fixtures/turn';
 import { sentContext } from './fixtures/contextAssertions';
 import { initialCompanionProfile, loadCompanionProfile } from '../services/local/companionProfile';
@@ -26,7 +27,7 @@ beforeEach(async () => {
 });
 afterEach(() => repo.close());
 
-it('旧 V10 两方向缺省；Variables 单向命令保留另一方向，World 无法替玩家设置称呼', async () => {
+it('Variables 文本命令可从剧情更新未逐字出现的称呼，保留另一方向及其他 NPC 的设置', async () => {
   const snap = await repo.loadVariableSnapshot(id);
   expect(snap.state.schemaVersion).toBe(10);
   expect(snap.state.npc.scene).not.toHaveProperty('addressing');
@@ -46,17 +47,10 @@ it('旧 V10 两方向缺省；Variables 单向命令保留另一方向，World �
   expect([...documents.entries()]).toEqual(originalBytes);
   const draft = rerollStory(createTurnDraft(id, 0, 'address', 'opening', '交谈'), {
     turnKind: 'opening',
-    narrative: '【旁白】对方同意以后称主角为老大。',
+    narrative: '【旁白】对方笑着换了个更亲近的称呼。',
     summary: '双方约定称呼。',
     variableGuide: [],
   });
-  await expect(
-    parseTextVariables(
-      '<thinking>沿用旧场景。</thinking><说明></说明><命令>\nset npc[scene].addressing = {"playerToNpc":"阿姨"}\n</命令>',
-      saved.state,
-      draft,
-    ),
-  ).rejects.toThrow();
   const vars = await parseTextVariables(
     '<thinking>根据当场约定更新。</thinking><说明></说明><命令>\nset npc[scene].addressing = {"npcToPlayer":"老大"}\n</命令>',
     saved.state,
@@ -82,6 +76,37 @@ it('旧 V10 两方向缺省；Variables 单向命令保留另一方向，World �
   expect(() =>
     parseWorld(JSON.stringify({ ...w, worldCommands: [forbidden] }), saved.state, worldDraft()),
   ).toThrow();
+});
+
+it.each(['UpdateNpc', 'CreateNpc'] as const)('Variables JSON %s 可结算正文未逐字出现的双向称呼', async (type) => {
+  const state = await repo.load(id);
+  const draft = worldDraft(false, 'opening');
+  const addressing = { playerToNpc: '小周', npcToPlayer: '林老师' };
+  const npcId = type === 'UpdateNpc' ? 'scene' : 'new-npc';
+  const common = { type, commandId: 'addressing', evidence: '剧情中关系趋近' };
+  const command = type === 'UpdateNpc'
+    ? { ...common, npcId, expectedRevision: state.revision, changes: { addressing } }
+    : { ...common, npc: { ...npc(npcId), name: '周岚', addressing } };
+  const candidate = parseVariables(JSON.stringify({
+    commands: [command], rejectedSuggestions: [], unresolved: [],
+  }), state, draft);
+  const ready = await completeDraft(repo, { variables: candidate, narrative: draft.story!.narrative });
+  const result = await repo.commitTurn(submission(ready, ''));
+  expect(result.state.npc[npcId].addressing).toEqual(addressing);
+  expect((await repo.load(id)).npc[npcId].addressing).toEqual(addressing);
+});
+
+it('称呼 JSON 命令继续拒绝错误字段类型和不存在的 NPC', async () => {
+  const state = await repo.load(id);
+  const draft = worldDraft(false, 'opening');
+  const command = { type: 'UpdateNpc', npcId: 'scene', commandId: 'addressing', expectedRevision: state.revision,
+    evidence: '关系趋近', changes: { addressing: { npcToPlayer: '林老师' } } };
+  const validate = (value: unknown) => parseVariables(JSON.stringify({
+    commands: [value], rejectedSuggestions: [], unresolved: [],
+  }), state, draft);
+  expect(() => validate({ ...command, changes: { addressing: { npcToPlayer: 10 } } })).toThrow(expect.objectContaining({ code: 'schema_fields' }));
+  expect(() => validate({ ...command, npcId: 'missing' })).toThrow(expect.objectContaining({ code: 'data_integrity' }));
+  expect(await repo.load(id)).toEqual(state);
 });
 
 it('Variables 关闭时，下一次 Story messages 同时保留旧正文并读取正式新称呼', async () => {
