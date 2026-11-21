@@ -78,7 +78,7 @@ type StoryWorldbookOutcome =
 
 | 字段 | 酒馆里的含义 | 建议放法 |
 | --- | --- | --- |
-| `before` | 角色定义之前 | 新增一个「玩家世界书」数据容器，放在两本内置世界书**之后**；`before` 在前 |
+| `before` | 角色定义之前 | 新增一个「玩家世界书」user 数据容器，放在**全部系统提示之后**（默认路径下即游戏上下文 `GAME_CONTEXT` 之前），不插入系统提示、不打乱锁定的开头（身份 + 两本内置世界书）；`before` 在前 |
 | `after` | 角色定义之后 | 同一容器，接在 `before` 后面 |
 | `authorNoteTop` / `authorNoteBottom` | 作者注释上 / 下 | 同一容器，依次接在后面 |
 | `exampleMessages` | 示例对话前后 | 同一容器，接在后面（只取 `content`） |
@@ -110,7 +110,7 @@ type StoryWorldbookOutcome =
 1. 把 `src/services/worldbook/storyWorldbook.ts` 里的 `STORY_WORLDBOOK_CONNECTED` 改为 `true`。管理界面就不再显示「启用的世界书暂时不会带入正文」。
 2. 建议补以下测试：
    - `off` 时请求与现在逐字相同；
-   - `ok` 时容器出现在内置世界书之后、user 角色里；
+   - `ok` 时容器出现在全部系统提示之后、user 角色里；
    - 含 `{{user}}` 的条目不会触发占位符拦截；
    - `skipped` 时正文照常发送，并记一条日志；
    - 取消 Story 请求时，世界书扫描一起取消。
