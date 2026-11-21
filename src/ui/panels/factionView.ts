@@ -72,7 +72,7 @@ export function factionView(view: PlayerView) {
       ...family.upcoming.map(row => ({ id: row.id, title: row.title, state: 'next' as const }))],
     departments: memberDepartment([...(event.detail?.actorRefs ?? []), ...family.running.flatMap(row => row.detail?.actorRefs ?? [])]),
     startAt: event.startAt,
-    relation: involves(event.detail?.actorRefs, 'protagonist') ? '你参与了' : event.detail?.protagonistKnowledge ? '你知道' : undefined,
+    relation: involves(event.detail?.actorRefs, 'protagonist') ? '我参与了' : event.detail?.protagonistKnowledge ? '我知道' : undefined,
   }));
   const recent = families.filter(({ event }) => terminal(event) || event.retired)
     .filter(({ event }) => knownToProtagonist(event) || event.detail?.visibility === 'known')

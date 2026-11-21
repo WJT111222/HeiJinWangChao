@@ -34,10 +34,10 @@ describe('我的势力面板', () => {
     expect(panelNames.indexOf('我的势力')).toBe(panelNames.indexOf('势力组织') + 1);
   });
 
-  it('未绑定显示孤身一人与绑定提示', () => {
+  it('未绑定只显示目前孤身一人', () => {
     const html = markup(organizationArchiveState());
-    expect(html).toContain('你目前孤身一人');
-    expect(html).toContain('正式入伙、拜码头、接受任命');
+    expect(html).toContain('目前孤身一人');
+    expect(html).not.toContain('你');
   });
 
   it('公开信息统一七项，缺失项不显示', () => {
@@ -57,7 +57,7 @@ describe('我的势力面板', () => {
     expect(data.intel.map(row => row.text)).toEqual(['董事长有意出售维修业务']);
     expect(data.ongoing.map(event => event.id)).toEqual(['org-active']);
     const html = markup(state, true);
-    for (const text of ['合伙人', '入股成为合伙人，负责财务', '运营部', '你在这里', '董事长有意出售维修业务', '业务整合与新车间交接', '口碑稳定'])
+    for (const text of ['合伙人', '入股成为合伙人，负责财务', '运营部', '我在这里', '董事长有意出售维修业务', '业务整合与新车间交接', '口碑稳定'])
       expect(html).toContain(text);
     expect(html).toContain(`查看人物：${state.npc.person.name}`);
   });

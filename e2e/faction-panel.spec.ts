@@ -32,8 +32,7 @@ test('我的势力：未绑定显示孤身一人，只读不写状态', async ({
   await seedRoster(page); await page.route('https://**/*', route => route.abort());
   const before = await rosterGame(page);
   const dialog = await openFaction(page);
-  await expect(dialog).toContainText('你目前孤身一人');
-  await expect(dialog).toContainText('正式入伙、拜码头、接受任命');
+  await expect(dialog).toContainText('目前孤身一人');
   expect(await rosterGame(page)).toEqual(before);
 });
 
@@ -43,7 +42,7 @@ test('我的势力：显示公开信息、部门与内情，点名字跳到人�
   const before = await rosterGame(page), name = before.state.npc.person.name;
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   const dialog = await openFaction(page);
-  for (const text of ['青龙会', '你的身份：看场', '由红棍引荐入会，在夜场看场', '话事人 · 龙叔', '道上都知道', '看场组', '你在这里', '账由二把手的人亲自来收'])
+  for (const text of ['青龙会', '我的身份：看场', '由红棍引荐入会，在夜场看场', '话事人 · 龙叔', '道上都知道', '看场组', '我在这里', '账由二把手的人亲自来收'])
     await expect(dialog).toContainText(text);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await dialog.getByRole('button', { name: `查看人物：${name}（红棍）`, exact: true }).click();

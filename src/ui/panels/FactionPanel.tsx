@@ -21,8 +21,7 @@ export function FactionPanel({ view, links, desktop = false }: { view: PlayerVie
   if (!data) return <div className="faction-panel" data-empty="true" data-desktop={desktop || undefined}>
     <div className="fc-empty">
       <span className="fc-empty-seal" aria-hidden="true">势</span>
-      <h3>你目前孤身一人</h3>
-      <p>在剧情里明确加入某个势力，比如正式入伙、拜码头、接受任命，或者自己拉起一帮人，这个势力就会出现在这里。</p>
+      <h3>目前孤身一人</h3>
     </div>
   </div>;
   const { org, faction } = data;
@@ -31,7 +30,7 @@ export function FactionPanel({ view, links, desktop = false }: { view: PlayerVie
       <div className="fc-title">
         <h3>{links ? <button type="button" className="fc-link" onClick={() => links.organization(org.id)}>{org.name}</button> : org.name}</h3>
         <span className="fc-pill">{data.kindLabel}</span>
-        <span className="fc-pill" data-tone="gold">你的身份：{faction.position}{data.department ? ` · ${data.department}` : ''}</span>
+        <span className="fc-pill" data-tone="gold">我的身份：{faction.position}{data.department ? ` · ${data.department}` : ''}</span>
       </div>
       <p className="fc-lead">{faction.bondText}</p>
       <p className="fc-meta">{dateTime(faction.joinedAt)} 起以此为主势力</p>
@@ -53,17 +52,17 @@ export function FactionPanel({ view, links, desktop = false }: { view: PlayerVie
     </div>
 
     <section className="fc-card" aria-labelledby={`${uid}-departments`}>
-      <h4 id={`${uid}-departments`}>部门<small>部门下列出你认识的人</small></h4>
+      <h4 id={`${uid}-departments`}>部门<small>部门下列出认识的人</small></h4>
       {data.departments.length ? <div className="fc-departments">{data.departments.map(row => <article key={row.id} className="fc-dept" data-mine={row.mine || undefined}>
-        <header><strong>{row.name}</strong>{row.mine && <span className="fc-pill" data-tone="gold">你在这里</span>}</header>
+        <header><strong>{row.name}</strong>{row.mine && <span className="fc-pill" data-tone="gold">我在这里</span>}</header>
         <dl className="fc-dl">
-          <Detail label="负责人">{[row.headPosition, row.headName].filter(Boolean).join(' ') || '你还不知道是谁'}</Detail>
+          <Detail label="负责人">{[row.headPosition, row.headName].filter(Boolean).join(' ') || '还不知道是谁'}</Detail>
           {row.duty && <Detail label="职能">{row.duty}</Detail>}
           {row.scaleText && <Detail label="规模">{row.scaleText}</Detail>}
           {row.statusText && <Detail label="现状">{row.statusText}</Detail>}
         </dl>
         {(row.people.length > 0 || row.mine) && <div className="fc-people">
-          {row.mine && <span className="fc-person" data-self="true"><span className="fc-avatar" aria-hidden="true">你</span><span>你<small>{faction.position}</small></span></span>}
+          {row.mine && <span className="fc-person" data-self="true"><span className="fc-avatar" aria-hidden="true">我</span><span><span className="fc-visually-hidden">我：</span>{faction.position}</span></span>}
           {row.people.map(person => <Person key={person.id} {...person} links={links}/>)}
         </div>}
       </article>)}</div> : <Empty>部门尚未记录</Empty>}
@@ -87,14 +86,14 @@ export function FactionPanel({ view, links, desktop = false }: { view: PlayerVie
 
     <div className="fc-grid">
       <section className="fc-card" aria-labelledby={`${uid}-holdings`}>
-        <h4 id={`${uid}-holdings`}>你知道的据点与产业</h4>
+        <h4 id={`${uid}-holdings`}>知道的据点与产业</h4>
         {data.holdings.length ? <ul className="fc-list">{data.holdings.map(row => <li key={row.id}>
           <strong>{row.text}</strong>{row.statusText && <span className="fc-pill">{row.statusText}</span>}
           <span className="fc-note">{kindLabels[row.knowledgeKind]} · {row.source} · {dateTime(row.learnedAt)}</span>
         </li>)}</ul> : <Empty>还不知道这个势力的据点或产业</Empty>}
       </section>
       <section className="fc-card" aria-labelledby={`${uid}-intel`}>
-        <h4 id={`${uid}-intel`}>你知道的内情</h4>
+        <h4 id={`${uid}-intel`}>知道的内情</h4>
         {data.intel.length ? <ul className="fc-list">{data.intel.map(row => <li key={row.id}>
           <span>{row.text}</span><span className="fc-pill">{kindLabels[row.knowledgeKind]}</span>
           <span className="fc-note">{row.source} · {dateTime(row.learnedAt)}</span>
@@ -104,7 +103,7 @@ export function FactionPanel({ view, links, desktop = false }: { view: PlayerVie
 
     <div className="fc-grid">
       <section className="fc-card" aria-labelledby={`${uid}-mine`}>
-        <h4 id={`${uid}-mine`}>你手上的事</h4>
+        <h4 id={`${uid}-mine`}>手上的事</h4>
         {data.mine.length ? <ul className="fc-list">{data.mine.map(event => <li key={event.id}>
           {links ? <button type="button" className="fc-link" onClick={() => links.event(event.id)}>{event.title}</button> : <span>{event.title}</span>}
           <span className="fc-pill">{eventStatusLabels[event.status]}</span>
@@ -116,7 +115,7 @@ export function FactionPanel({ view, links, desktop = false }: { view: PlayerVie
           {event.at && <span className="fc-when">{dateTime(event.at)}</span>}
           {links ? <button type="button" className="fc-link" onClick={() => links.event(event.id)}>{event.title}</button> : <span>{event.title}</span>}
           {event.outcome && <span className="fc-note">{event.outcome}</span>}
-        </li>)}</ul> : <Empty>暂无你知道的近期动态</Empty>}
+        </li>)}</ul> : <Empty>暂无近期动态</Empty>}
       </section>
     </div>
   </div>;
