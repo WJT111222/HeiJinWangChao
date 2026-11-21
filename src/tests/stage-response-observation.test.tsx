@@ -176,8 +176,9 @@ it('待返回的家庭变更在 Variables 取消后不能复活或写入正式�
   const a = fixture(), repo = await SaveRepository.open('cancel-family', new IDBFactory());
   const person = a.state.npc.scene;
   person.gender = 'female'; person.age = 32;
-  const waiting = Promise.withResolvers<Response>();
-  const transport = vi.fn<typeof fetch>(() => waiting.promise);
+  let finish!: (response: Response) => void;
+  const waiting = new Promise<Response>(resolve => { finish = resolve; });
+  const transport = vi.fn<typeof fetch>(() => waiting);
   const runner = new VariableStage(repo, new AiClient(transport));
   try {
     await repo.create(a.state);
@@ -187,7 +188,7 @@ it('待返回的家庭变更在 Variables 取消后不能复活或写入正式�
     await vi.waitFor(() => expect(transport).toHaveBeenCalledTimes(1));
     runner.cancel(); await rejected;
     const changes = [{op:'join',npcId:person.id,identityKey:person.identityKey,to:100,reason:'已确认的家庭关系'}];
-    waiting.resolve(Response.json({choices:[{message:{content:'<thinking>准备登记。</thinking><说明>登记家庭。</说明><命令>\nset harem.changes = '+JSON.stringify(changes)+'\n</命令>'},finish_reason:'stop'}]}));
+    finish(Response.json({choices:[{message:{content:'<thinking>准备登记。</thinking><说明>登记家庭。</说明><命令>\nset harem.changes = '+JSON.stringify(changes)+'\n</命令>'},finish_reason:'stop'}]}));
     const loaded = await repo.loadGame(a.state.saveId);
     expect(loaded.state).toEqual(a.state);
     expect(loaded.draft?.variables).toBeUndefined();
