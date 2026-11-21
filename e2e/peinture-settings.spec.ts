@@ -311,7 +311,7 @@ for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
 }
 
 for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
-  for (const stream of [false, true]) test(`普通回合与显式重生成读取本轮资料 ${protocol} ${stream ? 'SSE' : 'JSON'}`, async ({page, context}) => {
+  for (const stream of [false, true]) test(`普通回合与显式重生成读取本轮资料 ${protocol} ${stream ? 'SSE' : 'JSON'}`, async ({page, context, isMobile}) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     const sent = await prepare(page, protocol, stream, false, false, museumAction, true);
     const dialog = await runtimeSettings(page);
@@ -319,6 +319,10 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
     await applyMode(page, dialog);
     await generate(page, 'peinture-smoke', 'rejected', '生成本回合正文');
     expect(sent).toHaveLength(1);
+    if (isMobile) {
+      const failure = page.getByRole('dialog').filter({has: page.getByRole('heading', {name: '重试与变更详情'})});
+      await failure.getByRole('button', {name: '关闭资料界面'}).click();
+    }
     await generate(page, 'peinture-smoke', museumStory, '生成本回合正文');
     expect(sent).toHaveLength(2);
     expect(await copyStoryReport(page)).toMatchObject({storyValidated: true, candidateSaved: true,
