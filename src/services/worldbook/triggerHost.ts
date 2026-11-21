@@ -76,10 +76,12 @@ export class WorldbookTriggerHost {
     const deadline = options.deadline ?? startedAt + clampTimeout(options.timeoutMs);
     const timeoutMs = Math.max(0, deadline - startedAt);
     return new Promise<TriggerOutcome>((resolve) => {
+      if (options.signal?.aborted) { resolve({ status: 'cancelled' }); return; }
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) { resolve({ status: 'timeout', timeoutMs }); return; }
       // inner：本次请求自己的停止信号（外部取消或到期）。排队中的请求收到后不再启动；运行中的请求终止 Worker。
       const inner = new AbortController();
       let settled = false;
-      let timer: ReturnType<typeof setTimeout> | undefined;
       const settle = (outcome: TriggerOutcome) => {
         if (settled) return;
         settled = true;
@@ -89,10 +91,7 @@ export class WorldbookTriggerHost {
       };
       const stop = (outcome: TriggerOutcome) => { settle(outcome); inner.abort(); };
       const onAbort = () => stop({ status: 'cancelled' });
-      if (options.signal?.aborted) { settle({ status: 'cancelled' }); return; }
-      const remaining = deadline - Date.now();
-      if (remaining <= 0) { settle({ status: 'timeout', timeoutMs }); return; }
-      timer = setTimeout(() => stop({ status: 'timeout', timeoutMs }), remaining);
+      const timer = setTimeout(() => stop({ status: 'timeout', timeoutMs }), remaining);
       options.signal?.addEventListener('abort', onAbort, { once: true });
       const job = this.tail.then(() => (inner.signal.aborted ? undefined
         : this.runNow(request, inner.signal).then(settle, () => settle({ status: 'failed', reason: 'internal' }))));
