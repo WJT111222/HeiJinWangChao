@@ -3,7 +3,8 @@ import { TavernAssistant } from './TavernAssistant';
 import type { FeedbackLevel } from '../Feedback';
 import { Feedback,useDesktopFeedback } from '../Feedback';
 import { MemorySummarySettings } from './MemorySummarySettings';
-import type { SaveRepository } from '../../services/storage/saveRepository';
+import { VariableManager } from './VariableManager';
+import type { SaveRepository, VariableSnapshot } from '../../services/storage/saveRepository';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, cloneElement, isValidElement } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { AiConnections } from './AiConnections';
@@ -20,15 +21,15 @@ const PromptInspector = lazy(() =>
   import('./PromptInspector').then((module) => ({ default: module.PromptInspector })),
 );
 
-const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关与超时','外观':'日间 / 夜间配色','提示词管理':'查看与编辑提示词'};
-const tabs = ['AI 连接', '提示词', '记忆', '运行', '外观', '提示词管理'] as const;
+const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关与超时','外观':'日间 / 夜间配色','提示词管理':'查看与编辑提示词','变量管理':'查看并修正当前存档'};
+const tabs = ['AI 连接', '提示词', '记忆', '运行', '外观', '提示词管理', '变量管理'] as const;
 const appearances = [['night', '夜间', '黑金配色，适合夜里或暗处'], ['day', '日间', '浅色纸页，适合白天或光线充足时'], ['system', '跟随系统', '随设备的深浅色自动切换']] as const;
 export function SettingsPanel({
   settings,
   onSave,
   repository,
   activeSaveId,
-  memoryMaintenance,
+  memoryMaintenance, variableSaveId, onVariablesSaved, onVariablesDirtyChange,
   onAiDirtyChange,
   onSummaryDirtyChange,
   onOpenNotice,
@@ -37,6 +38,9 @@ export function SettingsPanel({
   repository?: SaveRepository;
   activeSaveId?: string;
   memoryMaintenance?: ReactNode;
+  variableSaveId?: string;
+  onVariablesSaved?: (result: VariableSnapshot) => void;
+  onVariablesDirtyChange?: (dirty:boolean) => void;
   onAiDirtyChange?: (dirty: boolean) => void;
   onSummaryDirtyChange?: (dirty: boolean) => void;
   onOpenNotice?: (kind: NoticeKind) => void;
@@ -58,6 +62,8 @@ export function SettingsPanel({
   const [aiDirty, setAiDirty] = useState(false);
   let presetOwnsWriting = false;
   try { presetOwnsWriting = Boolean(captureStoryPreset()); } catch { /* Recovery remains available in runtime settings. */ }
+  const [variablesDirty,setVariablesDirty]=useState(false);
+  const variablesDirtyChanged=useCallback((dirty:boolean)=>{setVariablesDirty(dirty);onVariablesDirtyChange?.(dirty);},[onVariablesDirtyChange]);
   const [summaryDirty, setSummaryDirty] = useState(false);
   const summaryDirtyChanged = useCallback((dirty: boolean) => { setSummaryDirty(dirty); onSummaryDirtyChange?.(dirty); }, [onSummaryDirtyChange]);
   const [pendingTab, setPendingTab] = useState<(typeof tabs)[number]|'home'>();
@@ -119,21 +125,21 @@ export function SettingsPanel({
     }
   }
   function showCategory(name:(typeof tabs)[number]){if(!desktop&&mobileHome)homeScroll.current=host.current?.closest<HTMLElement>('.modal-body')?.scrollTop??0;setTab(name);lastCategory.current=name;setMobileHome(false);setNotice('');const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=0;}
-  function back(){if((tab==='AI 连接'&&aiDirty)||(tab==='记忆'&&summaryDirty)){setPendingTab('home');return;}setMobileHome(true);requestAnimationFrame(()=>{const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=homeScroll.current;host.current?.querySelector<HTMLButtonElement>(`[data-settings-category="${lastCategory.current}"]`)?.focus({preventScroll:true});});}
+  function back(){if(variablesDirty||(tab==='AI 连接'&&aiDirty)||(tab==='记忆'&&summaryDirty)){setPendingTab('home');return;}setMobileHome(true);requestAnimationFrame(()=>{const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=homeScroll.current;host.current?.querySelector<HTMLButtonElement>(`[data-settings-category="${lastCategory.current}"]`)?.focus({preventScroll:true});});}
   return (
     <div ref={host} data-tab={tab} className={`settings-layout st-wrap ${tab === '提示词管理' ? 'prompt-settings-layout' : ''}`}>
       <nav aria-label="设置分类" className="settings-nav" hidden={!desktop&&!mobileHome}>
         {!desktop&&<p className="muted">本地偏好与 AI 渠道</p>}
-        {tabs.map((name) => (
+        {tabs.filter(name=>name!=='变量管理'||Boolean(variableSaveId)).map((name) => (
           <button
             key={name} data-settings-category={name} aria-label={name}
             aria-pressed={desktop?tab === name:false}
             onClick={() => {
-              if (name !== tab && ((tab === 'AI 连接' && aiDirty) || (tab === '记忆' && summaryDirty))) { setPendingTab(name); return; }
+              if (name !== tab && (variablesDirty || (tab === 'AI 连接' && aiDirty) || (tab === '记忆' && summaryDirty))) { setPendingTab(name); return; }
               showCategory(name);
             }}
           >
-            <i aria-hidden="true">{{'AI 连接':'连','提示词':'词','记忆':'忆','运行':'运','外观':'色','提示词管理':'管'}[name]}</i>{desktop?<span>{name}</span>:<span className="settings-row-text"><strong>{name}</strong><small>{descriptions[name]}</small></span>}{((name==='AI 连接'&&aiDirty)||(name==='记忆'&&summaryDirty)||((name==='提示词'||name==='运行')&&localDirty))&&<span className="dirty" aria-hidden="true" title="有未保存的修改"/>}{!desktop&&<span aria-hidden="true">›</span>}
+            <i aria-hidden="true">{{'AI 连接':'连','提示词':'词','记忆':'忆','运行':'运','外观':'色','提示词管理':'管','变量管理':'量'}[name]}</i>{desktop?<span>{name}</span>:<span className="settings-row-text"><strong>{name}</strong><small>{descriptions[name]}</small></span>}{((name==='AI 连接'&&aiDirty)||(name==='记忆'&&summaryDirty)||((name==='提示词'||name==='运行')&&localDirty))&&<span className="dirty" aria-hidden="true" title="有未保存的修改"/>}{!desktop&&<span aria-hidden="true">›</span>}
           </button>
         ))}
         {onOpenNotice && <NoticeLinks onOpen={onOpenNotice} />}
@@ -141,6 +147,7 @@ export function SettingsPanel({
       {(desktop||!mobileHome)&&<div className="settings-content">
         {!desktop&&<button className="paper-back" aria-label="返回设置" onClick={back}>‹ 设置</button>}
         <h3 ref={categoryHeading} tabIndex={!desktop?-1:undefined}>{tab}</h3>
+        {tab === '变量管理' && variableSaveId && repository && onVariablesSaved && <VariableManager key={variableSaveId} saveId={variableSaveId} repository={repository} onSaved={onVariablesSaved} onDirtyChange={variablesDirtyChanged}/>}
         {tab === '提示词管理' && (
           <Suspense fallback={<p>正在打开提示词管理中心…</p>}>
             <PromptInspector
@@ -270,13 +277,13 @@ export function SettingsPanel({
           </>
         )}
         <div className="local-save-bar"><Feedback role="status" level={noticeLevel} className="field-hint">{notice||(localDirty&&(tab==='提示词管理'||(desktop&&(tab==='提示词'||tab==='运行')))?'本地设置尚未保存。':'')}</Feedback>
-        {tab !== 'AI 连接' && tab !== '记忆' && tab !== '外观' && (
+        {tab !== 'AI 连接' && tab !== '记忆' && tab !== '外观' && tab !== '变量管理' && (
           <button className="primary" onClick={save}>
             保存本地设置
           </button>
         )}</div>
       </div>}
-      {pendingTab && <UnsavedAiChanges subject={tab === '记忆' ? '记忆设置' : undefined} onContinue={() => setPendingTab(undefined)} onDiscard={() => {
+      {pendingTab && <UnsavedAiChanges subject={tab === '变量管理' ? '存档变量' : tab === '记忆' ? '记忆设置' : undefined} onContinue={() => setPendingTab(undefined)} onDiscard={() => {
         aiDirtyChanged(false);
         if(pendingTab==='home'){setMobileHome(true);requestAnimationFrame(()=>{const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=homeScroll.current;host.current?.querySelector<HTMLButtonElement>(`[data-settings-category="${lastCategory.current}"]`)?.focus({preventScroll:true});});}else showCategory(pendingTab);
         setPendingTab(undefined);

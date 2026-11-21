@@ -123,6 +123,7 @@ export function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [aiSettingsDirty, setAiSettingsDirty] = useState(false);
+  const [variablesDirty,setVariablesDirty] = useState(false);
   const [summarySettingsDirty, setSummarySettingsDirty] = useState(false);
   const settingsDestination=useRef<(()=>void)|undefined>(undefined);
   const [confirmSettingsClose, setConfirmSettingsClose] = useState(false);
@@ -368,7 +369,7 @@ export function App() {
   // 游戏中由原GameScreen提供唯一维护控制器；设置只是展示，不拥有任务生命周期。
   function requestSettingsClose(afterClose?:()=>void){
     settingsDestination.current=afterClose;
-    if(aiSettingsDirty||summarySettingsDirty)setConfirmSettingsClose(true);
+    if(aiSettingsDirty||summarySettingsDirty||variablesDirty)setConfirmSettingsClose(true);
     else{setSettingsOpen(false);settingsDestination.current=undefined;afterClose?.();}
   }
   const renderSettings = (memoryMaintenance?: ReactNode) => (
@@ -376,6 +377,13 @@ export function App() {
       settingsHost={{inGame:Boolean(gameRoute&&loaded)}} onClose={()=>requestSettingsClose()}
       returnFocus={()=>document.querySelector<HTMLElement>('[data-settings-open]')}>
       <SettingsPanel settings={settings} onSave={saveSettings} repository={repository}
+        variableSaveId={gameRoute ? loaded?.state.saveId : undefined}
+        onVariablesDirtyChange={setVariablesDirty}
+        onVariablesSaved={result=>{
+          openingStart.current?.revoke();
+          setLoaded(current=>current && current.instance === result.instance && canAcceptNpcView(current,result)
+            ? {...current,state:result.state,draft:result.draft} : current);
+        }}
         activeSaveId={loaded?.state.saveId ?? active?.saveId} memoryMaintenance={memoryMaintenance}
         onAiDirtyChange={setAiSettingsDirty} onSummaryDirtyChange={setSummarySettingsDirty} onOpenNotice={notices.open} />
     </ArchivePanel>
@@ -543,9 +551,9 @@ export function App() {
         onMutedChange={notices.setMuted} onClose={notices.close} />}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}
       <PeintureLauncher />
-      {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={summarySettingsDirty ? '记忆设置' : undefined} onContinue={() => {setConfirmSettingsClose(false);settingsDestination.current=undefined;}} onDiscard={() => {
+      {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={variablesDirty ? '存档变量' : summarySettingsDirty ? '记忆设置' : undefined} onContinue={() => {setConfirmSettingsClose(false);settingsDestination.current=undefined;}} onDiscard={() => {
         setConfirmSettingsClose(false);
-        setAiSettingsDirty(false); setSummarySettingsDirty(false);
+        setAiSettingsDirty(false); setSummarySettingsDirty(false); setVariablesDirty(false);
         setSettingsOpen(false);const destination=settingsDestination.current;settingsDestination.current=undefined;destination?.();
       }} />}
       {deleting && (
