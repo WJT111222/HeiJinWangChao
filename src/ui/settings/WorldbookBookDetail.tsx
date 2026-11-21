@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { exportNativeText, exportSillyTavern } from '../../domain/worldbook/export';
-import type { EntryEdit } from '../../domain/worldbook/release';
+import { blankEntry } from '../../domain/worldbook/entryFields';
+import { applyEntryEdit, type BookChange, type EntryEdit } from '../../domain/worldbook/release';
 import { ENTRY_POSITIONS, SELECTIVE_LOGIC, type WorldbookEntry, type WorldbookRelease } from '../../domain/worldbook/schema';
 import { DECISION_TEXT, type EntryDecision } from '../../domain/worldbook/trigger';
 import type { ShelfBook } from '../../services/storage/worldbookLibrary';
@@ -8,7 +9,7 @@ import { previewWorldbook, type WorldbookPreviewOutcome } from '../../services/w
 import { Feedback } from '../Feedback';
 
 /**
- * 一本世界书的详情：条目列表（单条启用 / 关键词唤醒或常驻）、导出、触发预览。
+ * 一本世界书的详情：条目列表（单条启用 / 关键词唤醒或常驻）、编辑条目、新增 / 删除条目、重命名、导出、触发预览。
  * 修改先暂存，点「保存修改」才写入书库（保存为新版本）；预览按已保存的内容运行。
  */
 type Filter = 'all' | 'constant' | 'keyword' | 'disabled';
@@ -39,7 +40,7 @@ export interface BookDetailProps {
   release: WorldbookRelease;
   busy: boolean;
   /** 保存暂存的修改；返回是否成功（失败时由外层显示原因）。 */
-  onSave: (edits: Record<string, EntryEdit>) => Promise<boolean>;
+  onSave: (change: BookChange) => Promise<boolean>;
   onToggleBook: (enabled: boolean) => void;
   onDelete: () => void;
   onBack: () => void;
@@ -47,55 +48,93 @@ export interface BookDetailProps {
   onDirtyChange: (count: number) => void;
 }
 
+/** 暂存的修改：书名、改条目、新增条目（界面上排在最前，保存时追加到末尾）、删除条目。 */
+interface Draft { title?: string; entries: Record<string, EntryEdit>; added: Array<{ entryId: string } & EntryEdit>; removed: string[] }
+const EMPTY_DRAFT: Draft = { entries: {}, added: [], removed: [] };
+interface Row { entry: WorldbookEntry; original: WorldbookEntry | null; index: number; removed: boolean }
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+const newEntryId = () => `local-${crypto.randomUUID()}`;
+
 export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook, onDelete, onBack, onDirtyChange }: BookDetailProps) {
-  const [edits, setEdits] = useState<Record<string, EntryEdit>>({});
+  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const [shown, setShown] = useState(PAGE);
   const [open, setOpen] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [exportNote, setExportNote] = useState<string | null>(null);
 
   // 换书（或保存后版本变了）时清空暂存。
-  useEffect(() => { setEdits({}); setShown(PAGE); setOpen(null); setConfirmDelete(false); setExportNote(null); }, [release.bookId, release.versionId]);
-  const dirty = Object.keys(edits).length;
+  useEffect(() => { setDraft(EMPTY_DRAFT); setShown(PAGE); setOpen(null); setRenaming(false); setConfirmDelete(false); setExportNote(null); }, [release.bookId, release.versionId]);
+  const dirty = (draft.title !== undefined ? 1 : 0) + Object.keys(draft.entries).length + draft.added.length + draft.removed.length;
   useEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
   useEffect(() => () => onDirtyChange(0), [onDirtyChange]);
 
-  const effective = (entry: WorldbookEntry) => ({
-    disabled: edits[entry.entryId]?.disabled ?? entry.disabled,
-    constant: edits[entry.entryId]?.constant ?? entry.constant,
-  });
-  const edit = (entry: WorldbookEntry, change: EntryEdit) => setEdits((current) => {
-    const next = { ...current };
-    const merged = { ...next[entry.entryId], ...change };
-    // 改回原值的字段不再算修改。
-    if (merged.disabled === entry.disabled) delete merged.disabled;
-    if (merged.constant === entry.constant) delete merged.constant;
-    if (Object.keys(merged).length) next[entry.entryId] = merged; else delete next[entry.entryId];
-    return next;
-  });
+  const allRows = useMemo<Row[]>(() => [
+    ...draft.added.map((added, i) => ({ entry: applyEntryEdit(blankEntry(added.entryId), added), original: null, index: release.entries.length + i, removed: false })),
+    ...release.entries.map((entry, index) => ({ entry: applyEntryEdit(entry, draft.entries[entry.entryId]), original: entry, index, removed: draft.removed.includes(entry.entryId) })),
+  ], [release.entries, draft]);
+
+  function editRow(row: Row, change: EntryEdit) {
+    setDraft((current) => {
+      if (!row.original) {
+        return { ...current, added: current.added.map((a) => (a.entryId === row.entry.entryId ? { ...a, ...change } : a)) };
+      }
+      const original = row.original;
+      const merged: EntryEdit = { ...current.entries[original.entryId], ...change };
+      // 改回原值的字段不再算修改。
+      for (const key of Object.keys(merged) as Array<keyof EntryEdit>) {
+        if (same(applyEntryEdit(original, { [key]: merged[key] } as EntryEdit), original)) delete merged[key];
+      }
+      const entries = { ...current.entries };
+      if (Object.keys(merged).length) entries[original.entryId] = merged; else delete entries[original.entryId];
+      return { ...current, entries };
+    });
+  }
+  function toggleRemove(row: Row) {
+    setDraft((current) => {
+      if (!row.original) return { ...current, added: current.added.filter((a) => a.entryId !== row.entry.entryId) };
+      const id = row.original.entryId;
+      return { ...current, removed: current.removed.includes(id) ? current.removed.filter((x) => x !== id) : [...current.removed, id] };
+    });
+  }
+  function addEntry() {
+    const entryId = newEntryId();
+    setDraft((current) => ({ ...current, added: [{ entryId, comment: '', keys: [], content: '' }, ...current.added] }));
+    setFilter('all'); setQuery(''); setOpen(entryId);
+  }
+  function save() {
+    const change: BookChange = {};
+    if (draft.title !== undefined) change.title = draft.title;
+    if (Object.keys(draft.entries).length) change.entries = draft.entries;
+    // 界面上新条目排在最前（最新的在上），保存时按创建先后追加。
+    if (draft.added.length) change.add = [...draft.added].reverse();
+    if (draft.removed.length) change.remove = draft.removed;
+    void onSave(change);
+  }
 
   const counts = useMemo(() => {
-    let enabled = 0, constant = 0;
-    for (const entry of release.entries) {
-      const state = { disabled: edits[entry.entryId]?.disabled ?? entry.disabled, constant: edits[entry.entryId]?.constant ?? entry.constant };
-      if (!state.disabled) { enabled++; if (state.constant) constant++; }
+    let enabled = 0, constant = 0, total = 0;
+    for (const row of allRows) {
+      if (row.removed) continue;
+      total++;
+      if (!row.entry.disabled) { enabled++; if (row.entry.constant) constant++; }
     }
-    return { enabled, constant, total: release.entries.length };
-  }, [release.entries, edits]);
+    return { enabled, constant, total };
+  }, [allRows]);
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return release.entries.map((entry, index) => ({ entry, index })).filter(({ entry, index }) => {
-      const state = { disabled: edits[entry.entryId]?.disabled ?? entry.disabled, constant: edits[entry.entryId]?.constant ?? entry.constant };
-      if (filter === 'disabled' && !state.disabled) return false;
-      if (filter === 'constant' && (state.disabled || !state.constant)) return false;
-      if (filter === 'keyword' && (state.disabled || state.constant)) return false;
+    return allRows.filter(({ entry, index, original }) => {
+      if (!original && open === entry.entryId) return true; // 正在编辑的新条目始终显示
+      if (filter === 'disabled' && !entry.disabled) return false;
+      if (filter === 'constant' && (entry.disabled || !entry.constant)) return false;
+      if (filter === 'keyword' && (entry.disabled || entry.constant)) return false;
       if (!needle) return true;
       return [entryTitle(entry, index), entry.content, ...entry.keys, ...entry.secondaryKeys].some((text) => text.toLowerCase().includes(needle));
     });
-  }, [release.entries, edits, filter, query]);
+  }, [allRows, filter, query, open]);
 
   function exportAs(kind: 'sillytavern' | 'heijin') {
     const title = release.metadata.title;
@@ -105,13 +144,25 @@ export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook,
     setExportNote(notices.length ? `已导出酒馆格式。${notices.map((n) => n.message).join(' ')}` : '已导出酒馆格式。');
   }
 
+  const shownTitle = draft.title ?? release.metadata.title;
+  const local = release.versionLabel === '本地修改' ? ' · 已在本地修改' : release.versionLabel === '本地新建' ? ' · 本地新建' : '';
   return (
     <section className="wb-detail" aria-label={`世界书「${release.metadata.title}」`}>
       <div className="wb-detail-head">
         <button className="wb-back" onClick={onBack}>← 返回列表</button>
         <div className="wb-detail-title">
-          <h3>{release.metadata.title}</h3>
-          <small>启用 {counts.enabled} / 共 {counts.total} 条 · 常驻 {counts.constant} 条{release.versionLabel === '本地修改' ? ' · 已在本地修改' : ''}</small>
+          {renaming ? (
+            <span className="wb-rename">
+              <input value={shownTitle} maxLength={200} aria-label="书名" autoFocus
+                onChange={(e) => { const value = e.target.value; setDraft((c) => ({ ...c, title: value === release.metadata.title ? undefined : value })); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') setRenaming(false); }} />
+              <button onClick={() => setRenaming(false)}>完成</button>
+            </span>
+          ) : (
+            <h3>{shownTitle}{draft.title !== undefined && <em className="wb-edited">已修改</em>}
+              <button className="wb-link" disabled={busy} onClick={() => setRenaming(true)}>重命名</button></h3>
+          )}
+          <small>启用 {counts.enabled} / 共 {counts.total} 条 · 常驻 {counts.constant} 条{local}</small>
         </div>
         <label className="toggle">
           <input type="checkbox" checked={item.enabled} disabled={busy} aria-label={`启用整本「${release.metadata.title}」`} onChange={(e) => onToggleBook(e.target.checked)} />
@@ -127,19 +178,20 @@ export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook,
             <button className="danger" disabled={busy} onClick={onDelete}>确认删除整本</button>
             <button disabled={busy} onClick={() => setConfirmDelete(false)}>取消</button>
           </span>
-        ) : <button disabled={busy} onClick={() => setConfirmDelete(true)}>删除</button>}
+        ) : <button disabled={busy} onClick={() => setConfirmDelete(true)}>删除整本</button>}
       </div>
       {exportNote && <Feedback role="status" level="info" className="field-hint">{exportNote}</Feedback>}
 
       {dirty > 0 && (
         <div className="wb-savebar" role="status">
-          <span>有 {dirty} 条修改未保存</span>
-          <button className="primary" disabled={busy} onClick={() => void onSave(edits)}>保存修改</button>
-          <button disabled={busy} onClick={() => setEdits({})}>放弃</button>
+          <span>有 {dirty} 项修改未保存</span>
+          <button className="primary" disabled={busy} onClick={save}>保存修改</button>
+          <button disabled={busy} onClick={() => { setDraft(EMPTY_DRAFT); setOpen(null); }}>放弃</button>
         </div>
       )}
 
       <div className="wb-filter">
+        <button className="wb-add" disabled={busy} onClick={addEntry}>＋ 新增条目</button>
         <input type="search" placeholder="搜索标题、关键词或内容" value={query} aria-label="搜索条目" onChange={(e) => { setQuery(e.target.value); setShown(PAGE); }} />
         <div className="wb-chips" role="group" aria-label="筛选条目">
           {FILTERS.map(([value, label]) => (
@@ -148,45 +200,40 @@ export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook,
         </div>
       </div>
 
-      {rows.length === 0 ? <p className="muted wb-empty">没有符合条件的条目。</p> : (
+      {rows.length === 0 ? <p className="muted wb-empty">{allRows.length === 0 ? '这本书还没有条目，点「＋ 新增条目」开始写。' : '没有符合条件的条目。'}</p> : (
         <ul className="wb-entries" aria-label="条目">
-          {rows.slice(0, shown).map(({ entry, index }) => {
-            const state = effective(entry), changed = Boolean(edits[entry.entryId]), title = entryTitle(entry, index);
+          {rows.slice(0, shown).map((row) => {
+            const { entry, index, original, removed } = row;
+            const isNew = !original, changed = !isNew && Boolean(draft.entries[entry.entryId]), title = entryTitle(entry, index);
             const expanded = open === entry.entryId;
             return (
-              <li key={entry.entryId} className="wb-entry" data-disabled={state.disabled || undefined} data-changed={changed || undefined}>
+              <li key={entry.entryId} className="wb-entry" data-disabled={entry.disabled || removed || undefined} data-changed={changed || isNew || undefined} data-removed={removed || undefined}>
                 <div className="wb-entry-head">
                   <button className="wb-entry-title" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : entry.entryId)}>
-                    <strong>{title}</strong>{changed && <em>已修改</em>}
+                    <strong>{title}</strong>{isNew ? <em>新增</em> : removed ? <em>将删除</em> : changed && <em>已修改</em>}
                   </button>
                   <div className="wb-mode" role="radiogroup" aria-label={`「${title}」的唤醒方式`}>
-                    <button role="radio" aria-checked={!state.constant} disabled={busy} onClick={() => edit(entry, { constant: false })}>关键词唤醒</button>
-                    <button role="radio" aria-checked={state.constant} disabled={busy} onClick={() => edit(entry, { constant: true })}>常驻</button>
+                    <button role="radio" aria-checked={!entry.constant} disabled={busy || removed} onClick={() => editRow(row, { constant: false })}>关键词唤醒</button>
+                    <button role="radio" aria-checked={entry.constant} disabled={busy || removed} onClick={() => editRow(row, { constant: true })}>常驻</button>
                   </div>
                   <label className="toggle">
-                    <input type="checkbox" checked={!state.disabled} disabled={busy} aria-label={`启用条目「${title}」`} onChange={(e) => edit(entry, { disabled: !e.target.checked })} />
+                    <input type="checkbox" checked={!entry.disabled} disabled={busy || removed} aria-label={`启用条目「${title}」`} onChange={(e) => editRow(row, { disabled: !e.target.checked })} />
                   </label>
                 </div>
-                <div className="wb-keys">
-                  {state.constant ? <span className="wb-key wb-key-const">常驻：每次都带入</span>
-                    : entry.keys.length ? entry.keys.slice(0, 8).map((key, i) => <span key={i} className="wb-key">{key}</span>)
-                      : <span className="wb-key wb-key-warn">没有关键词：选「关键词唤醒」时不会被唤醒</span>}
-                  {!state.constant && entry.keys.length > 8 && <span className="wb-key">+{entry.keys.length - 8}</span>}
-                  {!state.constant && entry.selective && entry.secondaryKeys.length > 0 && (
-                    <span className="wb-key wb-key-sub">{LOGIC_TEXT[entry.selectiveLogic] ?? '副关键词'}：{entry.secondaryKeys.slice(0, 4).join('、')}{entry.secondaryKeys.length > 4 ? '…' : ''}</span>
-                  )}
-                </div>
-                {expanded ? (
-                  <div className="wb-entry-body">
-                    <pre>{entry.content || '（正文为空，不会带入）'}</pre>
-                    <dl>
-                      <div><dt>顺序</dt><dd>{entry.order}</dd></div>
-                      <div><dt>位置</dt><dd>{POSITION_TEXT[entry.position] ?? `未知（${entry.position}）`}{entry.position === ENTRY_POSITIONS.atDepth ? `，深度 ${entry.depth}` : ''}</dd></div>
-                      {entry.useProbability && entry.probability < 100 && <div><dt>概率</dt><dd>{entry.probability}%</dd></div>}
-                      {entry.group && <div><dt>分组</dt><dd>{entry.group}</dd></div>}
-                      {(entry.sticky || entry.cooldown) ? <div><dt>持续 / 冷却</dt><dd>已保存，暂不生效</dd></div> : null}
-                    </dl>
+                {!expanded && (
+                  <div className="wb-keys">
+                    {entry.constant ? <span className="wb-key wb-key-const">常驻：每次都带入</span>
+                      : entry.keys.length ? entry.keys.slice(0, 8).map((key, i) => <span key={i} className="wb-key">{key}</span>)
+                        : <span className="wb-key wb-key-warn">没有关键词：选「关键词唤醒」时不会被唤醒</span>}
+                    {!entry.constant && entry.keys.length > 8 && <span className="wb-key">+{entry.keys.length - 8}</span>}
+                    {!entry.constant && entry.selective && entry.secondaryKeys.length > 0 && (
+                      <span className="wb-key wb-key-sub">{LOGIC_TEXT[entry.selectiveLogic] ?? '副关键词'}：{entry.secondaryKeys.slice(0, 4).join('、')}{entry.secondaryKeys.length > 4 ? '…' : ''}</span>
+                    )}
                   </div>
+                )}
+                {expanded ? (
+                  <EntryEditor entry={entry} disabled={busy || removed} removed={removed} isNew={isNew}
+                    onChange={(change) => editRow(row, change)} onRemove={() => toggleRemove(row)} />
                 ) : <p className="wb-entry-preview">{entry.content || '（正文为空）'}</p>}
               </li>
             );
@@ -197,6 +244,78 @@ export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook,
 
       <TriggerPreview item={item} release={release} dirty={dirty > 0} />
     </section>
+  );
+}
+
+/** 关键词输入：逗号（中英文）、顿号或换行分隔；输入框里保留玩家原样的文字，只把解析结果交出去。 */
+const splitKeys = (text: string) => text.split(/[,，、\n]/);
+function KeysField({ label, entryId, keys, disabled, onChange, placeholder }: {
+  label: string; entryId: string; keys: string[]; disabled: boolean; onChange: (keys: string[]) => void; placeholder: string;
+}) {
+  const [text, setText] = useState(() => keys.join('，'));
+  // 只在换条目时从数据同步，避免输入逗号时被立即整理掉。
+  const latest = useRef(keys);
+  latest.current = keys;
+  useEffect(() => { setText(latest.current.join('，')); }, [entryId]);
+  return (
+    <label className="wb-field">
+      <span>{label}</span>
+      <input value={text} disabled={disabled} placeholder={placeholder}
+        onChange={(e) => { setText(e.target.value); onChange(splitKeys(e.target.value)); }} />
+    </label>
+  );
+}
+
+function EntryEditor({ entry, disabled, removed, isNew, onChange, onRemove }: {
+  entry: WorldbookEntry; disabled: boolean; removed: boolean; isNew: boolean; onChange: (change: EntryEdit) => void; onRemove: () => void;
+}) {
+  const regexKeys = entry.keys.filter((key) => /^\/.+\/[a-z]*$/.test(key));
+  return (
+    <div className="wb-entry-body wb-editor">
+      <label className="wb-field">
+        <span>标题</span>
+        <input value={entry.comment} disabled={disabled} maxLength={500} placeholder="例如：李四（茶楼老板）" onChange={(e) => onChange({ comment: e.target.value })} />
+      </label>
+      <KeysField label="关键词" entryId={entry.entryId} keys={entry.keys} disabled={disabled} placeholder="用逗号分隔，例如：李四，茶楼老板"
+        onChange={(keys) => onChange({ keys })} />
+      {!entry.constant && entry.keys.length === 0 && <p className="field-hint wb-warn">没有关键词时，这条只有设为「常驻」才会带入。</p>}
+      {regexKeys.length > 0 && <p className="field-hint">形如 /…/ 的关键词按正则表达式匹配。</p>}
+      <div className="wb-field-row">
+        <KeysField label="副关键词（可选）" entryId={entry.entryId} keys={entry.secondaryKeys} disabled={disabled} placeholder="同时满足的条件"
+          onChange={(secondaryKeys) => onChange({ secondaryKeys })} />
+        <label className="wb-field wb-field-narrow">
+          <span>副关键词规则</span>
+          <select value={entry.selectiveLogic} disabled={disabled || entry.secondaryKeys.length === 0} onChange={(e) => onChange({ selectiveLogic: Number(e.target.value) })}>
+            {[SELECTIVE_LOGIC.andAny, SELECTIVE_LOGIC.andAll, SELECTIVE_LOGIC.notAny, SELECTIVE_LOGIC.notAll].map((value) => (
+              <option key={value} value={value}>{LOGIC_TEXT[value]}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label className="wb-field">
+        <span>内容</span>
+        <textarea rows={6} value={entry.content} disabled={disabled} placeholder="触发后带入正文的设定文字" onChange={(e) => onChange({ content: e.target.value })} />
+      </label>
+      {entry.content.trim() === '' && <p className="field-hint wb-warn">内容为空，触发了也不会带入任何文字。</p>}
+      <div className="wb-field-row">
+        <label className="wb-field wb-field-narrow">
+          <span>顺序（越大越靠后）</span>
+          <input type="number" value={Number.isFinite(entry.order) ? entry.order : 100} disabled={disabled} step={1}
+            onChange={(e) => { const value = Number(e.target.value); if (e.target.value !== '' && Number.isFinite(value)) onChange({ order: value }); }} />
+        </label>
+        <dl>
+          <div><dt>位置</dt><dd>{POSITION_TEXT[entry.position] ?? `未知（${entry.position}）`}{entry.position === ENTRY_POSITIONS.atDepth ? `，深度 ${entry.depth}` : ''}</dd></div>
+          {entry.useProbability && entry.probability < 100 && <div><dt>概率</dt><dd>{entry.probability}%</dd></div>}
+          {entry.group && <div><dt>分组</dt><dd>{entry.group}</dd></div>}
+          {(entry.sticky || entry.cooldown) ? <div><dt>持续 / 冷却</dt><dd>已保存，暂不生效</dd></div> : null}
+        </dl>
+      </div>
+      <div className="wb-editor-actions">
+        <button className={removed ? '' : 'danger'} disabled={disabled && !removed} onClick={onRemove}>
+          {isNew ? '不要这条' : removed ? '撤销删除' : '删除这条'}
+        </button>
+      </div>
+    </div>
   );
 }
 

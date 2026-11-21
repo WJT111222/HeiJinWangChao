@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { EntryEdit } from '../../domain/worldbook/release';
+import type { BookChange } from '../../domain/worldbook/release';
 import type { ImportNotice, WorldbookRelease } from '../../domain/worldbook/schema';
 import { MAX_ENABLED_BOOKS, WorldbookLibrary, type LibraryFailureCode, type ShelfBook } from '../../services/storage/worldbookLibrary';
 import { importIntoLibrary, type ImportOutcome } from '../../services/worldbook/libraryImport';
 import { STORY_WORLDBOOK_CONNECTED } from '../../services/worldbook/storyWorldbook';
 import { Feedback, type FeedbackLevel } from '../Feedback';
-import { WorldbookBookDetail } from './WorldbookBookDetail';
+import { WorldbookBookDetail, entryTitle } from './WorldbookBookDetail';
 import './worldbook-library.css';
 
 /**
@@ -94,12 +94,18 @@ export function WorldbookLibraryPanel() {
     setSelected(bookId);
   }
 
-  async function save(bookId: string, edits: Record<string, EntryEdit>): Promise<boolean> {
+  async function save(bookId: string, change: BookChange): Promise<boolean> {
     setBusy(true);
-    const result = await withLibrary((library) => library.reviseBook(bookId, edits));
+    const result = await withLibrary((library) => library.reviseBook(bookId, change));
     if (!mounted.current) return false;
-    if (result.ok) setMessage({ level: 'ok', text: `已保存 ${Object.keys(edits).length} 条修改，${EFFECT}。` });
-    else setMessage({ level: 'err', text: failureText(result.code) });
+    if (result.ok) setMessage({ level: 'ok', text: `已保存修改，${EFFECT}。` });
+    else if ('notices' in result && result.notices?.length) {
+      // 把条目引用换成玩家看得到的标题。
+      const titles = new Map<string, string>();
+      release?.entries.forEach((entry, index) => { const title = entryTitle(entry, index); titles.set(entry.entryId, title); if (entry.sourceKey !== null) titles.set(entry.sourceKey, title); });
+      const lines = result.notices.map((n) => `${n.entryRef ? `「${titles.get(n.entryRef) ?? '新增条目'}」` : ''}${n.message}`);
+      setMessage({ level: 'err', text: `没有保存：${lines.slice(0, 5).join(' ')}${lines.length > 5 ? ` 等 ${lines.length} 处` : ''}` });
+    } else setMessage({ level: 'err', text: failureText(result.code) });
     await refresh();
     if (mounted.current) setBusy(false);
     return result.ok;
@@ -134,6 +140,17 @@ export function WorldbookLibraryPanel() {
     }
   }
 
+  async function createBlank() {
+    if (dirty > 0) { setMessage({ level: 'warn', text: '当前这本书有未保存的修改，请先保存或放弃。' }); return; }
+    setBusy(true);
+    const result = await withLibrary((library) => library.createBook('新世界书'));
+    if (!mounted.current) return;
+    setMessage(result.ok ? { level: 'ok', text: '已新建「新世界书」：点「重命名」改书名，点「＋ 新增条目」开始写。写好后记得打开整本开关。' } : { level: 'err', text: failureText(result.code) });
+    await refresh();
+    if (result.ok && mounted.current) setSelected(result.release.bookId);
+    if (mounted.current) setBusy(false);
+  }
+
   async function toggle(book: ShelfBook, enabled: boolean) {
     setBusy(true);
     const result = await withLibrary((library) => library.setEnabled(book.book.bookId, enabled));
@@ -162,6 +179,7 @@ export function WorldbookLibraryPanel() {
       {!STORY_WORLDBOOK_CONNECTED && <Feedback role="note" level="warn" className="field-hint">正文接入还在进行中：现在可以导入和管理世界书，但启用的世界书暂时不会带入正文。</Feedback>}
       <div className="wb-actions">
         <button className="primary" disabled={busy} onClick={() => fileInput.current?.click()}>导入世界书</button>
+        <button disabled={busy} onClick={() => void createBlank()}>新建空白书</button>
         {busy && importing.current && <button onClick={() => importing.current?.abort()}>取消导入</button>}
         <input key={inputKey} ref={fileInput} type="file" accept=".json,application/json" hidden aria-label="选择世界书文件"
           onChange={(e) => { const file = e.target.files?.[0]; setInputKey((k) => k + 1); if (file) void importFile(file); }} />

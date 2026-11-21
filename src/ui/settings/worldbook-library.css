@@ -71,6 +71,22 @@
 .worldbook-library .wb-preview-list li span{color:var(--muted);overflow-wrap:anywhere}
 .worldbook-library .wb-preview-list li[data-missed] strong{font-weight:400;color:var(--muted)}
 
+.worldbook-library .wb-detail-title h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:.2rem .6rem}
+.worldbook-library .wb-edited{font-style:normal;font-size:.7rem;color:var(--gold,#b79755)}
+.worldbook-library .wb-rename{display:flex;gap:.4rem;align-items:center}
+.worldbook-library .wb-rename input{flex:1;min-width:0;font-size:1rem}
+.worldbook-library .wb-entry[data-removed] .wb-entry-title strong{text-decoration:line-through}
+.worldbook-library .wb-editor{display:grid;gap:.6rem}
+.worldbook-library .wb-field{display:grid;gap:.25rem;min-width:0}
+.worldbook-library .wb-field>span{font-size:.74rem;color:var(--muted)}
+.worldbook-library .wb-field :is(input,textarea,select){width:100%;box-sizing:border-box;min-width:0}
+.worldbook-library .wb-field textarea{resize:vertical;font:inherit;font-size:.86rem;line-height:1.6}
+.worldbook-library .wb-field-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(9rem,auto);gap:.6rem;align-items:end}
+.worldbook-library .wb-field-row dl{margin:0;align-self:center}
+.worldbook-library .wb-warn{color:var(--neg,#c0392b)}
+.worldbook-library .wb-editor-actions{display:flex;justify-content:flex-end}
+.worldbook-library .wb-add{flex:none}
+
 @media(max-width:900px){
   .worldbook-library .wb-layout{grid-template-columns:minmax(0,1fr)}
   .worldbook-library .wb-list{position:static}
@@ -81,6 +97,7 @@
   .worldbook-library .wb-entry-title{grid-area:title}
   .worldbook-library .wb-entry-head>.toggle{grid-area:toggle}
   .worldbook-library .wb-mode{grid-area:mode;justify-self:start}
+  .worldbook-library .wb-field-row{grid-template-columns:minmax(0,1fr)}
 }
 
 /* 设置页（桌面 / 手机）对 button / pre 有更具体的全局样式（含悬停底色），这里用更高的优先级还原成文字按钮与普通正文。 */
@@ -88,4 +105,6 @@
 .app-shell dialog:is(.settings-paper,.settings-mobile-paper) .settings-content .worldbook-library button[class]:is(.wb-info,.wb-entry-title):hover:not(:disabled){background:none;border:0;box-shadow:none;min-height:0;width:auto;color:inherit;text-align:left;font:inherit;border-radius:6px}
 .app-shell dialog:is(.settings-paper,.settings-mobile-paper) .settings-content .worldbook-library button[class].wb-info{padding:.1rem .5rem}
 .app-shell dialog:is(.settings-paper,.settings-mobile-paper) .settings-content .worldbook-library button[class].wb-entry-title{padding:0}
+.app-shell dialog:is(.settings-paper,.settings-mobile-paper) .settings-content .worldbook-library button[class].wb-link,
+.app-shell dialog:is(.settings-paper,.settings-mobile-paper) .settings-content .worldbook-library button[class].wb-link:hover:not(:disabled){background:none;border:0;box-shadow:none;min-height:0;width:auto;padding:0;font-size:.74rem;color:var(--gold,#8E6C25);text-decoration:underline;text-underline-offset:2px}
 .app-shell :is(.settings-paper,.settings-mobile-paper,.mobile-sheet) .worldbook-library .wb-entry-body pre{background:transparent;color:var(--text);border:0;padding:0;box-shadow:none;font:inherit;font-size:.82rem;max-height:20rem}
