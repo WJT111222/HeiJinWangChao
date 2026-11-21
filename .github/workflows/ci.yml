@@ -94,7 +94,7 @@ jobs:
     needs: scope
     if: >-
       always() && (
-        github.event_name == 'schedule' ||
+        github.event_name == 'pull_request' || github.event_name == 'schedule' ||
         (github.event_name == 'workflow_dispatch' && inputs.e2e) ||
         (github.event_name == 'push' && needs.scope.outputs.e2e == 'true')
       )
