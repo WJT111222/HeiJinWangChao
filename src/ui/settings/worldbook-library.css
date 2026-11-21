@@ -30,6 +30,7 @@
 .worldbook-library .wb-confirm{display:inline-flex;gap:.4rem}
 .worldbook-library .wb-savebar{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1px solid var(--gold,#b79755);border-radius:8px;background:var(--card,#EFE8D9);color:var(--text)}
 .worldbook-library .wb-savebar span{flex:1;font-size:.84rem}
+.worldbook-library .wb-savebar[data-conflict]{border-color:var(--neg,#c0392b)}
 .worldbook-library .wb-filter{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
 .worldbook-library .wb-filter input[type=search]{flex:1 1 14rem;min-width:0}
 .worldbook-library .wb-chips{display:flex;flex-wrap:wrap;gap:.3rem}
@@ -86,6 +87,7 @@
 .worldbook-library .wb-warn{color:var(--neg,#c0392b)}
 .worldbook-library .wb-editor-actions{display:flex;justify-content:flex-end}
 .worldbook-library .wb-add{flex:none}
+.worldbook-library .wb-field textarea.wb-keys-input{min-height:2.4rem;font-size:.86rem;line-height:1.5;field-sizing:content;max-height:8rem}
 
 @media(max-width:900px){
   .worldbook-library .wb-layout{grid-template-columns:minmax(0,1fr)}

@@ -75,8 +75,11 @@ export function WorldbookLibraryPanel() {
 
   const selectedItem = books?.find((b) => b.book.bookId === selected) ?? null;
   const selectedVersion = selectedItem?.book.latestVersionId ?? null;
+  // 有未保存的修改时，不把详情换成别的标签页保存的新版本（否则玩家的修改会被悄悄清掉），改为提示冲突。
+  const keepDraft = dirty > 0 && release?.bookId === selected;
   useEffect(() => {
     if (!selected || !selectedVersion) { setRelease(null); return; }
+    if (keepDraft) return;
     let live = true;
     void withLibrary((library) => library.getRelease(selected, selectedVersion)).then((result) => {
       if (!live || !mounted.current) return;
@@ -84,7 +87,8 @@ export function WorldbookLibraryPanel() {
       else { setRelease(null); setMessage({ level: 'err', text: result.ok ? failureText('not_found') : failureText(result.code) }); }
     });
     return () => { live = false; };
-  }, [selected, selectedVersion, withLibrary]);
+  }, [selected, selectedVersion, withLibrary, keepDraft]);
+  const stale = Boolean(selectedItem && release && release.bookId === selectedItem.book.bookId && release.versionId !== selectedItem.book.latestVersionId);
   // 书被删除（本页或其他页面）后退出详情。
   useEffect(() => { if (books && selected && !books.some((b) => b.book.bookId === selected)) setSelected(null); }, [books, selected]);
 
@@ -94,12 +98,22 @@ export function WorldbookLibraryPanel() {
     setSelected(bookId);
   }
 
-  async function save(bookId: string, change: BookChange): Promise<boolean> {
+  /** baseVersionId：开始编辑时详情里显示的版本；别的标签页先保存过时返回冲突，不覆盖、不报成功。 */
+  async function save(bookId: string, baseVersionId: string, change: BookChange): Promise<boolean> {
     setBusy(true);
-    const result = await withLibrary((library) => library.reviseBook(bookId, change));
+    const result = await withLibrary((library) => library.reviseBook(bookId, change, { baseVersionId }));
     if (!mounted.current) return false;
-    if (result.ok) setMessage({ level: 'ok', text: `已保存修改，${EFFECT}。` });
-    else if ('notices' in result && result.notices?.length) {
+    if (result.ok) {
+      // 书目与详情同时换成刚保存的版本（同一次渲染），不会被误判为「别的标签页改过」，也不会闪一下「正在读取」。
+      if (result.changed) {
+        const saved = result.book;
+        setBooks((current) => current?.map((item) => (item.book.bookId === saved.bookId ? { ...item, book: saved } : item)) ?? current);
+        setRelease(result.release);
+      }
+      setMessage({ level: 'ok', text: result.changed ? `已保存修改，${EFFECT}。` : '没有需要保存的变化。' });
+    } else if (result.code === 'version_conflict') {
+      setMessage({ level: 'warn', text: '没有保存：这本书已在其他标签页保存过新版本。你的修改还在，没有覆盖对方；如需保留，请先记下内容，再读取最新版本。' });
+    } else if ('notices' in result && result.notices?.length) {
       // 把条目引用换成玩家看得到的标题。
       const titles = new Map<string, string>();
       release?.entries.forEach((entry, index) => { const title = entryTitle(entry, index); titles.set(entry.entryId, title); if (entry.sourceKey !== null) titles.set(entry.sourceKey, title); });
@@ -212,9 +226,9 @@ export function WorldbookLibraryPanel() {
           </ul>
           <div className="wb-pane">
             {!selectedItem ? <p className="wb-empty muted wb-pick">选择左侧的一本书，查看和调整它的条目。</p>
-              : !release || release.versionId !== selectedItem.book.latestVersionId ? <p className="muted">正在读取条目…</p>
-                : <WorldbookBookDetail item={selectedItem} release={release} busy={busy}
-                  onSave={(edits) => save(selectedItem.book.bookId, edits)}
+              : !release || release.bookId !== selectedItem.book.bookId || (stale && !keepDraft) ? <p className="muted">正在读取条目…</p>
+                : <WorldbookBookDetail item={selectedItem} release={release} busy={busy} stale={stale}
+                  onSave={(change) => save(selectedItem.book.bookId, release.versionId, change)}
                   onToggleBook={(enabled) => void toggle(selectedItem, enabled)}
                   onDelete={() => void remove(selectedItem)}
                   onBack={() => select(null)}

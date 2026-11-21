@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { exportNativeText, exportSillyTavern } from '../../domain/worldbook/export';
 import { blankEntry } from '../../domain/worldbook/entryFields';
+import { formatKeys, parseKeys } from '../../domain/worldbook/keyText';
 import { applyEntryEdit, type BookChange, type EntryEdit } from '../../domain/worldbook/release';
 import { ENTRY_POSITIONS, SELECTIVE_LOGIC, type WorldbookEntry, type WorldbookRelease } from '../../domain/worldbook/schema';
 import { DECISION_TEXT, type EntryDecision } from '../../domain/worldbook/trigger';
@@ -39,6 +40,8 @@ export interface BookDetailProps {
   item: ShelfBook;
   release: WorldbookRelease;
   busy: boolean;
+  /** 别的标签页已保存了这本书的新版本，而这里还有未保存的修改：不能保存，只能放弃后读取最新版本。 */
+  stale?: boolean;
   /** 保存暂存的修改；返回是否成功（失败时由外层显示原因）。 */
   onSave: (change: BookChange) => Promise<boolean>;
   onToggleBook: (enabled: boolean) => void;
@@ -55,7 +58,7 @@ interface Row { entry: WorldbookEntry; original: WorldbookEntry | null; index: n
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const newEntryId = () => `local-${crypto.randomUUID()}`;
 
-export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook, onDelete, onBack, onDirtyChange }: BookDetailProps) {
+export function WorldbookBookDetail({ item, release, busy, stale = false, onSave, onToggleBook, onDelete, onBack, onDirtyChange }: BookDetailProps) {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
@@ -71,10 +74,14 @@ export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook,
   useEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
   useEffect(() => () => onDirtyChange(0), [onDirtyChange]);
 
-  const allRows = useMemo<Row[]>(() => [
-    ...draft.added.map((added, i) => ({ entry: applyEntryEdit(blankEntry(added.entryId), added), original: null, index: release.entries.length + i, removed: false })),
+  const allRows = useMemo<Row[]>(() => {
+    // 刚保存成功、暂存还没清空的那一次渲染里，新条目已经在版本里了：只显示版本里的那条。
+    const saved = new Set(release.entries.map((entry) => entry.entryId));
+    return [
+    ...draft.added.filter((added) => !saved.has(added.entryId)).map((added, i) => ({ entry: applyEntryEdit(blankEntry(added.entryId), added), original: null, index: release.entries.length + i, removed: false })),
     ...release.entries.map((entry, index) => ({ entry: applyEntryEdit(entry, draft.entries[entry.entryId]), original: entry, index, removed: draft.removed.includes(entry.entryId) })),
-  ], [release.entries, draft]);
+    ];
+  }, [release.entries, draft]);
 
   function editRow(row: Row, change: EntryEdit) {
     setDraft((current) => {
@@ -111,7 +118,8 @@ export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook,
     // 界面上新条目排在最前（最新的在上），保存时按创建先后追加。
     if (draft.added.length) change.add = [...draft.added].reverse();
     if (draft.removed.length) change.remove = draft.removed;
-    void onSave(change);
+    // 保存成功且生成了新版本时，换版本的效果会清空暂存；没有实际变化时在这里清空。
+    void onSave(change).then((ok) => { if (ok) setDraft(EMPTY_DRAFT); });
   }
 
   const counts = useMemo(() => {
@@ -171,8 +179,8 @@ export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook,
       </div>
       {release.metadata.description && <p className="wb-desc muted">{release.metadata.description}</p>}
       <div className="wb-detail-actions">
-        <button disabled={busy || dirty > 0} onClick={() => exportAs('sillytavern')} title={dirty ? '请先保存或放弃修改' : undefined}>导出酒馆格式</button>
-        <button disabled={busy || dirty > 0} onClick={() => exportAs('heijin')} title={dirty ? '请先保存或放弃修改' : undefined}>导出王朝格式</button>
+        <button disabled={busy || dirty > 0 || stale} onClick={() => exportAs('sillytavern')} title={dirty ? '请先保存或放弃修改' : undefined}>导出酒馆格式</button>
+        <button disabled={busy || dirty > 0 || stale} onClick={() => exportAs('heijin')} title={dirty ? '请先保存或放弃修改' : undefined}>导出王朝格式</button>
         {confirmDelete ? (
           <span className="wb-confirm">
             <button className="danger" disabled={busy} onClick={onDelete}>确认删除整本</button>
@@ -182,13 +190,18 @@ export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook,
       </div>
       {exportNote && <Feedback role="status" level="info" className="field-hint">{exportNote}</Feedback>}
 
-      {dirty > 0 && (
+      {dirty > 0 && (stale ? (
+        <div className="wb-savebar" role="alert" data-conflict>
+          <span>这本书已在其他标签页保存过新版本。这里的 {dirty} 项修改不能再保存（不会覆盖对方）；需要的内容请先记下。</span>
+          <button className="primary" disabled={busy} onClick={() => { setDraft(EMPTY_DRAFT); setOpen(null); }}>放弃我的修改，读取最新版本</button>
+        </div>
+      ) : (
         <div className="wb-savebar" role="status">
           <span>有 {dirty} 项修改未保存</span>
           <button className="primary" disabled={busy} onClick={save}>保存修改</button>
           <button disabled={busy} onClick={() => { setDraft(EMPTY_DRAFT); setOpen(null); }}>放弃</button>
         </div>
-      )}
+      ))}
 
       <div className="wb-filter">
         <button className="wb-add" disabled={busy} onClick={addEntry}>＋ 新增条目</button>
@@ -207,7 +220,7 @@ export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook,
             const isNew = !original, changed = !isNew && Boolean(draft.entries[entry.entryId]), title = entryTitle(entry, index);
             const expanded = open === entry.entryId;
             return (
-              <li key={entry.entryId} className="wb-entry" data-disabled={entry.disabled || removed || undefined} data-changed={changed || isNew || undefined} data-removed={removed || undefined}>
+              <li key={`${isNew ? 'new' : 'saved'}:${entry.entryId}`} className="wb-entry" data-disabled={entry.disabled || removed || undefined} data-changed={changed || isNew || undefined} data-removed={removed || undefined}>
                 <div className="wb-entry-head">
                   <button className="wb-entry-title" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : entry.entryId)}>
                     <strong>{title}</strong>{isNew ? <em>新增</em> : removed ? <em>将删除</em> : changed && <em>已修改</em>}
@@ -247,21 +260,24 @@ export function WorldbookBookDetail({ item, release, busy, onSave, onToggleBook,
   );
 }
 
-/** 关键词输入：逗号（中英文）、顿号或换行分隔；输入框里保留玩家原样的文字，只把解析结果交出去。 */
-const splitKeys = (text: string) => text.split(/[,，、\n]/);
+/**
+ * 关键词输入：逗号（中英文）、顿号或换行分隔；完整的正则 /…/ 整体保留（里面的逗号不分隔），
+ * 普通关键词里的逗号写成「\,」。格式化与解析互逆（见 domain/worldbook/keyText.ts），
+ * 输入框里保留玩家原样的文字，只把解析结果交出去。
+ */
 function KeysField({ label, entryId, keys, disabled, onChange, placeholder }: {
   label: string; entryId: string; keys: string[]; disabled: boolean; onChange: (keys: string[]) => void; placeholder: string;
 }) {
-  const [text, setText] = useState(() => keys.join('，'));
-  // 只在换条目时从数据同步，避免输入逗号时被立即整理掉。
+  const [text, setText] = useState(() => formatKeys(keys));
   const latest = useRef(keys);
   latest.current = keys;
-  useEffect(() => { setText(latest.current.join('，')); }, [entryId]);
+  // 只在换条目时从数据同步，避免输入逗号时被立即整理掉。
+  useEffect(() => { setText(formatKeys(latest.current)); }, [entryId]);
   return (
     <label className="wb-field">
       <span>{label}</span>
-      <input value={text} disabled={disabled} placeholder={placeholder}
-        onChange={(e) => { setText(e.target.value); onChange(splitKeys(e.target.value)); }} />
+      <textarea className="wb-keys-input" rows={1} value={text} disabled={disabled} placeholder={placeholder} spellCheck={false}
+        onChange={(e) => { setText(e.target.value); onChange(parseKeys(e.target.value)); }} />
     </label>
   );
 }
@@ -276,10 +292,11 @@ function EntryEditor({ entry, disabled, removed, isNew, onChange, onRemove }: {
         <span>标题</span>
         <input value={entry.comment} disabled={disabled} maxLength={500} placeholder="例如：李四（茶楼老板）" onChange={(e) => onChange({ comment: e.target.value })} />
       </label>
-      <KeysField label="关键词" entryId={entry.entryId} keys={entry.keys} disabled={disabled} placeholder="用逗号分隔，例如：李四，茶楼老板"
+      <KeysField label="关键词" entryId={entry.entryId} keys={entry.keys} disabled={disabled} placeholder="用逗号分隔，例如：李四，茶楼老板；正则写成 /…/"
         onChange={(keys) => onChange({ keys })} />
       {!entry.constant && entry.keys.length === 0 && <p className="field-hint wb-warn">没有关键词时，这条只有设为「常驻」才会带入。</p>}
-      {regexKeys.length > 0 && <p className="field-hint">形如 /…/ 的关键词按正则表达式匹配。</p>}
+      {regexKeys.length > 0 && <p className="field-hint">形如 /…/ 的关键词按正则表达式匹配，里面的逗号不会被拆开。</p>}
+      {entry.keys.some((key) => /[,，、]/.test(key) && !/^\/.+\/[a-z]*$/i.test(key)) && <p className="field-hint">普通关键词里的逗号显示为 \,（输入时也这样写）。</p>}
       <div className="wb-field-row">
         <KeysField label="副关键词（可选）" entryId={entry.entryId} keys={entry.secondaryKeys} disabled={disabled} placeholder="同时满足的条件"
           onChange={(secondaryKeys) => onChange({ secondaryKeys })} />
