@@ -1,3 +1,4 @@
+import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
 import { AiError } from '../../services/ai/errors';
 import type { RequestSnapshot } from '../../services/ai/snapshot';
 import type { AiMessage } from '../../services/ai/protocols';
@@ -11,7 +12,7 @@ import { tavernWire } from './wire';
 
 export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType, messages: AiMessage[], sampling: Sampling | undefined,
   stream: boolean, signal: AbortSignal, trace: UpstreamTrace,
-  send: (wire: ReturnType<typeof tavernWire>, signal: AbortSignal) => Promise<Response>, nativeReference?: readonly AiMessage[]) {
+  send: (wire: ReturnType<typeof tavernWire>, signal: AbortSignal) => Promise<Response>, nativeReference?: readonly AiMessage[], playerWorldbook?: PlayerWorldbook) {
   const data: GenerationData = { type, messages, ...sampling, stream, n: 1, enable_web_search: false, request_images: false, model: snapshot.model,
     max_tokens: snapshot.channel.parameters.maxOutputTokens, chat_completion_source: 'custom', custom_prompt_post_processing: '' };
   try { await tavernTools.apply(data); }
@@ -23,7 +24,7 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
     const result = await fetchGeneration(data, signal, async request => {
       const actual = AbortSignal.any([signal, request.signal]);
       try {
-        const wire = tavernWire(snapshot, await request.json(), nativeReference);
+        const wire = tavernWire(snapshot, await request.json(), nativeReference, playerWorldbook);
         actual.throwIfAborted();
         trace.requestedStream = wire.stream;
         trace.calls++;

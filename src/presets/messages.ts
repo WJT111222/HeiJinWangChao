@@ -51,6 +51,7 @@ export function assemblePreset(preset: LoadedPreset, materials: StoryMaterials, 
   const injected = reversed.reverse().filter((m) => m.content.trim());
   return {
     messages: sequence.flatMap((m) => (m === 'history' ? injected : [m])),
+    history: history.filter(m => m.content.trim()),
     unknownMacros: [...macros.unknown],
   };
 }
