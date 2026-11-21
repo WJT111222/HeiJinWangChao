@@ -3,6 +3,7 @@ import { TavernAssistant } from './TavernAssistant';
 import type { FeedbackLevel } from '../Feedback';
 import { Feedback,useDesktopFeedback } from '../Feedback';
 import { MemorySummarySettings } from './MemorySummarySettings';
+import type { CompanionProfile } from '../../services/local/companionProfile';
 import { VariableManager } from './VariableManager';
 import type { SaveRepository, VariableSnapshot } from '../../services/storage/saveRepository';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, cloneElement, isValidElement } from 'react';
@@ -29,7 +30,7 @@ export function SettingsPanel({
   onSave,
   repository,
   activeSaveId,
-  memoryMaintenance, variableSaveId, onVariablesSaved, onVariablesDirtyChange,
+  memoryMaintenance, variableSaveId, variableInstance, companion, onVariablesSaved, onVariablesDirtyChange,
   onAiDirtyChange,
   onSummaryDirtyChange,
   onOpenNotice,
@@ -39,6 +40,8 @@ export function SettingsPanel({
   activeSaveId?: string;
   memoryMaintenance?: ReactNode;
   variableSaveId?: string;
+  variableInstance?: string;
+  companion?: CompanionProfile;
   onVariablesSaved?: (result: VariableSnapshot) => void;
   onVariablesDirtyChange?: (dirty:boolean) => void;
   onAiDirtyChange?: (dirty: boolean) => void;
@@ -147,7 +150,7 @@ export function SettingsPanel({
       {(desktop||!mobileHome)&&<div className="settings-content">
         {!desktop&&<button className="paper-back" aria-label="返回设置" onClick={back}>‹ 设置</button>}
         <h3 ref={categoryHeading} tabIndex={!desktop?-1:undefined}>{tab}</h3>
-        {tab === '变量管理' && variableSaveId && repository && onVariablesSaved && <VariableManager key={variableSaveId} saveId={variableSaveId} repository={repository} onSaved={onVariablesSaved} onDirtyChange={variablesDirtyChanged}/>}
+        {tab === '变量管理' && variableSaveId && repository && onVariablesSaved && <VariableManager key={variableSaveId} saveId={variableSaveId} instance={variableInstance} companion={companion} repository={repository} onSaved={onVariablesSaved} onDirtyChange={variablesDirtyChanged}/>}
         {tab === '提示词管理' && (
           <Suspense fallback={<p>正在打开提示词管理中心…</p>}>
             <PromptInspector

@@ -35,5 +35,9 @@ export function npcContext(state: GameState, cues: RecallCues, sourceTurns: Read
    ...(expanded?{}:{omittedFields:[...(['appearance','temperament','background'] as const)].filter(k=>person[k]!==undefined)})};
   void appearance;void temperament;void background;
  }
- return {npc:projected,npcSummaries:summaries,index:{groups,selection,policy:npcContextPolicy}};
+ const usesAddressing = cues.stage === 'story' && Object.values(state.npc).some(person => person.addressing);
+ const policy = usesAddressing
+   ? npcContextPolicy + ' 对白按当前人物 ID 的 addressing 使用固定称呼：playerToNpc 是主角称呼此人，npcToPlayer 是此人称呼主角。两个方向独立，缺省表示未确定。当前明确设定优先于旧正文、创角原始档案的习惯写法，不按年龄或性别推断。'
+   : npcContextPolicy;
+ return {npc:projected,npcSummaries:summaries,index:{groups,selection,policy}};
 }

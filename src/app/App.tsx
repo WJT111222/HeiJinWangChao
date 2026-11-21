@@ -377,6 +377,7 @@ export function App() {
       settingsHost={{inGame:Boolean(gameRoute&&loaded)}} onClose={()=>requestSettingsClose()}
       returnFocus={()=>document.querySelector<HTMLElement>('[data-settings-open]')}>
       <SettingsPanel settings={settings} onSave={saveSettings} repository={repository}
+        variableInstance={loaded?.instance} companion={loaded?.companionProfile}
         variableSaveId={gameRoute ? loaded?.state.saveId : undefined}
         onVariablesDirtyChange={setVariablesDirty}
         onVariablesSaved={result=>{

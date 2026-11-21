@@ -1741,7 +1741,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 493,
+      "characters": 365,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "always",
@@ -1751,7 +1751,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "8ac72c12b790bcc31f10b218059ec7febed8fe1e76d9fb505ac32ebb5b45b613",
+      "contentSha256": "305d289bc786fdbfc50d5a29fb553c9768feb967eec06c3b308c772fc4d38dfb",
       "placeholders": []
     },
     {

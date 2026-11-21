@@ -2,7 +2,7 @@ import { storySceneAuthority, validateNarrationClock } from '../../domain/events
 import { nestedStoryTag, storyEnvelopeDiagnostic, storySchemaError } from './storyDiagnostics';
 import { recoverStoryEnvelope, repairUnclosedTags } from './storyEnvelopeRecovery';
 import { parseStoryGuide } from './storyGuide';
-import { validateVariableWork } from './variableWork';
+import { validateAddressing, validateVariableWork } from './variableWork';
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
 import { openingTimeBase } from '../../domain/openingTime';
 import { StorySchema } from '../../domain/state';
@@ -58,7 +58,7 @@ export async function validateVariableStatements(ast: readonly ParsedVariableCom
   const simulated = await simulateVariablePlan(compiled.value, state, context);
   if (!simulated.ok) throw textExecutionError(simulated.error, 'simulation');
   for (const [index, command] of compiled.value.commands.entries()) {
-    try { validateVariableWork(state, draft, simulated.value, command); }
+    try { validateAddressing(state, draft, command); validateVariableWork(state, draft, simulated.value, command); }
     catch (error) {
       const failure = variableFailure(error, 'simulation');
       const origin = compiled.value.origins[index];
@@ -147,8 +147,10 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
     const projected = commitCommands(state, draft.turnId, state.revision, prepared.commands, state.updatedAt,
       storySceneAuthority(timeState,draft,checked.data.commands), prepared.acknowledgedReceipts);
     validateNarrationClock(timeState,draft,projected.worldClock);
-    for (const command of checked.data.commands)
+    for (const command of checked.data.commands) {
+      validateAddressing(state, draft, command);
       if (command.type === 'SaveEvent') validateSceneEventUpdate(state, projected, command.event, draft.turnId,draft.story);
+    }
   } catch (error) { throw variableValidationError(error); }
   return checked.data;
 }
