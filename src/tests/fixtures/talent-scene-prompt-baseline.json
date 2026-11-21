@@ -1,20 +1,34 @@
 {
-  "baseCommit": "0d3fc3525bcfccb08d497faf7dcbbb9085839ca5",
+  "baseCommit": "4e14d924b75ffedcf95b876cda000ad90d0d8d78",
   "results": [
     {
       "stage": "variables",
       "mode": "opening",
-      "messages": "e89d04301c1a1b22c790a9ee8ba967a0bdbe83d8dffb9ad16584c2f1b78e0374",
-      "context": "ee20271a57324c41e0e60003c1e5edf0649e5fe5345fa6bcdf23dc8fdbcdf929",
+      "messages": "3e2f0975bea7157f77b68c7f6560899ae2e659f5771369a65e3d2d5b306e4a75",
+      "context": "ecb44c6b18d6dd46162a33bfdc5692c8f506e2afd68b85a1bd7c2e3d113837a6",
       "modules": "2fcfdff8cf2b35bf0245ed8b98c9d22ca1fbdce14ba8d1050c957cac112c657f"
     },
     {
       "stage": "variables",
       "mode": "regular",
-      "messages": "28465f10f522737e85eab421c8af202aa38c24b8d0ef1a1361a9edff76344385",
-      "context": "9db72142acdf360c140cff3e9a99ed76afe522d8eddb2e10c47b30825e038584",
-      "modules": "2fe225851151d05530dcc1c1c84f2d2f99de390e102fae5271d2bfd76e51aea5"
+      "messages": "7198225e5f17ff006072bc3732ee7f200b4a90585be857a47d0754fdc18d4128",
+      "context": "dc655b5a19c6ff81a27167ef3a2d717d00a3dfa9299c14ca86b87f9540f76d71",
+      "modules": "5e5e35cfc0f20bdb66b510e0fdfe93838be59f4f54a543975344ae0ed8f0f88f"
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "messages": "fb63bb4dce20c53f2bb5956df36223bad8230cc533fd4dc0108e369a7fd22aeb",
+      "context": "9c33c54b8257c464fb783a8353a8fc4afeba89a0fb8e1076daaeece0b9d3ce0f",
+      "modules": "7fa831f8f3173fd52f1d56a07ae7dbfd1cdd9dea9d93b09ceb70d565763067d2"
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "messages": "fd641da03dd0fe0ff8d8d9ab2fe5b7b500eb85b75d07347d70ce01131e804037",
+      "context": "9684e4ac64cd91d3387873b3525722fdf9823c2e04a85fb79bf9bd78e41c41b5",
+      "modules": "e11340fdc401b3098c73d6de3796055724a8db40670abd80e100e5b2b71078a8"
     }
   ],
-  "withTalentVariablesAndWorld": "f5a73b9cc74df979bd7fa72dc4f2f22c95b53f41019364734949cf7b4f37e4ec"
+  "withTalentVariablesAndWorld": "63acdf0ea4cb159940cf25f1a018bbb62808c7c4688bf740dbd08642d81d98b4"
 }
