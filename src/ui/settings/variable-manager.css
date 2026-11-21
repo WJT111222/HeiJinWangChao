@@ -57,7 +57,15 @@
 .vm-domains button {
   text-align: left;
 }
-.variable-manager :is(.vm-domains, .vm-modes) button[aria-pressed='true'] {
+/* Paper archives tint generic hovered buttons; keep the selected ink pair together. */
+.settings-layout[data-tab='变量管理']
+  .variable-manager
+  :is(.vm-domains, .vm-modes)
+  button[aria-pressed='true'],
+.settings-layout[data-tab='变量管理']
+  .variable-manager
+  :is(.vm-domains, .vm-modes)
+  button[aria-pressed='true']:hover:not(:disabled) {
   color: #ffefd1;
   background: #463925;
   border-color: #79613c;

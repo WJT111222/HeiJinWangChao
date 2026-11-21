@@ -184,6 +184,10 @@ test('分区工作台可在结构树、路径登记表与 JSON 之间审阅同�
   await panel.getByRole('button', { name: '加入待保存修改' }).click();
   await panel.getByRole('button', { name: '变量登记表' }).click();
   await panel.getByLabel('检索全档路径').fill('/npc/npc-a/onScene');
+  const selectedMode = panel.getByRole('button', { name: '变量登记表', pressed: true });
+  if (info.project.name === 'desktop') await selectedMode.hover();
+  await expect(selectedMode).toHaveCSS('background-color', 'rgb(70, 57, 37)');
+  await expect(selectedMode).toHaveCSS('color', 'rgb(255, 239, 209)');
   await shot('registry');
   await panel.getByRole('button', { name: '修订 /npc/npc-a/onScene' }).click();
   await expect(panel.getByLabel('变量路径')).toHaveValue('/npc/npc-a/onScene');
