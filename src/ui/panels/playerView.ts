@@ -60,6 +60,7 @@ export function playerView(state: GameState, authoredCompanion?: CompanionProfil
     locations: Object.values(state.locations), events: Object.values(state.events),
     retiredEvents: Object.values(state.retiredEvents),
     tasks: Object.values(state.tasks), economy: state.economy,
+    protagonistFaction: state.protagonistFaction,
     protagonist: state.protagonist,
     timeline: [...state.timeline].sort((a, b) => Date.parse(a.recordedAt) - Date.parse(b.recordedAt)),
     memories,

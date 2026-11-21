@@ -35,6 +35,8 @@ export function turnChangesPair(extra=0,none=false){
   after.items.folder={id:'folder',name:'纸质归档袋',category:'document',quantity:1,ownerRef:hero,conditionText:'新领用',description:'用于分别保留已核实记录与尚未核实的说明。'};
   after.organizations.newGroup={id:'newGroup',name:'南桥互助组',kind:'civil',description:'新建立的资料协作组织，各成员保持独立职责。',protagonistRelation:'参与一次协作',relationHistory:[],keyNpcIds:[],currentTaskIds:[],activities:[]};
   after.organizations['org-stage-b'].protagonistRelation='已确认协作安排';
+  after.protagonistFaction={organizationId:'newGroup',position:'协作成员',joinedAt:after.worldClock,bondText:'正式加入南桥互助组，负责资料核对'};
+  after.organizations.newGroup.protagonistKnown=[{id:'known-room',category:'holding',text:'南桥资料室是互助组的固定据点',source:'亲自到场',learnedAt:after.worldClock,knowledgeKind:'observed'}];
   after.events['main-stage'].status='blocked';
   for(const id of ['changes-sub-one','changes-sub-two'])after.events[id]={...subStage(id,before.worldClock,'2027-05-15T00:00:00+08:00'),title:id.endsWith('one')?'独立补充记录核对':'并行的资料来源核查',sourceTurnIds:['changes-turn-3']};
   after.events.finished.resultKnowledge={facts:['已完成一批登记'],reported:['来访者提出另一种说法'],suspected:['可能还有一份遗漏清单']};

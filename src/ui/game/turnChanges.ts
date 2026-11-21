@@ -7,7 +7,7 @@ import { eventArchive,eventStatusLabels } from '../panels/eventArchive';
 import { locationText } from './atmosphere';
 import type { Level } from '../panels/MemoryPanel';
 
-export type ChangeTarget={panel:'NPC'|'物品栏'|'势力组织'|'世界事件'|'地图';id?:string}
+export type ChangeTarget={panel:'NPC'|'物品栏'|'势力组织'|'世界事件'|'地图';id?:string}|{panel:'我的势力'}
  |{panel:'人物档案'|'经济与资产'}|{panel:'历史时间轴';id?:string}|{panel:'记忆';level?:Level};
 export interface ChangeRow {key:string;subject:string;field?:string;value:string;detail?:string;oldValue?:string;newValue?:string;time?:boolean;tone:'add'|'del'|'mod'|'up'|'down';target:ChangeTarget}
 export interface ChangeGroup {key:'time'|'me'|'npc'|'item'|'world'|'mem';label:string;rows:ChangeRow[]}
@@ -43,6 +43,10 @@ export function diffTurn(before:GameState,after:GameState):ChangeGroup[]{
  };
  for(const [key,label] of [['topItemId','上衣'],['bottomItemId','下装'],['shoesItemId','鞋子'],['accessoryItemIds','饰品'],['primaryWeaponItemId','主武器'],['secondaryWeaponItemId','副武器'],['currentVehicleAssetId','载具']] as const)
   if(changed(before.protagonist.currentWear[key],after.protagonist.currentWear[key]))me.push({key:`wear:${key}`,subject:label,value:'变更',detail:`${wearNames(before,key)} → ${wearNames(after,key)}`,tone:'mod',target:profile});
+ const factionName=(state:GameState)=>{const f=state.protagonistFaction,org=f&&state.organizations[f.organizationId];return f&&org?`${org.name} · ${f.position}`:'孤身一人';};
+ if(factionName(before)!==factionName(after))update(me,'faction','主势力',factionName(before),factionName(after),{panel:'我的势力'});
+ const factionId=after.protagonistFaction?.organizationId,learned=factionId?(after.organizations[factionId]?.protagonistKnown??[]).filter(row=>!(before.organizations[factionId]?.protagonistKnown??[]).some(old=>old.id===row.id)):[];
+ if(learned.length)me.push({key:'faction-known',subject:'势力内情',value:`+${learned.length} 条`,detail:learned[0].text,tone:'add',target:{panel:'我的势力'}});
  const previousView=playerView(before),currentView=playerView(after),oldPeople=new Map(previousView.npc.map(n=>[n.id,n]));
  for(const person of currentView.npc){const old=oldPeople.get(person.id),target:ChangeTarget={panel:'NPC',id:person.id};
   if(!old){people.push({key:`npc:${person.id}`,subject:person.name,value:'新人物',detail:person.identity||'已加入人物资料',tone:'add',target});continue;}

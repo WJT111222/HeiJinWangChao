@@ -5,7 +5,7 @@ import {diffTurn} from '../ui/game/turnChanges';
 import {turnChangeBadges} from '../ui/game/turnChangeBadges';
 import {TurnChanges} from '../ui/game/TurnChangesView';
 import {panelNames} from '../ui/panels/Panels';
-test('七入口按真实 target.panel 逐行计数，与世界分组、对象数量及未读状态无关',()=>{
+test('八入口按真实 target.panel 逐行计数，与世界分组、对象数量及未读状态无关',()=>{
  const {before,after}=turnChangesPair(),original=structuredClone({before,after}),groups=diffTurn(before,after),badges=turnChangeBadges(groups);
  for(const panel of panelNames)expect(badges[panel]??0).toBe(groups.flatMap(g=>g.rows).filter(r=>r.target.panel===panel).length);
  expect(Object.keys(badges).sort()).toEqual([...panelNames].sort());expect(badges['NPC']).toBeGreaterThan(1);expect(badges['势力组织']).not.toBe(groups.find(g=>g.key==='world')!.rows.length);expect(badges).not.toHaveProperty('人物档案');expect(badges).not.toHaveProperty('经济与资产');expect({before,after}).toEqual(original);
