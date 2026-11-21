@@ -1,6 +1,14 @@
 import { expect, test } from './helpers/test';
 import { enterArchiveGame, openArchive } from './helpers/mobileArchives';
 import { resolve } from 'node:path';
+import { execFile } from 'node:child_process';
+import { rm } from 'node:fs/promises';
+import { promisify } from 'node:util';
+
+test.afterEach(async ({ page }, info) => {
+  await page.unrouteAll({ behavior: 'wait' });
+  await rm(info.outputPath('production-app'), {recursive: true, force: true});
+});
 
 for (const build of ['development', 'production'] as const) {
   test('家庭名册 ' + build + '：换行、重名档案、键盘返回与刷新', async ({ page, isMobile }, info) => {
@@ -17,11 +25,14 @@ for (const build of ['development', 'production'] as const) {
       }
     });
     if (build === 'production') {
+      // E2E shards start from npm ci and can run concurrently. Build exact current sources in this test's directory.
+      const dist = info.outputPath('production-app');
+      await promisify(execFile)(process.execPath,[resolve('node_modules/vite/bin/vite.js'),'build','--outDir',dist]);
       await page.route('http://127.0.0.1:5174/', (route) =>
-        route.fulfill({ path: resolve('dist/index.html'), contentType: 'text/html' }),
+        route.fulfill({ path: resolve(dist,'index.html'), contentType: 'text/html' }),
       );
       await page.route('**/assets/*', (route) =>
-        route.fulfill({ path: resolve('dist', '.' + new URL(route.request().url()).pathname) }),
+        route.fulfill({ path: resolve(dist, '.' + new URL(route.request().url()).pathname) }),
       );
     }
     const posts: string[] = [];
