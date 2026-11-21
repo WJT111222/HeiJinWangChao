@@ -47,8 +47,9 @@ const wb = await prepareStoryWorldbook(input, { signal, timeoutMs });
 
 运行参数：
 
-- `signal`：直接传 Story 请求的 `AbortSignal`。玩家取消时，世界书扫描会立即终止。
-- `timeoutMs`：默认 5000，允许范围 200–30000。
+- `signal`：直接传 Story 请求的 `AbortSignal`。玩家取消时立即返回 `skipped`（`cancelled`），不论此时在打开书库、读取启用列表、排队还是扫描；正在运行的 Worker 会被终止。
+- `timeoutMs`：**整个调用**的总预算，默认 5000，允许范围 200–30000。从调用开始计时，打开书库、读取启用列表、在 Worker 队列里等待、扫描和主线程降级都计入同一个截止时间；到点返回 `skipped`（`timeout`）。
+- 超时或取消之后不会再有迟到的结果；迟到打开的书库连接会被关闭，不影响下一次调用。
 
 ## 5. 输出
 

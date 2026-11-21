@@ -272,3 +272,66 @@ describe('书库只读读取器：附属库版本兼容', () => {
     lib.library.close();
   });
 });
+
+describe('收尾返修：排队任务的超时与取消', () => {
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  it('排在长任务后面的请求：等待时间计入它自己的超时，到点就返回 timeout，不等前一个结束', async () => {
+    const a = await makeRelease('a', 'v1', entries('a', 5));
+    const { loader } = memoryLoader([a]);
+    const host = new WorldbookTriggerHost({ createWorker: () => new InProcessWorker(new TriggerExecutor(loader), 'silent') });
+    const first = host.run(request([a]), { timeoutMs: 3_000 });
+    const started = Date.now();
+    const second = await host.run(request([a]), { timeoutMs: 300 });
+    expect(second).toMatchObject({ status: 'timeout' });
+    expect(Date.now() - started).toBeLessThan(1_000);
+    expect(await first).toMatchObject({ status: 'timeout' });
+  });
+
+  it('排队中的请求被取消：立即返回 cancelled；前一个请求不受影响，之后的正常请求照常得到结果', async () => {
+    const a = await makeRelease('a', 'v1', entries('a', 5));
+    const { loader } = memoryLoader([a]);
+    let mode: 'silent' | 'normal' = 'silent';
+    const host = new WorldbookTriggerHost({ createWorker: () => new InProcessWorker(new TriggerExecutor(loader), mode) });
+    const first = host.run(request([a]), { timeoutMs: 600 });
+    const controller = new AbortController();
+    const queued = host.run(request([a]), { signal: controller.signal, timeoutMs: 5_000 });
+    await sleep(30);
+    const started = Date.now();
+    controller.abort();
+    expect(await queued).toEqual({ status: 'cancelled' });
+    expect(Date.now() - started).toBeLessThan(200);
+    expect(await first).toMatchObject({ status: 'timeout' }); // 前一个照常按自己的预算结束
+    mode = 'normal';
+    const next = await host.run(request([a]), { timeoutMs: 2_000 });
+    expect(next).toMatchObject({ status: 'ok', via: 'worker' });
+  });
+
+  it('截止时间（deadline）优先于 timeoutMs；已经过期的请求不启动 Worker', async () => {
+    const a = await makeRelease('a', 'v1', entries('a', 5));
+    const { loader } = memoryLoader([a]);
+    let created = 0;
+    const host = new WorldbookTriggerHost({ createWorker: () => { created++; return new InProcessWorker(new TriggerExecutor(loader)); } });
+    expect(await host.run(request([a]), { deadline: Date.now() - 1, timeoutMs: 5_000 })).toMatchObject({ status: 'timeout' });
+    expect(created).toBe(0);
+    expect(await host.run(request([a]), { deadline: Date.now() + 2_000 })).toMatchObject({ status: 'ok' });
+  });
+
+  it('主线程降级路径也受截止时间约束：读取卡住时到点返回 timeout，迟到的结果被丢弃', async () => {
+    const a = await makeRelease('a', 'v1', entries('a', 5));
+    const { loader } = memoryLoader([a]);
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const fallback: MainThreadFallback = {
+      async size() { await gate; return { entryCount: 5, keyChars: 10, contentChars: 10 }; },
+      load: loader,
+    };
+    const host = new WorldbookTriggerHost({ createWorker: () => { throw new Error('no worker'); }, fallback });
+    const started = Date.now();
+    expect(await host.run(request([a]), { timeoutMs: 250 })).toMatchObject({ status: 'timeout' });
+    expect(Date.now() - started).toBeLessThan(1_000);
+    release();
+    // 降级的下一次请求不受前一次迟到结果影响。
+    expect(await host.run(request([a]), { timeoutMs: 2_000 })).toMatchObject({ status: 'ok', via: 'main-thread' });
+  });
+});

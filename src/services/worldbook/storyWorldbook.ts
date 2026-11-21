@@ -1,6 +1,6 @@
 import { EMPTY_TIMED_STATE } from '../../domain/worldbook/timedEffects';
 import type { ActivatedEntry, InjectionPlan, TriggerMode, TriggerResult } from '../../domain/worldbook/trigger';
-import type { BookRef } from '../../domain/worldbook/triggerRequest';
+import { clampTimeout, type BookRef } from '../../domain/worldbook/triggerRequest';
 import { WorldbookLibrary, type EnabledBook, type LibraryFailureCode } from '../storage/worldbookLibrary';
 import { libraryFallback } from './libraryFallback';
 import type { PauseReason } from './triggerExecutor';
@@ -34,6 +34,10 @@ export interface StoryWorldbookInput {
   /** 概率类条目的随机种子，建议“存档 ID + 回合 ID + 第几次尝试”，保证同一次尝试结果可复现。 */
   seed: string;
 }
+/**
+ * signal：直接传 Story 请求的 AbortSignal。
+ * timeoutMs：整个调用的总预算（默认 5000，范围 200–30000），从调用开始计时，包含打开书库、读取启用列表、排队与扫描。
+ */
 export interface StoryWorldbookRun { signal?: AbortSignal; timeoutMs?: number }
 
 export type StoryWorldbookOutcome =
@@ -114,19 +118,46 @@ function fromOutcome(outcome: TriggerOutcome, books: EnabledBook[]): StoryWorldb
   }
 }
 
+/**
+ * 截止时间与取消的看守：从开始执行时建立，打开书库、读取启用列表都与它赛跑；扫描阶段把同一个截止时间交给触发宿主。
+ */
+function watch(run: StoryWorldbookRun, deadline: number) {
+  let stop!: (why: 'cancelled' | 'timeout') => void;
+  const stopped = new Promise<'cancelled' | 'timeout'>((resolve) => { stop = resolve; });
+  const timer = setTimeout(() => stop('timeout'), Math.max(0, deadline - Date.now()));
+  const onAbort = () => stop('cancelled');
+  run.signal?.addEventListener('abort', onAbort, { once: true });
+  return {
+    /** 先完成的一方：步骤结果，或「已取消 / 已到期」。 */
+    race: <T,>(step: Promise<T>) => Promise.race([step.then((value) => ({ value })), stopped]),
+    dispose() { clearTimeout(timer); run.signal?.removeEventListener('abort', onAbort); },
+  };
+}
+
 export async function prepareStoryWorldbook(
   input: StoryWorldbookInput, run: StoryWorldbookRun = {}, deps: StoryWorldbookDeps = {},
 ): Promise<StoryWorldbookOutcome> {
+  if (run.signal?.aborted) return skipped('cancelled');
+  // 统一截止时间：从这里开始算，后面每一步（打开书库、读启用列表、排队、执行、降级）共用。
+  const deadline = Date.now() + clampTimeout(run.timeoutMs);
+  const guard = watch(run, deadline);
   try {
-    if (run.signal?.aborted) return skipped('cancelled');
-    const opened = await (deps.openLibrary ?? (() => WorldbookLibrary.open()))();
+    const opening = (deps.openLibrary ?? (() => WorldbookLibrary.open()))();
+    const first = await guard.race(opening);
+    if (typeof first === 'string') {
+      // 到期或取消后才打开成功的书库：立即关闭，不留下迟到的连接。
+      opening.then((late) => { if (late.ok) late.library.close(); }, () => undefined);
+      return skipped(first);
+    }
+    const opened = first.value;
     // 第一次使用时这里会建立空书库（之后 enabledBooks 为空 → off）；打不开说明确实出错，要告诉玩家。
     if (!opened.ok) return skipped(opened.code);
     let books: EnabledBook[];
     try {
-      const listed = await opened.library.enabledBooks();
-      if (!listed.ok) return skipped(listed.code);
-      books = listed.books;
+      const second = await guard.race(opened.library.enabledBooks());
+      if (typeof second === 'string') return skipped(second);
+      if (!second.value.ok) return skipped(second.value.code);
+      books = second.value.books;
     } finally { opened.library.close(); }
     if (books.length === 0) return { status: 'off' };
     const outcome = await (deps.host ?? defaultHost()).run({
@@ -139,10 +170,12 @@ export async function prepareStoryWorldbook(
       timedState: EMPTY_TIMED_STATE,
       seed: input.seed,
       settings: undefined,
-    }, run);
+    }, { signal: run.signal, deadline });
     return fromOutcome(outcome, books);
   } catch {
     return skipped('internal');
+  } finally {
+    guard.dispose();
   }
 }
 
