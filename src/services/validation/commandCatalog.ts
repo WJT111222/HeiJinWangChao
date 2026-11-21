@@ -96,8 +96,10 @@ export function inlineCommandCatalog(stage: CatalogStage) {
               const history = variant.properties.relationHistory;
               if (history && typeof history === 'object') history.maxItems = 0;
               // 仅描述既有 World 创建权限，不改变正式 OrganizationSchema。
-              for (const field of ['funds', 'assetsEstimate', 'liquidityEstimate', 'protagonistKnown'])
+              for (const field of ['funds', 'assetsEstimate', 'liquidityEstimate'])
                 if (field in variant.properties) variant.properties[field] = false;
+              // 部门、成员创建后经UpdateOrganization补充；主角已知不属于World。只精简展示，不改变正式Schema。
+              for (const field of ['departments', 'members', 'protagonistKnown']) delete variant.properties[field];
             }
           }
         }

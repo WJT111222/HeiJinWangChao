@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { OpeningInitialStateSchema } from '../../domain/openingInitialization';
 import { ActorRefSchema, GameTimeSchema, MoneySchema, TextSchema } from '../../domain/common';
 import { OrdinaryNpcCreationSchema, SpecialNpcCreationSchema } from '../../domain/npc/schema';
-import { GangOrgSchema, GovernmentOrgSchema, CivilOrgSchema, BusinessOrgSchema, OrganizationChangesSchema, FinancialBasisSchema, FactionBindingSchema, organizationChangeFields } from '../../domain/organizations/schema';
+import { GangOrgSchema, GovernmentOrgSchema, CivilOrgSchema, BusinessOrgSchema, OrganizationChangesSchema, FinancialBasisSchema, organizationChangeFields } from '../../domain/organizations/schema';
 import { AccountSchema, IncomeRecordSchema, DebtRecordSchema, VehicleAssetSchema } from '../../domain/economy/schema';
 import { OwnedItemInputSchema } from '../../domain/items/schema';
 import { itemDetailFields, itemCategoryGroup } from '../../domain/items/details';
@@ -17,6 +17,9 @@ import { affinityChangeInput, memoryInputSchema, orgKnowledgeInputSchema, textIn
 import { SceneEventStateSchema, WorldTaskSchema } from '../../domain/events/schema';
 
 const positive = MoneySchema.refine(n=>n>0);
+const creationOmit = {id:true,departments:true,members:true,protagonistKnown:true} as const;
+// 展示用的扁平结构；正式校验仍按 FactionBindingSchema 区分 bind（需 position/bondText）、update、unbind。
+const factionDisplay = z.strictObject({action:z.enum(['bind','update','unbind']),position:TextSchema.optional(),bondText:TextSchema.optional(),departmentId:z.string().nullable().optional()});
 const npcChanges = variableCommandSchemas[1].shape.changes.shape;
 const heroChanges = variableCommandSchemas[0].shape.changes.shape;
 interface Entry { operation:VariableOperation; path:string; commandType:DomainCommand['type']; value:z.ZodType }
@@ -51,10 +54,11 @@ const entries:Entry[] = [
   {operation:'set',path:'npc[id].activeGoals',commandType:'UpdateNpc',value:variableCommandSchemas[1].shape.activeGoals.unwrap()},
   {operation:'set',path:'npc[id].specialProfile',commandType:'PromoteNpc',value:z.union([PromotionProfileSchema,z.strictObject({})])},
   {operation:'set',path:'npc[id].contact',commandType:'RegisterContact',value:z.strictObject({reason:TextSchema})},
+  // 创建只展示基础字段；部门、成员在创建后用state补充，主角已知只能逐条push，避免四类结构重复展示。
   {operation:'set',path:'organizations[id]',commandType:'CreateOrganization',value:z.union([
-    GangOrgSchema.omit({id:true}),GovernmentOrgSchema.omit({id:true}),CivilOrgSchema.omit({id:true}),BusinessOrgSchema.omit({id:true})])},
+    GangOrgSchema.omit(creationOmit),GovernmentOrgSchema.omit(creationOmit),CivilOrgSchema.omit(creationOmit),BusinessOrgSchema.omit(creationOmit)])},
   {operation:'set',path:'organizations[id].state',commandType:'UpdateOrganization',value:OrganizationChangesSchema.safeExtend({financialBasis:FinancialBasisSchema.optional()})},
-  {operation:'set',path:'organizations[id].protagonistRelation',commandType:'RecordOrgRelation',value:z.strictObject({relation:TextSchema,reason:TextSchema,faction:FactionBindingSchema.optional()})},
+  {operation:'set',path:'organizations[id].protagonistRelation',commandType:'RecordOrgRelation',value:z.strictObject({relation:TextSchema,reason:TextSchema,faction:factionDisplay.optional()})},
   {operation:'push',path:'organizations[id].protagonistKnown',commandType:'RecordOrgKnowledge',value:orgKnowledgeInputSchema},
   ...(['cash','onlineBalance'] as const).map((field):Entry=>({operation:'add',path:`economy.${field}`,commandType:'SpendFunds',value:z.number().int().negative()})),
   {operation:'set',path:'economy.incomes[id]',commandType:'ReceiveIncome',value:IncomeRecordSchema.omit({id:true}).extend({amount:positive,status:z.literal('received'),receivedAt:GameTimeSchema})},
@@ -83,7 +87,7 @@ export function textVariableCatalog(mode: 'opening' | 'regular' = 'regular') {
       addressing: 'set npc[example-npc].addressing = {"npcToPlayer":"老大"}；根据本回合剧情更新适用方向。playerToNpc 是主角称呼该人物，npcToPlayer 是该人物称呼主角。省略的方向保持原值。',
       affinityChange: 'set npc[example-npc].affinityChange = {"to":35,"reason":"共同核对材料后彼此更信任","relationshipText":"愿意继续协作"}',
       memory: 'push npc[example-npc].memories = {"text":"自己与对方核对材料并约定继续合作，尚有问题待确认。","knowledgeKind":"observed","knowledgeSource":"本人参与本轮交谈","visibility":"npc_private"}',
-      faction: 'set organizations[example-org].protagonistRelation = {"relation":"正式成员","reason":"本幕拜码头入会","faction":{"action":"bind","position":"看场","bondText":"由引荐人带入会，在夜场看场"}}；push organizations[example-org].protagonistKnown = {"category":"intel","text":"账由二把手的人亲自来收","source":"夜班时亲眼看到","knowledgeKind":"observed"}',
+      faction: 'set organizations[example-org].protagonistRelation = {"relation":"正式成员","reason":"拜码头入会","faction":{"action":"bind","position":"看场","bondText":"经引荐入会看场"}}；bind需position与bondText。',
       caution: '示例只说明结构，替换人物ID、数值和剧情。好感只用set npc[id].affinityChange={to,reason,relationshipText}：to为变化后的好感终值（-100～100），reason写本回合具体剧情原因，relationshipText写当前关系与态度，三项都不可省略；前值由程序读取正式状态（同批连续更新按上一笔结果），不要填写from。可与healthText、lastInteractionAt及四字段记忆同批写入。记忆ID、来源回合、时间和人物引用由程序生成。',
     },
     rules:[
