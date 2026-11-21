@@ -52,7 +52,12 @@ export function exportSillyTavern(release: WorldbookRelease): { value: Record<st
     usedKeys.add(key);
     setOwn(entries, key, writeSillyTavernEntry(entry, raw, uid));
   }
-  if (fromSillyTavern) return { value: { ...(payload as Record<string, unknown>), entries }, notices };
+  if (fromSillyTavern) {
+    const value: Record<string, unknown> = { ...(payload as Record<string, unknown>), entries };
+    // 原文件自带书名时写当前书名（玩家可能重命名过）；没改名时与原文件一致，保持无损回环。
+    if (typeof value.name === 'string' && value.name !== release.metadata.title) value.name = release.metadata.title;
+    return { value, notices };
+  }
 
   if (release.source.format === 'character-card-v2' && isPlainObject(payload)) {
     const lost = ['name', 'description', 'scan_depth', 'token_budget', 'recursive_scanning'].filter((key) => payload[key] !== undefined);

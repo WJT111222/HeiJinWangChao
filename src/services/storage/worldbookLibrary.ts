@@ -33,6 +33,7 @@ const RELEASES = 'releases';
 const BOOKS = 'books';
 const SUMMARIES = 'summaries';
 const ENABLED = 'enabled';
+const CONFLICT_MESSAGE = '这本书已在其他标签页保存过新版本，你的修改没有保存。';
 /** 同时启用的书数上限，与单次触发请求的书数上限一致。 */
 export const MAX_ENABLED_BOOKS = TRIGGER_RESOURCE_LIMITS.maxBooks;
 
@@ -380,12 +381,14 @@ export class WorldbookLibrary {
 
   /**
    * 修改一本书（改条目、增删条目、改书名），保存为新版本并替换旧版本：
-   * - 先读最近版本、在事务外生成新版本并计算哈希，再在一个事务里核对「最近版本没被别的页面改过」，
+   * - baseVersionId 是玩家**开始编辑时**看到的版本：最近版本已经不是它（别的标签页先保存了），直接返回 version_conflict，
+   *   不把这次修改套到别人的新版本上，也不报成功；
+   * - 先读最近版本、在事务外生成新版本并计算哈希，再在一个事务里再次核对最近版本仍是 baseVersionId，
    *   删除这本书的全部旧版本与摘要、写入新版本、更新书目；启用状态（按书 ID）保持不变；
    * - 简化版不绑定存档，旧版本没有引用，所以直接删除，不占空间；
    * - 没有实际变化时不写入。
    */
-  async reviseBook(bookId: string, change: BookChange, options: { now?: () => number; newId?: () => string } = {}):
+  async reviseBook(bookId: string, change: BookChange, options: { baseVersionId: string; now?: () => number; newId?: () => string }):
     Promise<{ ok: true; changed: boolean; release: WorldbookRelease; book: LibraryBook } | (LibraryFailure & { notices?: ImportNotice[] })> {
     let base: { book: LibraryBook; release: WorldbookRelease };
     try {
@@ -398,6 +401,7 @@ export class WorldbookLibrary {
         return { book, release: readStored(raw).release };
       });
       if (!read) return fail('not_found', MESSAGES.not_found);
+      if (read.book.latestVersionId !== options.baseVersionId) return fail('version_conflict', CONFLICT_MESSAGE);
       base = read;
     } catch (error) { return failureOf(error); }
     let revised: Awaited<ReturnType<typeof reviseRelease>>;
@@ -418,8 +422,8 @@ export class WorldbookLibrary {
         const rawBook = await request(books.get(bookId));
         if (rawBook === undefined) throw new LibraryAbort(fail('not_found', MESSAGES.not_found));
         const current = readBook(rawBook);
-        if (current.latestVersionId !== base.book.latestVersionId)
-          throw new LibraryAbort(fail('version_conflict', '这本书刚在其他页面被修改过，请刷新后重试。'));
+        if (current.latestVersionId !== options.baseVersionId)
+          throw new LibraryAbort(fail('version_conflict', CONFLICT_MESSAGE));
         const old = (await request(summaries.index('bookId').getAll(bookId))).map(readSummary);
         const all = (await request(summaries.getAll())).map(readSummary);
         const total = all.reduce((sum, item) => sum + item.canonicalChars, 0) - old.reduce((sum, item) => sum + item.canonicalChars, 0);
@@ -437,11 +441,20 @@ export class WorldbookLibrary {
     } catch (error) { return failureOf(error); }
   }
 
-  /** 新建一本空白世界书（没有条目），按普通安装写入；不自动启用。 */
-  async createBook(title: string, options: { now?: () => number; newId?: () => string } = {}) {
-    const created = await createBlankRelease(title, { newId: options.newId });
+  /**
+   * 新建一本空白世界书（没有条目），不自动启用。
+   * 书名与已有的书重复时自动编号（「新世界书 2」…）；空白书内容相同也是不同的书，不按重复内容合并。
+   */
+  async createBook(title: string, options: { now?: () => number; newId?: () => string } = {}): Promise<InstallResult> {
+    const listed = await this.listBooks();
+    if (!listed.ok) return listed;
+    const taken = new Set(listed.books.map((book) => book.title));
+    const base = Array.from(title.trim()).slice(0, 190).join('') || '新世界书';
+    let name = base;
+    for (let n = 2; taken.has(name); n++) name = `${base} ${n}`;
+    const created = await createBlankRelease(name, { newId: options.newId });
     if (!created.ok) return fail('invalid', created.notices.map((n) => n.message).join(' ') || MESSAGES.invalid);
-    return this.install(created.release, { now: options.now });
+    return this.install(created.release, { now: options.now, allowDuplicateContent: true });
   }
 
   /** 删除一本书：在同一个事务里删掉它的全部版本、摘要、书目与启用状态。不存在时返回 not_found。 */
