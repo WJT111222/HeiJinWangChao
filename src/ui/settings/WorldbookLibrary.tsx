@@ -159,7 +159,7 @@ export function WorldbookLibraryPanel() {
     setBusy(true);
     const result = await withLibrary((library) => library.createBook('新世界书'));
     if (!mounted.current) return;
-    setMessage(result.ok ? { level: 'ok', text: '已新建「新世界书」：点「重命名」改书名，点「＋ 新增条目」开始写。写好后记得打开整本开关。' } : { level: 'err', text: failureText(result.code) });
+    setMessage(result.ok ? { level: 'ok', text: `已新建「${result.release.metadata.title}」：点「重命名」改书名，点「＋ 新增条目」开始写。写好后记得打开整本开关。` } : { level: 'err', text: failureText(result.code) });
     await refresh();
     if (result.ok && mounted.current) setSelected(result.release.bookId);
     if (mounted.current) setBusy(false);
