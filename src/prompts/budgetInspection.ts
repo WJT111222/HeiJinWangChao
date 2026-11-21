@@ -5,7 +5,7 @@ export const dataCategories = {
   system: '系统提示词（固定/世界书/阶段/领域）', protagonist: '主角档案、装备与经济资产',
   npc: 'NPC分层档案', npcMemory: 'NPC原始、长期与个人总结记忆', world: '世界组织、地点、任务、事件与时间线',
   layeredMemory: '短中长期分层记忆', recent: '近期完整正文', recall: '历史召回原文与元数据',
-  candidate: '当前输入与阶段候选', catalog: '命令协议与目录', other: '其他资料', structure: 'JSON键名、标点、容器与空白',
+  player_worldbook: '玩家世界书', candidate: '当前输入与阶段候选', catalog: '命令协议与目录', other: '其他资料', structure: 'JSON键名、标点、容器与空白',
 } as const;
 type Category = keyof typeof dataCategories;
 const encoder = new TextEncoder();
@@ -74,6 +74,10 @@ export function inspectBudget(messages: readonly AiMessage[]) {
     for (const ch of text) row.weight += ch.codePointAt(0)! < 128 ? 0.25 : 1.5;
   };
   messages.forEach((message, index) => {
+    if (message.role === 'user' && message.content.startsWith('<PLAYER_WORLDBOOK>\n') && message.content.endsWith('\n</PLAYER_WORLDBOOK>')) {
+      add('player_worldbook', message.content);
+      return;
+    }
     const marker = message.content.match(/^<GAME_CONTEXT>\s*/);
     if (!marker || message.role !== 'user') { add(message.role === 'system' ? 'system' : 'other', message.content); return; }
     const previousAmounts = structuredClone(amounts), previousIdentities = new Map(identities), previousExact = new Map(exact);

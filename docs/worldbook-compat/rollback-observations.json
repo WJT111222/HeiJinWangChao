@@ -1,0 +1,654 @@
+{
+  "baseline": "main@a820f5e（独立工作树，仅加入场景模块与测试脚本）",
+  "browser": "Chromium（Playwright），Vite 开发服务器",
+  "projects": {
+    "desktop": [
+      {
+        "scenario": "基线：普通存档",
+        "operation": "存档列表",
+        "result": "readable",
+        "expected": "^readable$",
+        "pass": true
+      },
+      {
+        "scenario": "基线：普通存档",
+        "operation": "打开存档",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "基线：普通存档",
+        "operation": "新建命名收藏",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "基线：普通存档",
+        "operation": "撤回一回合",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "基线：普通存档",
+        "operation": "回溯到命名收藏",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "基线：普通存档",
+        "operation": "备份导出并解析",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "存档列表",
+        "result": "unreadable",
+        "expected": "^unreadable",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "打开存档",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败：CORRUPT_SAVE",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "查看撤回状态",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "历史收藏列表",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "新建命名收藏",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "备份导出",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "原始数据导出（排查用）",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "旧版操作后原始数据",
+        "result": "未改动",
+        "expected": "^未改动$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "风险",
+        "result": "旧版界面对“无法读取的存档”提供显式删除；玩家误点会永久删除这份存档",
+        "expected": "（记录）",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "打开存档",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "撤回状态（可撤回回合数）",
+        "result": "2",
+        "expected": "^2$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "撤回一回合",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "自动历史节点列表",
+        "result": "2 个",
+        "expected": "^2 个$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "预览最新的自动节点",
+        "result": "失败：CORRUPT_SAVE（历史数据处理失败，原存档未修改；请刷新列表或更换新版浏览器）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "预览更早的自动节点",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "旧版操作后原始数据",
+        "result": "未改动",
+        "expected": "^未改动$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏元数据带 worldbookRefs",
+        "operation": "收藏列表",
+        "result": "无法读取的历史收藏",
+        "expected": "^无法读取的历史收藏$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏元数据带 worldbookRefs",
+        "operation": "预览收藏",
+        "result": "失败：ZodError（[\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\":）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏元数据带 worldbookRefs",
+        "operation": "旧版操作后原始数据",
+        "result": "未改动",
+        "expected": "^未改动$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏载荷里的存档带字段",
+        "operation": "收藏列表",
+        "result": "正常显示",
+        "expected": "^正常显示$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏载荷里的存档带字段",
+        "operation": "预览 / 回溯",
+        "result": "失败：HISTORY_CORRUPT（收藏元数据与内容不一致）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏载荷里的存档带字段",
+        "operation": "旧版操作后原始数据",
+        "result": "未改动",
+        "expected": "^未改动$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：草稿带冻结快照字段",
+        "operation": "读取草稿",
+        "result": "失败：CORRUPT_DRAFT（草稿数据损坏，原始数据已保留）",
+        "expected": "^失败：CORRUPT_DRAFT",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：草稿带冻结快照字段",
+        "operation": "打开存档",
+        "result": "失败：ZodError（[\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\":）",
+        "expected": "（记录）",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：草稿带冻结快照字段",
+        "operation": "旧版操作后原始数据",
+        "result": "未改动",
+        "expected": "^未改动$",
+        "pass": true
+      },
+      {
+        "scenario": "备份：第 2 版文件",
+        "operation": "旧版解析",
+        "result": "失败：BACKUP_FUTURE（这份备份来自更新的游戏版本，请先更新游戏再导入；本机存档没有任何改动。）",
+        "expected": "^失败：BACKUP_FUTURE",
+        "pass": true
+      },
+      {
+        "scenario": "备份：第 1 版文件、存档带字段",
+        "operation": "旧版解析",
+        "result": "该份不可导入（这份存档的内容已损坏，无法导入。）",
+        "expected": "^该份不可导入",
+        "pass": true
+      },
+      {
+        "scenario": "备份：第 1 版文件、附加未知顶层字段",
+        "operation": "旧版解析",
+        "result": "成功",
+        "expected": "（记录）",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放主库新表（主库升到第 6 版）",
+        "operation": "旧版打开数据库",
+        "result": "失败：0（The requested version (5) is less than the existin）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放主库新表（主库升到第 6 版）",
+        "operation": "原有存档数据",
+        "result": "仍在，但旧版无法读取任何存档",
+        "expected": "^仍在",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "存档列表",
+        "result": "readable",
+        "expected": "^readable$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "打开存档",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版推进一回合后，时间线头",
+        "result": "变为附属库中没有记录的新回合",
+        "expected": "^变为附属库中没有记录的新回合$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版撤回",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版撤回后，时间线头",
+        "result": "回到附属库已有记录的回合",
+        "expected": "^回到附属库已有记录的回合$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版新建命名收藏",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版回溯到更早的自动节点",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "回溯后，时间线头",
+        "result": "为更早的回合（附属库中没有该头的记录）",
+        "expected": "（记录）",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版导出备份",
+        "result": "第 1 版，不含世界书数据（旧版不知道附属库）",
+        "expected": "（记录）",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "附属库记录",
+        "result": "未被旧版改动",
+        "expected": "^未被旧版改动$",
+        "pass": true
+      }
+    ],
+    "mobile": [
+      {
+        "scenario": "基线：普通存档",
+        "operation": "存档列表",
+        "result": "readable",
+        "expected": "^readable$",
+        "pass": true
+      },
+      {
+        "scenario": "基线：普通存档",
+        "operation": "打开存档",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "基线：普通存档",
+        "operation": "新建命名收藏",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "基线：普通存档",
+        "operation": "撤回一回合",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "基线：普通存档",
+        "operation": "回溯到命名收藏",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "基线：普通存档",
+        "operation": "备份导出并解析",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "存档列表",
+        "result": "unreadable",
+        "expected": "^unreadable",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "打开存档",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败：CORRUPT_SAVE",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "查看撤回状态",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "历史收藏列表",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "新建命名收藏",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "备份导出",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "原始数据导出（排查用）",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "旧版操作后原始数据",
+        "result": "未改动",
+        "expected": "^未改动$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：当前存档带 worldbook 字段",
+        "operation": "风险",
+        "result": "旧版界面对“无法读取的存档”提供显式删除；玩家误点会永久删除这份存档",
+        "expected": "（记录）",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "打开存档",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "撤回状态（可撤回回合数）",
+        "result": "2",
+        "expected": "^2$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "撤回一回合",
+        "result": "失败：CORRUPT_SAVE（存档结构或来源引用损坏，原始数据已保留）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "自动历史节点列表",
+        "result": "2 个",
+        "expected": "^2 个$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "预览最新的自动节点",
+        "result": "失败：CORRUPT_SAVE（历史数据处理失败，原存档未修改；请刷新列表或更换新版浏览器）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "预览更早的自动节点",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：撤回点快照带字段（当前存档不带）",
+        "operation": "旧版操作后原始数据",
+        "result": "未改动",
+        "expected": "^未改动$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏元数据带 worldbookRefs",
+        "operation": "收藏列表",
+        "result": "无法读取的历史收藏",
+        "expected": "^无法读取的历史收藏$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏元数据带 worldbookRefs",
+        "operation": "预览收藏",
+        "result": "失败：ZodError（[\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\":）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏元数据带 worldbookRefs",
+        "operation": "旧版操作后原始数据",
+        "result": "未改动",
+        "expected": "^未改动$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏载荷里的存档带字段",
+        "operation": "收藏列表",
+        "result": "正常显示",
+        "expected": "^正常显示$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏载荷里的存档带字段",
+        "operation": "预览 / 回溯",
+        "result": "失败：HISTORY_CORRUPT（收藏元数据与内容不一致）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：命名收藏载荷里的存档带字段",
+        "operation": "旧版操作后原始数据",
+        "result": "未改动",
+        "expected": "^未改动$",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：草稿带冻结快照字段",
+        "operation": "读取草稿",
+        "result": "失败：CORRUPT_DRAFT（草稿数据损坏，原始数据已保留）",
+        "expected": "^失败：CORRUPT_DRAFT",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：草稿带冻结快照字段",
+        "operation": "打开存档",
+        "result": "失败：ZodError（[\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\":）",
+        "expected": "（记录）",
+        "pass": true
+      },
+      {
+        "scenario": "GameState 方案：草稿带冻结快照字段",
+        "operation": "旧版操作后原始数据",
+        "result": "未改动",
+        "expected": "^未改动$",
+        "pass": true
+      },
+      {
+        "scenario": "备份：第 2 版文件",
+        "operation": "旧版解析",
+        "result": "失败：BACKUP_FUTURE（这份备份来自更新的游戏版本，请先更新游戏再导入；本机存档没有任何改动。）",
+        "expected": "^失败：BACKUP_FUTURE",
+        "pass": true
+      },
+      {
+        "scenario": "备份：第 1 版文件、存档带字段",
+        "operation": "旧版解析",
+        "result": "该份不可导入（这份存档的内容已损坏，无法导入。）",
+        "expected": "^该份不可导入",
+        "pass": true
+      },
+      {
+        "scenario": "备份：第 1 版文件、附加未知顶层字段",
+        "operation": "旧版解析",
+        "result": "成功",
+        "expected": "（记录）",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放主库新表（主库升到第 6 版）",
+        "operation": "旧版打开数据库",
+        "result": "失败：0（The requested version (5) is less than the existin）",
+        "expected": "^失败",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放主库新表（主库升到第 6 版）",
+        "operation": "原有存档数据",
+        "result": "仍在，但旧版无法读取任何存档",
+        "expected": "^仍在",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "存档列表",
+        "result": "readable",
+        "expected": "^readable$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "打开存档",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版推进一回合后，时间线头",
+        "result": "变为附属库中没有记录的新回合",
+        "expected": "^变为附属库中没有记录的新回合$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版撤回",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版撤回后，时间线头",
+        "result": "回到附属库已有记录的回合",
+        "expected": "^回到附属库已有记录的回合$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版新建命名收藏",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版回溯到更早的自动节点",
+        "result": "成功",
+        "expected": "^成功$",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "回溯后，时间线头",
+        "result": "为更早的回合（附属库中没有该头的记录）",
+        "expected": "（记录）",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "旧版导出备份",
+        "result": "第 1 版，不含世界书数据（旧版不知道附属库）",
+        "expected": "（记录）",
+        "pass": true
+      },
+      {
+        "scenario": "附属状态放独立数据库",
+        "operation": "附属库记录",
+        "result": "未被旧版改动",
+        "expected": "^未被旧版改动$",
+        "pass": true
+      }
+    ]
+  }
+}
