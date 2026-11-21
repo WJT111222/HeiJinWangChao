@@ -13,9 +13,13 @@ test.afterEach(async ({ page }, info) => {
 for (const build of ['development', 'production'] as const) {
   test('家庭名册 ' + build + '：换行、重名档案、键盘返回与刷新', async ({ page, isMobile }, info) => {
     await page.goto('/');
-    await page.evaluate(async () => {
-      const modules = ['/src/tests/fixtures/harem.ts', '/src/services/storage/saveRepository.ts'];
-      const [{ householdFixture }, { SaveRepository }] = await Promise.all(modules.map((p) => import(p)));
+    const appearance = build === 'production' ? 'day' : 'night';
+    await page.evaluate(async (appearance) => {
+      const modules = ['/src/tests/fixtures/harem.ts', '/src/services/storage/saveRepository.ts', '/src/ui/settings/model.ts'];
+      const [{ householdFixture }, { SaveRepository }, { defaultSettings, settingsKey }] = await Promise.all(modules.map((p) => import(p)));
+      const settings = defaultSettings();
+      settings.display.appearance = appearance;
+      localStorage.setItem(settingsKey, JSON.stringify(settings));
       const repository = await SaveRepository.open(),
         snapshot = { state: householdFixture(24) };
       try {
@@ -23,7 +27,7 @@ for (const build of ['development', 'production'] as const) {
       } finally {
         repository.close();
       }
-    });
+    }, appearance);
     if (build === 'production') {
       // E2E shards start from npm ci and can run concurrently. Build exact current sources in this test's directory.
       const dist = info.outputPath('production-app');
@@ -42,6 +46,7 @@ for (const build of ['development', 'production'] as const) {
     await enterArchiveGame(page);
     if (build === 'production')
       expect(await page.locator('script[type="module"]').first().getAttribute('src')).toMatch(/^\/assets\//);
+    await expect(page.locator('html')).toHaveAttribute('data-appearance', appearance);
     const panel = await openArchive(page, '后宫');
     const widths = isMobile ? [320, 360, 390, 420] : [1280, 1440];
     for (const width of widths) {
