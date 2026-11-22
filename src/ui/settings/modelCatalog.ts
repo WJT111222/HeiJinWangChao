@@ -42,7 +42,7 @@ export class ModelCatalog {
       const counts = diagnostics ? ` 原始条目 ${diagnostics.rawEntries}，有效 ${diagnostics.validEntries}，过滤 ${diagnostics.filteredEntries}，重复 ${diagnostics.duplicateEntries}；列表模型 ${diagnostics.uniqueModels} 个，读取 ${diagnostics.pages} 页，同源端点尝试 ${diagnostics.attemptedEndpoints} 个（不含默认或手填项）。` : '';
       const limit = diagnostics?.complete === false ? ' 已达20页读取上限，列表尚未完整获取，可手动补充模型。' : '';
       const endpoint = diagnostics ? ` 列表端点 ${diagnostics.endpoint}，HTTP ${diagnostics.httpStatus}。` : '';
-      const corrected = diagnostics?.fullEndpointInput ? ' 列表已兼容完整接口地址；生成请求仍使用原配置，请将 Base URL 改为接口根地址。' : '';
+      const corrected = diagnostics?.fullEndpointInput ? (isOpenAiCompatible(channel.protocol) ? ' 生成请求自动使用同一基础路径的聊天接口，保存的地址保持原样。' : ' 列表已兼容完整接口地址；生成请填写接口根地址。') : '';
       // 列表在备用路径（如补上 /v1）才找到时，生成请求仍按原地址发送，常见于中转站地址漏写 /v1。
       const fallback = diagnostics && !diagnostics.fullEndpointInput && diagnostics.attemptedEndpoints > 1
         ? ` 注意：列表是在备用路径找到的，生成请求仍会发到当前地址下的${isOpenAiCompatible(channel.protocol) ? ' /chat/completions' : '接口'}；如果生成时报「服务路径或模型不存在」，请把服务地址改成列表端点去掉末尾 /models 后的部分。` : '';

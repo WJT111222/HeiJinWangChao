@@ -143,14 +143,17 @@ export class AiClient {
     if (trace) { trace.status = response.status; trace.contentType = safeMime(response.headers); }
     if (!response.ok) {
       const status = response.status;
-      // Do not wait for an extra error body: preserve HTTP failure/retry timing.
-      // Only the JSON already consumed for compatibility below is projected.
+      // Only inspect JSON generation errors; list discovery handles its own status codes.
       if (!signal.aborted) observe?.({ transport: 'http', httpStatus: status, complete: false });
-      if (snapshot && (snapshot.thinkingCapability !== 'none' || snapshot.channel.protocol === 'openai' || presetSampling) && [400, 422].includes(status)
+      if (snapshot && (snapshot.thinkingCapability !== 'none' || snapshot.channel.protocol === 'openai' || presetSampling) && ([400, 422].includes(status) || (status === 404 && snapshot.channel.protocol === 'openai'))
         && response.headers.get('content-type')?.includes('application/json')) {
         try {
           const error: unknown = await response.json();
           if (!signal.aborted) observe?.({ ...responseDiagnostics(error, snapshot.channel.protocol), transport: 'http', httpStatus: status, complete: true });
+          const provider = record(record(error).error);
+          if (snapshot.channel.protocol === 'openai' && typeof provider.code === 'string' && ['model_not_found', 'InvalidEndpointOrModel.NotFound', 'ModelNotFound'].includes(provider.code))
+            throw new AiError('not_found', status, {fieldPath:'channel.model'});
+          if (status === 404) throw new AiError('not_found', status);
           if (!signal.aborted && snapshot.thinkingCapability !== 'none' && unsupportedThinkingParameter(error)) blockThinkingCapability(snapshot.channel, snapshot.model);
           const sentBody = record(typeof init.body === 'string' ? JSON.parse(init.body) : undefined);
           if (!signal.aborted && presetSampling && rememberPresetSamplingRejection(snapshot.channel, url, snapshot.model, error, sentBody))
@@ -163,6 +166,8 @@ export class AiClient {
             rememberUnsupported(snapshot.channel, snapshot.model, parameter);
             throw new AiError('parameter_adjusted', status);
           }
+          if (provider.code === 'unsupported_parameter' && typeof provider.param === 'string' && Object.hasOwn(sentBody, provider.param))
+            throw new AiError('rejected', status, {fieldPath:'channel.parameter'});
         } catch (error) { if (error instanceof AiError) throw error; /* 错误正文不外传，不猜测兼容能力，也不重发当前请求。 */ }
       }
       throw new AiError(

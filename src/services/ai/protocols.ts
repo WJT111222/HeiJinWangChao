@@ -1,3 +1,4 @@
+import { compatibleBase } from './compatibleEndpoints';
 import type { Sampling } from '../../presets/package';
 import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
@@ -27,6 +28,7 @@ export const record = (value: unknown): Record<string, unknown> =>
 export const array = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
 export const string = (value: unknown) => (typeof value === 'string' ? value : '');
 export function endpoint(snapshot: RequestSnapshot, path: string) {
+  if (isOpenAiCompatible(snapshot.channel.protocol)) return compatibleBase(snapshot.channel.baseUrl) + '/' + path;
   return snapshot.channel.baseUrl.replace(/\/$/, '') + '/' + path;
 }
 export function authHeaders(snapshot: RequestSnapshot): Record<string, string> {

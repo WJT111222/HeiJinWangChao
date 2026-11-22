@@ -26,7 +26,7 @@ async function storyKept(page: Page, settings: ReturnType<Page['locator']>, mode
   }
 }
 for (const protocol of ['openai', 'gemini', 'anthropic']) {
-  test(`${protocol}完整Models仅规范列表，保留渠道与路由，提示生成仍需根路径`, async ({ page }) => {
+  test(`${protocol}完整Models地址保留渠道与路由，按协议显示生成路径说明`, async ({ page }) => {
     const urls: string[] = [];
     await page.route('https://final-models.mock.invalid/**', async (route) => {
       expect(route.request().method()).toBe('GET'); urls.push(route.request().url());
@@ -34,7 +34,7 @@ for (const protocol of ['openai', 'gemini', 'anthropic']) {
     });
     const { settings, group } = await seed(page, protocol, protocol === 'gemini' ? '/v1beta/models///' : '/custom/v1/models///');
     const before = await page.evaluate(() => localStorage.getItem('heijin.ai.v1'));
-    await expect(group).toContainText('当前接口返回 1 个模型'); await expect(group).toContainText('生成请求仍使用原配置');
+    await expect(group).toContainText('当前接口返回 1 个模型'); await expect(group).toContainText(protocol === 'openai' ? '生成请求自动使用同一基础路径的聊天接口' : '生成请填写接口根地址');
     expect(urls).toHaveLength(1); const url = new URL(urls[0]); expect(url.pathname).not.toContain('models/models');
     if (protocol === 'anthropic') expect(url.searchParams.get('limit')).toBe('100');
     expect(await page.evaluate(() => localStorage.getItem('heijin.ai.v1'))).toBe(before); await storyKept(page, settings, 'saved-route');

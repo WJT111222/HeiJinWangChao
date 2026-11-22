@@ -53,6 +53,16 @@ describe('同源有界端点兼容、错误与生成路径保护', () => {
     expect(new Set(urls).size).toBe(urls.length); expect(urls.length).toBeLessThanOrEqual(4);
     for (const url of urls) { expect(new URL(url).origin).toBe(new URL(base).origin); expect(new URL(url).search).toBe(''); expect(url).not.toMatch(/admin|dashboard|relay\?/); }
   });
+  it.each([
+    ['https://ark.cn-beijing.volces.com/api/plan/v3/tenant', 'https://ark.cn-beijing.volces.com/api/plan/v3/tenant/models', 404],
+    ['https://ark.cn-beijing.volces.com/api/plan/v3/tenant/chat/completions/', 'https://ark.cn-beijing.volces.com/api/plan/v3/tenant/models', 405],
+    ['https://list.mock.invalid/gateway/api/plan/v3/tenant/models', 'https://list.mock.invalid/gateway/api/plan/v3/tenant/models', 404],
+  ] as const)('套餐自定义路径 %s 失败后不再携带密钥探测其他端点', async (base, endpoint, status) => {
+    const transport = vi.fn<typeof fetch>(async () => new Response(null, { status }));
+    await expect(new AiClient(transport).listModels(setup(base))).rejects.toMatchObject({ status });
+    expect(transport.mock.calls.map(([url, init]) => [url, new Headers(init?.headers).get('authorization')]))
+      .toEqual([[endpoint, 'Bearer list-mock-secret']]);
+  });
   it.each(['gemini', 'anthropic'] as const)('%s只使用原生列表端点，不套OpenAI候选', async (protocol) => {
     const snapshot = setup('https://list.mock.invalid/v1/', protocol), fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('', { status: 404 }));
     expect(modelListCandidates(snapshot)).toHaveLength(1); await expect(new AiClient(fetcher).listModels(snapshot)).rejects.toMatchObject({ code: 'not_found' }); expect(fetcher).toHaveBeenCalledTimes(1);
@@ -99,14 +109,14 @@ describe('同源有界端点兼容、错误与生成路径保护', () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Promise<Response>(() => {}));
     await expect(new AiClient(fetcher).listModels(setup(), { timeoutSeconds: 0.01 })).rejects.toMatchObject({ code: 'timeout' }); expect(fetcher).toHaveBeenCalledTimes(1);
   });
-  it('列表校正不改变任何生成阶段的原始URL', async () => {
+  it('完整聊天地址在各阶段均只使用一次', async () => {
     const snapshot = setup('https://list.mock.invalid/v1/chat/completions/');
     const { wireRequest } = await import('../services/ai/protocols');
     const { channel } = snapshot;
     for (const stage of ['story', 'variables', 'world', 'memory'] as const) {
       // 模型只影响JSON/编码，不更改原有endpoint函数。
       const wire = wireRequest(setup(channel.baseUrl, 'openai', stage, '模型 (A)+'), [{ role: 'user', content: '测试' }], false);
-      expect(wire.url).toBe(channel.baseUrl.replace(/\/$/, '') + '/chat/completions');
+      expect(wire.url).toBe('https://list.mock.invalid/v1/chat/completions');
       expect(JSON.parse(wire.init.body).model).toBe('模型 (A)+');
     }
   });
@@ -204,4 +214,51 @@ describe('最新main任务书的完整Models路径及脱敏端点', () => {
     expect(diagnostics?.endpoint).not.toContain('a%2Bb'); expect(diagnostics?.endpoint).not.toContain('a+b');
     expect(diagnostics?.endpoint).toContain('[密钥已隐藏]');
   });
+});
+
+const compatibleRoutes = [
+  ['https://qianfan.baidubce.com/v2', 'ernie-test'],
+  ['https://ark.cn-beijing.volces.com/api/v3', 'ep-synthetic'],
+  ['https://ark.cn-beijing.volces.com/api/plan/v3', 'ark-code-latest'],
+  ['https://openrouter.ai/api/v1', 'vendor/model-1:free'],
+] as const;
+
+describe.each(compatibleRoutes)('渠道正式 HTTP 边界 %s', (base, model) => {
+  it.each(['story', 'variables', 'world', 'memory'] as const)('%s 保留完整 ID、版本前缀和一次 POST', async stage => {
+    for (const suffix of ['', '/chat/completions/', '/models///']) {
+      for (const stream of [false, true]) {
+        const snapshot = setup(base + suffix, 'openai', stage, model);
+        const transport = vi.fn<typeof fetch>(async () => stream
+          ? new Response('data: {"choices":[{"delta":{"content":"收到"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n', {headers:{'content-type':'text/event-stream'}})
+          : Response.json({choices:[{message:{content:'收到'},finish_reason:'stop'}]}));
+        const result = await new AiClient(transport).generate(snapshot,[{role:'user',content:'合成测试'}],{stream});
+        expect(result.text).toBe('收到');
+        expect(transport).toHaveBeenCalledTimes(1);
+        const [url, init] = transport.mock.calls[0];
+        expect(url).toBe(base + '/chat/completions');
+        expect(init?.method).toBe('POST');
+        expect(new Headers(init?.headers).get('authorization')).toBe('Bearer list-mock-secret');
+        expect(JSON.parse(String(init?.body))).toMatchObject({model,stream});
+        expect(snapshot.channel.baseUrl).toBe(base + suffix);
+      }
+    }
+  });
+  it('已知入口的列表仅在当前产品路径读取', async () => {
+    const transport = vi.fn<typeof fetch>(async () => new Response(null,{status:405}));
+    await expect(new AiClient(transport).listModels(setup(base))).rejects.toMatchObject({status:405});
+    expect(transport.mock.calls.map(([url])=>url)).toEqual([base + '/models']);
+  });
+});
+
+it.each([
+  [404,'model_not_found','model','not_found','channel.model'],
+  [400,'unsupported_parameter','stream','rejected','channel.parameter'],
+  [404,'unclassified','','not_found',undefined],
+] as const)('生成 HTTP %i %s 保留可确认的归因，且不泄露响应原文', async (status,code,param,errorCode,fieldPath) => {
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json({error:{code,param,message:'list-mock-secret 私人原文'}},{status}));
+  const error = await new AiClient(fetcher).generate(setup(compatibleRoutes[0][0],'openai','variables','test-model'),[{role:'user',content:'测试'}]).catch(e=>e);
+  expect(error.code).toBe(errorCode);
+  expect(error.details?.fieldPath).toBe(fieldPath);
+  expect(error.message).not.toMatch(/list-mock-secret|私人原文/);
+  expect(fetcher).toHaveBeenCalledTimes(1);
 });

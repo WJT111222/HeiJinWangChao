@@ -72,7 +72,7 @@ for (const kind of ['authorization', 'missing', 'network', 'format', 'json', 'em
   });
 }
 
-test('完整models地址只用于列表兼容，显示真实脱敏端点与HTTP状态，不伪称生成配置已修复', async ({ page }) => {
+test('完整models地址保存原文，提示生成使用同一基础路径并显示脱敏列表端点', async ({ page }) => {
   const urls: string[] = [];
   await page.route('https://list-browser.mock.invalid/**', async (route) => {
     expect(route.request().method()).toBe('GET'); urls.push(route.request().url());
@@ -82,9 +82,95 @@ test('完整models地址只用于列表兼容，显示真实脱敏端点与HTTP�
   await setUrl(settings, 'https://list-browser.mock.invalid/v1/models///');
   const box = settings.locator('.ai-connect');
   await expect(box).toContainText('列表端点 https://list-browser.mock.invalid/v1/models，HTTP 200');
-  await expect(box).toContainText('生成请求仍使用原配置');
+  await expect(box).toContainText('生成请求自动使用同一基础路径的聊天接口');
   expect(urls).toEqual(['https://list-browser.mock.invalid/v1/models']); // 改地址后自动读取一次
   await saveAi(settings);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.ai.v1')!).channels[0].baseUrl)).toBe('https://list-browser.mock.invalid/v1/models///');
   await backToList(settings); await selected(page, '正文生成模型', 'kept-route');
 });
+
+test('OpenRouter 列表不可读仍可手填、保存、刷新并获得一次正式测试回复', async ({page}) => {
+  const posts: {model:string}[] = [];
+  await page.route('https://openrouter.ai/**', async route => {
+    if (route.request().method() === 'GET') {
+      expect(route.request().url()).toBe('https://openrouter.ai/api/v1/models');
+      await route.fulfill({status:405,body:''});
+    } else {
+      expect(route.request().url()).toBe('https://openrouter.ai/api/v1/chat/completions');
+      posts.push(route.request().postDataJSON());
+      await route.fulfill({json:{choices:[{message:{content:'OK'},finish_reason:'stop'}]}});
+    }
+  });
+  await page.goto('/');
+  let settings = await openAiSettings(page);
+  await addChannel(settings,{preset:'OpenRouter',key:'mock-router-only'});
+  await expect(settings.locator('.ai-connect')).toContainText('405');
+  await stageModel(settings,'正文生成','OpenRouter','vendor/model-1:free');
+  await saveAi(settings);
+  await page.reload();
+  settings = await openAiSettings(page);
+  await backToList(settings);
+  await selected(page,'正文生成模型','vendor/model-1:free');
+  await openChannel(settings,'OpenRouter');
+  await settings.getByRole('button',{name:'获取模型',exact:true}).click();
+  await expect(settings.locator('.ai-connect')).toContainText('405');
+  await settings.getByRole('button',{name:'测试回复（可能产生少量费用）'}).click();
+  await expect(settings.locator('.ai-connect')).toContainText('测试回复成功');
+  expect(posts.map(p=>p.model)).toEqual(['vendor/model-1:free']);
+});
+
+test('普通方舟与 Agent Plan 分别使用自己的地址和密钥', async ({page}) => {
+  const lists: [string,string | undefined][] = [];
+  await page.route('https://ark.cn-beijing.volces.com/**', async route => {
+    lists.push([route.request().url(),route.request().headers().authorization]);
+    await route.fulfill({json:{data:[]}});
+  });
+  await page.goto('/');
+  const settings = await openAiSettings(page);
+  await addChannel(settings,{preset:'火山方舟',key:'mock-normal'});
+  await expect(settings.locator('.ai-connect')).toContainText('未返回可用模型');
+  await settings.getByRole('button',{name:'方舟 Agent Plan',exact:true}).click();
+  const key = settings.getByLabel('API 密钥',{exact:true});
+  await expect(key).toHaveValue('');
+  await key.fill('mock-plan');
+  await expect(settings.locator('.ai-connect')).toContainText('未返回可用模型');
+  expect(lists).toEqual([
+    ['https://ark.cn-beijing.volces.com/api/v3/models','Bearer mock-normal'],
+    ['https://ark.cn-beijing.volces.com/api/plan/v3/models','Bearer mock-plan'],
+  ]);
+});
+
+for (const pending of [false, true]) {
+  test(`测试回复仅适用于发起时的模型（切换时 A ${pending ? '仍在请求' : '已成功'}）`, async ({ page }) => {
+    const models: string[] = [];
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    await page.route('https://list-browser.mock.invalid/**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({ json: { data: [{ id: 'kept-route' }, { id: 'model-b' }] } });
+        return;
+      }
+      const model = route.request().postDataJSON().model;
+      models.push(model);
+      if (pending && model === 'kept-route') await gate;
+      await route.fulfill({ json: { choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }] } });
+    });
+    const settings = await seed(page);
+    const box = settings.locator('.ai-connect');
+    const probe = box.getByRole('button', { name: '测试回复（可能产生少量费用）' });
+    await probe.click();
+    await expect.poll(() => models).toEqual(['kept-route']);
+    if (!pending) await expect(box).toContainText('测试回复成功');
+    try {
+      await stageModel(settings, '正文生成', '列表兼容测试', 'model-b');
+      await openChannel(settings, '列表兼容测试');
+    } finally { release(); }
+    await expect(probe).toBeEnabled();
+    await expect(box).toContainText('尚未测试 model-b 的回复');
+    await expect(box).not.toContainText('测试回复成功');
+    expect(models).toEqual(['kept-route']);
+    await probe.click();
+    await expect(box).toContainText('用 model-b 收到了回复');
+    expect(models).toEqual(['kept-route', 'model-b']);
+  });
+}

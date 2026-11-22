@@ -86,7 +86,7 @@ const messages: Record<AiErrorCode, string> = {
   content_filter: '模型服务的内容审核拦截了这次请求或输出，结果未保存。可以调整行动描述后重试，或换用审核更宽松的模型或服务。',
   parameter_adjusted: '服务明确拒绝了已发送的参数。下次主动生成时，将对符合本次条件的请求使用兼容写法。本次未自动重发、未生成内容，也未改动正式存档。',
 };
-const presetMessages = new Map<string, string>([
+const fieldMessages = new Map<string, string>([
   ['tavern.refresh_required', '正文模式已在其他页面变更，请刷新后再生成。'],
   ['tavern.context_boundary', '正文资料与交付标记冲突，本次未发送。'],
   ['tavern.native_delivery.tools', '未能准备本次正文所需的工具。请关闭破甲模式或检查渠道后再生成。'],
@@ -94,6 +94,8 @@ const presetMessages = new Map<string, string>([
   ['tavern.native_delivery.response', '渠道未返回可核对的正文工具结果，本次未保存。可关闭破甲模式后手动生成。'],
   ['tavern.initialization', '预设脚本初始化失败，可到运行设置查看实例状态。'],
   ['tavern.wrapper', '预设脚本处理响应时出错。'],
+  ['channel.model', '服务明确报告模型或推理接入点不存在，或当前账户无权使用。请核对模型 ID 和授权。'],
+  ['channel.parameter', '模型明确拒绝了本次发送的参数，请核对渠道高级设置。'],
   ['tavern.wrapper.http', '预设脚本返回了失败响应。'],
   ['tavern.unhandled_tool', '预设脚本未将工具结果还原为正文。'],
   ['tavern.upstream.tool', '上游工具数据不完整或结构无效。'],
@@ -104,7 +106,7 @@ export class AiError extends Error {
     public readonly status?: number,
     public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[]; worldRule?: WorldRule; eventEntryReason?: EventEntryReason; variableStep?: VariableStep } & Partial<ExecutionDiagnostic> & Partial<StoryDiagnostic>,
   ) {
-    super(details?.storyRule ? storyDiagnosticMessage(safeStoryDiagnostic(details)) : (presetMessages.get(details?.fieldPath ?? '') ?? messages[code])
+    super(details?.storyRule ? storyDiagnosticMessage(safeStoryDiagnostic(details)) : (fieldMessages.get(details?.fieldPath ?? '') ?? messages[code])
       + (isTimeDomainRule(details?.domainRule) ? ` ${details?.commandIndex === undefined ? '整批约束' : `第${details.commandIndex + 1}条命令`}：${domainRuleNames[details!.domainRule!]}。` : '')
       + (details?.fieldPath ? ` 字段：${details.fieldPath}${details.commandType ? `（${details.commandType}${details.commandIndex === undefined ? '' : `，第${details.commandIndex + 1}条`}）` : ''}。` : ''));
     if (details?.storyRule) this.details = safeStoryDiagnostic(details);
