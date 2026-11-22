@@ -110,7 +110,7 @@ leadership可省略或为空，每项为{position,publicName,description?,npcId?
 relations可省略或为空，每项{organizationId,relation,description}，只用真实稳定组织ID，不指自身；同一目标仅保留一项当前关系，单向合法、不强制反向或全矩阵。变化时替换当前项，结束可移除；不要删除原事件/历史，旧businessRelations文字保留且不猜ID。
 已有组织通过UpdateOrganization白名单更新name/description、所属类型字段、leadership/keyNpcIds/currentTaskIds/relations/departments/members；不得改id/kind/protagonistRelation/relationHistory，主角关系仍走RecordOrgRelation。更名沿用ID并避免同类重名。四类字段见实际目录，不自由覆盖实体。
 金额仅gang.funds、business.assetsEstimate/liquidityEstimate，人民币非负安全整数分；数字未知不填，不为完整性编造。金额更新须financialBasis={at:合法ISO游戏时间,note:依据说明}，at不晚于当前时钟；估值、组织资金与主角账户完全分开，不产生主角收入/扣款或自动交易。非金额变化不要求financialBasis。只核验结构、时间与权限，不要求逐字证据或关键词审批。
-departments每项{id,name,duty,headPosition?,headPublicName?,headNpcId?,scaleText?,statusText?}，members每项{npcId,position,departmentId?}，整体替换、只收已建档NPC、部门引用须存在；帮派/公司reputationText、公司operatingAreaText、政府/民间fundingText（经费文字，不是金额）同样按白名单更新。主势力绑定（faction）与protagonistKnown属于Variables，World只读不写。
+departments每项{id,name,duty,headPosition?,headPublicName?,headNpcId?,scaleText?,statusText?}，members每项{npcId,position,departmentId?,covert?}（covert=true为暗中身份，主角即使认识也不显示），整体替换、只收已建档NPC、部门引用须存在，撤销部门时程序清空指向它的归属；帮派/公司reputationText、公司operatingAreaText、政府/民间fundingText（经费文字，不是金额）同样按白名单更新。主势力绑定（faction）与protagonistKnown属于Variables，World只读不写。
 重大收购、争端或权力变化通过现有世界事件承接，实际结果改变档案才更新；小规模既定状态或关系可直接记录，不强迫创建事件。未完成计划不写成已完成结果。组织不强制拥有NPC、事件、任务或势力关系，currentTaskIds只引用本组织合法任务。
 
 World可自主更新合法场外组织现状。UpdateOrganization={commandId,type,organizationId,expectedRevision,changes,financialBasis?,evidence}；依赖正式BASE_SAVE_REVISION，changes仅白名单字段。不得重写本轮合法Variables已经确认的同一组织字段或主角关系；可更新不冲突的后台字段。World创建组织仍保持原创建权限，不内联金额；已有组织金额采用上述明确更新入口。

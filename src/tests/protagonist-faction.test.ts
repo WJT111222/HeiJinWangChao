@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { commitCommands } from '../domain/commands';
 import type { DomainCommand } from '../domain/commands';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { prepareVariableProjection } from '../domain/turnProjection';
 import { GameStateSchema } from '../domain/state';
 import type { GameState } from '../domain/state';
 import { parseTextVariables, parseWorld } from '../services/validation/aiOutputs';
@@ -198,3 +199,29 @@ describe('按需加载的势力上下文', () => {
     expect(policies.size).toBe(3);
   });
 });
+
+describe('审查修订：部门撤销与开局保护', () => {
+  it('撤销主角所在部门时，成员与主角的部门归属同步清空，职位保留，更新不被拒绝', () => {
+    const state = organizationState();
+    const roster = commitCommands(state, 'roster', state.revision, [organizationUpdate('org-gang', {
+      departments, members: [{ npcId: 'person', position: '红棍', departmentId: 'dept-door' }] })]);
+    const bound = commitCommands(roster, 'bind', roster.revision, [relation('org-gang', bind('看场', 'dept-door'))]);
+    const next = commitCommands(bound, 'reorg', bound.revision, [{ ...organizationUpdate('org-gang', { departments: [departments[1]] }, bound.revision), commandId: 'reorg' }]);
+    expect(next.organizations['org-gang'].members).toEqual([{ npcId: 'person', position: '红棍' }]);
+    expect(next.protagonistFaction).toMatchObject({ organizationId: 'org-gang', position: '看场' });
+    expect(next.protagonistFaction).not.toHaveProperty('departmentId');
+  });
+
+  it('只改成员却引用不存在的部门仍然拒绝', () => {
+    const state = organizationState();
+    expect(() => commitCommands(state, 'bad', state.revision, [organizationUpdate('org-gang', { members: [{ npcId: 'person', position: '红棍', departmentId: 'ghost' }] })])).toThrow();
+  });
+
+  it('正式候选入口拒绝开局回合绑定主势力，不只依赖文本编译', () => {
+    const state = organizationState();
+    const draft = rerollStory(createTurnDraft(state.saveId, state.revision, 'opening-turn', 'opening', ''), {
+      turnKind: 'opening', narrative: '【旁白】开局。', summary: '开局', variableGuide: [] });
+    expect(() => prepareVariableProjection(state, draft, [relation('org-gang', bind())])).toThrow(/开局回合不能绑定主势力/);
+  });
+});
+

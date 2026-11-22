@@ -838,7 +838,7 @@
       "protagonistFactionV1": {
         "baseCommit": "4e14d92",
         "notes": "World 可按白名单更新组织部门、成员及补齐的公开字段；主势力绑定与主角已知列表只读。原始来源及历次适配记录保留。",
-        "sha256": "e20e8c8317de8c3cb4a20abf567d58dee46000c1aec5734b75f049c2cd0ca861"
+        "sha256": "b9433d3cad9e51ac23f3305a8fc074acc92fa62ab7d8771a49079b7c7c2d4ce0"
       }
     },
     "stages/opening/variables.md": {

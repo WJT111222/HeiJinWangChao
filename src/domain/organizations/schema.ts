@@ -17,7 +17,8 @@ export const DepartmentSchema = z.strictObject({
   scaleText: z.string().optional(), statusText: z.string().optional(),
 }).refine(row => row.headPublicName !== null || row.headNpcId === undefined, '负责人身份未公开时不绑定公开人物入口');
 const departments = z.array(DepartmentSchema).refine(rows => new Set(rows.map(r => r.id)).size === rows.length, '部门ID重复');
-export const OrganizationMemberSchema = z.strictObject({ npcId: IdSchema, position: TextSchema, departmentId: IdSchema.optional() });
+// covert=true：暗中身份（卧底、暗桩等），主角即使认识此人也不能凭此得知其组织身份。
+export const OrganizationMemberSchema = z.strictObject({ npcId: IdSchema, position: TextSchema, departmentId: IdSchema.optional(), covert: z.boolean().optional() });
 const members = z.array(OrganizationMemberSchema).refine(rows => new Set(rows.map(r => r.npcId)).size === rows.length, '同一人物仅保留一个成员记录');
 /** 主角在剧情里真实得知的该组织据点/产业与内情；由程序填写id与learnedAt，只能逐条追加。 */
 export const ProtagonistOrgKnowledgeSchema = z.strictObject({
