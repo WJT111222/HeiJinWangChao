@@ -14,6 +14,8 @@ import { NARRATIVE_LENGTH_TIERS, narrativeLengthTier, narrativeRange, SettingsSc
 import type { Settings } from './model';
 import { STORY_STYLES } from './storyStyles';
 import type { StoryStyle } from './storyStyles';
+import { STORY_DIFFICULTIES, storyDifficulty } from './storyDifficulty';
+import type { StoryDifficulty } from './storyDifficulty';
 import { NoticeLinks } from '../notices/Notices';
 import './settings-paper.css';
 import type { NoticeKind } from '../notices/useNotices';
@@ -181,7 +183,7 @@ export function SettingsPanel({
         {tab === 'AI 连接' && <AiConnections timeoutSeconds={settings.runtime.timeoutSeconds} onDirtyChange={aiDirtyChanged} />}
         {tab === '提示词' && (
           <>
-            <p className="muted">{presetOwnsWriting ? '文风、人称和叙事偏好由预设接管；篇幅和行动选项继续由游戏控制。关闭预设后沿用原偏好。' : '七项叙事偏好用于下一次正文请求的提示词与输出校验。'}</p>
+            <p className="muted">{presetOwnsWriting ? '文风、人称和叙事偏好由预设接管；篇幅、行动选项和剧情难度继续由游戏控制。关闭预设后沿用原偏好。' : '这些叙事偏好和剧情难度用于下一次正文请求的提示词与输出校验。'}</p>
             <div className="settings-fields">
               <label>
                 叙事人称
@@ -197,6 +199,7 @@ export function SettingsPanel({
                 </select>
               </label>
               <fieldset className="style-fieldset" disabled={presetOwnsWriting} style={{border:0,padding:0,margin:0}}><StyleField value={editing.prompts.style} onChange={(value) => prompt('style', value)} /></fieldset>
+              <DifficultyField value={storyDifficulty(editing.prompts)} onChange={(value) => prompt('difficulty', value)} />
               <LengthField
                 min={editing.prompts.minNarrativeChars}
                 max={editing.prompts.maxNarrativeChars}
@@ -358,6 +361,32 @@ function LengthField({ min, max, custom, minInput, onTier, onCustom, onMin, onMa
           ? <p className="field-hint length-warn" role="alert">建议上限不能低于最低字数。</p>
           : <p className="field-hint">最低字数由程序硬性检查，不够会判失败并重写；建议上限只告诉模型写到这里收尾，写多了也照常通过。</p>}
         {tier === 'high' && <p className="field-hint length-warn">高档每回合要写 8000 字以上：需要模型单次输出足够长（建议在「AI 连接」把最大输出调到 16k 以上），生成更慢、更耗额度；正文写到一半被截断时，可以用「续写正文」接着写。</p>}
+      </div>
+    </div>
+  );
+}
+
+/** 剧情难度：三档，独立于风格；使用文学预设时同样生效，因此不放进被预设禁用的分组。 */
+function DifficultyField({ value, onChange }: { value: StoryDifficulty; onChange: (value: StoryDifficulty) => void }) {
+  const current = STORY_DIFFICULTIES.find((item) => item.id === value) ?? STORY_DIFFICULTIES[0]!;
+  return (
+    <div className="style-field difficulty-field" role="group" aria-labelledby="difficulty-field-title">
+      <span id="difficulty-field-title" className="style-field-title">剧情难度</span>
+      <div className="style-field-body">
+        <div className="style-options" role="radiogroup" aria-label="剧情难度">
+          {STORY_DIFFICULTIES.map((item) => (
+            <div key={item.id} className="style-item" data-checked={item.id === value || undefined}>
+              <label className="style-option">
+                <input type="radio" name="story-difficulty" value={item.id} checked={item.id === value} onChange={() => onChange(item.id)} />
+                <span>{item.name}</span>
+                <i className="style-dot" aria-hidden="true" />
+              </label>
+              {item.id === value && <p className="style-item-desc">{item.text}</p>}
+            </div>
+          ))}
+        </div>
+        <p className="style-explain" aria-live="polite"><b>{current.name}</b>{current.text}</p>
+        <p className="field-hint">所有存档共用这一档；新开局最后一步选的难度也会改这里，下一回合起生效。</p>
       </div>
     </div>
   );

@@ -129,6 +129,7 @@ describe('真实资源库、选择器与独立排序', () => {
     expect(Object.keys(SettingsSchema.shape.prompts.shape)).toEqual([
       'perspective',
       'style',
+      'difficulty',
       'minNarrativeChars',
       'maxNarrativeChars',
       'noControl',

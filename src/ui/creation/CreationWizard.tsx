@@ -20,6 +20,9 @@ import { ProfessionProfile } from '../components/ProfessionProfile';
 import { OpeningPacks } from './OpeningPacksPanel';
 import { CityCardArt, CreationDossier, TemplateCards, creationStepHints, creationTint } from './DesktopCreation';
 import './desktop-creation.css';
+import './creation-difficulty.css';
+import { OPENING_STORY_DIFFICULTY, STORY_DIFFICULTIES } from '../settings/storyDifficulty';
+import type { StoryDifficulty } from '../settings/storyDifficulty';
 
 const steps = ['基本信息', '职业与能力', '城市与背景', '初始同伴', '确认与开局'];
 export function CreationWizard({
@@ -29,15 +32,27 @@ export function CreationWizard({
   busy,
   onExit,
   timeoutSeconds,
+  difficulty: savedDifficulty,
 }: {
   form: Creation;
   onChange: (form: Creation) => void;
-  onCreate: () => void;
+  /** 确认创建时带上第五步选中的剧情难度（全局设置，由调用方写入）。 */
+  onCreate: (difficulty: StoryDifficulty) => void;
   busy: boolean;
   onExit: () => void;
   timeoutSeconds?: number;
+  /** 设置里已保存的剧情难度；从未选过时第五步默认「标准」。 */
+  difficulty?: StoryDifficulty;
 }) {
   const [error, setError] = useState('');
+  const [difficulty, setDifficulty] = useState<StoryDifficulty>(savedDifficulty ?? OPENING_STORY_DIFFICULTY);
+  // 创角途中在设置里（或另一个标签页）改了难度：第五步跟随最新设置，确认创建时不会把它改回旧值。
+  // 之后在第五步再点选，以第五步为准——谁最后改，听谁的。
+  const [syncedDifficulty, setSyncedDifficulty] = useState(savedDifficulty);
+  if (syncedDifficulty !== savedDifficulty) {
+    setSyncedDifficulty(savedDifficulty);
+    setDifficulty(savedDifficulty ?? OPENING_STORY_DIFFICULTY);
+  }
   const mobile=!useDesktopFeedback(),[preview,setPreview]=useState(false),[direction,setDirection]=useState('forward'),[showPreset,setShowPreset]=useState(form.profession!=='custom');
   const main=useRef<HTMLElement>(null),formRef=useRef<HTMLFormElement>(null),card=useRef<HTMLDivElement>(null),submitted=useRef(false);
   const resetTear=useRef<()=>void>(()=>{});
@@ -234,7 +249,7 @@ export function CreationWizard({
               }
             }
             submitted.current=true;
-            onCreate();
+            onCreate(difficulty);
           }
         }}
       >
@@ -498,6 +513,19 @@ export function CreationWizard({
                   </p>
                 </CreationReviewCard>
               </div>
+              <fieldset className="creation-gender creation-difficulty">
+                <legend>剧情难度</legend>
+                <div className="creation-options" role="radiogroup" aria-label="剧情难度">
+                  {STORY_DIFFICULTIES.map((item) => (
+                    <label key={item.id} className="creation-choice">
+                      <input type="radio" name="creation-difficulty" value={item.id} checked={item.id === difficulty}
+                        onChange={() => setDifficulty(item.id)} />{item.name}
+                    </label>
+                  ))}
+                </div>
+                <p className="creation-difficulty-text" aria-live="polite">{STORY_DIFFICULTIES.find((item) => item.id === difficulty)?.text}</p>
+                <p className="muted creation-difficulty-hint">所有存档共用这一档，确认创建时写入设置；之后可以在「设置 → 提示词」随时修改。</p>
+              </fieldset>
               <label>
                 开局偏好（可选）
                 <textarea

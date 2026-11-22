@@ -89,6 +89,8 @@ function usage(item: PromptModule) {
     return `打开时，每次${used}请求都会带上；关闭后不发送。和「提示词」页的同名开关是同一个设置。`;
   if (item.toggle?.startsWith('perspective') || item.toggle?.startsWith('style'))
     return `只在「提示词」页选中这一项时发送给${used}阶段。`;
+  if (item.toggle?.startsWith('difficulty:'))
+    return `只在「提示词」页的剧情难度选中这一档时发送给${used}阶段；宽松不发送任何难度规则。`;
   return {
     always: `每次${used}请求都会带上。`,
     setting: `随设置开关，发送给${used}阶段。`,
