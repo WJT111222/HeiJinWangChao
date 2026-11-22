@@ -449,3 +449,23 @@ describe('变量阶段真实请求到草稿保存', () => {
     expect(JSON.stringify(await repo.loadDraft('save-a'))).not.toContain('mock-variable-key');
   });
 });
+
+it.each([
+  ['https://qianfan.baidubce.com/v2', 'ernie-test'],
+  ['https://ark.cn-beijing.volces.com/api/v3', 'ep-test'],
+  ['https://ark.cn-beijing.volces.com/api/plan/v3', 'ark-code-latest'],
+  ['https://openrouter.ai/api/v1', 'test/model:free'],
+])('手动 ID 经正式 Variables 生成并保存候选 %s', async (baseUrl, modelId) => {
+  const a = setup('openai');
+  a.config.channels[1].baseUrl = baseUrl + '/chat/completions';
+  a.config.routes.variables = {mode:'independent',channelId:a.config.channels[1].id,modelId};
+  const before = await repo.load('save-a');
+  const transport = vi.fn<typeof fetch>(async () => wire());
+  await runner(transport).generate({...a, draft});
+  expect(transport).toHaveBeenCalledTimes(1);
+  expect(transport.mock.calls[0][0]).toBe(baseUrl + '/chat/completions');
+  expect(JSON.parse(String(transport.mock.calls[0][1]?.body)).model).toBe(modelId);
+  const loaded = await repo.loadGame('save-a');
+  expect(loaded.draft?.variables?.result.commands).toEqual(result.commands);
+  expect(loaded.state).toEqual(before);
+});

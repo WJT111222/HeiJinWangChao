@@ -1,3 +1,4 @@
+import { compatibleBase, compatibleBases } from './compatibleEndpoints';
 import { modelIdSchema } from './configuration';
 import { isOpenAiCompatible } from './configuration';
 import type { Protocol } from './configuration';
@@ -53,7 +54,7 @@ export interface ModelPage {
 const control = /[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]/u;
 const secretForms = (secret: string) => [secret, encodeURIComponent(secret), JSON.stringify(secret).slice(1, -1)].filter(Boolean);
 
-// 仅用于列表；绝不改写保存的 Base URL 或 wireRequest 的生成端点。
+// 备用路径只用于发现模型，不改变生成地址。
 export function modelListCandidates(snapshot: RequestSnapshot): string[] {
   const url = new URL(snapshot.channel.baseUrl), paths: string[] = [];
   let base = url.pathname.replace(/\/+$/, '');
@@ -68,6 +69,7 @@ export function modelListCandidates(snapshot: RequestSnapshot): string[] {
   const configuredModels = base;
   base = base.replace(/\/(?:chat\/completions|models)$/i, '');
   push(completeModels ? configuredModels : `${base}/models`);
+  if (Object.values(compatibleBases).includes(compatibleBase(url.href))) return paths;
   const segments = base.split('/').filter(Boolean);
   let version = -1;
   for (let index = segments.length - 1; index >= 0; index--)

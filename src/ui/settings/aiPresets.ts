@@ -1,8 +1,9 @@
+import { compatibleBases } from '../../services/ai/compatibleEndpoints';
 import { defaultUrls } from '../../services/ai/configuration';
 import type { Channel, Protocol } from '../../services/ai/configuration';
 
 // 「服务商」只是界面上的快捷选择：最终仍保存为原有的协议 + 服务地址，不改变 AI 配置格式。
-export type PresetId = 'openai' | 'claude' | 'gemini' | 'deepseek' | 'compat' | 'local';
+export type PresetId = 'openai' | 'claude' | 'gemini' | 'deepseek' | 'compat' | 'local' | keyof typeof compatibleBases;
 export interface Preset { id: PresetId; label: string; sub: string; protocol: Protocol; url: string; name: string; official: boolean }
 export const localUrl = 'http://localhost:11434/v1';
 export const presets: readonly Preset[] = [
@@ -10,6 +11,10 @@ export const presets: readonly Preset[] = [
   { id: 'claude', label: 'Claude', sub: '官方', protocol: 'anthropic', url: defaultUrls.anthropic, name: 'Claude 官方', official: true },
   { id: 'gemini', label: 'Gemini', sub: '官方', protocol: 'gemini', url: defaultUrls.gemini, name: 'Gemini 官方', official: true },
   { id: 'deepseek', label: 'DeepSeek', sub: '官方', protocol: 'deepseek', url: defaultUrls.deepseek, name: 'DeepSeek 官方', official: true },
+  { id: 'qianfan', label: '百度千帆', sub: '千帆 V2', protocol: 'openai', url: compatibleBases.qianfan, name: '百度千帆', official: true },
+  { id: 'ark', label: '火山方舟', sub: '普通 API', protocol: 'openai', url: compatibleBases.ark, name: '火山方舟', official: true },
+  { id: 'arkPlan', label: '方舟 Agent Plan', sub: '套餐专属', protocol: 'openai', url: compatibleBases.arkPlan, name: '方舟 Agent Plan', official: true },
+  { id: 'openrouter', label: 'OpenRouter', sub: 'OpenAI 兼容', protocol: 'openai', url: compatibleBases.openrouter, name: 'OpenRouter', official: true },
   { id: 'compat', label: 'OpenAI 兼容', sub: '中转／其他', protocol: 'openai', url: '', name: 'OpenAI 兼容', official: false },
   { id: 'local', label: '本地模型', sub: 'Ollama 等', protocol: 'openai', url: localUrl, name: '本地模型', official: false },
 ];

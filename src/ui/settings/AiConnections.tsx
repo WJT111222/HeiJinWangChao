@@ -1,3 +1,4 @@
+import { credentialScope } from '../../services/ai/compatibleEndpoints';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   AiConfigSchema,
@@ -73,7 +74,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
   const [noticeLevel, setNoticeLevel] = useState<FeedbackLevel>(start.notice ? 'err' : 'info');
   const [catalog] = useState(() => new ModelCatalog());
   const lists = useSyncExternalStore(catalog.subscribe, catalog.getSnapshot);
-  const active = useRef<AbortController | undefined>(undefined);
+  const active = useRef<{id: string; controller: AbortController} | undefined>(undefined);
   const { config } = draft;
   const channel = config.channels.find((item) => item.id === selectedId);
   function setNotice(message: string, level: FeedbackLevel = 'err') { setNoticeText(message); setNoticeLevel(level); }
@@ -102,7 +103,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
-  useEffect(() => () => { active.current?.abort(); catalog.dispose(); }, [catalog]);
+  useEffect(() => () => { active.current?.controller.abort(); catalog.dispose(); }, [catalog]);
 
   // —— 路由工具 ——
   const routeOf = (stage: AiTask) => {
@@ -139,7 +140,13 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
     if (noticeLevel === 'ok') setNotice('', 'info');
   }
   function patchChannel(id: string, values: Partial<Channel>) {
-    update((next) => { next.config.channels = next.config.channels.map((item) => item.id === id ? { ...item, ...values } : item); });
+    update((next) => {
+      const current = next.config.channels.find((item) => item.id === id);
+      if (!current) return;
+      if (values.baseUrl !== undefined && credentialScope(current.baseUrl) !== credentialScope(values.baseUrl))
+        next.keys[id] = '';
+      Object.assign(current, values);
+    });
   }
   function draftVault(id: string) {
     const vault = new CredentialVault(memoryStore(), memoryStore());
@@ -165,6 +172,8 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
     savedKey.current[channel.id] = selectedKey;
     if (previous === undefined || previous === selectedKey) return;
     catalog.remove(channel.id);
+    if (active.current?.id === channel.id) { active.current.controller.abort(); active.current = undefined; }
+    setTests((current) => { const next = { ...current }; delete next[channel.id]; return next; });
     if (!canLoad(channel.id)) return;
     const timer = setTimeout(() => loadModels(channel.id), 600);
     return () => clearTimeout(timer);
@@ -188,6 +197,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
     const autoName = !target.name.trim() || target.name === '新渠道' || (previous && target.name === previous.name);
     const baseUrl = preset === 'compat' ? (before === 'compat' ? target.baseUrl : '') : chosen.url;
     update((next) => {
+      if (target.baseUrl !== baseUrl) next.keys[id] = '';
       next.presets[id] = preset;
       next.config.channels = next.config.channels.map((item) => item.id !== id ? item : {
         ...item, protocol: chosen.protocol, baseUrl, defaultModel: '', ...(autoName ? { name: chosen.name } : {}),
@@ -298,17 +308,17 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
     const model = (routed && effectiveModel(routed)) || target.defaultModel || lists[id]?.models[0] || '';
     if (!model) { setTests((current) => ({ ...current, [id]: { status: 'err', text: '还没有可用的模型：先让模型列表出现，或在上方为某个阶段选好模型。' } })); return; }
     const controller = new AbortController();
-    active.current = controller;
+    active.current = {id, controller};
     setTests((current) => ({ ...current, [id]: { status: 'loading', text: `正在用 ${model} 发一条测试消息…` } }));
     try {
       const probe = { ...target, defaultModel: model, parameters: { ...target.parameters, maxOutputTokens: Math.min(target.parameters.maxOutputTokens ?? 32, 32) } };
       const result = await new AiClient().generate(channelSnapshot(probe, draftVault(id)), [{ role: 'user', content: '请仅回复 OK。' }], { signal: controller.signal, timeoutSeconds });
-      if (active.current !== controller) return;
+      if (active.current?.controller !== controller) return;
       setTests((current) => ({ ...current, [id]: { status: 'ok', text: [`用 ${model} 收到了回复，游戏回合未运行。`, ...result.diagnostics].join(' ') } }));
     } catch (error) {
-      if (active.current === controller) setTests((current) => ({ ...current, [id]: { status: 'err', text: safeAiError(error).message } }));
+      if (active.current?.controller === controller) setTests((current) => ({ ...current, [id]: { status: 'err', text: safeAiError(error).message } }));
     } finally {
-      if (active.current === controller) active.current = undefined;
+      if (active.current?.controller === controller) active.current = undefined;
     }
   }
 
@@ -320,9 +330,9 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
     if (test?.status === 'loading') return { tone: 'loading', title: '正在测试…', text: test.text };
     if (list?.status === 'loading') return { tone: 'loading', title: '正在连接…', text: '正在获取模型列表（不产生费用）…' };
     if (test?.status === 'err') return { tone: 'err', title: '测试失败', text: test.text };
-    if (list?.status === 'error') return { tone: 'err', title: '连接失败', text: brief(list.message), detail: list.message };
-    if (test?.status === 'ok') return { tone: 'ok', title: '连接正常', text: test.text };
-    if (list && (list.status === 'ready' || list.status === 'empty')) return { tone: 'ok', title: '连接正常', text: list.message };
+    if (test?.status === 'ok') return { tone: 'ok', title: '测试回复成功', text: test.text, detail: list?.message };
+    if (list?.status === 'error') return { tone: 'err', title: '模型列表连接失败', text: brief(list.message) + ' 可手动填写模型 ID。', detail: list.message };
+    if (list && (list.status === 'ready' || list.status === 'empty')) return { tone: 'ok', title: '模型列表连接正常', text: list.message };
     if (!draft.presets[id]) return { tone: 'idle', title: '未完成', text: '先选一个服务商。' };
     if (!draft.keys[id]?.trim()) return { tone: 'idle', title: '尚未连接', text: '粘贴密钥后会自动获取模型（不产生费用）。' };
     return { tone: 'idle', title: '尚未检查连接', text: '点「获取模型」检查连接并读取模型列表（不产生费用）。' };
@@ -399,7 +409,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
               <input aria-label="服务地址" type="url" value={channel.baseUrl} readOnly={locked} spellCheck={false}
                 placeholder={preset === 'compat' ? 'https://…/v1' : chosen?.url} onChange={(event) => patchChannel(channel.id, { baseUrl: event.target.value.trim() })} />
             </div>
-            {!channel.baseUrl ? <p className="ai-hint warn">填写服务商提供的地址，一般以 /v1 结尾。</p>
+            {!channel.baseUrl ? <p className="ai-hint warn">请填写服务商文档中的基础地址，保留完整版本和产品路径。</p>
               : !urlOk ? <p className="ai-hint err">地址需要以 https:// 开头（本机地址可以用 http://localhost），不能带「?」后面的参数。</p>
               : chosen?.official ? (locked ? <p className="ai-hint">官方地址已自动填写 · <button type="button" className="ai-link" onClick={() => setUrlEditing((current) => ({ ...current, [channel.id]: true }))}>需要改地址？</button></p>
                 : <p className="ai-hint">正在使用自定义地址。</p>)
@@ -417,6 +427,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
                 placeholder={preset === 'local' ? '本地服务一般不校验，可填 ollama' : '粘贴密钥后自动获取模型'} onChange={(event) => { const value = event.target.value; update((next) => { next.keys[channel.id] = value.trim(); }); }} />
               <button type="button" className="ai-show" onClick={() => setShowKey(!showKey)}>{showKey ? '隐藏' : '显示'}</button>
             </div>
+            {preset === 'arkPlan' && <p className="ai-hint">请核对套餐允许的应用范围。通用游戏 API 调用请使用普通火山方舟及其密钥；套餐入口使用专属密钥。</p>}
             {preset === 'local' && <p className="ai-hint">本地服务一般不需要真实密钥，填一个占位值（如 ollama）就能连接，它只会发给你本机的服务。</p>}
             <label className="ai-switch">
               <input type="checkbox" role="switch" checked={draft.remember[channel.id] ?? true}
@@ -433,7 +444,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
           <div className="ai-connect-acts">
             {status.tone !== 'loading' && <button type="button" className="ai-btn" disabled={!canLoad(channel.id)} onClick={() => loadModels(channel.id, true)}>{lists[channel.id] ? '重新获取模型' : '获取模型'}</button>}
             {tests[channel.id]?.status === 'loading'
-              ? <button type="button" className="ai-btn" onClick={() => { active.current?.abort(); active.current = undefined; setTests((current) => ({ ...current, [channel.id]: { status: 'err', text: '已取消测试，未提交任何游戏状态。' } })); }}>取消</button>
+              ? <button type="button" className="ai-btn" onClick={() => { active.current?.controller.abort(); active.current = undefined; setTests((current) => ({ ...current, [channel.id]: { status: 'err', text: '已取消测试，未提交任何游戏状态。' } })); }}>取消</button>
               : <button type="button" className="ai-btn" disabled={!canLoad(channel.id) || Boolean(active.current)} title="会真实调用一次模型，可能产生少量费用"
                 onClick={() => void testReply(channel.id)}>测试回复（可能产生少量费用）</button>}
           </div>
@@ -499,7 +510,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
               <span className="ai-chi-t"><span className="ai-chi-nm">{item.name || '未命名渠道'}</span>
                 {draft.presets[item.id] && <span className="ai-pill">{protocolNames[item.protocol]}</span>}{!desktop && <span className="ai-arrow" aria-hidden="true">›</span>}</span>
               <span className="ai-chi-s"><span className={`ai-dot is-${status.tone}`} aria-hidden="true" />
-                {status.tone === 'ok' ? `连接正常${listCount(item.id) ? ` · ${listCount(item.id)} 个模型` : ''}` : status.tone === 'err' ? '连接失败' : status.tone === 'loading' ? '正在连接…'
+                {status.tone === 'ok' ? `${status.title}${listCount(item.id) ? ` · ${listCount(item.id)} 个模型` : ''}` : status.tone === 'err' ? status.title : status.tone === 'loading' ? '正在连接…'
                   : !draft.presets[item.id] ? '未完成：先选服务商' : !draft.keys[item.id] ? '还没填密钥' : '尚未连接'}</span>
               <span className="ai-chi-s">{used.length ? `用于：${used.join(' · ')}` : '暂未被任何阶段使用'}</span>
             </button>;
