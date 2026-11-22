@@ -469,6 +469,32 @@
       "placeholders": []
     },
     {
+      "id": "shared.10_world_difficulty_hardcore",
+      "path": "shared/10_world_difficulty_hardcore.md",
+      "title": "剧情难度：硬核 · 场外反制",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": "difficulty:hardcore",
+      "domain": null,
+      "characters": 304,
+      "version": "0.1.0-difficulty",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 305,
+      "orderGroup": "shared",
+      "reorderable": false,
+      "category": "shared",
+      "contentSha256": "4c0cf778b3fa95b6af0068199e32a29bddc15344b45dbfe6613d211656225f2b",
+      "placeholders": []
+    },
+    {
       "id": "variableGroups.protagonist.init",
       "path": "variableGroups/protagonist/init.md",
       "title": "主角｜初始化（文本变量）",
@@ -2087,6 +2113,60 @@
       "reorderable": true,
       "category": "narrative_core",
       "contentSha256": "54d1c4ba8a4326391c40a118c92548c4f299d08560140dee62582de8fe1e07a9",
+      "placeholders": []
+    },
+    {
+      "id": "writing.difficulty_standard",
+      "path": "writing/difficulty_standard.md",
+      "title": "剧情难度：标准（防口胡）",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": "difficulty:standard",
+      "domain": null,
+      "characters": 339,
+      "version": "0.1.0-difficulty",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 83,
+      "orderGroup": "narrative_core",
+      "reorderable": false,
+      "category": "narrative_core",
+      "contentSha256": "4952c3cfc9f666e2dc0caa9b028a6e11d1c9b72b3300a0035da5a75a42c1c116",
+      "placeholders": []
+    },
+    {
+      "id": "writing.difficulty_hardcore",
+      "path": "writing/difficulty_hardcore.md",
+      "title": "剧情难度：硬核",
+      "kind": "prompt",
+      "applicableStages": [
+        "story"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": "difficulty:hardcore",
+      "domain": null,
+      "characters": 786,
+      "version": "0.1.0-difficulty",
+      "messageRole": "system",
+      "activation": "setting",
+      "permanent": false,
+      "configurable": true,
+      "defaultOrder": 83,
+      "orderGroup": "narrative_core",
+      "reorderable": false,
+      "category": "narrative_core",
+      "contentSha256": "d71933583aeb3d152a0abf2a5288a3db1b6c8f1a1836a5f14393fb89dfa75086",
       "placeholders": []
     },
     {

@@ -5,7 +5,7 @@ import { resolve, relative } from 'node:path';
 import manifest from '../../prompts/manifest.json';
 import sources from '../../prompts/sources.lock.json';
 import { promptManifest, PromptManifestSchema } from '../prompts/manifest';
-import { defaultSettings } from '../ui/settings/model';
+import { SettingsSchema, defaultSettings } from '../ui/settings/model';
 import { DomainCommandSchema } from '../domain/commands';
 import { VariableResultSchema, WorldResultSchema } from '../domain/drafts';
 import { WorldEventSchema, WorldTaskSchema } from '../domain/events/schema';
@@ -182,7 +182,9 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
       .filter((m) => m.toggle !== null)
       .map((m) => m.toggle!.split(':')[0]);
     // 正文建议上限与最低字数同属 writing.min_length 一个模块（toggle 记在 minNarrativeChars 上）。
-    expect([...new Set(toggles)].sort()).toEqual(Object.keys(defaultSettings().prompts).filter((key) => key !== 'maxNarrativeChars').sort());
+    // 剧情难度是可选设置：默认不写入（按宽松处理），只有标准/硬核两档登记了模块。
+    expect([...new Set(toggles)].sort()).toEqual([...Object.keys(defaultSettings().prompts).filter((key) => key !== 'maxNarrativeChars'), 'difficulty'].sort());
+    expect(SettingsSchema.shape.prompts.shape.difficulty.safeParse(undefined).success).toBe(true);
     expect(JSON.stringify(promptManifest.globalDefaults)).not.toMatch(/nsfw/i);
     for (const id of ['writing.nsfw', 'writing.intimacy_boundaries']) {
       expect(moduleById(id)).toMatchObject({
@@ -288,7 +290,7 @@ describe('正式文本来源与旧架构保留', () => {
     for (const module of promptManifest.modules.filter((m) => m.kind === 'prompt')) {
       const record = sources.resources[module.path as keyof typeof sources.resources];
       expect(record, module.path).toBeDefined();
-      const latest = ['variableGuideNotes','storyGuideOpeningTime','partialSettlement','issue194LegacyRecovery','issue194NotificationReceipt','issue194EntryHandoff','antiTemplateV1','narrativeLengthTiers','promptCacheOrderingV1','legacyCleanupV10','storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
+      const latest = ['storyDifficultyV1','variableGuideNotes','storyGuideOpeningTime','partialSettlement','issue194LegacyRecovery','issue194NotificationReceipt','issue194EntryHandoff','antiTemplateV1','narrativeLengthTiers','promptCacheOrderingV1','legacyCleanupV10','storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
         .map(key=>Reflect.get(record,key)).find(value=>value && typeof value==='object' && 'sha256' in value);
       if(latest) expect(sha(text(module.path)),module.path).toBe(Reflect.get(latest,'sha256'));
       if (record.treatment === 'verbatim')

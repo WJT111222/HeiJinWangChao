@@ -1,4 +1,5 @@
 import { STORY_STYLE_IDS } from './storyStyles';
+import { STORY_DIFFICULTY_IDS } from './storyDifficulty';
 import { z } from 'zod';
 import { SummarySettingsSchema, defaultSummarySettings } from '../../domain/memories/configuration';
 export const settingsKey = 'heijin.settings.v1';
@@ -33,6 +34,8 @@ export const SettingsSchema = z.strictObject({
   prompts: z.strictObject({
     perspective: z.enum(['first', 'second', 'third']),
     style: z.enum(STORY_STYLE_IDS),
+    // 剧情难度（可选）：缺省按宽松处理，旧设置原样可读；读取一律经 storyDifficulty。
+    difficulty: z.enum(STORY_DIFFICULTY_IDS).optional(),
     minNarrativeChars: z.number().int().positive().max(NARRATIVE_CHARS_LIMIT),
     // 建议上限（可选）：读取一律经 narrativeRange，旧设置缺字段时按最低字数推出，低于最低字数时按最低字数处理。
     maxNarrativeChars: z.number().int().positive().max(NARRATIVE_CHARS_LIMIT).optional(),

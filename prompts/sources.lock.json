@@ -1693,6 +1693,36 @@
         "notes": "四种创角补全参考玩家当前填写的姓名、年龄、性别，保留原有补全目标与输出协议。",
         "sha256": "e57f52fee1580eacf806b9cdc757cf521bf7a820c90e85bfbb3152f3b99940b5"
       }
+    },
+    "writing/difficulty_standard.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/writing/difficulty_standard.md",
+      "sourceSha256": "4952c3cfc9f666e2dc0caa9b028a6e11d1c9b72b3300a0035da5a75a42c1c116",
+      "storyDifficultyV1": {
+        "notes": "剧情难度「标准」（防口胡）：项目原创规则；说辞不等于事实、结果写法只算意图、说服依赖真实筹码、谎言留痕。仅在玩家选择标准难度时进入正文阶段；不改输出协议。",
+        "sha256": "4952c3cfc9f666e2dc0caa9b028a6e11d1c9b72b3300a0035da5a75a42c1c116"
+      }
+    },
+    "writing/difficulty_hardcore.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/writing/difficulty_hardcore.md",
+      "sourceSha256": "d71933583aeb3d152a0abf2a5288a3db1b6c8f1a1836a5f14393fb89dfa75086",
+      "storyDifficultyV1": {
+        "notes": "剧情难度「硬核」：项目原创规则；包含标准难度全文，并追加成功有代价、NPC 默认谨慎、得势招风、失败要落地与公平原则。仅在玩家选择硬核难度时进入正文阶段；不改输出协议。",
+        "sha256": "d71933583aeb3d152a0abf2a5288a3db1b6c8f1a1836a5f14393fb89dfa75086"
+      }
+    },
+    "shared/10_world_difficulty_hardcore.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/shared/10_world_difficulty_hardcore.md",
+      "sourceSha256": "4c0cf778b3fa95b6af0068199e32a29bddc15344b45dbfe6613d211656225f2b",
+      "storyDifficultyV1": {
+        "notes": "剧情难度「硬核」场外反制：项目原创规则；仅在硬核难度的普通回合动态世界阶段注入，反制须有已确立的人物、传播路径与因果，不凭空制造敌人；不改输出协议与命令目录。",
+        "sha256": "4c0cf778b3fa95b6af0068199e32a29bddc15344b45dbfe6613d211656225f2b"
+      }
     }
   },
   "m5P6": {

@@ -264,6 +264,8 @@
 .app-shell .settings-layout .style-field-title{padding-top:.75rem;color:var(--text,#2B2723)}
 .app-shell .settings-layout .style-field-body{display:grid;gap:.6rem;min-width:0}
 .app-shell .settings-layout .style-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem}
+.app-shell .settings-layout .settings-fields>.difficulty-field{grid-column:1/-1;min-width:0}
+.app-shell .settings-layout .difficulty-field .style-options{grid-template-columns:repeat(3,minmax(0,1fr))}
 .app-shell .settings-layout .style-item{border:1px solid #2a262233;border-radius:8px;background:#EFE8D9}
 .app-shell .settings-layout .style-item:hover{border-color:#B79755}
 .app-shell .settings-layout .style-item[data-checked]{border-color:#8E6C25;background:#E8DCC0;box-shadow:inset 0 0 0 1px #8E6C25}
@@ -281,6 +283,7 @@
 @media(max-width:1199px){.app-shell .settings-layout .style-field-title{padding-top:0}}
 @media(max-width:900px){
 .app-shell .settings-layout .style-options{grid-template-columns:minmax(0,1fr)}
+.app-shell .settings-layout .difficulty-field .style-options{grid-template-columns:minmax(0,1fr)}
 .app-shell .settings-layout .style-item>label.style-option{justify-content:flex-start;min-height:3.25rem;padding:.5rem .9rem!important}
 .app-shell .settings-layout .style-item>label.style-option span{flex-grow:1;text-align:left;font-size:1rem}
 .app-shell .settings-layout .style-dot{display:block}

@@ -19,6 +19,7 @@ import { UnsavedAiChanges } from '../ui/settings/UnsavedAiChanges';
 import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/model';
 import { useAppearance } from './useAppearance';
 import type { Settings } from '../ui/settings/model';
+import type { StoryDifficulty } from '../ui/settings/storyDifficulty';
 import { MobileHomeScreen } from '../ui/home/MobileHomeScreen';
 import { HomeScreen } from '../ui/home/HomeScreen';
 import { BackupImportDialog } from '../ui/home/BackupImportDialog';
@@ -261,8 +262,17 @@ export function App() {
     writeDocument(localStorage, settingsKey, SettingsSchema, next);
     setSettings(next);
   }
-  async function create() {
+  async function create(difficulty?: StoryDifficulty) {
     if (!repository || lock.current) return;
+    // 第五步选的剧情难度就是设置里的同一个全局选项：先写入设置，开局正文按它生成。
+    if (difficulty && difficulty !== settings.prompts.difficulty) {
+      try {
+        saveSettings({ ...settings, prompts: { ...settings.prompts, difficulty } });
+      } catch {
+        setError('剧情难度保存失败，请检查浏览器存储权限后重试。');
+        return;
+      }
+    }
     lock.current = true;
     const creationNavigation = navigationRevision.current;
     setBusy(true);
@@ -434,7 +444,8 @@ export function App() {
           form={form}
           onChange={changeForm}
           timeoutSeconds={settings.runtime.timeoutSeconds}
-          onCreate={() => void create()}
+          onCreate={(difficulty) => void create(difficulty)}
+          difficulty={settings.prompts.difficulty}
           busy={busy || !repository}
           onExit={() => navigate()}
         />

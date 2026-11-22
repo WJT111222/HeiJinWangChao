@@ -1,0 +1,10 @@
+/* 第五步「剧情难度」：沿用性别分段按钮的样式，扩成三档，并在下方显示当前档位说明。 */
+.creation-card .creation-difficulty { margin: 1.1rem 0 1rem; }
+.creation-card .creation-difficulty-text { margin: .6rem 0 0; font-size: .88rem; line-height: 1.75; }
+.creation-card .creation-difficulty-hint { margin: .3rem 0 0; font-size: .78rem; }
+.mobile-creation .creation-difficulty .creation-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mobile-creation .creation-difficulty-text { font-size: .8rem; line-height: 1.7; }
+.mobile-creation .creation-difficulty-hint { font-size: .72rem; }
+.desktop-creation .creation-difficulty { max-width: 32rem; }
+.desktop-creation .creation-difficulty-text { color: var(--cr-prose, inherit); font-size: 13px; }
+.desktop-creation .creation-difficulty-hint { font-size: 12px; color: var(--cr-dim, var(--muted)); }

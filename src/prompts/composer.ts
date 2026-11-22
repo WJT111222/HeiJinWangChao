@@ -40,6 +40,11 @@ function cacheFriendlyContext(context: Record<string, unknown>, extra: { PROMPT_
   for (const [key, value] of Object.entries(all)) if (!(key in ordered)) ordered[key] = value;
   return ordered;
 }
+function outgoingPromptSettings<T extends { difficulty?: unknown }>(prompts: T): Omit<T, 'difficulty'> {
+  const { difficulty: _difficulty, ...rest } = prompts;
+  void _difficulty;
+  return rest;
+}
 export async function composePrompt(
   unchecked: ComposeInput,
   selection: AssistantSelection = unchecked.stage === 'story' ? captureAssistantSelection() : null,
@@ -122,7 +127,8 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
   }
   // 剧情风格只作用于正文：非 Story 阶段出站的 PROMPT_SETTINGS 一律投影为原有的 style:'general'，
   // 字段与顺序不变；不修改玩家保存的设置，也不影响其他写作偏好。
-  const promptSettings = input.stage === 'story' ? input.settings.prompts : { ...input.settings.prompts, style: 'general' as const };
+  // 剧情难度只经 difficulty_* 模块进入请求，出站 PROMPT_SETTINGS 不携带该字段：宽松与引入难度前逐字相同。
+  const promptSettings = outgoingPromptSettings(input.stage === 'story' ? input.settings.prompts : { ...input.settings.prompts, style: 'general' as const });
   const assembled = preset ? assemblePreset(preset, storyMaterials(input, context, worldview.join('\n\n'))) : undefined;
   if (assembled) messages.push(...assembled.messages);
   else {
