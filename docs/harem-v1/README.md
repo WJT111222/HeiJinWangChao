@@ -9,7 +9,7 @@
 | 正式数据 | [schema.ts](../../src/domain/harem/schema.ts)、[validation.ts](../../src/domain/harem/validation.ts)、[state.ts](../../src/domain/state.ts)。V10 新增可选 `harem`。没有该字段的旧档可以直接载入，浏览空面板不会写入。成员以 NPC ID 为键，并校验稳定身份。 |
 | Variables 写入 | [目录](../../src/executors/variableText/catalog.ts)、[编译](../../src/executors/variableText/compile.ts)、[领域执行](../../src/domain/harem/apply.ts)。每轮有变化时提交一条 `set harem.changes = [...]`。支持加入、退出、地位更新、总览、成对关系、重要计划、妊娠、子女登记和后来确认知情。 |
 | 原子结算 | [分组](../../src/services/validation/partialOutputs.ts)、[提交](../../src/domain/commands.ts)。新建 NPC 和同批家庭登记共同成功或回滚。无法从畸形家庭命令辨认新生儿 ID 时，保守跳过同批新建 NPC，独立的其他更新仍可结算。失败诊断保留输入位置。 |
-| 知情范围 | [投影](../../src/domain/harem/projection.ts)、[公共上下文](../../src/prompts/sharedContext.ts)、[World 候选](../../src/prompts/context.ts)。Variables 取维护所需的当前事实。Story 优先取行动提到的、正宫及在场成员，最多 12 人。面板和 Story 只取玩家已知的计划、妊娠、关系及亲子事实。World 的三个命令组均拒绝家庭写入。 |
+| 知情范围 | [投影](../../src/domain/harem/projection.ts)、[公共上下文](../../src/prompts/sharedContext.ts)、[World 候选](../../src/prompts/context.ts)。Variables 取维护所需的当前事实。Story 优先取行动提到的、正宫及在场成员，最多 12 人。面板和 Story 只取玩家已知的计划、妊娠、关系及亲子事实。World 只读与 Variables 相同的家庭事实，并可用 `ApplyHaremBackground` 推进离场成员的计划、离场成员之间的关系和家庭总体局势；`ApplyHaremChanges` 在 World 三个命令组中仍被拒绝。 |
 | 页面 | [后宫档案](../../src/ui/panels/HaremPanel.tsx)、[面板入口](../../src/ui/game/GameScreen.tsx)、[既有 NPC 档案](../../src/ui/panels/NpcPanel.tsx)。桌面资料区与手机世界资料均可打开。总览显示人数、正宫、和谐度、竞争与关系、妊娠、已知子女、计划、近期变动及退出成员。下方卡片按分值、入册时间、稳定 ID 排序并自动换行。 |
 | 提示词 | [Variables 开局](../../prompts/variableGroups/npc_ordinary/init.md)、[普通回合](../../prompts/variableGroups/npc_ordinary/update.md)、[输出契约](../../prompts/docs/OUTPUT_CONTRACT.md)。Manifest、来源锁、清单断言及受影响的 Variables 快照同步更新。完整字段归属见[变量覆盖表](../VARIABLES_FIELD_COVERAGE.md)。 |
 
@@ -60,3 +60,23 @@ H0 工程草案中的加入、退出、地位与正宫均从每个人有来源�
 专项无已知新增阻断。旧手机矮屏资料导航失败单列保留，未执行全仓完整 Playwright 套件、真实手机或收费模型。构建仍提示部分 JS 资源超过 Vite 的 500 kB 提示线。未来成员与关系大量增长时，Variables 的当前事实投影仍会随存档规模增加。模型语义表现、真实设备可读性与大型长期存档的耗时不能从本轮 Mock 成绩推断。
 
 [原始检查日志、Mock 对照数据与合流测试夹具](evidence.zip)
+
+## 场内／场外分工（Claude 修订）
+
+| 内容 | Variables | World |
+| --- | --- | --- |
+| 加入、退出、地位（正宫更替） | ✓ 剧情中确立 | ✗ |
+| 妊娠、子女登记、亲子知情 | ✓ | ✗ |
+| 成员的重要计划 | ✓ 剧情中发生或主角在场得知 | ✓ 仅离场成员，不覆盖本回合 Variables 已写的同一人 |
+| 成员之间的关系 | ✓ | ✓ 仅双方都离场，不覆盖本回合 Variables 已写的同一对 |
+| 家庭总体局势（和谐度、竞争、整体） | ✓ | ✓ 本回合 Variables 未写时 |
+
+- World 读到与 Variables 相同的家庭事实（含内部记录），以免场外剧情与后宫身份、地位、妊娠或子女状况矛盾；存在现役成员时才注入 `HAREM_WORLD_POLICY`。
+- 领域层：`ApplyHaremBackground` 结构只含 plan、pair、overview，必须已有现役成员；在同一批次中排在 Variables 的 `ApplyHaremChanges` 之后执行，每个阶段至多一组。
+- World 目录新增该命令，因此无后宫存档的 World 请求也随目录变化，相关基线已重新生成。
+
+## 界面改版（Claude 修订）
+
+- 总览：正宫卡（姓名、年龄身份、关系一句话）与四个数据块（现役成员、和谐度进度条、已确认妊娠、主角子嗣），下方并列竞争态势与整体局势。
+- 成员卡：地位序号、正宫/成员标签与分数、地位进度条、年龄·身份·所在地、关系描述（两行截断）、妊娠/计划/子女标签、上次联络；正宫卡金色描边。
+- 成员关系（合作/矛盾标签）与近期变动（地位、妊娠、子女的统一时间线）并排；已退出成员折叠。

@@ -560,7 +560,7 @@
       ],
       "toggle": null,
       "domain": "npc_ordinary",
-      "characters": 2286,
+      "characters": 2355,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "relevant-domain",
@@ -570,7 +570,7 @@
       "orderGroup": "variable_group",
       "reorderable": false,
       "category": "variable_group",
-      "contentSha256": "90d017846ea2be8acbfe305c1eb5f1e383ae21c6a04640388c2b596a1eefa41a",
+      "contentSha256": "10329eac059c7f74e176f90dc844d32f2df50a4c690766cfb14dbc63f0395bf3",
       "placeholders": []
     },
     {
@@ -586,7 +586,7 @@
       ],
       "toggle": null,
       "domain": "npc_ordinary",
-      "characters": 2277,
+      "characters": 2346,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "relevant-domain",
@@ -596,7 +596,7 @@
       "orderGroup": "variable_group",
       "reorderable": false,
       "category": "variable_group",
-      "contentSha256": "fc5bed7765b95bfabeffb260912ddf1ca966b30dbdb86e21db36cdbe3a780e1b",
+      "contentSha256": "81ef99821493f0b8f4c86aa7ac41e5d75f25b5abf03b1aa8f9f18752602155d6",
       "placeholders": []
     },
     {
@@ -1811,7 +1811,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 14811,
+      "characters": 14978,
       "version": "1.2.0-variable-source-port",
       "messageRole": null,
       "activation": "never",
@@ -1821,7 +1821,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "c9cf0a0226a26122d15d9b51f5423eb19df302303c33df7aee58a7a46432ac23",
+      "contentSha256": "9b9b646561913163113569d093caf28dfe37fad7f6a87d2a63bdf77832003808",
       "placeholders": [
         "immediateMemoryTurns",
         "maxNarrativeChars",

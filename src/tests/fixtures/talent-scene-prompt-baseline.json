@@ -4,17 +4,31 @@
     {
       "stage": "variables",
       "mode": "opening",
-      "messages": "72f4a8236b25559cd1624656de5d3913dffefa6d713aab31d9d2a796945863e8",
+      "messages": "4b4dbd915a6e238d750b395800a76d73c5cb25f5c2eec84d116530835ff41753",
       "context": "cfaf0315cdbb17d567f41bb897d4b09c96a321b6a7429bf74a55a0fb9cce6884",
-      "modules": "79c4b8b9d7da2af7033bab4f09156914724da679d629167819d63de4108730a1"
+      "modules": "74f2a3a075cd39946bdfbe162acd2fa0afbdbfc856336dcf4c5c05d1fa622136"
     },
     {
       "stage": "variables",
       "mode": "regular",
-      "messages": "535bd0b737ea000ce934c5f20a323003db4dcd4e006fddcb178124fce958fef9",
+      "messages": "3c34470ba9fcd0ca1cf689f51dee7dcd51ef27f2e3ab951f31640f6de61799c4",
       "context": "5631c3aa4dd7bc3bfd90973eab950490d6d354dda6e31804f0c6c2cde4865013",
-      "modules": "5b6d1cc591e608495eb43a884d4d29c9b49c28121c7bd4d8088e333975b7aaec"
+      "modules": "5dfaefaca5d19f526d8648e7afd4edbfb7bc8f5218a7b4c620e555097e0890c0"
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "messages": "951ebbd8d60e3702ed35d93248384aaa47a468085d4d603d1cb3ac9d1b29f513",
+      "context": "32110a5bcb5a5bbb0c654b62c8ab99b44e4d0dcc282177ee83bd388c27c07ee5",
+      "modules": "c226c45106f84507805febd80dab6680fc4ccf348e64efea782d2030ab4ef13a"
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "messages": "b2f099b7b06c00f6f52d90bf86081835b81aa52b024826959a40df9964261060",
+      "context": "466ed4f2a65d17f5bce71d7e99fbdf7632bef0a400d6ff20573c338d83c7cf02",
+      "modules": "a4c56db5d23baeb3684630c3a963939cb1281be864f73a3caeeeddd99200b9f8"
     }
   ],
-  "withTalentVariablesAndWorld": "254a94d183cc0f64072d2a4725c41bd0f66bb61dad76232735e39522150cf0af"
+  "withTalentVariablesAndWorld": "c969ca40b5d54172a301285ca049c2803341f6fe80c30288e7140873abbcb9f2"
 }

@@ -1,15 +1,26 @@
 import type { z } from 'zod';
 import { requireData } from '../common';
 import type { GameState } from '../state';
-import { currentStanding, type Harem, type HaremCommandSchema } from './schema';
+import { currentStanding, type Harem, type HaremBackgroundCommandSchema, type HaremCommandSchema } from './schema';
 import { householdIssue } from './validation';
 
 // commitCommands owns the parsed working copy. No intermediate operation writes to storage.
 export function applyHarem(state: GameState, command: z.infer<typeof HaremCommandSchema>, turnId: string) {
   requireData(command.expectedRevision === state.revision, 'REVISION_CONFLICT', '后宫候选的存档版本已改变');
+  applyHouseholdEdits(state, command.changes, turnId);
+}
+
+/** World 的场外推进：只接受计划、成员关系与总体局势，且必须已有现役成员。 */
+export function applyHaremBackground(state: GameState, command: z.infer<typeof HaremBackgroundCommandSchema>, turnId: string) {
+  requireData(state.harem && Object.values(state.harem.members).some((m) => currentStanding(m) !== null),
+    'HAREM_STATE', '没有现役后宫成员，World 不能推进家庭事务');
+  applyHouseholdEdits(state, command.changes, turnId);
+}
+
+function applyHouseholdEdits(state: GameState, changes: z.infer<typeof HaremCommandSchema>['changes'], turnId: string) {
   const h: Harem = state.harem ?? { members: {}, pairs: [], children: [] };
   const editedPairs = new Set<string>();
-  for (const edit of command.changes) {
+  for (const edit of changes) {
     const source = { turnId, at: state.worldClock, reason: edit.reason };
     if (edit.op === 'overview') {
       h.overview = { ...edit.value, ...source };

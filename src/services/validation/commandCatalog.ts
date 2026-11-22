@@ -17,6 +17,7 @@ export const worldTypes = [
   'UpdateOrganization',
   'RecordOrgRelation',
   'RecordHistory',
+  'ApplyHaremBackground',
 ] as const;
 type CatalogStage = Exclude<AiStage, 'story'>;
 const CATALOG_REF_RULE = 'schema.definitions 是只写一次的公共结构；字段写作 {"$ref":"#/definitions/名称"} 时，表示它的格式与该同名定义完全相同，按展开后的结构填写，输出中不要写 $ref。';
@@ -39,7 +40,7 @@ export function commandCatalog(stage: CatalogStage) {
 export function inlineCommandCatalog(stage: CatalogStage) {
   const options = DomainCommandSchema.options.filter(
     (option) =>
-      (stage === 'variables' && !['DeleteEvent','RecordHistory','ApplyHaremChanges'].includes(option.shape.type.value)) ||
+      (stage === 'variables' && !['DeleteEvent','RecordHistory','ApplyHaremChanges','ApplyHaremBackground'].includes(option.shape.type.value)) ||
       (stage === 'world' && [...worldTypes, 'SaveTask', 'SaveEvent','DeleteEvent'].includes(option.shape.type.value)),
   );
   return {

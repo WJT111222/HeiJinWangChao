@@ -1,4 +1,8 @@
 import { householdContext } from '../domain/harem/projection';
+import { currentStanding } from '../domain/harem/schema';
+
+// 只在存在现役成员时注入；地位、加入退出、妊娠与子女仍只属于 Variables。
+const HAREM_WORLD_POLICY = '后宫成员也是世界里的人：场外安排其行动时须符合其后宫身份、地位、妊娠与子女状况，不写与之矛盾的后台剧情。World只能用ApplyHaremBackground推进离场成员的重要计划（plan）、离场成员之间的关系（pair）和家庭总体局势（overview）；在场成员与本回合Variables已写的同一项不碰。地位、加入退出、妊娠、子女与亲子知情只由Variables在剧情中写入。没有实质场外变化就不写。';
 import type { GameState } from '../domain/state';
 import { npcContext } from './npcContext';
 import { recallJournal } from '../domain/memories/recall';
@@ -28,9 +32,11 @@ export function sharedContext(state: GameState, windowSize: number, query: strin
   const sources=new Set([...recent.map(t=>t.turnId),...memory.recalledTurns.map(t=>t.turnId)]);
   const people=npcContext(state,cues,sources);
   const talent = talentContext(state.protagonist.talentId, cues.stage);
+  const householdPolicy = harem && cues.stage === 'world' && Object.values(harem.members).some(m => currentStanding(m) !== null) ? HAREM_WORLD_POLICY : undefined;
   return {
     ...(talent ? { PROTAGONIST_TALENT: talent } : {}),
-    SAVE_STATE: { ...snapshot, ...(harem && cues.stage !== 'world' ? {harem:householdContext(harem,state.npc,cues.stage==='variables',query)} : {}), npc:people.npc, memories:{...memories,npcSummaries:people.npcSummaries}, worldClock: state.openingTimePending ? null : state.worldClock },
+    ...(householdPolicy ? { HAREM_WORLD_POLICY: householdPolicy } : {}),
+    SAVE_STATE: { ...snapshot, ...(harem ? {harem:householdContext(harem,state.npc,cues.stage!=='story',query)} : {}), npc:people.npc, memories:{...memories,npcSummaries:people.npcSummaries}, worldClock: state.openingTimePending ? null : state.worldClock },
     MEMORY_CONTEXT: {
       ...memory,
       immediateWindowSize: windowSize,

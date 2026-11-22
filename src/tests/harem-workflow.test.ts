@@ -128,8 +128,8 @@ describe('后宫经过正式 Variables、World 权限与存储链', () => {
           }),
           userInput: '',
         });
-        if (stage === 'world') expect(JSON.stringify(prompt.context)).not.toContain('protagonistParentage');
-        else expect(prompt.context.SAVE_STATE).toHaveProperty('harem.children.0.childNpcId', 'baby');
+        // World 只读完整家庭事实，以免场外剧情与后宫身份矛盾；写入权限另由 ApplyHaremBackground 限定。
+        expect(prompt.context.SAVE_STATE).toHaveProperty('harem.children.0.childNpcId', 'baby');
       }
       const undone = await other.undoTurn({
         saveId: 'save-a',
@@ -146,7 +146,7 @@ describe('后宫经过正式 Variables、World 权限与存储链', () => {
     }
   });
   it.each(['worldCommands', 'taskCommands', 'eventCommands'])(
-    'World %s 拒绝家庭命令，投影不泄漏家庭候选',
+    'World %s 拒绝 Variables 家庭命令，但能读到本回合家庭候选',
     async (group) => {
       const { state, draft } = setup();
       const result = await parsePartialVariables(wrap([text([joinFamily('a', 100)])]), state, draft);
@@ -173,9 +173,7 @@ describe('后宫经过正式 Variables、World 权限与存储链', () => {
         userInput: '',
         settings: defaultSettings(),
       });
-      expect(JSON.stringify(prompt.messages)).not.toMatch(
-        /ApplyHaremChanges|harem\.changes|双方决定以家庭成员身份/,
-      );
+      expect(JSON.stringify(prompt.messages)).toMatch(/双方决定以家庭成员身份/);
     },
   );
 });
