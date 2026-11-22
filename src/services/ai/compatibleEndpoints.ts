@@ -11,12 +11,16 @@ export function compatibleBase(url: string) {
   return parsed.origin + parsed.pathname.replace(/\/+$/, '').replace(/\/(?:chat\/completions|models)$/i, '');
 }
 
+// A gateway may mount the subscription under a prefix or add its own path after the version.
+export function arkPlanScope(url: URL) {
+  const prefix = url.pathname.match(/^(.*?\/api\/plan)(?:\/|$)/i)?.[1];
+  return prefix ? url.origin + prefix : undefined;
+}
+
 // The standard Ark product and its subscription share an origin but use distinct credentials.
 export function credentialScope(address: string) {
   try {
     const url = new URL(address);
-    if (url.origin === new URL(compatibleBases.ark).origin && /^\/api\/plan(?:\/|$)/.test(url.pathname))
-      return compatibleBases.arkPlan;
-    return url.origin;
+    return arkPlanScope(url) ?? url.origin;
   } catch { return undefined; }
 }

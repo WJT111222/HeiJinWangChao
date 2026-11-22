@@ -1,4 +1,4 @@
-import { compatibleBase, compatibleBases } from './compatibleEndpoints';
+import { arkPlanScope, compatibleBase, compatibleBases } from './compatibleEndpoints';
 import { modelIdSchema } from './configuration';
 import { isOpenAiCompatible } from './configuration';
 import type { Protocol } from './configuration';
@@ -69,7 +69,7 @@ export function modelListCandidates(snapshot: RequestSnapshot): string[] {
   const configuredModels = base;
   base = base.replace(/\/(?:chat\/completions|models)$/i, '');
   push(completeModels ? configuredModels : `${base}/models`);
-  if (Object.values(compatibleBases).includes(compatibleBase(url.href))) return paths;
+  if (arkPlanScope(url) || Object.values(compatibleBases).includes(compatibleBase(url.href))) return paths;
   const segments = base.split('/').filter(Boolean);
   let version = -1;
   for (let index = segments.length - 1; index >= 0; index--)

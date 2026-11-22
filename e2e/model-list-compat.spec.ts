@@ -139,3 +139,38 @@ test('普通方舟与 Agent Plan 分别使用自己的地址和密钥', async ({
     ['https://ark.cn-beijing.volces.com/api/plan/v3/models','Bearer mock-plan'],
   ]);
 });
+
+for (const pending of [false, true]) {
+  test(`测试回复仅适用于发起时的模型（切换时 A ${pending ? '仍在请求' : '已成功'}）`, async ({ page }) => {
+    const models: string[] = [];
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    await page.route('https://list-browser.mock.invalid/**', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({ json: { data: [{ id: 'kept-route' }, { id: 'model-b' }] } });
+        return;
+      }
+      const model = route.request().postDataJSON().model;
+      models.push(model);
+      if (pending && model === 'kept-route') await gate;
+      await route.fulfill({ json: { choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }] } });
+    });
+    const settings = await seed(page);
+    const box = settings.locator('.ai-connect');
+    const probe = box.getByRole('button', { name: '测试回复（可能产生少量费用）' });
+    await probe.click();
+    await expect.poll(() => models).toEqual(['kept-route']);
+    if (!pending) await expect(box).toContainText('测试回复成功');
+    try {
+      await stageModel(settings, '正文生成', '列表兼容测试', 'model-b');
+      await openChannel(settings, '列表兼容测试');
+    } finally { release(); }
+    await expect(probe).toBeEnabled();
+    await expect(box).toContainText('尚未测试 model-b 的回复');
+    await expect(box).not.toContainText('测试回复成功');
+    expect(models).toEqual(['kept-route']);
+    await probe.click();
+    await expect(box).toContainText('用 model-b 收到了回复');
+    expect(models).toEqual(['kept-route', 'model-b']);
+  });
+}

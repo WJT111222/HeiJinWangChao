@@ -53,6 +53,16 @@ describe('同源有界端点兼容、错误与生成路径保护', () => {
     expect(new Set(urls).size).toBe(urls.length); expect(urls.length).toBeLessThanOrEqual(4);
     for (const url of urls) { expect(new URL(url).origin).toBe(new URL(base).origin); expect(new URL(url).search).toBe(''); expect(url).not.toMatch(/admin|dashboard|relay\?/); }
   });
+  it.each([
+    ['https://ark.cn-beijing.volces.com/api/plan/v3/tenant', 'https://ark.cn-beijing.volces.com/api/plan/v3/tenant/models', 404],
+    ['https://ark.cn-beijing.volces.com/api/plan/v3/tenant/chat/completions/', 'https://ark.cn-beijing.volces.com/api/plan/v3/tenant/models', 405],
+    ['https://list.mock.invalid/gateway/api/plan/v3/tenant/models', 'https://list.mock.invalid/gateway/api/plan/v3/tenant/models', 404],
+  ] as const)('套餐自定义路径 %s 失败后不再携带密钥探测其他端点', async (base, endpoint, status) => {
+    const transport = vi.fn<typeof fetch>(async () => new Response(null, { status }));
+    await expect(new AiClient(transport).listModels(setup(base))).rejects.toMatchObject({ status });
+    expect(transport.mock.calls.map(([url, init]) => [url, new Headers(init?.headers).get('authorization')]))
+      .toEqual([[endpoint, 'Bearer list-mock-secret']]);
+  });
   it.each(['gemini', 'anthropic'] as const)('%s只使用原生列表端点，不套OpenAI候选', async (protocol) => {
     const snapshot = setup('https://list.mock.invalid/v1/', protocol), fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('', { status: 404 }));
     expect(modelListCandidates(snapshot)).toHaveLength(1); await expect(new AiClient(fetcher).listModels(snapshot)).rejects.toMatchObject({ code: 'not_found' }); expect(fetcher).toHaveBeenCalledTimes(1);

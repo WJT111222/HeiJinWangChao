@@ -32,7 +32,7 @@ const stages: [AiTask, string, string][] = [
 const short: Record<AiTask, string> = { story: '正文', variables: '变量', world: '动态世界', memory: '记忆' };
 type Optional = Exclude<AiTask, 'story'>;
 interface Draft { config: AiConfig; keys: Record<string, string>; remember: Record<string, boolean>; presets: Record<string, PresetId | ''> }
-type TestState = { status: 'loading' | 'ok' | 'err'; text: string };
+type TestState = { model: string; status: 'loading' | 'ok' | 'err'; text: string };
 
 function memoryStore() {
   const data = new Map<string, string>();
@@ -301,22 +301,25 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
   }
 
   // —— 测试回复（真实调用一次模型） ——
+  function replyModel(id: string) {
+    const routed = stages.map(([stage]) => (follows(stage) ? config.routes.story : routeOf(stage))).find((route) => route.channelId === id && effectiveModel(route));
+    return (routed && effectiveModel(routed)) || config.channels.find((item) => item.id === id)?.defaultModel || lists[id]?.models[0] || '';
+  }
   async function testReply(id: string) {
     const target = config.channels.find((item) => item.id === id);
     if (!target || active.current) return;
-    const routed = stages.map(([stage]) => (follows(stage) ? config.routes.story : routeOf(stage))).find((route) => route.channelId === id && effectiveModel(route));
-    const model = (routed && effectiveModel(routed)) || target.defaultModel || lists[id]?.models[0] || '';
-    if (!model) { setTests((current) => ({ ...current, [id]: { status: 'err', text: '还没有可用的模型：先让模型列表出现，或在上方为某个阶段选好模型。' } })); return; }
+    const model = replyModel(id);
+    if (!model) { setTests((current) => ({ ...current, [id]: { model, status: 'err', text: '还没有可用的模型：先让模型列表出现，或在上方为某个阶段选好模型。' } })); return; }
     const controller = new AbortController();
     active.current = {id, controller};
-    setTests((current) => ({ ...current, [id]: { status: 'loading', text: `正在用 ${model} 发一条测试消息…` } }));
+    setTests((current) => ({ ...current, [id]: { model, status: 'loading', text: `正在用 ${model} 发一条测试消息…` } }));
     try {
       const probe = { ...target, defaultModel: model, parameters: { ...target.parameters, maxOutputTokens: Math.min(target.parameters.maxOutputTokens ?? 32, 32) } };
       const result = await new AiClient().generate(channelSnapshot(probe, draftVault(id)), [{ role: 'user', content: '请仅回复 OK。' }], { signal: controller.signal, timeoutSeconds });
       if (active.current?.controller !== controller) return;
-      setTests((current) => ({ ...current, [id]: { status: 'ok', text: [`用 ${model} 收到了回复，游戏回合未运行。`, ...result.diagnostics].join(' ') } }));
+      setTests((current) => ({ ...current, [id]: { model, status: 'ok', text: [`用 ${model} 收到了回复，游戏回合未运行。`, ...result.diagnostics].join(' ') } }));
     } catch (error) {
-      if (active.current?.controller === controller) setTests((current) => ({ ...current, [id]: { status: 'err', text: safeAiError(error).message } }));
+      if (active.current?.controller === controller) setTests((current) => ({ ...current, [id]: { model, status: 'err', text: safeAiError(error).message } }));
     } finally {
       if (active.current?.controller === controller) active.current = undefined;
     }
@@ -326,7 +329,14 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
   // 列表错误信息较长（含尝试过的地址等），卡片里只显示原因，完整内容放在悬停提示里。
   const brief = (message: string) => message.replace(/^本次获取失败：(保留的错误（可能来自此前候选）：)?/, '').split(' 最后尝试')[0];
   function channelStatus(id: string): { tone: 'ok' | 'err' | 'loading' | 'idle'; title: string; text: string; detail?: string } {
-    const test = tests[id], list = lists[id];
+    const previous = tests[id], list = lists[id];
+    const model = replyModel(id);
+    const test = previous?.model === model ? previous : undefined;
+    if (previous && !test && model) {
+      if (previous.status === 'loading') return { tone: 'loading', title: '正在测试…', text: `正在等待 ${previous.model} 的回复；当前模型 ${model} 尚未测试。` };
+      if (list?.status !== 'loading' && list?.status !== 'error')
+        return { tone: 'idle', title: '尚未测试当前模型', text: `尚未测试 ${model} 的回复。`, detail: list?.message };
+    }
     if (test?.status === 'loading') return { tone: 'loading', title: '正在测试…', text: test.text };
     if (list?.status === 'loading') return { tone: 'loading', title: '正在连接…', text: '正在获取模型列表（不产生费用）…' };
     if (test?.status === 'err') return { tone: 'err', title: '测试失败', text: test.text };
@@ -444,7 +454,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
           <div className="ai-connect-acts">
             {status.tone !== 'loading' && <button type="button" className="ai-btn" disabled={!canLoad(channel.id)} onClick={() => loadModels(channel.id, true)}>{lists[channel.id] ? '重新获取模型' : '获取模型'}</button>}
             {tests[channel.id]?.status === 'loading'
-              ? <button type="button" className="ai-btn" onClick={() => { active.current?.controller.abort(); active.current = undefined; setTests((current) => ({ ...current, [channel.id]: { status: 'err', text: '已取消测试，未提交任何游戏状态。' } })); }}>取消</button>
+              ? <button type="button" className="ai-btn" onClick={() => { active.current?.controller.abort(); active.current = undefined; setTests((current) => ({ ...current, [channel.id]: { ...current[channel.id], status: 'err', text: '已取消测试，未提交任何游戏状态。' } })); }}>取消</button>
               : <button type="button" className="ai-btn" disabled={!canLoad(channel.id) || Boolean(active.current)} title="会真实调用一次模型，可能产生少量费用"
                 onClick={() => void testReply(channel.id)}>测试回复（可能产生少量费用）</button>}
           </div>
