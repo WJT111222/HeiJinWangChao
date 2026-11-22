@@ -46,6 +46,13 @@ export function CreationWizard({
 }) {
   const [error, setError] = useState('');
   const [difficulty, setDifficulty] = useState<StoryDifficulty>(savedDifficulty ?? OPENING_STORY_DIFFICULTY);
+  // 创角途中在设置里（或另一个标签页）改了难度：第五步跟随最新设置，确认创建时不会把它改回旧值。
+  // 之后在第五步再点选，以第五步为准——谁最后改，听谁的。
+  const [syncedDifficulty, setSyncedDifficulty] = useState(savedDifficulty);
+  if (syncedDifficulty !== savedDifficulty) {
+    setSyncedDifficulty(savedDifficulty);
+    setDifficulty(savedDifficulty ?? OPENING_STORY_DIFFICULTY);
+  }
   const mobile=!useDesktopFeedback(),[preview,setPreview]=useState(false),[direction,setDirection]=useState('forward'),[showPreset,setShowPreset]=useState(form.profession!=='custom');
   const main=useRef<HTMLElement>(null),formRef=useRef<HTMLFormElement>(null),card=useRef<HTMLDivElement>(null),submitted=useRef(false);
   const resetTear=useRef<()=>void>(()=>{});
