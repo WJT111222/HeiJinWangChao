@@ -1,7 +1,7 @@
 import { GameTimeSchema } from '../src/domain/common';
 import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { closeWorkflowSheet, openGameTools, openWorkflow } from './helpers/gameLayout';
+import { closeWorkflowSheet, openGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema, StorySchema } from '../src/domain/state';
@@ -324,7 +324,7 @@ test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', a
     await diagnostic.getByRole('tab', { name: '运行日志' }).click();
     await expect(diagnostic).toContainText('正式结算');
     await page.keyboard.press('Escape');
-    await openWorkflow(page);
+    await expect(diagnostic).not.toBeVisible();
   } else await expect(page.getByRole('alert').filter({ hasText: '正式结算' })).toBeVisible();
   const failed = await stored(page);
   expect(failed.state).toEqual(before.state);
@@ -334,7 +334,10 @@ test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', a
     const restore = Reflect.get(window, '__restoreTurnPut');
     if (typeof restore === 'function') restore();
   });
-  await workflow(page).getByRole('button', { name: '完成本回合结算', exact: true }).click();
+  const retry = isMobile
+    ? page.locator('.composer-workflow-action').and(page.getByRole('button', { name: '完成本回合结算', exact: true }))
+    : workflow(page).getByRole('button', { name: '完成本回合结算', exact: true });
+  await retry.click();
   await ready(page, 2);
   const saved = await stored(page);
   expect(saved.state.turnNumber).toBe(2);
