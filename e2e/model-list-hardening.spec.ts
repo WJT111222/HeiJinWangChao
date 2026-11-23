@@ -55,6 +55,7 @@ for (const failure of ['404', '401', 'network', 'format', 'pagination']) {
         : { status: Number(mode), json: { error: 'browser-hardening-secret private-server-detail' } });
     });
     const { settings, group, refresh } = await seed(page); await expect(group).toContainText('当前接口返回 2 个模型');
+    if (failure === 'network') await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck();
     const before = await page.evaluate(() => ({ config: localStorage.getItem('heijin.ai.v1'), keys: JSON.stringify(sessionStorage) }));
     mode = failure; calls = 0; await refresh();
     await expect(group).toContainText('连接失败');
@@ -68,6 +69,29 @@ for (const failure of ['404', '401', 'network', 'format', 'pagination']) {
     expect(await page.evaluate(() => ({ config: localStorage.getItem('heijin.ai.v1'), keys: JSON.stringify(sessionStorage) }))).toEqual(before);
   });
 }
+
+test('列表刷新中转失败：显示 Worker 状态，保留上次选模，不继续探测', async ({ page }) => {
+  const calls: string[] = [];
+  let offline = false;
+  await page.route('https://final-models.mock.invalid/**', route => {
+    calls.push('direct ' + route.request().method());
+    return offline ? route.abort('failed') : route.fulfill({ json: { data: [{ id: 'available' }] } });
+  });
+  await page.route('**/api/ai-relay?*', route => {
+    calls.push('relay ' + route.request().method());
+    return route.fulfill({ status: 502, headers: { 'X-Heijin-Relay-Error': '1' }, json: { error: 'private-mock-detail' } });
+  });
+  const { settings, group, refresh } = await seed(page);
+  await expect(group).toContainText('当前接口返回 1 个模型');
+  offline = true;
+  await refresh();
+  await expect(group).toContainText('本站中转未能完成请求');
+  await expect(group).toContainText('最后端点状态：HTTP 502');
+  await expect(group).toContainText('非本次请求结果');
+  await expect(settings).not.toContainText('private-mock-detail');
+  await storyKept(page, settings, 'saved-route', 'available');
+  expect(calls).toEqual(['direct GET', 'direct GET', 'relay GET']);
+});
 
 test('官方结构的model字段真实选用，name-only不冒充模型', async ({ page }) => {
   let verified = true;
@@ -96,6 +120,7 @@ for (const failure of ['405', 'format', 'pagination-network']) {
       await route.fulfill(calls === 1 ? failure === '405' ? { status: 405, body: '' } : { json: { unsupported: true } } : { status: 404, body: '' });
     });
     const { settings, group, refresh } = await seed(page); await expect(group).toContainText('当前接口返回 2 个模型');
+    if (failure === 'pagination-network') await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck();
     const previous = await page.evaluate(() => ({ config: localStorage.getItem('heijin.ai.v1'), keys: JSON.stringify(sessionStorage) }));
     failed = true; calls = 0; await refresh(); await expect(group).toContainText('连接失败'); await expect(group).toContainText('本次获取失败');
     if (failure === 'pagination-network') {

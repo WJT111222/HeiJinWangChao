@@ -26,6 +26,8 @@ Worker 接受同域浏览器的 GET、POST 和 OPTIONS。前后端共用目标�
 
 Worker 等到上游真实响应头再返回状态，直接传递响应流。上游首字节仍受浏览器和托管平台各自的等待时限约束。浏览器中止后无法保证供应商也停止处理。
 
+服务端使用 Origin 和 Sec-Fetch-Site 检查浏览器来源。独立 HTTP 客户端可以省略或自行设置这些头，因此公开路由仍有被第三方调用、消耗 Worker 配额的风险。目标与端点限制、请求体上限和重定向拒绝仍须独立生效。
+
 ## 验证入口
 
 - Node 24 下执行 `npm ci`、`npm run check`、`npm run prompts:check`。

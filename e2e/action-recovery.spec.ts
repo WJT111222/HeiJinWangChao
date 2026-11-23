@@ -4,6 +4,7 @@ import { openWorkflowDiagnostics, openSettings } from './helpers/gameLayout';
 import { setup, plan, calls, data, closeError, send, button, stopped, record, snapshot, oldOptions } from './helpers/actionRecovery';
 const cases = [
     ['500', ['server', 'server']],
+    ['500-auto', ['server']],
     ['401', ['authorization']],
     ['429', ['rate_limit']],
     ['invalid', ['invalid_output']],
@@ -17,9 +18,20 @@ const cases = [
 for (const [mode, errorCodes] of cases)
     test(`A ${mode}: inspect stopped state and explicit resend`, async ({ page }, info) => {
         await setup(page, true, ['silence', 'timeout'].includes(mode) ? 5 : 30);
+        // Exercise both documented HTTP 500 policies. The legacy direct-only case retries once.
+        if (mode === '500') {
+            await page.evaluate(async () => {
+                const modulePath = '/src/services/ai/corsRelay.ts';
+                (await import(modulePath)).setRelayMode('off');
+            });
+        }
+        const relayRequests: string[] = [];
+        page.on('request', request => {
+            if (new URL(request.url()).pathname === '/api/ai-relay') relayRequests.push(request.method());
+        });
         const original = await data(page);
         await expect(page.getByRole('button', { name: /沿江走一走/ })).toBeVisible();
-        await plan(page, mode);
+        await plan(page, mode === '500-auto' ? '500' : mode);
         await send(page);
         await expect.poll(async () => (await calls(page)).length).toBeGreaterThan(0);
         if (['partial', 'silence'].includes(mode)) {
@@ -60,6 +72,7 @@ for (const [mode, errorCodes] of cases)
         await expect.poll(async () => (await data(page)).state.turnNumber).toBe(2);
         await expect(button(page)).toHaveAttribute('data-kind', 'idle');
         expect((await calls(page)).map(c => c.stage)).toEqual([...(mode === '500' ? ['story', 'story'] : ['story']), 'story', 'variables', 'world']);
+        expect(relayRequests).toEqual([]);
     });
 for (const stage of ['variables', 'world'])
     test(`B ${stage}: disabled send versus legal stage continuation`, async ({ page }, info) => {

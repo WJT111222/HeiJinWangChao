@@ -195,6 +195,8 @@ test('连接授权错误不展示服务详情，网络错误不误报密钥，�
   await openChannel(settings, 'Mock');
   await testReply(settings);
   await expect(settings.getByRole('status').filter({ hasText: '测试失败' }).first()).toContainText('授权错误');
+  // Check the direct transport's CORS diagnostic with no Worker fallback.
+  await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck();
   mode = 'network';
   await testReply(settings);
   await expect(settings.getByRole('status').filter({ hasText: 'CORS' }).first()).toBeVisible();
