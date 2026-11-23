@@ -83,3 +83,21 @@ export function defaultSettings(): Settings {
     display: { appearance: 'night' },
   };
 }
+
+/** Apply only preference fields changed relative to the options the editor opened with. */
+export function mergeSettingsChanges(base: Settings, edited: Settings, latest: Settings): Settings {
+  function section<T extends object>(before: T, after: T, current: T): T {
+    const result = { ...current };
+    for (const key of Object.keys({ ...before, ...after }) as (keyof T)[]) {
+      if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) result[key] = after[key];
+    }
+    return result;
+  }
+  return {
+    ...latest,
+    prompts: section(base.prompts, edited.prompts, latest.prompts),
+    memory: section(base.memory, edited.memory, latest.memory),
+    runtime: section(base.runtime, edited.runtime, latest.runtime),
+    display: section(base.display, edited.display, latest.display),
+  };
+}

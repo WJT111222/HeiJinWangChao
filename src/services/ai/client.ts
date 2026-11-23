@@ -267,6 +267,7 @@ export class AiClient {
           let terminal = false, nativeSeen = false;
           const think = isOpenAiCompatible(protocol) ? new LeadingThink() : undefined;
           for await (const event of readSse(response.body, signal, trace ? { detachCleanup: true } : undefined)) {
+            if (event.event === 'error') throw new AiError('rejected');
             if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
               terminal = true;
               break;
@@ -278,7 +279,7 @@ export class AiClient {
               throw new AiError('invalid_json');
             }
             if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol, true), httpStatus: response.status, complete: false });
-            if (data.error || data.type === 'error' || event.event === 'error')
+            if (data.error || data.type === 'error')
               throw new AiError('rejected');
             if (trace && residualTool(data, true)) unhandledTool = true;
             const rawDelta = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);

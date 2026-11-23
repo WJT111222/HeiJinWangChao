@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SettingsSchema, defaultSettings } from '../ui/settings/model';
+import { SettingsSchema, defaultSettings, mergeSettingsChanges } from '../ui/settings/model';
 import { resolveAppearance } from '../app/useAppearance';
 
 describe('外观设置', () => {
@@ -22,5 +22,17 @@ describe('外观设置', () => {
     expect(resolveAppearance('system', false)).toBe('night');
     expect(resolveAppearance('day', false)).toBe('day');
     expect(resolveAppearance('night', true)).toBe('night');
+  });
+});
+
+it('外观或叙事视角的变更不会恢复另一标签已关闭的世界阶段', () => {
+  const base = defaultSettings();
+  const latest = structuredClone(base);
+  latest.runtime.useWorldStage = false;
+  const edited = structuredClone(base);
+  edited.prompts.perspective = 'first';
+  edited.display.appearance = 'day';
+  expect(mergeSettingsChanges(base, edited, latest)).toEqual({
+    ...latest, prompts: edited.prompts, display: edited.display,
   });
 });

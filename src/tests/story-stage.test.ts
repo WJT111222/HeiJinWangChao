@@ -726,3 +726,14 @@ it('已启用独立交付时，显式续写仍使用普通消息并保留原断�
     expect(wire.messages.at(-2)).toEqual({role: 'assistant', content: raw.slice(0, cut)});
   } finally { vi.unstubAllGlobals(); }
 });
+
+it('完整正文后收到 error 类型的 DONE 仍不能保存候选或结算', async () => {
+  const before = await repo.loadGame(draft.saveId);
+  const text = frame({ choices: [{ delta: { content: output() } }] }) + 'event: error\ndata: [DONE]\n\n';
+  const transport = vi.fn<typeof fetch>(async () => new Response(text, { headers: { 'content-type': 'text/event-stream' } }));
+  await expect(runner(transport).generate({ ...setup(), draft })).rejects.toMatchObject({ code: 'rejected' });
+  const after = await repo.loadGame(draft.saveId);
+  expect(after.state).toEqual(before.state);
+  expect(after.draft?.story).toBeUndefined();
+  expect(transport).toHaveBeenCalledTimes(1);
+});

@@ -16,7 +16,7 @@ import type { Creation } from '../ui/creation/model';
 import { SettingsPanel } from '../ui/settings/SettingsPanel';
 import { PeintureLauncher } from '../ui/settings/PeintureLauncher';
 import { UnsavedAiChanges } from '../ui/settings/UnsavedAiChanges';
-import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/model';
+import { SettingsSchema, defaultSettings, settingsKey, mergeSettingsChanges } from '../ui/settings/model';
 import { useAppearance } from './useAppearance';
 import type { Settings } from '../ui/settings/model';
 import type { StoryDifficulty } from '../ui/settings/storyDifficulty';
@@ -258,9 +258,12 @@ export function App() {
       setError('填写内容暂未保存，刷新可能丢失。请检查浏览器存储空间或权限。');
     }
   }
-  function saveSettings(next: Settings) {
-    writeDocument(localStorage, settingsKey, SettingsSchema, next);
-    setSettings(next);
+  function saveSettings(next: Settings, base = settings) {
+    const latest = readDocument(localStorage, settingsKey, SettingsSchema) ?? settings;
+    const merged = mergeSettingsChanges(base, next, latest);
+    writeDocument(localStorage, settingsKey, SettingsSchema, merged);
+    setSettings(merged);
+    return merged;
   }
   async function create(difficulty?: StoryDifficulty) {
     if (!repository || lock.current) return;
@@ -490,9 +493,9 @@ export function App() {
               renderSettings={settingsOpen ? renderSettings : undefined}
               companionProfile={loaded.companionProfile}
               settings={settings}
-              onSettings={(next) => {
+              onSettings={(next, base) => {
                 try {
-                  saveSettings(next);
+                  saveSettings(next, base);
                 } catch {
                   setError('运行偏好保存失败，请检查浏览器存储权限。');
                 }

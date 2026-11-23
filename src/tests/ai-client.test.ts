@@ -337,6 +337,24 @@ describe('安全错误、取消、超时和流式分片', () => {
       expect(onDelta.mock.calls.flat().join('')).toBe('你好');
     },
   );
+  it.each(['\n', '\r\n', '\r'])('接受 SSE 换行 %j，并在逐字节拆分时保留结束边界', async (lineBreak) => {
+    const a = configured();
+    const state = frame({ choices: [{ delta: { content: '你好' }, finish_reason: 'stop' }] }) + 'data: [DONE]\n\n';
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(sseResponse(state.replaceAll('\n', lineBreak), 1));
+    const response = await new AiClient(fetcher).generate(requestSnapshot(a.config, 'story', a.vault), messages, { stream: true });
+    expect(response.text).toBe('你好');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it.each(['[DONE]', '非 JSON 错误'])('有正文增量后 event:error 优先于载荷 %s', async (payload) => {
+    const a = configured();
+    const data = frame({ choices: [{ delta: { content: '片段' } }] }) + 'event: error\ndata: ' + payload + '\n\n';
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(sseResponse(data, 1));
+    const onDelta = vi.fn();
+    await expect(new AiClient(fetcher).generate(requestSnapshot(a.config, 'story', a.vault), messages, { stream: true, onDelta }))
+      .rejects.toMatchObject({ code: 'rejected' });
+    expect(onDelta.mock.calls.flat().join('')).toBe('片段');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
   it('中断 SSE、不合法 JSON 与空响应均不能成功', async () => {
     const a = configured();
     const snap = requestSnapshot(a.config, 'story', a.vault);

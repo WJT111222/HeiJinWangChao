@@ -116,7 +116,7 @@ export function GameScreen({
   draft?: TurnDraft;
   companionProfile?: CompanionProfile;
   settings: Settings;
-  onSettings: (settings: Settings) => void;
+  onSettings: (settings: Settings, base?: Settings) => void;
   onSaves: () => void;
   repository: SaveRepository;
   onDraftSaved: (draft: TurnDraft) => void;
@@ -1092,8 +1092,8 @@ export function GameScreen({
           )}
         </Dialog>
       )}
-      {renderSettings?.(<MemorySummarySettings state={settingsMemoryState} settings={settings} onSave={next => {
-        onSettings(next);
+      {renderSettings?.(<MemorySummarySettings state={settingsMemoryState} settings={settings} onSave={(next, base) => {
+        onSettings(next, base);
         const saved = SettingsSchema.parse(JSON.parse(localStorage.getItem(settingsKey) || 'null'));
         if (fingerprint(saved.memory) !== fingerprint(next.memory)) throw new Error('memory settings not saved');
       }} phase={memory.phase} activity={memory.activity} notice={memory.notice}
