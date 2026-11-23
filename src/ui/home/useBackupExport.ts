@@ -39,7 +39,7 @@ export function useBackupExport(repository: SaveRepository | undefined) {
       const name = backupFileName(entries, now);
       const file = new File([await serializeBackup(entries, PRODUCT_VERSION, now)], name, { type: 'application/json' });
       download(file);
-      recordBackup(entries.map(entry => ({ saveId: entry.state.saveId, revision: entry.state.revision, turnNumber: entry.state.turnNumber })), now);
+      recordBackup(entries.map(entry => entry.state), now);
       const text = entries.length === 1
         ? `已导出「${entries[0].summary.title}」第 ${entries[0].summary.turnNumber} 回合的备份：${name}`
         : `已导出 ${entries.length} 份存档的备份：${name}`;

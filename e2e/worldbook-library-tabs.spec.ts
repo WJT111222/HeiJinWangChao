@@ -52,3 +52,31 @@ test('多标签页编辑冲突与正则关键词无损编辑', async ({ context 
   expect(saved.entries.find((e) => e.comment === '街角')!.keys).toEqual(['/街角[0-9]{1,2}/', '茶楼']);
   expect(saved.exported.find((e) => e.comment === '街角')!.key).toEqual(['/街角[0-9]{1,2}/', '茶楼']);
 });
+
+test('多标签页世界书旧删除确认失败，取消和刷新后重新确认有效', async ({ context }) => {
+  const a = await context.newPage(), b = await context.newPage();
+  await a.goto(HARNESS);
+  await a.locator('input[type=file]').setInputFiles({ name: '街巷志.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(book)) });
+  const details = a.locator('.wb-detail');
+  await details.getByRole('button', { name: '删除整本', exact: true }).click();
+  const confirm = details.getByRole('button', { name: '确认删除整本', exact: true });
+  await details.getByRole('button', { name: '取消', exact: true }).click();
+  await expect(confirm).toHaveCount(0);
+  await details.getByRole('button', { name: '删除整本', exact: true }).click();
+  await b.goto(HARNESS);
+  await b.getByText('街巷志', { exact: true }).click();
+  await entry(b, '茶楼').locator('.wb-entry-title').click();
+  await entry(b, '茶楼').getByRole('textbox', { name: '内容' }).fill('另一标签已保存的新版本');
+  await b.getByRole('button', { name: '保存修改' }).click();
+  await expect(b.getByText('已保存修改', { exact: false })).toBeVisible();
+  await confirm.click();
+  await expect(a.getByText('这本书刚在其他页面被修改过', { exact: false })).toBeVisible();
+  expect((await latest(a)).entries.find(e => e.comment === '茶楼')?.content).toBe('另一标签已保存的新版本');
+
+  await a.reload();
+  await a.getByText('街巷志', { exact: true }).click();
+  await details.getByRole('button', { name: '删除整本', exact: true }).click();
+  await confirm.click();
+  await expect(details).not.toBeVisible();
+  await expect(latest(a)).rejects.toThrow('书库为空');
+});

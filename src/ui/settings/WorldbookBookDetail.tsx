@@ -45,7 +45,7 @@ export interface BookDetailProps {
   /** 保存暂存的修改；返回是否成功（失败时由外层显示原因）。 */
   onSave: (change: BookChange) => Promise<boolean>;
   onToggleBook: (enabled: boolean) => void;
-  onDelete: () => void;
+  onDelete: (confirmed: ShelfBook) => void;
   onBack: () => void;
   /** 暂存修改数量变化时通知外层（切换书前提醒）。 */
   onDirtyChange: (count: number) => void;
@@ -65,11 +65,11 @@ export function WorldbookBookDetail({ item, release, busy, stale = false, onSave
   const [shown, setShown] = useState(PAGE);
   const [open, setOpen] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<ShelfBook>();
   const [exportNote, setExportNote] = useState<string | null>(null);
 
   // 换书（或保存后版本变了）时清空暂存。
-  useEffect(() => { setDraft(EMPTY_DRAFT); setShown(PAGE); setOpen(null); setRenaming(false); setConfirmDelete(false); setExportNote(null); }, [release.bookId, release.versionId]);
+  useEffect(() => { setDraft(EMPTY_DRAFT); setShown(PAGE); setOpen(null); setRenaming(false); setConfirmDelete(undefined); setExportNote(null); }, [release.bookId, release.versionId]);
   const dirty = (draft.title !== undefined ? 1 : 0) + Object.keys(draft.entries).length + draft.added.length + draft.removed.length;
   useEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
   useEffect(() => () => onDirtyChange(0), [onDirtyChange]);
@@ -183,10 +183,10 @@ export function WorldbookBookDetail({ item, release, busy, stale = false, onSave
         <button disabled={busy || dirty > 0 || stale} onClick={() => exportAs('heijin')} title={dirty ? '请先保存或放弃修改' : undefined}>导出王朝格式</button>
         {confirmDelete ? (
           <span className="wb-confirm">
-            <button className="danger" disabled={busy} onClick={onDelete}>确认删除整本</button>
-            <button disabled={busy} onClick={() => setConfirmDelete(false)}>取消</button>
+            <button className="danger" disabled={busy} onClick={() => onDelete(confirmDelete)}>确认删除整本</button>
+            <button disabled={busy} onClick={() => setConfirmDelete(undefined)}>取消</button>
           </span>
-        ) : <button disabled={busy} onClick={() => setConfirmDelete(true)}>删除整本</button>}
+        ) : <button disabled={busy || stale} onClick={() => setConfirmDelete(item)}>删除整本</button>}
       </div>
       {exportNote && <Feedback role="status" level="info" className="field-hint">{exportNote}</Feedback>}
 

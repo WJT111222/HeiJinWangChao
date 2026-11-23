@@ -44,6 +44,8 @@ export interface ParsedBackup {
   entries: ParsedBackupEntry[];
 }
 
+export const maxBackupEntries = 1000;
+
 const EnvelopeSchema = z.object({
   format: z.literal(backupFormat),
   version: z.number().int(),
@@ -53,7 +55,7 @@ const EnvelopeSchema = z.object({
     summary: z.object({ title: z.string() }).passthrough().optional(),
     state: z.unknown(),
     draft: z.unknown().optional(),
-  })).min(1).max(200),
+  })).min(1).max(maxBackupEntries),
   checksum: z.string().max(100).optional(),
 });
 
@@ -96,13 +98,20 @@ export function compatibleDraft(state: GameState, raw: unknown, exportLocalRecov
 }
 
 export async function serializeBackup(entries: readonly BackupEntry[], app: string, now = new Date()): Promise<string> {
+  if (!entries.length || entries.length > maxBackupEntries)
+    throw new DataError('BACKUP_TOO_LARGE', `单个备份文件最多容纳 ${maxBackupEntries} 份存档。请分别导出，原存档保持完整。`);
   const saves = entries.map((entry) => ({ summary: entry.summary, state: entry.state, ...(entry.draft ? { draft: entry.draft } : {}) }));
-  const checksum = await sha256(JSON.stringify(saves));
+  const serializedSaves = JSON.stringify(saves);
+  const exportTooLarge = () => new DataError('BACKUP_TOO_LARGE', '备份文件超过可导入的容量上限。请分别导出，原存档保持完整。');
+  if (utf8ByteLength(serializedSaves, maxBackupBytes) > maxBackupBytes) throw exportTooLarge();
+  const checksum = await sha256(serializedSaves);
   const file: BackupFile = {
     format: backupFormat, version: backupVersion, app, exportedAt: now.toISOString(),
     saves, ...(checksum ? { checksum } : {}),
   };
-  return JSON.stringify(file);
+  const text = JSON.stringify(file);
+  if (utf8ByteLength(text, maxBackupBytes) > maxBackupBytes) throw exportTooLarge();
+  return text;
 }
 
 export function backupSummary(state: GameState): BackupEntry['summary'] {
