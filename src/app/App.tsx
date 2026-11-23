@@ -1,7 +1,7 @@
 import { authorizeHistoryStart } from '../ui/history/authorize';
 import {GlobalFeedback} from '../ui/GlobalFeedback';
 import { canAcceptNpcView } from '../ui/game/npcManagement';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { DataError, IdSchema } from '../domain/common';
 import type { GameState } from '../domain/state';
@@ -163,18 +163,31 @@ export function App() {
       connection?.close();
     };
   }, []);
+  const settingsDirty = localSettingsDirty || aiSettingsDirty || summarySettingsDirty || variablesDirty || worldbookDirty;
+  const onRouteChange = useEffectEvent(() => {
+    const nextRoute = window.location.hash;
+    if (nextRoute === route) return;
+    if (settingsOpen && settingsDirty) {
+      // Browser history and direct hash navigation bypass the application's navigation buttons.
+      const previous = new URL(window.location.href);
+      previous.hash = route;
+      window.history.replaceState(window.history.state, '', previous);
+      requestSettingsClose(() => changeRoute(nextRoute.slice(1)));
+      return;
+    }
+    if (settingsOpen) requestSettingsClose();
+    navigationRevision.current++;
+    if (nextRoute !== `#game/${openingStart.current?.saveId}`) {
+      openingStart.current?.revoke();
+      openingStart.current = undefined;
+    }
+    setLoaded(undefined);
+    setLoading(true);
+    setHistorySaveId(undefined);
+    setRoute(nextRoute);
+  });
   useEffect(() => {
-    const changed = (event: HashChangeEvent) => {
-      navigationRevision.current++;
-      if (new URL(event.newURL).hash !== `#game/${openingStart.current?.saveId}`) {
-        openingStart.current?.revoke();
-        openingStart.current = undefined;
-      }
-      setLoaded(undefined);
-      setLoading(true);
-      setHistorySaveId(undefined);
-      setRoute(window.location.hash);
-    };
+    const changed = () => onRouteChange();
     window.addEventListener('hashchange', changed);
     return () => window.removeEventListener('hashchange', changed);
   }, []);
@@ -244,16 +257,20 @@ export function App() {
     if (window.location.hash === route) setLoading(false);
   }
   function openSave(id: string, start?: OpeningStart) {
-    openingStart.current?.revoke();
-    openingStart.current = start;
-    setSelected(id);
-    setError('');
-    try {
-      writeDocument(localStorage, selectedKey, IdSchema, id);
-    } catch {
-      setError('已选择存档，但浏览器未能保存最近选择。');
-    }
-    navigate(`game/${id}`);
+    const open = () => {
+      openingStart.current?.revoke();
+      openingStart.current = start;
+      setSelected(id);
+      setError('');
+      try {
+        writeDocument(localStorage, selectedKey, IdSchema, id);
+      } catch {
+        setError('已选择存档，但浏览器未能保存最近选择。');
+      }
+      changeRoute(`game/${id}`);
+    };
+    if (settingsOpen) requestSettingsClose(open);
+    else open();
   }
   function changeForm(next: Creation) {
     if (lock.current) return;
@@ -393,7 +410,7 @@ export function App() {
   // 游戏中由原GameScreen提供唯一维护控制器；设置只是展示，不拥有任务生命周期。
   function requestSettingsClose(afterClose?:()=>void){
     settingsDestination.current=afterClose;
-    if(localSettingsDirty||aiSettingsDirty||summarySettingsDirty||variablesDirty||worldbookDirty)setConfirmSettingsClose(true);
+    if(settingsDirty)setConfirmSettingsClose(true);
     else{setSettingsOpen(false);settingsDestination.current=undefined;afterClose?.();}
   }
   const renderSettings = (memoryMaintenance?: ReactNode) => (

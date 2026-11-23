@@ -29,7 +29,7 @@ jobs:
       - name: 运行 Chromium 回归
         run: |
           set -o pipefail
-          npm run test:e2e -- e2e/settings-readability.spec.ts --workers=1 --grep '运行偏好未保存时 Escape' 2>&1 | tee playwright.log
+          npm run test:e2e -- e2e/settings-readability.spec.ts --workers=1 --grep '运行偏好未保存时 Escape|未保存运行设置时离开存档' 2>&1 | tee playwright.log
       - uses: actions/upload-artifact@v6
         if: failure()
         with:
