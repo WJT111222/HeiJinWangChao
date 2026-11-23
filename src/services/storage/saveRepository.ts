@@ -117,8 +117,8 @@ async function readStoredState(tx: IDBTransaction, saveId: string): Promise<Game
 function listRecord(key: IDBValidKey, raw: unknown): SaveSummary {
   try {
     requireData(typeof key === 'string', 'CORRUPT_SAVE', '存档主键不是有效 ID');
-    const { saveId, title, revision, turnNumber, schemaVersion, updatedAt } = readState(raw, key as string);
-    return { status: 'readable', storageKey: key, saveId, title, revision, turnNumber, schemaVersion, updatedAt };
+    const { saveId, title, revision, turnNumber, schemaVersion, updatedAt, npcManagementRevision } = readState(raw, key as string);
+    return { status: 'readable', storageKey: key, saveId, title, revision, turnNumber, schemaVersion, updatedAt, ...(npcManagementRevision === undefined ? {} : { npcManagementRevision }) };
   } catch {
     // Only classify per-record parsing failures. IDB requests/transactions stay outside
     // this catch, so a storage failure can never masquerade as a broken save or empty list.
@@ -731,13 +731,14 @@ export class SaveRepository {
   }
 
   /** expectedInstance：列表摘要里的 instance（原存档为 null）。存档被导入替换后，旧列表即使版本号相同也不能删除。 */
-  async delete(saveId: string, expectedRevision: number, expectedInstance: string | null = null): Promise<void> {
+  async delete(saveId: string, expectedRevision: number, expectedInstance: string | null = null, expectedManagementRevision = 0): Promise<void> {
     IdSchema.parse(saveId); CountSchema.parse(expectedRevision);
     if (expectedInstance !== null) IdSchema.parse(expectedInstance);
     return transaction(this.database, [...timelineStores, ...historyStores], 'readwrite', async (tx) => {
       const current = await readStoredState(tx, saveId);
       requireData(await storedInstance(tx, saveId) === expectedInstance, 'REVISION_CONFLICT', replacedMessage);
-      requireData(current.revision === expectedRevision, 'REVISION_CONFLICT', '删除时存档版本已变化');
+      requireData(current.revision === expectedRevision && (current.npcManagementRevision ?? 0) === expectedManagementRevision,
+        'REVISION_CONFLICT', '删除时存档版本已变化');
       await clearManualHistory(tx, saveId);
       await deleteRecords(tx, saveId);
     });

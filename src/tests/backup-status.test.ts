@@ -19,6 +19,15 @@ describe('存档备份状态：只记在本机，不写进存档', () => {
     expect(values.get('unrelated')).toBe('preserve');
   });
 
+  it('手动管理后叙事版号未变也要求重新备份', () => {
+    const { access } = memoryStorage();
+    const original = save('a', 8, 8), edited = { ...original, npcManagementRevision: 1 };
+    recordBackup([original], new Date(), access);
+    expect(backupStatus(edited, new Date(), access).tone).toBe('warn');
+    recordBackup([edited], new Date(), access);
+    expect(backupStatus(edited, new Date(), access).tone).toBe('ok');
+  });
+
   it('昨天与更早的日期按本地日历显示', () => {
     const { access } = memoryStorage();
     recordBackup([save('a', 3, 3)], new Date(2026, 10, 12, 23, 59), access);
