@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { DataError, IdSchema } from '../domain/common';
 import type { GameState } from '../domain/state';
 import type { TurnDraft } from '../domain/drafts';
+import { maxBackupEntries } from '../services/storage/backup';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { readDocument, writeDocument } from '../services/local/documents';
 import { loadCompanionProfile, companionProfileKey } from '../services/local/companionProfile';
@@ -16,7 +17,7 @@ import type { Creation } from '../ui/creation/model';
 import { SettingsPanel } from '../ui/settings/SettingsPanel';
 import { PeintureLauncher } from '../ui/settings/PeintureLauncher';
 import { UnsavedAiChanges } from '../ui/settings/UnsavedAiChanges';
-import { SettingsSchema, defaultSettings, settingsKey } from '../ui/settings/model';
+import { SettingsSchema, defaultSettings, settingsKey, mergeSettingsChanges } from '../ui/settings/model';
 import { useAppearance } from './useAppearance';
 import type { Settings } from '../ui/settings/model';
 import type { StoryDifficulty } from '../ui/settings/storyDifficulty';
@@ -136,6 +137,7 @@ export function App() {
   // 存档备份：导入对话框（手机端先调起系统文件选择）、导出全部确认、手机分享。
   const [importing, setImporting] = useState<{ file?: File }>();
   const [exportAllOpen, setExportAllOpen] = useState(false);
+  const [exportAllError, setExportAllError] = useState('');
   const [shareable, setShareable] = useState<{ file: File; text: string }>();
   const importInput = useRef<HTMLInputElement>(null);
   const backupExport = useBackupExport(repository);
@@ -280,9 +282,12 @@ export function App() {
       setError('填写内容暂未保存，刷新可能丢失。请检查浏览器存储空间或权限。');
     }
   }
-  function saveSettings(next: Settings) {
-    writeDocument(localStorage, settingsKey, SettingsSchema, next);
-    setSettings(next);
+  function saveSettings(next: Settings, base = settings) {
+    const latest = readDocument(localStorage, settingsKey, SettingsSchema) ?? settings;
+    const merged = mergeSettingsChanges(base, next, latest);
+    writeDocument(localStorage, settingsKey, SettingsSchema, merged);
+    setSettings(merged);
+    return merged;
   }
   async function create(difficulty?: StoryDifficulty) {
     if (!repository || lock.current) return;
@@ -325,7 +330,7 @@ export function App() {
     setDeleteError('');
     try {
       if (deleting.status === 'readable') {
-        await repository.delete(deleting.saveId, deleting.revision, deleting.instance ?? null);
+        await repository.delete(deleting.saveId, deleting.revision, deleting.instance ?? null, deleting.npcManagementRevision ?? 0);
         forgetBackup(deleting.saveId);
       }
       else await repository.deleteUnreadable(deleting.storageKey);
@@ -369,14 +374,17 @@ export function App() {
   function requestDelete(save: SaveSummary) {setDeleteError(''); setSaveNotice(''); setDeleting(save);}
   const readableSaves = saves.filter(save => save.status === 'readable');
   async function exportBackups(saveIds: string[]) {
-    setSaveNotice(''); setShareable(undefined);
+    setSaveNotice(''); setShareable(undefined); setExportAllError('');
     try {
       const result = await backupExport.exportSaves(saveIds);
       setSaveNotice(result.text);
       if (!desktopUi && canShareFile(result.file)) setShareable(result);
       return true;
-    } catch {
-      setError('导出备份失败，未生成文件，存档没有改动。请刷新列表后重试。');
+    } catch (failure) {
+      const message = failure instanceof DataError && failure.code === 'BACKUP_TOO_LARGE' ? failure.message
+        : '导出备份失败，未生成文件，存档没有改动。请刷新列表后重试。';
+      if (exportAllOpen) setExportAllError(message);
+      else setError(message);
       return false;
     }
   }
@@ -512,9 +520,9 @@ export function App() {
               renderSettings={settingsOpen ? renderSettings : undefined}
               companionProfile={loaded.companionProfile}
               settings={settings}
-              onSettings={(next) => {
+              onSettings={(next, base) => {
                 try {
-                  saveSettings(next);
+                  saveSettings(next, base);
                 } catch {
                   setError('运行偏好保存失败，请检查浏览器存储权限。');
                 }
@@ -542,7 +550,7 @@ export function App() {
           hasDraft={hasDraft} notice={saveNotice} notices={<NoticeLinks onOpen={notices.open} />}
           onCreate={() => { changeForm(form); navigate('create'); }} onContinue={() => active && openSave(active.saveId)}
           onSettings={() => setSettingsOpen(true)} onRefresh={refreshSaves}
-          onImport={openImport} onExportAll={() => { setSaveNotice(''); setExportAllOpen(true); }}
+          onImport={openImport} onExportAll={() => { setSaveNotice(''); setExportAllError(''); setExportAllOpen(true); }}
           exportAllDisabled={!readableSaves.length || backupExport.exporting} backupReminder={loading ? undefined : backupReminder}>
           {loading ? <Empty>正在读取本地存档…</Empty> : listError ? <p className="empty err">{listError}</p> : !saves.length ?
             <Empty>还没有开始的人生。<br />创建角色，留下第一份存档。</Empty> : <>
@@ -576,9 +584,11 @@ export function App() {
           <li>包含：游戏进度、未结算的草稿</li>
           <li>不包含：AI 密钥、渠道与设置、撤回记录、手动历史收藏（请单独导出节点）</li>
         </ul>
+        {readableSaves.length > maxBackupEntries && <Feedback role="alert" level="err">单个备份最多容纳 {maxBackupEntries} 份存档，请分别导出。</Feedback>}
+        {exportAllError && <Feedback role="alert" level="err">{exportAllError}</Feedback>}
         <div className="dialog-actions feedback-dialog-actions">
           <button disabled={backupExport.exporting} onClick={() => setExportAllOpen(false)}>取消</button>
-          <button className="primary" disabled={backupExport.exporting || !readableSaves.length}
+          <button className="primary" disabled={backupExport.exporting || !readableSaves.length || readableSaves.length > maxBackupEntries}
             onClick={() => void exportBackups(readableSaves.map(save => save.saveId)).then(done => { if (done) setExportAllOpen(false); })}>
             {backupExport.exporting ? '正在导出…' : `导出 ${readableSaves.length} 份存档`}</button>
         </div>

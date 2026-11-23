@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SaveRepository } from '../services/storage/saveRepository';
 import type { BackupImportConfirmation } from '../services/storage/saveRepository';
-import { backupFileName, parseBackup, readBackupFile, serializeBackup, utf8ByteLength } from '../services/storage/backup';
+import { backupFileName, backupSummary, maxBackupEntries, parseBackup, readBackupFile, serializeBackup, utf8ByteLength } from '../services/storage/backup';
 import type { BackupEntry } from '../services/storage/backup';
 import { createTurnDraft, rerollStory, TurnDraftSchema } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
@@ -60,6 +60,38 @@ async function withDraft(saveId = 'save-a', input = '去银行') {
 }
 
 describe('备份文件格式', () => {
+  it.each([200, 201, 256])('%i 份备份通过正式导入并逐份恢复', async (count) => {
+    const entries = Array.from({ length: count }, (_, index) => {
+      const state = game(`batch-${index}`);
+      return { state, summary: backupSummary(state) };
+    });
+    const parsed = await parseBackup(await serializeBackup(entries, 'test'));
+    expect(parsed.entries).toHaveLength(count);
+    for (const entry of parsed.entries) {
+      if (!entry.ok) throw new Error(entry.code);
+      await repository.importBackup(entry, await confirm(entry));
+    }
+    expect((await repository.list()).map(save => save.saveId).sort()).toEqual(entries.map(entry => entry.state.saveId).sort());
+  }, 20_000);
+  it('超过文件条数上限时拒绝导出，不生成部分文件', async () => {
+    const state = game('bulk-limit');
+    const entries = Array.from({ length: maxBackupEntries + 1 }, () => ({ state, summary: backupSummary(state) }));
+    await expect(serializeBackup(entries, 'test')).rejects.toMatchObject({ code: 'BACKUP_TOO_LARGE' });
+  });
+  it('管理编辑未增加叙事版号时，旧确认不能删除新存档；刷新后可正常删除', async () => {
+    await repository.create(game('save-a'));
+    const [old] = await repository.list();
+    if (old.status !== 'readable') throw new Error('unreadable fixture');
+    const state = await repository.load('save-a');
+    await put('saves', { ...state, weatherText: '小雨', npcManagementRevision: (state.npcManagementRevision ?? 0) + 1 });
+    await expect(repository.delete(old.saveId, old.revision, old.instance ?? null, old.npcManagementRevision ?? 0))
+      .rejects.toMatchObject({ code: 'REVISION_CONFLICT' });
+    expect((await repository.load('save-a')).weatherText).toBe('小雨');
+    const [fresh] = await repository.list();
+    if (fresh.status !== 'readable') throw new Error('unreadable fixture');
+    await repository.delete(fresh.saveId, fresh.revision, fresh.instance ?? null, fresh.npcManagementRevision ?? 0);
+    expect(await repository.list()).toEqual([]);
+  });
   it.each([6, 7, 8, 9])('V%d重置保护：旧记录只读导出、旧备份拒绝覆盖V10，五仓库逐字保持', async version => {
     await withDraft();
     const legacy = { ...game('legacy'), schemaVersion: version, contactReviewNpcIds: [], retiredNpcs: {} };
@@ -581,7 +613,8 @@ describe('二轮复审：确认内容绑定、残留记录与旧页面依据', (
     expect((await repository.loadGame('save-a')).instance).toBeUndefined();
     const [summary] = await repository.list();
     expect(summary.status === 'readable' && summary.instance).toBeUndefined();
-    await repository.delete('save-a', 0);
+    if (summary.status !== 'readable') throw new Error('unreadable fixture');
+    await repository.delete('save-a', summary.revision, undefined, summary.npcManagementRevision ?? 0);
     expect(await repository.list()).toEqual([]);
   });
 

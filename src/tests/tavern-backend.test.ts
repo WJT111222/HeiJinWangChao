@@ -440,6 +440,17 @@ describe('第二批 P2 响应边界', () => {
     expect(transport).toHaveBeenCalledTimes(1);
   });
 
+  it.each(['openai', 'deepseek', 'gemini', 'anthropic'] as const)('%s 有正文和结束原因后仍须处理上游空错误', async protocol => {
+    const complete = await fixture(protocol, true, false).text();
+    const terminal = protocol === 'anthropic' ? frame({ type: 'message_stop' }) :
+      protocol === 'gemini' ? '' : 'data: [DONE]\n\n';
+    const beforeTerminal = terminal ? complete.slice(0, -terminal.length) : complete;
+    const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(sse(beforeTerminal + 'event: error\n\n' + terminal));
+    await expect(new AiClient(transport).generate(snapshot(protocol), messages, { tavernType: 'normal', stream: true }))
+      .rejects.toMatchObject({ code: 'rejected', details: { fieldPath: 'tavern.upstream.error' } });
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+
   it('Anthropic 收到正文后、message_stop 前取消', async () => {
     const cancel = vi.fn();
     const fragment = frame({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } });
