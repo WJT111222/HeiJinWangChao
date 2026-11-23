@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import type { Server, ServerResponse } from 'node:http';
 import { test, expect } from './helpers/test';
 import type { Page, TestInfo } from '@playwright/test';
+import { expectStoryRaw } from './helpers/storyRaw';
 import { closeWorkflowSheet, openGameTools, openStageRaw, openWorkflowStage, workflowTrigger, openTurnTools } from './helpers/gameLayout';
 
 let server: Server, response: ServerResponse | undefined, baseUrl: string, calls: number;
@@ -129,11 +130,8 @@ for (const mode of ['project', 'native', 'both', 'none'] as const) {
     const raw = await openStageRaw(page, 'story');
     await expect(page.locator('.wf-stage').getByRole('tab')).toHaveText(['概览', '模型原文', '校验结果']);
     await expect(page.getByRole('tab', { name: '叙事规划', exact: true })).toHaveCount(0);
-    const rawBox = raw.getByRole('textbox', { name: '正文模型完整原文', exact: true });
-    await expect(rawBox).toHaveValue((mode === 'native' || mode === 'both' ? native : '') + rawText);
-    await expect(raw.locator('textarea')).toHaveCount(1); await expect(raw.locator('pre')).toHaveCount(0);
+    const rawBox = await expectStoryRaw(raw, (mode === 'native' || mode === 'both' ? native : '') + rawText);
     await expect(raw.getByLabel('供应商公开原生思考全文', { exact: true })).toHaveCount(0);
-    await expect(raw.locator('.story-native-response')).toHaveCount(0);
     if (mode === 'both') {
       await shot(page, info, 'unified-raw');
       await rawBox.evaluate(el => { el.scrollTop = el.scrollHeight; });
@@ -216,8 +214,7 @@ for (const mode of ['all', 'only', 'mirror'] as const) {
     expect(JSON.stringify(saved.draft?.story)).not.toContain(planning);
     await closeDiagnostics(page);
     const raw = await openStageRaw(page, 'story');
-    await expect(raw.getByRole('textbox', { name: '正文模型完整原文', exact: true })).toHaveValue((mode === 'only' ? '' : nativeText) + rawText);
-    await expect(raw.locator('textarea')).toHaveCount(1); await expect(raw.locator('pre')).toHaveCount(0);
+    await expectStoryRaw(raw, (mode === 'only' ? '' : nativeText) + rawText);
     await expect(raw.getByRole('region', { name: '兼容文本思考', exact: true })).toHaveCount(0);
     await expect(raw).not.toContainText(key);
     await shot(page, info, `compat-${mode}-raw`);
