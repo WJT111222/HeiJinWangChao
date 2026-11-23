@@ -1,3 +1,4 @@
+import type { TurnDraft } from '../src/domain/drafts';
 import { test, expect } from './helpers/test';
 import { openWorkflowDiagnostics, openSettings } from './helpers/gameLayout';
 import { setup, plan, calls, data, closeError, send, button, stopped, record, snapshot, oldOptions } from './helpers/actionRecovery';
@@ -41,7 +42,7 @@ for (const [mode, errorCodes] of cases)
         expect(failed.state).toEqual(original.state);
         expect(failed.state.journal.at(-1)?.story.actionOptions).toEqual(oldOptions);
         expect(failed.draft?.story).toBeUndefined();
-        expect(failed.draft?.failures.map(failure => failure.errorCode)).toEqual(errorCodes);
+        expect(failed.draft?.failures.map((failure: TurnDraft['failures'][number]) => failure.errorCode)).toEqual(errorCodes);
         await expect(page.getByText('上一已结算回合建议 · 第1回合', { exact: false })).toBeVisible();
         await expect(page.getByRole('button', { name: /去书店看看/ })).toBeEnabled();
         await expect(page.locator('#action-recovery-guidance')).toContainText('尚无正文候选');
@@ -73,7 +74,7 @@ for (const stage of ['variables', 'world'])
         const failed = await data(page);
         expect(failed.state).toEqual(original.state);
         expect(failed.draft?.stageStatus[stage]).toBe('failed');
-        expect(failed.draft?.failures.map(failure => [failure.stage, failure.errorCode])).toEqual([[stage, 'authorization']]);
+        expect(failed.draft?.failures.map((failure: TurnDraft['failures'][number]) => [failure.stage, failure.errorCode])).toEqual([[stage, 'authorization']]);
         expect(failed.draft?.story).toBeTruthy();
         await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
         await expect(page.getByText('当前正文建议（本回合尚未结算）', { exact: false })).toBeVisible();
