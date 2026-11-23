@@ -38,7 +38,7 @@ test('跨标签保存叙事视角不会重新打开另一页关闭的动态世�
   await expect(b.getByText('记忆设置已保存', { exact: false })).toBeVisible();
 
   await category(a, '外观');
-  await a.getByRole('button', { name: /^日间/ }).click();
+  await a.getByRole('radio', { name: /^日间/ }).check();
   await expect(a.getByText('外观已切换。', { exact: true })).toBeVisible();
   await category(a, '运行');
   await a.getByLabel('请求超时（秒）').fill('150');
