@@ -11,8 +11,9 @@ const choice = (page: Page, name: string) => picker(page).getByRole('radio', { n
 const none = (page: Page) => picker(page).getByRole('radio', { name: /^不选择天赋/ });
 const profile = (page: Page) => page.getByRole('region', { name: '开局天赋', exact: true });
 
+test.use({ fixedTime: '2026-11-16T04:00:00Z' });
+
 test.beforeEach(async ({ page }) => {
-  await page.clock.setFixedTime(new Date('2026-11-16T04:00:00Z'));
   // Block every model POST, including accidental requests to a local mock address.
   await page.route('**/*', route => route.request().method() === 'POST' || !['127.0.0.1', 'localhost'].includes(new URL(route.request().url()).hostname) || route.request().url().endsWith('/api/announcement') ? route.abort() : route.continue());
 });
