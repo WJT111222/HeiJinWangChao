@@ -1,3 +1,4 @@
+import { fetchWithRelay, relayAttempt } from './corsRelay';
 import { nativeFetch } from '../../presets/tavern/fetch';
 import type { GenerationType } from '../../presets/tavern/events';
 import { insertPlayerWorldbook, type PlayerWorldbook } from '../../prompts/playerWorldbook';
@@ -5,7 +6,7 @@ import { sendTavern } from '../../presets/tavern/backend';
 import { safeMime } from '../../presets/tavern/responseFormat';
 import { newTrace, type UpstreamTrace } from '../../presets/tavern/upstream';
 import type { Sampling } from '../../presets/package';
-import { AiError, safeAiError } from './errors';
+import { AiError, manualRetryOnly, safeAiError } from './errors';
 import { requestInspections } from './inspection';
 import type { InspectionScope } from './inspection';
 import type { RequestSnapshot } from './snapshot';
@@ -117,7 +118,7 @@ async function operation<T>(
     if (rejectAbort) controller.signal.removeEventListener('abort', rejectAbort);
   }
 }
-export const manualRetryOnly = new WeakSet<AiError>();
+export { manualRetryOnly } from './errors';
 function residualTool(data: unknown, delta: boolean) {
   return array(record(data).choices).some(value => {
     const choice = record(value), message = record(delta ? choice.delta : choice.message);
@@ -127,24 +128,26 @@ function residualTool(data: unknown, delta: boolean) {
 export class AiClient {
   constructor(private transport: typeof fetch = nativeFetch) {}
   private async response(
-    url: string, init: RequestInit, signal: AbortSignal, snapshot?: RequestSnapshot,
+    url: string, init: RequestInit, signal: AbortSignal, relay: ReturnType<typeof relayAttempt>, snapshot?: RequestSnapshot,
     observe?: (value: ResponseDiagnostics) => void, presetSampling = false, trace?: UpstreamTrace,
   ) {
     trace?.clock.first('sentMs');
-    const response = await this.transport(url, {
+    const response = await fetchWithRelay(this.transport, url, {
       ...init,
       signal,
       credentials: 'omit',
       redirect: 'error',
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
-    });
+    }, relay);
     trace?.clock.first('headersMs');
     if (trace) { trace.status = response.status; trace.contentType = safeMime(response.headers); }
     if (!response.ok) {
       const status = response.status;
       // Only inspect JSON generation errors; list discovery handles its own status codes.
       if (!signal.aborted) observe?.({ transport: 'http', httpStatus: status, complete: false });
+      if (relay.used && response.headers.get('X-Heijin-Relay-Error') === '1')
+        throw new AiError(status >= 500 ? 'server' : 'rejected', status, { fieldPath: 'channel.relay' });
       if (snapshot && (snapshot.thinkingCapability !== 'none' || snapshot.channel.protocol === 'openai' || presetSampling) && ([400, 422].includes(status) || (status === 404 && snapshot.channel.protocol === 'openai'))
         && response.headers.get('content-type')?.includes('application/json')) {
         try {
@@ -190,6 +193,7 @@ export class AiClient {
     messages: readonly AiMessage[],
     options: RequestOptions = {},
   ): Promise<AiResponse> {
+    const relay = relayAttempt(snapshot.channel.protocol);
     const compat = snapshot.stage === 'story' && options.tavernType !== undefined;
     const trace = compat ? newTrace(options.storyClock) : undefined;
     const cleanup = compat ? new AbortController() : undefined;
@@ -212,7 +216,7 @@ export class AiClient {
           diagnostics = wire.diagnostics;
           try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
           catch { /* Inspection cannot affect transport. */ }
-          return this.response(wire.url, wire.init, requestSignal, snapshot, options.onResponseDiagnostics ? observe : undefined,
+          return this.response(wire.url, wire.init, requestSignal, relay, snapshot, options.onResponseDiagnostics ? observe : undefined,
             wire.presetSamplingInspection !== undefined, trace);
         };
         const playerWorldbook = snapshot.stage === 'story' ? options.playerWorldbook : undefined;
@@ -361,6 +365,7 @@ export class AiClient {
       }, trace?.clock);
     } catch (error) {
       const failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
+      if (relay.eligible && failure instanceof AiError) manualRetryOnly.add(failure);
       if (trace && failure instanceof AiError) {
         manualRetryOnly.add(failure);
         trace.cancelled = failure.code === 'cancelled' || failure.code === 'timeout';
@@ -380,6 +385,7 @@ export class AiClient {
     }
   }
   async listModels(snapshot: RequestSnapshot, options: ModelListOptions = {}): Promise<string[]> {
+    const relay = relayAttempt(snapshot.channel.protocol);
     let lastEndpoint: string | undefined, lastHttpStatus: number | undefined, attempts = 0, pagesRead = 0;
     try { return await operation(options, async (signal) => {
       const candidates = modelListCandidates(snapshot), protocol = snapshot.channel.protocol;
@@ -389,7 +395,7 @@ export class AiClient {
         lastEndpoint = url; lastHttpStatus = undefined;
         if (candidate) attempts++;
         let response: Response;
-        try { response = await client.response(url, { headers }, signal); }
+        try { response = await client.response(url, { headers }, signal, relay); }
         catch (error) {
           if (error instanceof AiError && error.status === 0) throw new AiError('network');
           if (!signal.aborted && error instanceof AiError) lastHttpStatus = error.status;
@@ -408,7 +414,7 @@ export class AiClient {
       for (const url of candidates) {
         try { first = await read(this, url, true); selected = url; break; }
         catch (error) {
-          if (signal.aborted || !canTryModelCandidate(error)) throw error;
+          if (signal.aborted || relay.used || !canTryModelCandidate(error)) throw error;
           // 不用后续404覆盖更明确的JSON/格式/网络错误；不展示原始服务响应。
           if (!(error instanceof AiError && [404, 405].includes(error.status ?? 0))
             || (failure instanceof AiError && failure.code === 'not_found')) failure = error;
