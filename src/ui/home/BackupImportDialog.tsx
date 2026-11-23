@@ -16,7 +16,7 @@ interface Row {
   /** 比较失败、文件内重复、导入失败等，显示在该行。 */
   problem?: string; done?: boolean;
 }
-export interface ImportedBackup { saveId: string; revision: number; turnNumber: number; title: string }
+export interface ImportedBackup { saveId: string; revision: number; turnNumber: number; npcManagementRevision?: number; title: string }
 type Stage = 'pick' | 'reading' | 'review' | 'confirm' | 'importing';
 
 const importable = (row: Row) => row.entry.ok && !row.done && !row.problem && row.comparison !== undefined && row.comparison.kind !== 'same';
@@ -114,7 +114,7 @@ export function BackupImportDialog({ repository, file, onClose, onImported }: {
       let patch: Partial<Row>;
       try {
         const state = await repository.importBackup(entry, comparison.confirmation, { overwrite: comparison.kind !== 'new' });
-        imported.push({ saveId: state.saveId, revision: state.revision, turnNumber: state.turnNumber, title: state.title });
+        imported.push({ saveId: state.saveId, revision: state.revision, turnNumber: state.turnNumber, npcManagementRevision: state.npcManagementRevision, title: state.title });
         patch = { done: true, checked: false };
       } catch (reason) { patch = { problem: importError(reason), checked: false }; }
       updated = updated.map(row => row.key === target.key ? { ...row, ...patch } : row);

@@ -303,7 +303,7 @@ export function App() {
     setDeleteError('');
     try {
       if (deleting.status === 'readable') {
-        await repository.delete(deleting.saveId, deleting.revision, deleting.instance ?? null);
+        await repository.delete(deleting.saveId, deleting.revision, deleting.instance ?? null, deleting.npcManagementRevision ?? 0);
         forgetBackup(deleting.saveId);
       }
       else await repository.deleteUnreadable(deleting.storageKey);
@@ -353,8 +353,9 @@ export function App() {
       setSaveNotice(result.text);
       if (!desktopUi && canShareFile(result.file)) setShareable(result);
       return true;
-    } catch {
-      setError('导出备份失败，未生成文件，存档没有改动。请刷新列表后重试。');
+    } catch (failure) {
+      setError(failure instanceof DataError && failure.code === 'BACKUP_TOO_LARGE' ? failure.message
+        : '导出备份失败，未生成文件，存档没有改动。请刷新列表后重试。');
       return false;
     }
   }
