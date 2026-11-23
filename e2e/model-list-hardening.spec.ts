@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { selected } from './helpers/select';
 import { backToList, openAiSettings, openChannel, saveAi, stageModel } from './helpers/aiSettings';
 
-async function seed(page: Page, protocol: string = 'openai', path = '/v1') {
+async function seed(page: Page, protocol: string = 'openai', path = '/v1', directOnly = false) {
   await page.goto('/');
   await page.evaluate(async ({ protocol, path }) => {
     const c = '/src/services/ai/configuration.ts', v = '/src/services/ai/credentials.ts';
@@ -12,7 +12,9 @@ async function seed(page: Page, protocol: string = 'openai', path = '/v1') {
     const config = defaultAiConfig(); config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'saved-route' };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'browser-hardening-secret');
   }, { protocol, path });
-  await page.reload(); const settings = await openAiSettings(page); await openChannel(settings, '新渠道');
+  await page.reload(); const settings = await openAiSettings(page);
+  if (directOnly) await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck();
+  await openChannel(settings, '新渠道');
   // 打开设置不联网，这里点「获取模型」读取一次；group 是渠道的连接状态（失败时“详细信息”里是完整诊断）。
   await settings.locator('.ai-connect').getByRole('button', { name: '获取模型', exact: true }).click();
   return { settings, group: settings.locator('.ai-connect'), refresh: () => settings.locator('.ai-connect').getByRole('button', { name: /获取模型$/ }).click() };
@@ -54,8 +56,7 @@ for (const failure of ['404', '401', 'network', 'format', 'pagination']) {
       await route.fulfill(mode === 'success' ? { json: { data: [{ id: 'saved-model' }, { id: 'available' }] } }
         : { status: Number(mode), json: { error: 'browser-hardening-secret private-server-detail' } });
     });
-    const { settings, group, refresh } = await seed(page); await expect(group).toContainText('当前接口返回 2 个模型');
-    if (failure === 'network') await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck();
+    const { settings, group, refresh } = await seed(page, 'openai', '/v1', failure === 'network'); await expect(group).toContainText('当前接口返回 2 个模型');
     const before = await page.evaluate(() => ({ config: localStorage.getItem('heijin.ai.v1'), keys: JSON.stringify(sessionStorage) }));
     mode = failure; calls = 0; await refresh();
     await expect(group).toContainText('连接失败');
@@ -119,8 +120,7 @@ for (const failure of ['405', 'format', 'pagination-network']) {
       }
       await route.fulfill(calls === 1 ? failure === '405' ? { status: 405, body: '' } : { json: { unsupported: true } } : { status: 404, body: '' });
     });
-    const { settings, group, refresh } = await seed(page); await expect(group).toContainText('当前接口返回 2 个模型');
-    if (failure === 'pagination-network') await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck();
+    const { settings, group, refresh } = await seed(page, 'openai', '/v1', failure === 'pagination-network'); await expect(group).toContainText('当前接口返回 2 个模型');
     const previous = await page.evaluate(() => ({ config: localStorage.getItem('heijin.ai.v1'), keys: JSON.stringify(sessionStorage) }));
     failed = true; calls = 0; await refresh(); await expect(group).toContainText('连接失败'); await expect(group).toContainText('本次获取失败');
     if (failure === 'pagination-network') {
