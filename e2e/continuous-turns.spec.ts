@@ -1,7 +1,7 @@
 import { GameTimeSchema } from '../src/domain/common';
 import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { closeWorkflowSheet, openGameTools, openProfile, openWorkflow } from './helpers/gameLayout';
+import { closeWorkflowSheet, openGameTools, openWorkflow } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema, StorySchema } from '../src/domain/state';
@@ -211,7 +211,7 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
   expect(initial.state.turnNumber).toBe(1);
   expect(initial.state.economy.cash).toBeNull();
   if (isMobile) {
-    await openProfile(page);
+    await page.getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '人物', exact: true }).click();
     const status = page.getByRole('dialog', { name: '此时此地' });
     await expect(status.getByRole('region', { name: '主角信息' })).toContainText('未确认');
     await page.keyboard.press('Escape');
@@ -318,8 +318,14 @@ test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', a
   await page.getByLabel('你的行动', { exact: true }).fill('等待下一轮');
   await page.getByRole('button', { name: '发送', exact: true }).click();
   await expect.poll(() => server.calls.length).toBe(6);
-  if (isMobile) await openWorkflow(page);
-  await expect(page.getByRole('alert').filter({ hasText: '正式结算' })).toBeVisible();
+  if (isMobile) {
+    const diagnostic = page.getByRole('dialog', { name: '重试与变更详情' });
+    await expect(diagnostic).toBeVisible();
+    await diagnostic.getByRole('tab', { name: '运行日志' }).click();
+    await expect(diagnostic).toContainText('正式结算');
+    await page.keyboard.press('Escape');
+    await openWorkflow(page);
+  } else await expect(page.getByRole('alert').filter({ hasText: '正式结算' })).toBeVisible();
   const failed = await stored(page);
   expect(failed.state).toEqual(before.state);
   expect(failed.draft.userInput).toBe('等待下一轮');
