@@ -6,7 +6,7 @@ import { MemorySummarySettings } from './MemorySummarySettings';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import { VariableManager } from './VariableManager';
 import type { SaveRepository, VariableSnapshot } from '../../services/storage/saveRepository';
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, cloneElement, isValidElement } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, cloneElement, isValidElement } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { AiConnections } from './AiConnections';
 import { UnsavedAiChanges } from './UnsavedAiChanges';
@@ -37,6 +37,7 @@ export function SettingsPanel({
   activeSaveId,
   memoryMaintenance, variableSaveId, variableInstance, companion, onVariablesSaved, onVariablesDirtyChange,
   onAiDirtyChange,
+  onLocalDirtyChange,
   onSummaryDirtyChange,
   onWorldbookDirtyChange,
   onOpenNotice,
@@ -50,6 +51,7 @@ export function SettingsPanel({
   companion?: CompanionProfile;
   onVariablesSaved?: (result: VariableSnapshot) => void;
   onVariablesDirtyChange?: (dirty:boolean) => void;
+  onLocalDirtyChange?: (dirty: boolean) => void;
   onAiDirtyChange?: (dirty: boolean) => void;
   onSummaryDirtyChange?: (dirty: boolean) => void;
   onWorldbookDirtyChange?: (dirty: boolean) => void;
@@ -88,6 +90,8 @@ export function SettingsPanel({
     onAiDirtyChange?.(dirty);
   }, [onAiDirtyChange]);
   const localDirty=JSON.stringify(editing.prompts)!==JSON.stringify(editingBase.prompts)||JSON.stringify(editing.runtime)!==JSON.stringify(editingBase.runtime);
+  useLayoutEffect(() => { onLocalDirtyChange?.(localDirty); }, [localDirty, onLocalDirtyChange]);
+  useEffect(() => () => onLocalDirtyChange?.(false), [onLocalDirtyChange]);
   useEffect(() => {
     if (!localDirty) {
       setEditing(settings);
