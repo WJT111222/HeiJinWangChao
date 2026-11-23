@@ -69,7 +69,7 @@ export function validateEventLinks(state: EventState) {
 }
 // Reference IDs use the same characters as IdSchema. Match a whole ID even inside legacy text.
 function citesEvent(serialized: string, id: string, plansOnly = false) {
-  const references = serialized.match(/event(?:-result|-plan)?:[a-zA-Z0-9_.:-]+/g) ?? [];
+  const references: readonly string[] = serialized.match(/event(?:-result|-plan)?:[a-zA-Z0-9_.:-]+/g) ?? [];
   return references.includes(`event-plan:${id}`)
     || (!plansOnly && (references.includes(`event:${id}`) || references.includes(`event-result:${id}`)
       || serialized.includes(JSON.stringify(id))));
