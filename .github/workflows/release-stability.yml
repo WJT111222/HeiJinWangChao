@@ -1,0 +1,59 @@
+name: 正式版定向验收
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Required checks must be created even when a PR changes production code only.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  critical-gameplay:
+    name: 关键回合 Chromium（${{ matrix.project }}）
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop, mobile]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: 运行 Chromium 回归
+        run: |
+          set -o pipefail
+          npm run test:e2e -- e2e/continuous-turns.spec.ts --project=${{ matrix.project }} --workers=1 --grep '连续正式游玩十回合|提交事务中途失败|快速双击与另一标签' 2>&1 | tee playwright.log
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: release-stability-${{ matrix.project }}
+          path: |
+            test-results/
+            playwright.log
+          if-no-files-found: ignore
+  prompts:
+    name: Prompt 专项与补丁空白检查
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run prompts:check
+      - run: git diff HEAD^ HEAD --check

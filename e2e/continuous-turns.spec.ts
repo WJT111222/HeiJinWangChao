@@ -1,14 +1,17 @@
+import { GameTimeSchema } from '../src/domain/common';
 import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { openGameTools } from './helpers/gameLayout';
+import { closeWorkflowSheet, openGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema, StorySchema } from '../src/domain/state';
 import { TurnDraftSchema } from '../src/domain/drafts';
 import { record, array, string } from '../src/services/ai/protocols';
 import type { DomainCommand } from '../src/domain/commands';
-// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
-test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
+// Three release scenarios now exercise the mobile composer and status drawer as well.
+test.beforeEach(({ isMobile }, info) => {
+  test.skip(isMobile && !/连续正式游玩十回合|提交事务中途失败|快速双击与另一标签/.test(info.title), '其余场景使用电脑端专用工作台');
+});
 
 async function configure(page: Page, useWorldStage = true) {
   await page.goto('/');
@@ -63,6 +66,8 @@ function contextFrom(body: unknown) {
   if (!match) throw new Error('实际请求缺少 GAME_CONTEXT');
   return record(JSON.parse(match[1]));
 }
+const variableRequestState = VariableStateProjectionSchema.extend({ worldClock: GameTimeSchema.nullable() });
+
 async function mock(page: Page) {
   const plan = { badStoryNumber: 0, holdWorld: undefined as Promise<void> | undefined };
   const stories: { number: number; action: string; context: string }[] = [],
@@ -94,14 +99,24 @@ async function mock(page: Page) {
       return;
     }
     if (stage === 'variables') {
-      const state = VariableStateProjectionSchema.parse(ctx.SAVE_STATE),
+      const state = variableRequestState.parse(ctx.SAVE_STATE),
         story = StorySchema.parse(ctx.STORY_RESULT);
+      const opening = record(ctx.OPENING_TIME);
+      let endAt: string;
+      if (opening.status === 'candidate') {
+        endAt = GameTimeSchema.parse(opening.endAt);
+      } else if (opening.status === 'pending' && state.worldClock === null) {
+        // This synthetic Story explicitly set the opening at 14:00 and ended at 14:01.
+        endAt = '2015-07-08T14:01:00+08:00';
+      } else {
+        endAt = new Date(Date.parse(GameTimeSchema.parse(state.worldClock)) + 60000).toISOString();
+      }
       const commands: DomainCommand[] = [
         {
           type: 'SetWorldClock',
           commandId: 'minute',
           evidence: '经过一分钟，主角在街边休息。',
-          worldClock: ctx.OPENING_TIME ? string(record(ctx.OPENING_TIME).endAt) : new Date(Date.parse(state.worldClock) + 60000).toISOString(),
+          worldClock: endAt,
         },
         {
           type: 'UpdateProtagonist',
@@ -174,14 +189,17 @@ async function ready(page: Page, number = 1) {
   await expect(page.getByTestId('story-reader').locator('article').last()).toContainText(
     `第${number}幕`,
   );
-  await expect(workflow(page)).toContainText('本回合已结算');
+  if ((page.viewportSize()?.width ?? 1000) <= 900) {
+    await closeWorkflowSheet(page);
+    await expect(page.getByRole('status').filter({ hasText: '本回合已结算' })).toBeVisible();
+  } else await expect(workflow(page)).toContainText('本回合已结算');
 }
 async function opening(page: Page) {
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await ready(page);
 }
 
-test('真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致', async ({ page }, info) => {
+test('真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致', async ({ page, isMobile }, info) => {
   test.setTimeout(120000);
   await configure(page);
   const server = await mock(page);
@@ -192,7 +210,12 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
   expect(initial.state.openingTimePending).toBeUndefined(); // 开局自动正式结算，待下一条行动。
   expect(initial.state.turnNumber).toBe(1);
   expect(initial.state.economy.cash).toBeNull();
-  await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText('未确认');
+  if (isMobile) {
+    await page.getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '人物', exact: true }).click();
+    const status = page.getByRole('dialog', { name: '此时此地' });
+    await expect(status.getByRole('region', { name: '主角信息' })).toContainText('未确认');
+    await page.keyboard.press('Escape');
+  } else await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText('未确认');
   for (let index = 1; index <= 9; index++) {
     const action = `行动${index}：在街边等待一分钟`;
     await page.getByLabel('你的行动', { exact: true }).fill(action);
@@ -272,13 +295,13 @@ test('下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完�
   ]);
 });
 
-test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', async ({ page }) => {
+test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', async ({ page, isMobile }) => {
   await configure(page);
-  await mock(page);
+  const server = await mock(page);
   await createCharacter(page);
   await ready(page);
   const before = await stored(page);
-  await page.evaluate(() => {
+  await page.evaluate(baseRevision => {
     const original = IDBObjectStore.prototype.put;
     Object.defineProperty(window, '__restoreTurnPut', {
       value: () => {
@@ -287,21 +310,40 @@ test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', a
       configurable: true,
     });
     IDBObjectStore.prototype.put = function (value, key) {
-      if (this.name === 'drafts') throw new DOMException('isolated test', 'QuotaExceededError');
+      if (this.name === 'drafts' && value?.baseSaveRevision === baseRevision + 1)
+        throw new DOMException('isolated test', 'QuotaExceededError');
       return original.call(this, value, key);
     };
-  });
+  }, before.state.revision);
   await page.getByLabel('你的行动', { exact: true }).fill('等待下一轮');
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect(page.getByRole('alert')).toBeVisible();
-  expect(await stored(page)).toEqual(before);
+  await expect.poll(() => server.calls.length).toBe(6);
+  if (isMobile) {
+    const diagnostic = page.getByRole('dialog', { name: '重试与变更详情' });
+    await expect(diagnostic).toBeVisible();
+    await diagnostic.getByRole('tab', { name: '运行日志' }).click();
+    await expect(diagnostic).toContainText('正式结算');
+    await page.keyboard.press('Escape');
+    await expect(diagnostic).not.toBeVisible();
+  } else await expect(page.getByRole('alert').filter({ hasText: '正式结算' })).toBeVisible();
+  const failed = await stored(page);
+  expect(failed.state).toEqual(before.state);
+  expect(failed.draft.userInput).toBe('等待下一轮');
+  expect(failed.draft.stageStatus).toMatchObject({ story: 'ready', variables: 'ready', world: 'ready' });
   await page.evaluate(() => {
     const restore = Reflect.get(window, '__restoreTurnPut');
     if (typeof restore === 'function') restore();
   });
-  await page.getByRole('button', { name: '发送', exact: true }).click();
+  const retry = isMobile
+    ? page.locator('.composer-workflow-action').and(page.getByRole('button', { name: '完成本回合结算', exact: true }))
+    : workflow(page).getByRole('button', { name: '完成本回合结算', exact: true });
+  await retry.click();
   await ready(page, 2);
-  expect((await stored(page)).state.turnNumber).toBe(2);
+  const saved = await stored(page);
+  expect(saved.state.turnNumber).toBe(2);
+  expect(saved.state.revision).toBe(before.state.revision + 1);
+  expect(saved.draft.baseSaveRevision).toBe(saved.state.revision);
+  expect(server.calls).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
 });
 
 test('快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿', async ({
@@ -309,7 +351,7 @@ test('快速双击与另一标签发送最多结算一次；成功后数据库�
   context,
 }) => {
   await configure(page);
-  await mock(page);
+  const server = await mock(page);
   await createCharacter(page);
   await ready(page);
   const other = await context.newPage();
@@ -323,21 +365,34 @@ test('快速双击与另一标签发送最多结算一次；成功后数据库�
     for (const channel of readAiConfig(localStorage).channels) vault.set(channel.id, 'mock-loop-secret');
   });
   await other.reload();
+  await openGameTools(other);
+  await closeWorkflowSheet(other);
   await page.getByLabel('你的行动', { exact: true }).fill('在街边等待');
   await other.getByLabel('你的行动', { exact: true }).fill('在街边等待');
   await Promise.all(
-    [page, other].map((p) =>
-      p.getByRole('button', { name: '发送', exact: true }).evaluate((button: HTMLButtonElement) => {
-        button.click();
-        button.click();
-      }),
-    ),
+    [page, other].map(async (tab) => {
+      const send = tab.getByRole('button', { name: '发送', exact: true });
+      await expect(send).toBeEnabled();
+    }),
   );
-  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
+  await Promise.all(
+    [page, other].map((tab) => tab.getByRole('button', { name: '发送', exact: true }).evaluate((button: HTMLButtonElement) => {
+      button.click();
+      button.click();
+    })),
+  );
+  try {
+    await expect.poll(async () => (await stored(page)).state.turnNumber, { timeout: 15_000 }).toBe(2);
+  } catch (error) {
+    const alerts = await Promise.all([page, other].map(tab => tab.getByRole('alert').allTextContents()));
+    console.error('提交诊断', { calls: server.calls, alerts, draft: (await stored(page)).draft.stageStatus });
+    throw error;
+  }
   const result = await stored(page);
   expect(result.state.journal).toHaveLength(2);
   expect(result.draft.baseSaveRevision).toBe(2);
   expect(result.draft.userInput).toBe('');
+  expect(server.calls).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
   await other.close();
 });
 
