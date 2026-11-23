@@ -613,7 +613,8 @@ describe('二轮复审：确认内容绑定、残留记录与旧页面依据', (
     expect((await repository.loadGame('save-a')).instance).toBeUndefined();
     const [summary] = await repository.list();
     expect(summary.status === 'readable' && summary.instance).toBeUndefined();
-    await repository.delete('save-a', 0);
+    if (summary.status !== 'readable') throw new Error('unreadable fixture');
+    await repository.delete('save-a', summary.revision, undefined, summary.npcManagementRevision ?? 0);
     expect(await repository.list()).toEqual([]);
   });
 
