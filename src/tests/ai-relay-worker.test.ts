@@ -70,6 +70,7 @@ it('逐块转发 SSE，无需等待结束；仅必要头进入上游', async () 
   });
   const response = await aiRelay(request, send);
   expect(response.headers.get('set-cookie')).toBeNull();
+  expect(response.headers.get('X-Heijin-Relay-Upstream')).toBe('1');
   const [url, init] = send.mock.calls[0];
   expect(url).toBe(base + '/chat/completions');
   expect(init?.redirect).toBe('manual');

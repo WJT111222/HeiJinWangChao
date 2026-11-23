@@ -1,4 +1,4 @@
-import { relayTarget } from './services/ai/relayTarget';
+import { relayTarget, relayUpstreamHeader } from './services/ai/relayTarget';
 
 const limit = 2 * 1024 * 1024;
 const safetyHeaders = {
@@ -83,6 +83,7 @@ export async function aiRelay(request: Request, send: typeof fetch = fetch): Pro
       return failure(502, '中转不跟随重定向');
     }
     const result = new Headers(safetyHeaders);
+    result.set(relayUpstreamHeader, '1');
     // A user-selected upstream must not serve active web content under the game's origin.
     const mime = upstream.headers.get('Content-Type') ?? '';
     result.set(

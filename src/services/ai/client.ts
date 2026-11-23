@@ -1,4 +1,5 @@
 import { fetchWithRelay, relayAttempt } from './corsRelay';
+import { relayUpstreamHeader } from './relayTarget';
 import { nativeFetch } from '../../presets/tavern/fetch';
 import type { GenerationType } from '../../presets/tavern/events';
 import { insertPlayerWorldbook, type PlayerWorldbook } from '../../prompts/playerWorldbook';
@@ -142,11 +143,17 @@ export class AiClient {
     }, relay);
     trace?.clock.first('headersMs');
     if (trace) { trace.status = response.status; trace.contentType = safeMime(response.headers); }
-    if (!response.ok) {
+    const relayError = relay.used && response.headers.get('X-Heijin-Relay-Error') === '1';
+    const relayUnavailable = relay.used && !relayError && response.headers.get(relayUpstreamHeader) !== '1';
+    if (!response.ok || relayUnavailable) {
       const status = response.status;
       // Only inspect JSON generation errors; list discovery handles its own status codes.
       if (!signal.aborted) observe?.({ transport: 'http', httpStatus: status, complete: false });
-      if (relay.used && response.headers.get('X-Heijin-Relay-Error') === '1')
+      if (relayUnavailable) {
+        void response.body?.cancel().catch(() => {});
+        throw new AiError('network', status, { fieldPath: 'channel.relay_unavailable' });
+      }
+      if (relayError)
         throw new AiError(status >= 500 ? 'server' : 'rejected', status, { fieldPath: 'channel.relay' });
       if (snapshot && (snapshot.thinkingCapability !== 'none' || snapshot.channel.protocol === 'openai' || presetSampling) && ([400, 422].includes(status) || (status === 404 && snapshot.channel.protocol === 'openai'))
         && response.headers.get('content-type')?.includes('application/json')) {

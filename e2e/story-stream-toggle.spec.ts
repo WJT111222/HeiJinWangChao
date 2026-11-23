@@ -150,7 +150,8 @@ test('GLM 中转 SSE 完成三阶段结算；下回合中转 500 保留正式状
     const body = route.request().postDataJSON();
     routeCalls.push('relay ' + body.model);
     expect(new URL(route.request().url()).searchParams.get('target')).toBe(glm + '/chat/completions');
-    if (fail) return route.fulfill({ status: 500, json: { error: 'mock' } });
+    const headers = { 'X-Heijin-Relay-Upstream': '1' };
+    if (fail) return route.fulfill({ status: 500, headers, json: { error: 'mock' } });
     const ctx = body.messages.find((m: { content: string }) =>
       m.content.startsWith('<GAME_CONTEXT>'),
     ).content;
@@ -173,6 +174,7 @@ test('GLM 中转 SSE 完成三阶段结算；下回合中转 500 保留正式状
               unresolved: [],
             });
     return route.fulfill({
+      headers,
       contentType: body.stream ? 'text/event-stream' : 'application/json',
       body: body.stream ? frame(content) + 'data: [DONE]\n\n' : json(content),
     });

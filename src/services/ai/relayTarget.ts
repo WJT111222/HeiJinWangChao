@@ -1,3 +1,5 @@
+export const relayUpstreamHeader = 'X-Heijin-Relay-Upstream';
+
 // Shared with the browser so an ineligible target never sends its credentials to the relay.
 export function relayTarget(raw: string, origin: string, method: string): URL | undefined {
   let url: URL;

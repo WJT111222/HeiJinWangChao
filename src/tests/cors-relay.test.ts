@@ -11,6 +11,10 @@ const origin = 'https://game.example',
   base = 'https://open.bigmodel.cn/api/paas/v4';
 const messages = [{ role: 'user' as const, content: '合成测试' }];
 const reply = () => Response.json({ choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }] });
+function forwarded(response: Response) {
+  response.headers.set('X-Heijin-Relay-Upstream', '1');
+  return response;
+}
 const failed = () => new TypeError('Failed to fetch');
 let vault: CredentialVault;
 function snapshot(stage: AiTask = 'story') {
@@ -46,7 +50,7 @@ it('直连成功只发一次', async () => {
 it.each(['story', 'variables', 'world', 'memory'] as const)(
   '%s 无状态网络错误在同域按原请求回退一次',
   async (stage) => {
-    const send = vi.fn<typeof fetch>().mockRejectedValueOnce(failed()).mockResolvedValueOnce(reply());
+    const send = vi.fn<typeof fetch>().mockRejectedValueOnce(failed()).mockResolvedValueOnce(forwarded(reply()));
     expect((await new AiClient(send).generate(snapshot(stage), messages)).text).toBe('OK');
     const url = base + '/chat/completions';
     expect(send.mock.calls.map((c) => String(c[0]))).toEqual([
@@ -82,11 +86,42 @@ it('关闭中转保留原有网络失败与 500 策略', async () => {
     base + '/chat/completions',
   ]);
 });
+it.each([400, 401, 403, 404, 429, 500])('中转上游 HTTP %i 保留直连错误语义且不再发送', async status => {
+  const send = vi.fn<typeof fetch>()
+    .mockResolvedValueOnce(new Response(null, { status }))
+    .mockRejectedValueOnce(failed())
+    .mockResolvedValueOnce(forwarded(new Response(null, { status })));
+  const client = new AiClient(send), route = snapshot();
+  const direct = await client.generate(route, messages).catch(e => e);
+  const relayed = await client.generate(route, messages).catch(e => e);
+  expect(relayed).toMatchObject({ code: direct.code, status });
+  expect(relayed.details).toEqual(direct.details);
+  expect(transientStageError(relayed)).toBe(false);
+  expect(send).toHaveBeenCalledTimes(3);
+});
+it('中转列表的下一页直连成功，无需中转响应标识', async () => {
+  const send = vi.fn<typeof fetch>().mockRejectedValueOnce(failed())
+    .mockResolvedValueOnce(forwarded(Response.json({ data: [{ id: 'a' }], next_cursor: 'next' })))
+    .mockResolvedValueOnce(Response.json({ data: [{ id: 'b' }] }));
+  expect(await new AiClient(send).listModels(snapshot())).toEqual(['a', 'b']);
+  expect(send.mock.calls[2][0]).toBe(base + '/models?cursor=next');
+  expect(send).toHaveBeenCalledTimes(3);
+});
+it.each([200, 404])('站点路由返回 HTTP %i 的页面时，准确报告中转不可用', async status => {
+  const send = vi.fn<typeof fetch>().mockRejectedValueOnce(failed()).mockResolvedValueOnce(
+    new Response('synthetic-private-page', { status, headers: { 'Content-Type': 'text/html' } }),
+  );
+  const error = await new AiClient(send).generate(snapshot(), messages).catch(e => e);
+  expect(error).toMatchObject({ code: 'network', status, details: { fieldPath: 'channel.relay_unavailable' } });
+  expect(error.message).not.toContain('synthetic-private-page');
+  expect(transientStageError(error)).toBe(false);
+  expect(send).toHaveBeenCalledTimes(2);
+});
 it('列表 GET 走中转；中转再失败也不探测其他候选端点', async () => {
   const send = vi
     .fn<typeof fetch>()
     .mockRejectedValueOnce(failed())
-    .mockResolvedValueOnce(Response.json({ data: [{ id: 'glm-mock' }] }))
+    .mockResolvedValueOnce(forwarded(Response.json({ data: [{ id: 'glm-mock' }] })))
     .mockRejectedValueOnce(failed())
     .mockRejectedValueOnce(failed());
   const list = () => new AiClient(send).listModels(snapshot());
@@ -107,7 +142,7 @@ it('流式回退继续读取 SSE，取得响应后流中断不再回退', async 
   const send = vi
     .fn<typeof fetch>()
     .mockRejectedValueOnce(failed())
-    .mockResolvedValueOnce(stream(frame + 'data: [DONE]\n\n'))
+    .mockResolvedValueOnce(forwarded(stream(frame + 'data: [DONE]\n\n')))
     .mockResolvedValueOnce(stream(frame));
   const generate = () => new AiClient(send).generate(snapshot(), messages, { stream: true });
   expect((await generate()).text).toBe('OK');

@@ -16,6 +16,7 @@ test('GLM 开关保存；真实设置连接用同域 GET 发现模型，POST 测
       status: 502, headers: { 'X-Heijin-Relay-Error': '1' }, json: { error: 'synthetic-private-detail' },
     });
     return route.fulfill({
+      headers: { 'X-Heijin-Relay-Upstream': '1' },
       json:
         r.method() === 'GET'
           ? { data: [{ id: 'glm-mock' }] }

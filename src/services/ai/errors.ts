@@ -95,6 +95,7 @@ const fieldMessages = new Map<string, string>([
   ['tavern.initialization', '预设脚本初始化失败，可到运行设置查看实例状态。'],
   ['tavern.wrapper', '预设脚本处理响应时出错。'],
   ['channel.relay', '本站中转未能完成请求。请检查地址、端点与请求大小，再手动重试。'],
+  ['channel.relay_unavailable', '网络请求失败：本站中转接口不可用，未能确认模型服务的响应。请检查站点的 Worker 配置。'],
   ['channel.model', '服务明确报告模型或推理接入点不存在，或当前账户无权使用。请核对模型 ID 和授权。'],
   ['channel.parameter', '模型明确拒绝了本次发送的参数，请核对渠道高级设置。'],
   ['tavern.wrapper.http', '预设脚本返回了失败响应。'],

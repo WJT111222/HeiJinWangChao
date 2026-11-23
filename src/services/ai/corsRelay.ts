@@ -46,6 +46,8 @@ export async function fetchWithRelay(
   attempt: ReturnType<typeof relayAttempt>,
 ) {
   const target = attempt.origin && relayTarget(url, attempt.origin, init.method ?? 'GET');
+  // Each model-list page starts with its own direct request.
+  attempt.used = false;
   attempt.eligible = Boolean(target);
   try {
     return await send(url, init);
