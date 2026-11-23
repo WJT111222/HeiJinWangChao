@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'e2e/backup-ui.spec.ts'
+      - 'e2e/worldbook-library-tabs.spec.ts'
   workflow_dispatch:
 
 permissions:
@@ -21,7 +22,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e -- e2e/backup-ui.spec.ts --workers=1 --grep '跨标签手动编辑以后旧删除确认'
+      - run: npm run test:e2e -- e2e/backup-ui.spec.ts e2e/worldbook-library-tabs.spec.ts --workers=1 --grep '跨标签手动编辑以后旧删除确认|多标签页世界书旧删除确认'
       - uses: actions/upload-artifact@v6
         if: failure()
         with:
