@@ -179,7 +179,7 @@ export function WorldbookLibraryPanel({ onDirtyChange }: { onDirtyChange?: (dirt
 
   async function remove(book: ShelfBook) {
     setBusy(true);
-    const result = await withLibrary((library) => library.deleteBook(book.book.bookId));
+    const result = await withLibrary((library) => library.deleteBook(book.book.bookId, book.book));
     if (!mounted.current) return;
     setMessage(result.ok ? { level: 'ok', text: `已删除「${book.book.title}」。` } : { level: 'err', text: failureText(result.code) });
     await refresh();
@@ -233,7 +233,7 @@ export function WorldbookLibraryPanel({ onDirtyChange }: { onDirtyChange?: (dirt
                 : <WorldbookBookDetail item={selectedItem} release={release} busy={busy} stale={stale}
                   onSave={(change) => save(selectedItem.book.bookId, release.versionId, change)}
                   onToggleBook={(enabled) => void toggle(selectedItem, enabled)}
-                  onDelete={() => void remove(selectedItem)}
+                  onDelete={(confirmed) => void remove(confirmed)}
                   onBack={() => select(null)}
                   onDirtyChange={setDirty} />}
           </div>

@@ -260,3 +260,18 @@ describe('阶段 C1：本地书库（独立附属数据库）', () => {
     library.close();
   });
 });
+
+it('旧世界书删除确认不能删除另一连接已保存的新版本', async () => {
+  const name = uniqueName('stale-delete'), factory = new IDBFactory();
+  const first = await open(name, factory), second = await open(name, factory);
+  try {
+    const book = await release();
+    const installed = await first.install(book);
+    if (!installed.ok) throw new Error(installed.code);
+    const changed = await second.reviseBook(book.bookId, { title: '更新后的码头志' }, { baseVersionId: book.versionId });
+    if (!changed.ok) throw new Error(changed.code);
+    expect(await first.deleteBook(book.bookId, installed.book)).toMatchObject({ ok: false, code: 'version_conflict' });
+    expect(await first.getRelease(book.bookId, changed.release.versionId)).toMatchObject({ ok: true, release: changed.release });
+    expect(await first.deleteBook(book.bookId, changed.book)).toEqual({ ok: true });
+  } finally { first.close(); second.close(); }
+});
