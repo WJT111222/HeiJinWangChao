@@ -159,9 +159,8 @@ for (const width of [900, 901]) {
 }
 
 test('运行偏好未保存时 Escape 允许继续编辑或明确放弃', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: '设置', exact: true }).first().click();
-  const settings = page.getByRole('dialog', { name: '设置', exact: true });
+  await prepare(page, false);
+  const settings = await openPaperSettings(page);
   await settings.getByRole('button', { name: '运行', exact: true }).click();
   const world = settings.getByRole('checkbox', { name: '动态世界', exact: true });
   const original = await world.isChecked();

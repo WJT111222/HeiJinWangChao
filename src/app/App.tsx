@@ -227,6 +227,10 @@ export function App() {
     setError(current => [listFailure, openFailure, loadFailure].includes(current) ? '' : current);
   }
   function navigate(hash = '') {
+    if (settingsOpen) requestSettingsClose(() => changeRoute(hash));
+    else changeRoute(hash);
+  }
+  function changeRoute(hash: string) {
     navigationRevision.current++;
     if (hash !== `game/${openingStart.current?.saveId}`) {
       openingStart.current?.revoke();
