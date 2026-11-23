@@ -1,0 +1,35 @@
+name: PR 229 只读提取既有 Chromium 失败快照
+on:
+  push:
+    branches: [review/pr229-raw-evidence-15a3f0a]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          github-token: ${{ github.token }}
+          run-id: 45212139143
+          name: rc-e2e-2
+          path: source
+      - name: 查看公告用例最后的可访问弹窗
+        shell: python
+        run: |
+          from pathlib import Path
+          import shutil
+          originals=list(Path('source/test-results').glob('startup-notices-直接打开存档*desktop/error-context.md'))
+          assert len(originals)==1, originals
+          p=originals[0]
+          print(p)
+          print('\n'.join(s for s in p.read_text().splitlines() if 'dialog "' in s))
+          dest=Path('evidence');dest.mkdir()
+          for file in ['error-context.md','trace.zip']:shutil.copyfile(p.parent/file,dest/file)
+      - uses: actions/upload-artifact@v6
+        with:
+          name: pr229-final-notice-original
+          path: evidence
+          retention-days: 30
