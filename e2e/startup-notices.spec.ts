@@ -257,10 +257,12 @@ test('长内容内部滚动，窄屏关闭和复选框可触达；截图', async
   expect(await disclaimer(page).locator('.notice-footer label').evaluate(node => getComputedStyle(node).flexDirection)).toBe('row');
   await page.screenshot({ path: info.outputPath('disclaimer.png') });
   await page.setViewportSize({ width: 320, height: 568 });
-  const content = disclaimer(page).getByLabel('免责声明内容');
-  // 视口刚缩小时布局可能还没稳定，轮询等待内部出现滚动条，避免时序偶发失败。
+  // The desktop dialog is replaced on resize. Scope scrolling to the mounted mobile dialog.
+  const narrow = disclaimer(page).and(page.locator('.mobile-notice-document'));
+  await expect(narrow).toBeVisible();
+  const content = narrow.getByLabel('免责声明内容');
   await expect.poll(() => content.evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true);
-  const finalSection = disclaimer(page).getByRole('heading', { name: '六、虚构与现实的边界' });
+  const finalSection = narrow.getByRole('heading', { name: '六、虚构与现实的边界' });
   await finalSection.scrollIntoViewIfNeeded();
   await expect(finalSection).toBeInViewport();
   await content.evaluate(node => { node.scrollTop = node.scrollHeight; });
