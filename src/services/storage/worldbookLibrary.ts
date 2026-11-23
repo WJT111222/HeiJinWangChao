@@ -458,11 +458,16 @@ export class WorldbookLibrary {
   }
 
   /** 删除一本书：在同一个事务里删掉它的全部版本、摘要、书目与启用状态。不存在时返回 not_found。 */
-  async deleteBook(bookId: string): Promise<{ ok: true } | LibraryFailure> {
+  async deleteBook(bookId: string, expected?: Pick<LibraryBook, 'latestVersionId' | 'installedAt' | 'updatedAt' | 'versionCount'>): Promise<{ ok: true } | LibraryFailure> {
     try {
       return await transaction(this.database, [RELEASES, SUMMARIES, BOOKS, ENABLED], 'readwrite', async (tx) => {
         const books = tx.objectStore(BOOKS);
-        if ((await request(books.get(bookId))) === undefined) throw new LibraryAbort(fail('not_found', MESSAGES.not_found));
+        const raw = await request(books.get(bookId));
+        if (raw === undefined) throw new LibraryAbort(fail('not_found', MESSAGES.not_found));
+        const current = readBook(raw);
+        if (expected && (current.latestVersionId !== expected.latestVersionId || current.installedAt !== expected.installedAt
+          || current.updatedAt !== expected.updatedAt || current.versionCount !== expected.versionCount))
+          throw new LibraryAbort(fail('version_conflict', CONFLICT_MESSAGE));
         const releases = tx.objectStore(RELEASES), summaries = tx.objectStore(SUMMARIES);
         for (const key of await request(releases.index('bookId').getAllKeys(bookId))) await request(releases.delete(key));
         for (const key of await request(summaries.index('bookId').getAllKeys(bookId))) await request(summaries.delete(key));

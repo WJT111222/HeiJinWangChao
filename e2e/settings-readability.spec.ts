@@ -157,3 +157,53 @@ for (const width of [900, 901]) {
     expect(posts()).toBe(0);
   });
 }
+
+test('运行偏好未保存时 Escape 允许继续编辑或明确放弃', async ({ page }) => {
+  const { root: settings, posts } = await prepare(page, false);
+  await settings.getByRole('button', { name: '运行', exact: true }).click();
+  const world = settings.getByRole('checkbox', { name: '动态世界', exact: true });
+  const original = await world.isChecked();
+  await world.setChecked(!original);
+  await expect(settings.locator('[data-settings-category="运行"] .dirty')).toBeAttached();
+  await page.keyboard.press('Escape');
+  const confirmation = page.getByRole('dialog', { name: '本地偏好尚未保存' });
+  try { await expect(confirmation).toBeVisible(); }
+  catch (error) { console.error(await page.getByRole('dialog').allTextContents()); throw error; }
+  await confirmation.getByRole('button', { name: '继续编辑' }).click();
+  if (original) await expect(world).not.toBeChecked();
+  else await expect(world).toBeChecked();
+  await page.keyboard.press('Escape');
+  await confirmation.getByRole('button', { name: '放弃本次修改' }).click();
+  await expect(settings).not.toBeVisible();
+  expect(posts()).toBe(0);
+});
+
+test('未保存运行设置时离开存档需要确认，继续编辑及放弃不写入设置', async ({ page }) => {
+  const { root, before, posts } = await prepare(page, true);
+  await tab(root, '运行');
+  const world = root.getByRole('checkbox', { name: '动态世界', exact: true });
+  const original = await world.isChecked();
+  const persisted = () => page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
+  const originalSettings = await persisted();
+  expect(originalSettings).not.toBeNull();
+  await world.setChecked(!original);
+  const dialog = page.getByRole('dialog', { name: '本地偏好尚未保存' });
+  const leave = () => page.evaluate(() => { window.location.hash = ''; });
+
+  await leave();
+  await expect(dialog).toBeVisible();
+  await expect(page).toHaveURL(/#game\/save-a$/);
+  await dialog.getByRole('button', { name: '继续编辑' }).click();
+  await expect(world).toBeChecked({ checked: !original });
+  expect(await persisted()).toBe(originalSettings);
+  expect(await storedArchives(page)).toEqual(before);
+
+  await leave();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: '放弃本次修改' }).click();
+  await expect(page).toHaveURL(url => !url.hash);
+  await expect(root).not.toBeVisible();
+  expect(await persisted()).toBe(originalSettings);
+  expect(await storedArchives(page)).toEqual(before);
+  expect(posts()).toBe(0);
+});

@@ -11,7 +11,7 @@ import type { SummaryIssue } from '../../workflows/memorySummaryRecords';
 import { RequestUsage } from '../game/RequestUsage';
 
 export function MemorySummarySettings({ settings, onSave, state, phase, activity, failures = [], paused, busy, notice, onRun, onCancel, onDirtyChange }: {
-  settings: Settings; onSave: (settings: Settings) => void; state?: GameState;
+  settings: Settings; onSave: (settings: Settings, base?: Settings) => void; state?: GameState;
   phase?: 'generating' | 'saving'; activity?: { kind: SummaryKind; npcId?: string };
   failures?: SummaryIssue[]; paused?: boolean; busy?: boolean; notice?: string;
   onRun?: (kind: SummaryKind, npcId?: string, retryId?: string) => void; onCancel?: () => void; onDirtyChange?: (dirty: boolean) => void;
@@ -64,7 +64,7 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activity
       const parsed = SettingsSchema.safeParse({ ...latest, memory: { ...latest.memory,
         immediateWindowSize: immediateTouched.current ? immediateWindowSize : latest.memory.immediateWindowSize, summaries } });
       if (!parsed.success) { setMessage('即时记忆完整回合数须为1～10000的正整数；总结阈值为1～10000，每批1～100且不能超过阈值；提示词不能为空或超过30000字符。'); return; }
-      onSave(parsed.data);
+      onSave(parsed.data, latest);
       touched.current.clear(); immediateTouched.current = false;
       setDirty(false); onDirtyChange?.(false);
       setMessage('记忆设置已保存；即时记忆窗口用于下一次正文请求，总结配置用于下一次维护，历史总结不变。');

@@ -256,3 +256,14 @@ it('未来安排可提前取消并记录真实终止时刻；公开重大取消�
   expect(after.timeline[0].recordedAt).toBe(projectedTime);expect(after.events[e.id].startAt).toBe(e.startAt);
   expect(GameStateSchema.safeParse(after).success).toBe(true);
 });
+
+it('较长事件 ID 的认知来源不会保护具有同前缀的另一事件', () => {
+  const short = ongoing('investigation'), long = { ...ongoing('investigation-2'), estimatedEndAt: '2026-10-20T08:00:00+08:00' };
+  const { state, draft } = prepared([short, long]);
+  state.npc['npc-a'].knownInformation = [{ text: '另一个事项的来源', source: `event-result:${long.id}`, learnedAt: state.worldClock }];
+  const results = resultFor(state, draft, [finish(short), clean(short.id)]);
+  const after = projectTurn(state, draft, [...results.worldCommands, ...results.eventCommands]);
+  expect(after.retiredEvents[short.id]).toMatchObject({ id: short.id, status: 'resolved' });
+  expect(after.events[long.id]).toEqual(state.events[long.id]);
+  expect(after.npc['npc-a'].knownInformation).toEqual(state.npc['npc-a'].knownInformation);
+});

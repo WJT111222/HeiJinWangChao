@@ -1,0 +1,40 @@
+name: 跨标签阶段设置定向验收
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Required checks must be created even when a PR changes production code only.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    name: 跨标签阶段设置 Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: 运行 Chromium 回归
+        run: |
+          set -o pipefail
+          npm run test:e2e -- e2e/settings-stage-sync.spec.ts --workers=1 --grep '跨标签保存叙事视角' 2>&1 | tee playwright.log
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: chromium-regression
+          path: |
+            test-results/
+            playwright.log
+          if-no-files-found: ignore

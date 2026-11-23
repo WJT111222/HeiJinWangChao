@@ -6,7 +6,7 @@ import { MemorySummarySettings } from './MemorySummarySettings';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import { VariableManager } from './VariableManager';
 import type { SaveRepository, VariableSnapshot } from '../../services/storage/saveRepository';
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, cloneElement, isValidElement } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, cloneElement, isValidElement } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { AiConnections } from './AiConnections';
 import { UnsavedAiChanges } from './UnsavedAiChanges';
@@ -37,6 +37,7 @@ export function SettingsPanel({
   activeSaveId,
   memoryMaintenance, variableSaveId, variableInstance, companion, onVariablesSaved, onVariablesDirtyChange,
   onAiDirtyChange,
+  onLocalDirtyChange,
   onSummaryDirtyChange,
   onWorldbookDirtyChange,
   onOpenNotice,
@@ -50,11 +51,12 @@ export function SettingsPanel({
   companion?: CompanionProfile;
   onVariablesSaved?: (result: VariableSnapshot) => void;
   onVariablesDirtyChange?: (dirty:boolean) => void;
+  onLocalDirtyChange?: (dirty: boolean) => void;
   onAiDirtyChange?: (dirty: boolean) => void;
   onSummaryDirtyChange?: (dirty: boolean) => void;
   onWorldbookDirtyChange?: (dirty: boolean) => void;
   onOpenNotice?: (kind: NoticeKind) => void;
-  onSave: (settings: Settings) => void;
+  onSave: (settings: Settings, base?: Settings) => Settings | void;
 }) {
   const desktop=useDesktopFeedback();
   const [mobileHome,setMobileHome]=useState(!desktop);
@@ -64,6 +66,7 @@ export function SettingsPanel({
   useEffect(()=>{if(desktop)setMobileHome(false);},[desktop]);
   useEffect(()=>{if(!desktop&&!mobileHome&&document.querySelector('dialog:modal')===host.current?.closest('dialog')){const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=0;categoryHeading.current?.focus({preventScroll:true});}},[desktop,mobileHome,tab]);
   const [editing, setEditing] = useState(settings);
+  const [editingBase, setEditingBase] = useState(settings);
   // 玩家点了「自定义」或手动改过数字：即使数字恰好等于某一档，也保持自定义选中。
   const [customLength, setCustomLength] = useState(false);
   const minLengthInput = useRef<HTMLInputElement>(null);
@@ -86,7 +89,15 @@ export function SettingsPanel({
     setAiDirty(dirty);
     onAiDirtyChange?.(dirty);
   }, [onAiDirtyChange]);
-  const localDirty=JSON.stringify(editing.prompts)!==JSON.stringify(settings.prompts)||JSON.stringify(editing.runtime)!==JSON.stringify(settings.runtime);
+  const localDirty=JSON.stringify(editing.prompts)!==JSON.stringify(editingBase.prompts)||JSON.stringify(editing.runtime)!==JSON.stringify(editingBase.runtime);
+  useLayoutEffect(() => { onLocalDirtyChange?.(localDirty); }, [localDirty, onLocalDirtyChange]);
+  useEffect(() => () => onLocalDirtyChange?.(false), [onLocalDirtyChange]);
+  useEffect(() => {
+    if (!localDirty) {
+      setEditing(settings);
+      setEditingBase(settings);
+    }
+  }, [localDirty, settings]);
   const prompt = <K extends keyof Settings['prompts']>(key: K, value: Settings['prompts'][K]) => {
     setNotice('');
     setNoticeLevel('info');
@@ -131,7 +142,9 @@ export function SettingsPanel({
       return;
     }
     try {
-      onSave(checked.data);
+      const saved = onSave(checked.data, { ...editingBase, memory: settings.memory, display: settings.display }) ?? checked.data;
+      setEditing(saved);
+      setEditingBase(saved);
       setNoticeLevel('ok');
       setNotice('本地偏好已保存，将用于下一次生成尝试；不会改写进行中的请求或已保存草稿。');
     } catch {
