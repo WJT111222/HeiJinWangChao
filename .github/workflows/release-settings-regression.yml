@@ -1,0 +1,29 @@
+name: 设置关闭定向验收
+
+on:
+  pull_request:
+    paths:
+      - 'e2e/settings-readability.spec.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e -- e2e/settings-readability.spec.ts --workers=1 --grep '运行偏好未保存时 Escape'
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: chromium-regression
+          path: test-results/

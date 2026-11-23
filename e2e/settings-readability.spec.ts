@@ -159,8 +159,7 @@ for (const width of [900, 901]) {
 }
 
 test('运行偏好未保存时 Escape 允许继续编辑或明确放弃', async ({ page }) => {
-  await prepare(page, false);
-  const settings = await openPaperSettings(page);
+  const { root: settings, posts } = await prepare(page, false);
   await settings.getByRole('button', { name: '运行', exact: true }).click();
   const world = settings.getByRole('checkbox', { name: '动态世界', exact: true });
   const original = await world.isChecked();
@@ -174,4 +173,5 @@ test('运行偏好未保存时 Escape 允许继续编辑或明确放弃', async 
   await page.keyboard.press('Escape');
   await confirmation.getByRole('button', { name: '放弃本次修改' }).click();
   await expect(settings).not.toBeVisible();
+  expect(posts()).toBe(0);
 });
