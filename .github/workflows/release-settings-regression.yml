@@ -2,15 +2,20 @@ name: 设置关闭定向验收
 
 on:
   pull_request:
-    paths:
-      - 'e2e/settings-readability.spec.ts'
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Required checks must be created even when a PR changes production code only.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   regression:
+    name: 设置关闭保护 Chromium
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -21,9 +26,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e -- e2e/settings-readability.spec.ts --workers=1 --grep '运行偏好未保存时 Escape'
+      - name: 运行 Chromium 回归
+        run: |
+          set -o pipefail
+          npm run test:e2e -- e2e/settings-readability.spec.ts --workers=1 --grep '运行偏好未保存时 Escape' 2>&1 | tee playwright.log
       - uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: chromium-regression
-          path: test-results/
+          path: |
+            test-results/
+            playwright.log
+          if-no-files-found: ignore
