@@ -228,6 +228,12 @@ test('开局组件加载前刷新销毁授权，未生成草稿保留且仅主�
 for (const failure of ['network', 'timeout'] as const) {
   test(`开局${failure}不隐式重试，刷新不重发，草稿和正式状态安全`, async ({ page }) => {
     await prepare(page);
+    if (failure === 'network') {
+      await page.evaluate(async () => {
+        const modulePath = '/src/services/ai/corsRelay.ts';
+        (await import(modulePath)).setRelayMode('off');
+      });
+    }
     if (failure === 'timeout') {
       await page.evaluate(() => {
         const key = 'heijin.settings.v1', settings = JSON.parse(localStorage.getItem(key)!);

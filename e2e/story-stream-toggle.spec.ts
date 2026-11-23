@@ -35,7 +35,7 @@ test.beforeEach(async ({ page }) => {
 });
 test.afterEach(async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); });
 
-async function seed(page: Page, stream: boolean, bound = false, legacy = false, timeout = 30) {
+async function seed(page: Page, stream: boolean, bound = false, legacy = false, timeout = 30, endpoint = baseUrl) {
   await page.goto('/');
   await page.evaluate(async ({ baseUrl, stream, bound, legacy, timeout }) => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/world.ts', '/src/tests/fixtures/turn.ts', '/src/ui/settings/model.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts'];
@@ -55,7 +55,7 @@ async function seed(page: Page, stream: boolean, bound = false, legacy = false, 
       const done = await repo.commitTurn({ draft: await completeDraft(repo), nextAction: '', useVariableStage: true, useWorldStage: true });
       if (bound) await repo.bindTurnAction(done.draft, '沿江观察', true, true);
     } finally { repo.close(); }
-  }, { baseUrl, stream, bound, legacy, timeout });
+  }, { baseUrl: endpoint, stream, bound, legacy, timeout });
   await page.goto('/#game/save-a'); await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible();
   return stored(page);
 }
@@ -136,4 +136,71 @@ test('非流式等待超时，保留行动及安全诊断，不自动换模式�
   await expect.poll(async () => (await stored(page)).draft?.stageStatus.story, { timeout: 10000 }).toBe('failed'); await closeError(page);
   const failed = await stored(page); expect(failed.state).toEqual(before.state); expect(failed.draft?.failures[0].errorCode).toBe('timeout');
   await expect(action(page)).toHaveAttribute('data-kind', 'continue'); await expect(page.locator('#player-input')).toHaveValue('沿江观察'); expect(calls).toEqual([{ model: 'story', stream: false }]);
+});
+
+test('GLM 中转 SSE 完成三阶段结算；下回合中转 500 保留正式状态', async ({ page }) => {
+  const glm = 'https://open.bigmodel.cn/api/paas/v4';
+  const routeCalls: string[] = [];
+  let fail = false;
+  await page.route(glm + '/**', (route) => {
+    routeCalls.push('direct ' + route.request().postDataJSON().model);
+    return route.abort('failed');
+  });
+  await page.route('**/api/ai-relay?*', async (route) => {
+    const body = route.request().postDataJSON();
+    routeCalls.push('relay ' + body.model);
+    expect(new URL(route.request().url()).searchParams.get('target')).toBe(glm + '/chat/completions');
+    const headers = { 'X-Heijin-Relay-Upstream': '1' };
+    if (fail) return route.fulfill({ status: 500, headers, json: { error: 'mock' } });
+    const ctx = body.messages.find((m: { content: string }) =>
+      m.content.startsWith('<GAME_CONTEXT>'),
+    ).content;
+    const start = JSON.parse(ctx.slice('<GAME_CONTEXT>\n'.length, -'\n</GAME_CONTEXT>'.length))
+      .SAVE_STATE.worldClock;
+    const content =
+      body.model === 'story'
+        ? output
+        : body.model === 'variables'
+          ? variableTextEnvelope(
+              '<命令>\nset worldClock = "' +
+                new Date(Date.parse(start) + 60000).toISOString() +
+                '"\n</命令>',
+            )
+          : JSON.stringify({
+              worldCommands: [],
+              taskCommands: [],
+              eventCommands: [],
+              visibleHooks: [],
+              unresolved: [],
+            });
+    return route.fulfill({
+      headers,
+      contentType: body.stream ? 'text/event-stream' : 'application/json',
+      body: body.stream ? frame(content) + 'data: [DONE]\n\n' : json(content),
+    });
+  });
+  const before = await seed(page, true, false, false, 30, glm);
+  const send = async (input: string) => {
+    await page.locator('#player-input').fill(input);
+    await page.getByRole('button', { name: '发送', exact: true }).click();
+  };
+  await send('沿江观察');
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(before.state.turnNumber + 1);
+  const committed = await stored(page);
+  expect(committed.state.journal).toHaveLength(before.state.journal.length + 1);
+  fail = true;
+  await send('继续观察');
+  await expect.poll(async () => (await stored(page)).draft?.stageStatus.story).toBe('failed');
+  await expect(action(page)).toHaveAttribute('data-kind', 'continue');
+  expect((await stored(page)).state).toEqual(committed.state);
+  expect(routeCalls).toEqual([
+    'direct story',
+    'relay story',
+    'direct variables',
+    'relay variables',
+    'direct world',
+    'relay world',
+    'direct story',
+    'relay story',
+  ]);
 });

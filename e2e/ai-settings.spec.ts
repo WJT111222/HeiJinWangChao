@@ -188,6 +188,8 @@ test('连接授权错误不展示服务详情，网络错误不误报密钥，�
   });
   await page.goto('/');
   const settings = await openAiSettings(page);
+  // This case exercises the direct transport's CORS diagnostic.
+  await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck();
   await addChannel(settings, { name: 'Mock', url: 'https://api.mock.invalid/v1', key: 'browser-mock-credential' });
   await expect(settings.getByRole('status').filter({ hasText: '连接失败' }).first()).toContainText('授权错误');
   await expect(page.getByRole('dialog').first()).not.toContainText('secret service detail');

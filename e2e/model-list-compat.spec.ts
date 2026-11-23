@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { selected } from './helpers/select';
 import { addChannel, backToList, openAiSettings, openChannel, saveAi, setUrl, stageModel } from './helpers/aiSettings';
 
-async function seed(page: Page) {
+async function seed(page: Page, directOnly = false) {
   await page.goto('/');
   await page.evaluate(async () => {
     const configPath = '/src/services/ai/configuration.ts', vaultPath = '/src/services/ai/credentials.ts';
@@ -13,7 +13,9 @@ async function seed(page: Page) {
     config.routes.story = { channelId: channel.id, modelId: 'kept-route' };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'browser-list-secret');
   });
-  await page.reload(); const settings = await openAiSettings(page); await openChannel(settings, '列表兼容测试'); return settings;
+  await page.reload(); const settings = await openAiSettings(page);
+  if (directOnly) await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck();
+  await openChannel(settings, '列表兼容测试'); return settings;
 }
 async function fetchModels(settings: Awaited<ReturnType<typeof seed>>) {
   await settings.locator('.ai-connect').getByRole('button', { name: '获取模型', exact: true }).click();
@@ -55,7 +57,7 @@ for (const kind of ['authorization', 'missing', 'network', 'format', 'json', 'em
         : kind === 'missing' ? { status: 404, json: { error: 'browser-list-secret hidden' } }
           : kind === 'format' ? { json: { result: 'browser-list-secret hidden' } } : { json: { data: [] } });
     });
-    const settings = await seed(page);
+    const settings = await seed(page, kind === 'network');
     const before = await page.evaluate(() => ({ config: localStorage.getItem('heijin.ai.v1'), key: JSON.stringify(sessionStorage) }));
     // 打开设置不联网；点「获取模型」才读取列表。失败只影响列表，不动配置。
     expect(calls).toBe(0); await fetchModels(settings);

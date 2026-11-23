@@ -22,6 +22,7 @@ import { OutputTokenLimit } from './OutputTokenLimit';
 import { detectPreset, presetById, presets, protocolNames, validEndpoint } from './aiPresets';
 import type { PresetId } from './aiPresets';
 import './ai-connections.css';
+import { relayMode, setRelayMode } from '../../services/ai/corsRelay';
 
 const stages: [AiTask, string, string][] = [
   ['story', '正文生成', '写剧情，最需要好模型'],
@@ -69,6 +70,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
   const [spinStage, setSpinStage] = useState<AiTask>();
   const [tests, setTests] = useState<Record<string, TestState>>({});
   const [confirm, setConfirm] = useState<{ kind: 'delete'; id: string } | { kind: 'preset'; id: string; preset: PresetId }>();
+  const [relay, setRelay] = useState(relayMode);
   const [secOpen, setSecOpen] = useState(false);
   const [notice, setNoticeText] = useState(start.notice);
   const [noticeLevel, setNoticeLevel] = useState<FeedbackLevel>(start.notice ? 'err' : 'info');
@@ -500,11 +502,20 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
   return (
     <div className={`ai-conn ${desktop ? 'is-desktop' : 'is-mobile'} ${!desktop && editing ? 'is-editing' : ''}`}>
       {!(!desktop && editing) && <>
-        <p className="ai-lede">游戏直接从浏览器连接你填写的服务，密钥只存在这台设备上，不进存档。{' '}
+        <p className="ai-lede">游戏优先直连你填写的服务，密钥保存在本机，不进存档。{' '}
           <button type="button" className="ai-link" aria-expanded={secOpen} onClick={() => setSecOpen(!secOpen)}>{secOpen ? '收起' : '安全说明'}</button></p>
         {secOpen && <Feedback className="notice ai-sec" level="info" mobileAs="p">
-          浏览器会直接连接你填写的服务地址，不使用额外的 CORS 代理；服务方和同一网站的脚本可能接触到密钥。浏览器存储不是安全的密钥库，在公共电脑上请关闭「记住密钥」。密钥不会进入游戏存档、提示词或诊断详情。请求开始时会冻结渠道、模型、参数和密钥，更改配置不影响正在执行的请求。
+          直连时密钥只发往你填写的服务；启用中转时，本站服务器也会处理密钥和请求内容。服务方和同一网站的脚本可能接触到密钥。浏览器存储不是安全的密钥库，在公共电脑上请关闭「记住密钥」。密钥不会进入游戏存档、提示词或诊断详情。请求开始时会冻结渠道、模型、参数和密钥，更改配置不影响正在执行的请求。
         </Feedback>}
+        <section className="ai-card" aria-label="网页版跨域自动中转">
+          <h4>网页版跨域自动中转</h4>
+          <label className="toggle"><input type="checkbox" checked={relay === 'auto'} onChange={event => {
+            const mode = event.target.checked ? 'auto' : 'off';
+            try { setRelayMode(mode); setRelay(mode); }
+            catch { setNotice('未能保存中转偏好，请检查本地存储权限。'); }
+          }}/>启用跨域自动中转（推荐开启）</label>
+          <p className="field-hint">部分第三方 API 不允许网页直接读取响应。开启后，直连发生疑似跨域网络错误时，系统会通过本站服务器自动重试一次。中转不保存密钥，但服务器在转发时会处理请求内容和密钥。个别情况下可能造成重复计费，可随时关闭。</p>
+        </section>
         <section className="ai-card ai-uses" aria-label="各阶段使用的模型">
           <div className="ai-uses-hd"><h4>各阶段使用的模型</h4><span>先选渠道，再从这个渠道的模型里选；变量、动态世界、记忆默认跟随正文</span></div>
           {stages.map(stageRow)}

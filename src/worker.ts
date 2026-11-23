@@ -1,3 +1,4 @@
+import { aiRelay } from './aiRelay';
 import { announcement } from './ui/notices/announcement';
 import { parseAnnouncement } from './services/notices/announcement';
 
@@ -9,6 +10,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const path = new URL(request.url).pathname;
     if (!path.startsWith('/api/')) return env.ASSETS.fetch(request);
+    if (path === '/api/ai-relay') return aiRelay(request);
     if (path !== '/api/announcement') return new Response('Not found', { status: 404 });
     if (request.method !== 'GET') return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET' } });
     let remote;
