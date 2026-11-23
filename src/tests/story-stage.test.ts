@@ -727,9 +727,9 @@ it('已启用独立交付时，显式续写仍使用普通消息并保留原断�
   } finally { vi.unstubAllGlobals(); }
 });
 
-it('完整正文后收到 error 类型的 DONE 仍不能保存候选或结算', async () => {
+it.each(['', 'data: [DONE]\n', 'data: 非 JSON\n'])('完整正文和 stop 后的 SSE 错误 %j 不能保存候选或结算', async (payload) => {
   const before = await repo.loadGame(draft.saveId);
-  const text = frame({ choices: [{ delta: { content: output() } }] }) + 'event: error\ndata: [DONE]\n\n';
+  const text = frame({ choices: [{ delta: { content: output() }, finish_reason: 'stop' }] }) + 'event: error\n' + payload + '\n';
   const transport = vi.fn<typeof fetch>(async () => new Response(text, { headers: { 'content-type': 'text/event-stream' } }));
   await expect(runner(transport).generate({ ...setup(), draft })).rejects.toMatchObject({ code: 'rejected' });
   const after = await repo.loadGame(draft.saveId);

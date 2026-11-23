@@ -30,7 +30,8 @@ export async function* readSse(
         skipLineFeed = buffer[end] === '\r';
         buffer = buffer.slice(end + 1);
         if (!line) {
-          if (data.length) yield { event, data: data.join('\n') };
+          // Some providers report failures with an event name and no data field.
+          if (data.length || event === 'error') yield { event, data: data.join('\n') };
           event = '';
           data = [];
         } else if (line.startsWith(':')) options?.onComment?.();
@@ -44,7 +45,7 @@ export async function* readSse(
         if (line.startsWith('data:')) data.push(line.slice(5).replace(/^ /, ''));
         else if (line.startsWith('event:')) event = line.slice(6).trimStart();
         else if (line.trim() && !line.startsWith(':')) throw new AiError('stream_interrupted', undefined, options?.tail ? { fieldPath: options.tail } : undefined);
-        if (data.length) yield { event, data: data.join('\n') };
+        if (data.length || event === 'error') yield { event, data: data.join('\n') };
         break;
       }
     }
