@@ -67,6 +67,14 @@ export function validateEventLinks(state: EventState) {
   }
   Object.keys(state.events).forEach(visit);Object.keys(state.retiredEvents).forEach(visit);
 }
+// Reference IDs use the same characters as IdSchema. Match a whole ID even inside legacy text.
+function citesEvent(serialized: string, id: string, plansOnly = false) {
+  const references = serialized.match(/event(?:-result|-plan)?:[a-zA-Z0-9_.:-]+/g) ?? [];
+  return references.includes(`event-plan:${id}`)
+    || (!plansOnly && (references.includes(`event:${id}`) || references.includes(`event-result:${id}`)
+      || serialized.includes(JSON.stringify(id))));
+}
+
 function hasReferences(state: GameState,event:WorldEvent) {
   const refs=[...Object.values(state.tasks),...Object.values(state.events).filter(e=>e.id!==event.id)];
   const condition=(ref:string)=>ref===event.id||ref===`event:${event.id}`;
@@ -77,14 +85,14 @@ function hasReferences(state: GameState,event:WorldEvent) {
       || ('predecessorEventIds' in r && r.predecessorEventIds?.includes(event.id)))
     || Object.values(state.retiredEvents).some(r=>r.predecessorEventIds.includes(event.id))
     || [...Object.values(state.events),...Object.values(state.retiredEvents)].some(e=>e.parentEventId===event.id)
-    || [...memories,...Object.values(state.organizations)].some(m=>JSON.stringify(m).includes(`event:${event.id}`)||JSON.stringify(m).includes(`event-result:${event.id}`)||JSON.stringify(m).includes(`event-plan:${event.id}`)||JSON.stringify(m).includes(JSON.stringify(event.id)));
+    || [...memories,...Object.values(state.organizations)].some(m=>citesEvent(JSON.stringify(m), event.id));
 }
 
 
 // Structured references resolve through eventById/historicalEvent after retirement.
 // Opaque knowledge/planning references still retain full context conservatively.
 function hasOpaqueReferences(state:GameState,event:WorldEvent) {
-  if(Object.values(state.npc).some(n=>n.kind==='special' && JSON.stringify(n.activeGoals).includes(`event-plan:${event.id}`)))return true;
+  if(Object.values(state.npc).some(n=>n.kind==='special' && citesEvent(JSON.stringify(n.activeGoals), event.id, true)))return true;
   if(event.eventKind==='main' && Object.values(state.events).some(e=>e.parentEventId===event.id&&!terminalEvent(e)))return true;
   const copy={...state,tasks:{},events:Object.fromEntries(Object.entries(state.events).map(([id,e])=>[id,{...e,linkedTaskIds:[],predecessorEventIds:[],parentEventId:undefined}])),
     retiredEvents:{},timeline:[]};

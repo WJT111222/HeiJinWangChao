@@ -420,3 +420,21 @@ it('旧默认false迁移及序列化后不自动收费，手动逐项开启不�
   expect(refreshed.memory.summaries.medium.automatic).toBe(false);
   expect(Object.values(defaultSettings().memory.summaries).every(config => config.automatic)).toBe(true);
 });
+
+it.each(['{broken', 'null', '[]'])('损坏的轮询游标 %s 可恢复，旧付费记录仍有效', async raw => {
+  const state = compressionState('short', 31), settings = defaultSettings(), storage = store();
+  const cursor = `heijin.summary.schedule:${state.saveId}`;
+  storage.setItem(cursor, raw);
+  const previous = new SummaryRecords(storage, state);
+  previous.begin({ kind: 'short', status: 'pending', retryId: 'previous-short', code: 'server',
+    resultId: 'failed-result', sourceIds: [state.memories.short[0].id] });
+  state.npc['npc-a'] = npcMemoryState(20).npc['npc-a'];
+  const execute = vi.fn(async () => {});
+  const queue = new MemorySummaryQueue({ saveId: state.saveId, storage, settings: () => settings,
+    load: async () => ({ state, paused: false }), execute, changed: vi.fn() });
+  await queue.wake();
+  expect(execute).toHaveBeenCalledTimes(1);
+  expect(execute).toHaveBeenCalledWith('npc', false, 'npc-a', undefined);
+  expect(JSON.parse(storage.getItem(cursor)!)).toMatchObject({ cursor: 1, npcCursor: 'npc-a' });
+  expect(new SummaryRecords(storage, state).pending).toMatchObject([{ retryId: 'previous-short' }]);
+});

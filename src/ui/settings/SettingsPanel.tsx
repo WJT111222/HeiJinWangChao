@@ -37,6 +37,7 @@ export function SettingsPanel({
   activeSaveId,
   memoryMaintenance, variableSaveId, variableInstance, companion, onVariablesSaved, onVariablesDirtyChange,
   onAiDirtyChange,
+  onLocalDirtyChange,
   onSummaryDirtyChange,
   onWorldbookDirtyChange,
   onOpenNotice,
@@ -50,6 +51,7 @@ export function SettingsPanel({
   companion?: CompanionProfile;
   onVariablesSaved?: (result: VariableSnapshot) => void;
   onVariablesDirtyChange?: (dirty:boolean) => void;
+  onLocalDirtyChange?: (dirty: boolean) => void;
   onAiDirtyChange?: (dirty: boolean) => void;
   onSummaryDirtyChange?: (dirty: boolean) => void;
   onWorldbookDirtyChange?: (dirty: boolean) => void;
@@ -87,6 +89,8 @@ export function SettingsPanel({
     onAiDirtyChange?.(dirty);
   }, [onAiDirtyChange]);
   const localDirty=JSON.stringify(editing.prompts)!==JSON.stringify(settings.prompts)||JSON.stringify(editing.runtime)!==JSON.stringify(settings.runtime);
+  useEffect(() => { onLocalDirtyChange?.(localDirty); }, [localDirty, onLocalDirtyChange]);
+  useEffect(() => () => onLocalDirtyChange?.(false), [onLocalDirtyChange]);
   const prompt = <K extends keyof Settings['prompts']>(key: K, value: Settings['prompts'][K]) => {
     setNotice('');
     setNoticeLevel('info');

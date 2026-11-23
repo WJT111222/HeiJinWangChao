@@ -69,8 +69,18 @@ export class MemorySummaryQueue {
   wake() {
     return this.enqueue('automatic', async () => {
       const scheduleKey = `heijin.summary.schedule:${this.options.saveId}`;
-      const schedule = JSON.parse(this.options.storage.getItem(scheduleKey) || '{}') as { cursor?: number; npcCursor?: string };
-      const cursor = Number.isInteger(schedule.cursor) ? Math.abs(schedule.cursor!) % summaryKinds.length : 0;
+      const rawSchedule = this.options.storage.getItem(scheduleKey);
+      let schedule: { cursor?: number; npcCursor?: string } = {};
+      if (rawSchedule) {
+        try {
+          const parsed: unknown = JSON.parse(rawSchedule);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) schedule = parsed;
+        } catch (error) {
+          if (!(error instanceof SyntaxError)) throw error;
+          // The round-robin cursor is disposable. Pending request records are stored separately.
+        }
+      }
+      const cursor = Number.isSafeInteger(schedule.cursor) ? Math.abs(schedule.cursor!) % summaryKinds.length : 0;
       const npcCursor = typeof schedule.npcCursor === 'string' ? schedule.npcCursor : '';
       const order = summaryKinds.map((_, index) => summaryKinds[(cursor + index) % summaryKinds.length]);
       const next = { cursor: (cursor + 1) % summaryKinds.length, npcCursor };
