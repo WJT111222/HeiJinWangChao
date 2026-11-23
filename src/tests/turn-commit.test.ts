@@ -70,6 +70,27 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
       expect(Date.parse(result.state.worldClock)).toBe(Date.parse(gameTime) + (index * (index + 1) / 2) * 10000);
     }
   });
+  it('连续结算 100 回合，中途重开数据库并重复提交仍各执行一次', async () => {
+    for (let index = 1; index <= 100; index++) {
+      const narrative = `第${index}幕，主角在公园休息一分钟。`;
+      const draft = await completeDraft(repo, { narrative, variables: await elapsedVariables(repo, narrative, 60) });
+      const input = submission(draft, `第${index + 1}幕行动`);
+      const result = await repo.commitTurn(input);
+      expect(result.state).toMatchObject({ turnNumber: index, revision: index });
+      expect(result.state.journal).toHaveLength(index);
+      if (index === 50 || index === 100) {
+        repo.close();
+        repo = await SaveRepository.open('commit', factory);
+        expect(await repo.commitTurn(input)).toEqual({ ...result, replayed: true });
+      }
+    }
+    const final = await repo.loadGame('save-a');
+    expect(new Set(final.state.journal.map(entry => entry.turnId)).size).toBe(100);
+    expect(final.state.appliedCommands).toHaveLength(100);
+    expect(final.state.journal.at(-1)?.story.narrative).toBe('第100幕，主角在公园休息一分钟。');
+    expect(Date.parse(final.state.worldClock)).toBe(Date.parse(gameTime) + 6_000_000);
+    expect(final.draft?.baseSaveRevision).toBe(100);
+  }, 90_000);
   it('保持旧 commitCommands 的空命令与幂等契约', () => {
     const state = worldState();
     expect(commitCommands(state, 'old-turn', 0, [])).toEqual(state);

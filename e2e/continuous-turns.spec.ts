@@ -1,3 +1,4 @@
+import { GameTimeSchema } from '../src/domain/common';
 import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
@@ -63,6 +64,8 @@ function contextFrom(body: unknown) {
   if (!match) throw new Error('实际请求缺少 GAME_CONTEXT');
   return record(JSON.parse(match[1]));
 }
+const variableRequestState = VariableStateProjectionSchema.extend({ worldClock: GameTimeSchema.nullable() });
+
 async function mock(page: Page) {
   const plan = { badStoryNumber: 0, holdWorld: undefined as Promise<void> | undefined };
   const stories: { number: number; action: string; context: string }[] = [],
@@ -94,14 +97,24 @@ async function mock(page: Page) {
       return;
     }
     if (stage === 'variables') {
-      const state = VariableStateProjectionSchema.parse(ctx.SAVE_STATE),
+      const state = variableRequestState.parse(ctx.SAVE_STATE),
         story = StorySchema.parse(ctx.STORY_RESULT);
+      const opening = record(ctx.OPENING_TIME);
+      let endAt: string;
+      if (opening.status === 'candidate') {
+        endAt = GameTimeSchema.parse(opening.endAt);
+      } else if (opening.status === 'pending' && state.worldClock === null) {
+        // This synthetic Story explicitly set the opening at 14:00 and ended at 14:01.
+        endAt = '2015-07-08T14:01:00+08:00';
+      } else {
+        endAt = new Date(Date.parse(GameTimeSchema.parse(state.worldClock)) + 60000).toISOString();
+      }
       const commands: DomainCommand[] = [
         {
           type: 'SetWorldClock',
           commandId: 'minute',
           evidence: '经过一分钟，主角在街边休息。',
-          worldClock: ctx.OPENING_TIME ? string(record(ctx.OPENING_TIME).endAt) : new Date(Date.parse(state.worldClock) + 60000).toISOString(),
+          worldClock: endAt,
         },
         {
           type: 'UpdateProtagonist',
@@ -309,7 +322,7 @@ test('快速双击与另一标签发送最多结算一次；成功后数据库�
   context,
 }) => {
   await configure(page);
-  await mock(page);
+  const server = await mock(page);
   await createCharacter(page);
   await ready(page);
   const other = await context.newPage();
@@ -338,6 +351,7 @@ test('快速双击与另一标签发送最多结算一次；成功后数据库�
   expect(result.state.journal).toHaveLength(2);
   expect(result.draft.baseSaveRevision).toBe(2);
   expect(result.draft.userInput).toBe('');
+  expect(server.calls).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
   await other.close();
 });
 
