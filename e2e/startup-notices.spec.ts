@@ -142,8 +142,19 @@ test('首页与设置手动查看只开指定公告；返回保留设置内容�
     await expect(trigger).toBeFocused();
     expect(await page.evaluate(() => document.body.style.overflow)).toBe('hidden');
   }
-  await settings.getByRole('button', { name: '关闭资料界面' }).click();
+  const readSettings = () => page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
+  const saved = await readSettings();
+  const close = settings.getByRole('button', { name: '关闭资料界面' });
+  const confirmation = page.getByRole('dialog', { name: '本地偏好尚未保存' });
+  await close.click();
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', { name: '继续编辑' }).click();
+  await expect(length).toHaveValue('2222');
+  expect(await readSettings()).toBe(saved);
+  await close.click();
+  await confirmation.getByRole('button', { name: '放弃本次修改' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(await readSettings()).toBe(saved);
   expect(await page.evaluate(() => document.body.style.overflow)).not.toBe('hidden');
 });
 
