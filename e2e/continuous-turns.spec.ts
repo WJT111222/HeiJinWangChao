@@ -1,15 +1,17 @@
 import { GameTimeSchema } from '../src/domain/common';
 import { VariableStateProjectionSchema } from '../src/tests/fixtures/variableState';
 import { variableReply } from '../src/tests/fixtures/variableReply';
-import { openGameTools } from './helpers/gameLayout';
+import { closeWorkflowSheet, openGameTools, openProfile, openWorkflow } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { GameStateSchema, StorySchema } from '../src/domain/state';
 import { TurnDraftSchema } from '../src/domain/drafts';
 import { record, array, string } from '../src/services/ai/protocols';
 import type { DomainCommand } from '../src/domain/commands';
-// 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
-test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
+// Three release scenarios now exercise the mobile composer and status drawer as well.
+test.beforeEach(({ isMobile }, info) => {
+  test.skip(isMobile && !/连续正式游玩十回合|提交事务中途失败|快速双击与另一标签/.test(info.title), '其余场景使用电脑端专用工作台');
+});
 
 async function configure(page: Page, useWorldStage = true) {
   await page.goto('/');
@@ -187,14 +189,17 @@ async function ready(page: Page, number = 1) {
   await expect(page.getByTestId('story-reader').locator('article').last()).toContainText(
     `第${number}幕`,
   );
-  await expect(workflow(page)).toContainText('本回合已结算');
+  if ((page.viewportSize()?.width ?? 1000) <= 900) {
+    await closeWorkflowSheet(page);
+    await expect(page.getByRole('status').filter({ hasText: '本回合已结算' })).toBeVisible();
+  } else await expect(workflow(page)).toContainText('本回合已结算');
 }
 async function opening(page: Page) {
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await ready(page);
 }
 
-test('真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致', async ({ page }, info) => {
+test('真实创角后连续正式游玩十回合；输入、资料、正文历史与刷新一致', async ({ page, isMobile }, info) => {
   test.setTimeout(120000);
   await configure(page);
   const server = await mock(page);
@@ -205,7 +210,12 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
   expect(initial.state.openingTimePending).toBeUndefined(); // 开局自动正式结算，待下一条行动。
   expect(initial.state.turnNumber).toBe(1);
   expect(initial.state.economy.cash).toBeNull();
-  await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText('未确认');
+  if (isMobile) {
+    await openProfile(page);
+    const status = page.getByRole('dialog', { name: '此时此地' });
+    await expect(status.getByRole('region', { name: '主角信息' })).toContainText('未确认');
+    await page.keyboard.press('Escape');
+  } else await expect(page.getByRole('complementary', { name: '主角信息' })).toContainText('未确认');
   for (let index = 1; index <= 9; index++) {
     const action = `行动${index}：在街边等待一分钟`;
     await page.getByLabel('你的行动', { exact: true }).fill(action);
@@ -285,7 +295,7 @@ test('下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完�
   ]);
 });
 
-test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', async ({ page }) => {
+test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', async ({ page, isMobile }) => {
   await configure(page);
   await mock(page);
   await createCharacter(page);
@@ -306,7 +316,9 @@ test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', a
   });
   await page.getByLabel('你的行动', { exact: true }).fill('等待下一轮');
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect(page.getByRole('alert')).toBeVisible();
+  if (isMobile) await openWorkflow(page);
+  await expect(page.getByRole('alert').filter({ hasText: '行动未发送' })).toBeVisible();
+  await closeWorkflowSheet(page);
   expect(await stored(page)).toEqual(before);
   await page.evaluate(() => {
     const restore = Reflect.get(window, '__restoreTurnPut');
@@ -336,17 +348,29 @@ test('快速双击与另一标签发送最多结算一次；成功后数据库�
     for (const channel of readAiConfig(localStorage).channels) vault.set(channel.id, 'mock-loop-secret');
   });
   await other.reload();
+  await openGameTools(other);
+  await closeWorkflowSheet(other);
   await page.getByLabel('你的行动', { exact: true }).fill('在街边等待');
   await other.getByLabel('你的行动', { exact: true }).fill('在街边等待');
   await Promise.all(
-    [page, other].map((p) =>
-      p.getByRole('button', { name: '发送', exact: true }).evaluate((button: HTMLButtonElement) => {
-        button.click();
-        button.click();
-      }),
-    ),
+    [page, other].map(async (tab) => {
+      const send = tab.getByRole('button', { name: '发送', exact: true });
+      await expect(send).toBeEnabled();
+    }),
   );
-  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
+  await Promise.all(
+    [page, other].map((tab) => tab.getByRole('button', { name: '发送', exact: true }).evaluate((button: HTMLButtonElement) => {
+      button.click();
+      button.click();
+    })),
+  );
+  try {
+    await expect.poll(async () => (await stored(page)).state.turnNumber, { timeout: 15_000 }).toBe(2);
+  } catch (error) {
+    const alerts = await Promise.all([page, other].map(tab => tab.getByRole('alert').allTextContents()));
+    console.error('提交诊断', { calls: server.calls, alerts, draft: (await stored(page)).draft.stageStatus });
+    throw error;
+  }
   const result = await stored(page);
   expect(result.state.journal).toHaveLength(2);
   expect(result.draft.baseSaveRevision).toBe(2);
