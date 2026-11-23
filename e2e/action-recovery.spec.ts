@@ -1,7 +1,19 @@
 import { test, expect } from './helpers/test';
 import { openWorkflowDiagnostics, openSettings } from './helpers/gameLayout';
-import { setup, transport, plan, calls, data, closeError, send, button, stopped, record, snapshot, oldOptions } from './helpers/actionRecovery';
-for (const mode of ['500', '401', '429', 'invalid', 'incomplete', 'missing-done', 'partial', 'silence', 'timeout', 'hold'])
+import { setup, plan, calls, data, closeError, send, button, stopped, record, snapshot, oldOptions } from './helpers/actionRecovery';
+const cases = [
+    ['500', ['server', 'server']],
+    ['401', ['authorization']],
+    ['429', ['rate_limit']],
+    ['invalid', ['invalid_output']],
+    ['incomplete', ['invalid_output']],
+    ['missing-done', ['stream_interrupted']],
+    ['partial', ['stream_interrupted']],
+    ['silence', ['timeout']],
+    ['timeout', ['timeout']],
+    ['hold', []],
+] as const;
+for (const [mode, errorCodes] of cases)
     test(`A ${mode}: inspect stopped state and explicit resend`, async ({ page }, info) => {
         await setup(page, true, ['silence', 'timeout'].includes(mode) ? 5 : 30);
         const original = await data(page);
@@ -29,6 +41,7 @@ for (const mode of ['500', '401', '429', 'invalid', 'incomplete', 'missing-done'
         expect(failed.state).toEqual(original.state);
         expect(failed.state.journal.at(-1)?.story.actionOptions).toEqual(oldOptions);
         expect(failed.draft?.story).toBeUndefined();
+        expect(failed.draft?.failures.map(failure => failure.errorCode)).toEqual(errorCodes);
         await expect(page.getByText('上一已结算回合建议 · 第1回合', { exact: false })).toBeVisible();
         await expect(page.getByRole('button', { name: /去书店看看/ })).toBeEnabled();
         await expect(page.locator('#action-recovery-guidance')).toContainText('尚无正文候选');
@@ -60,6 +73,7 @@ for (const stage of ['variables', 'world'])
         const failed = await data(page);
         expect(failed.state).toEqual(original.state);
         expect(failed.draft?.stageStatus[stage]).toBe('failed');
+        expect(failed.draft?.failures.map(failure => [failure.stage, failure.errorCode])).toEqual([[stage, 'authorization']]);
         expect(failed.draft?.story).toBeTruthy();
         await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
         await expect(page.getByText('当前正文建议（本回合尚未结算）', { exact: false })).toBeVisible();
@@ -68,7 +82,6 @@ for (const stage of ['variables', 'world'])
         await page.reload();
         await expect(page.getByTestId('story-reader')).toBeVisible();
         expect(await data(page)).toEqual(failed);
-        await transport(page);
         await button(page).click();
         await expect.poll(async () => (await data(page)).state.turnNumber).toBe(2);
         expect((await calls(page)).map(c => c.stage)).toEqual(stage === 'variables' ? ['variables', 'world'] : ['world']);
@@ -115,7 +128,6 @@ test('D lifecycle: no Web Locks, tabs, settings, cancelled late response and rel
     const second = await context.newPage();
     await second.goto('/#game/save-a');
     await expect(second.getByTestId('story-reader')).toBeVisible();
-    await transport(second);
     await send(second, '另一标签的新行动');
     await expect.poll(async () => (await snapshot(second)).ui.kind).toBe('continue');
     expect(await calls(second)).toHaveLength(0);
@@ -138,7 +150,6 @@ test('D lifecycle: no Web Locks, tabs, settings, cancelled late response and rel
     expect(await data(page)).toEqual(failed);
     await page.reload();
     await expect(page.getByTestId('story-reader')).toBeVisible();
-    await transport(page);
     await page.evaluate(() => Object.defineProperty(navigator, 'locks', { configurable: true, value: undefined }));
     await send(page, '读档后重新输入');
     await closeError(page);
@@ -181,7 +192,6 @@ test('C explicit suggestion, twice failed, unsent edit, save switch, reload and 
     await expect(page.getByTestId('story-reader')).toBeVisible();
     await expect(page.locator('#player-input')).toHaveValue(oldOptions[0]);
     expect(await data(page)).toEqual(failed);
-    await transport(page);
     await plan(page, 'ok');
     await page.locator('#player-input').fill('改去街边观察');
     await page.getByRole('button', { name: '发送', exact: true }).click();
@@ -205,7 +215,6 @@ test('reference-only old options, shortcuts and no fabricated options preserve b
     } });
     await page.reload();
     await expect(page.getByTestId('story-reader')).toBeVisible();
-    await transport(page);
     const original = await data(page);
     await expect(page.getByText('上一已结算回合建议 · 第1回合', { exact: false })).toBeVisible();
     await expect(page.getByRole('button', { name: /沿江走一走/ })).toBeDisabled();
