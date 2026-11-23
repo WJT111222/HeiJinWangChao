@@ -203,3 +203,40 @@ test('手机端：车票上导出备份并显示状态，导入直接调起系�
   await dialog(page).getByRole('button', { name: '关闭', exact: true }).click();
   await expect(dialog(page)).toHaveCount(0);
 });
+
+test('跨标签手动编辑以后旧删除确认拒绝，刷新列表方可删除', async ({ page, context }) => {
+  await seed(page, [{ id: 'save-a', title: '防误删 · 重庆', turns: 1 }]);
+  await openLibrary(page);
+  const remove = page.getByRole('button', { name: '删除', exact: true }).first();
+  const confirmation = page.getByRole('dialog', { name: '删除这份存档？' });
+  await remove.click();
+  await confirmation.getByRole('button', { name: '取消', exact: true }).first().click();
+  await expect(confirmation).not.toBeVisible();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: '导出备份', exact: true }).first().click();
+  await download;
+  await remove.click();
+  const other = await context.newPage();
+  await other.goto('/');
+  await other.evaluate(async () => {
+    const path = '/src/services/storage/saveRepository.ts';
+    const { SaveRepository } = await import(path), repo = await SaveRepository.open();
+    try {
+      const current = await repo.loadVariableSnapshot('save-a');
+      await repo.savePlayerVariables(current, { ...current.state, weatherText: '小雨' });
+    } finally { repo.close(); }
+  });
+  await confirmation.getByRole('button', { name: '确认删除', exact: true }).click();
+  await expect(confirmation.getByRole('alert')).toContainText('存档可能已更新');
+  await expect(confirmation).toBeVisible();
+  await other.close();
+
+  await page.reload();
+  await openLibrary(page);
+  await expect(page.getByText('备份后存档有变动', { exact: true }).first()).toBeVisible();
+  await remove.click();
+  await confirmation.getByRole('button', { name: '确认删除', exact: true }).click();
+  await expect(confirmation).not.toBeVisible();
+  await expect(remove).toHaveCount(0);
+});

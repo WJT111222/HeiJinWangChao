@@ -1,0 +1,29 @@
+name: 存档跨标签定向验收
+
+on:
+  pull_request:
+    paths:
+      - 'e2e/backup-ui.spec.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e -- e2e/backup-ui.spec.ts --workers=1 --grep '跨标签手动编辑以后旧删除确认'
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: chromium-regression
+          path: test-results/
