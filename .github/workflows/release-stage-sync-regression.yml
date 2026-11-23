@@ -2,7 +2,7 @@ name: 跨标签阶段设置定向验收
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, release/1.0-rc]
   workflow_dispatch:
 
 permissions:
