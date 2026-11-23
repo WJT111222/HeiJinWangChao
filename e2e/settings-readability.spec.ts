@@ -164,9 +164,11 @@ test('运行偏好未保存时 Escape 允许继续编辑或明确放弃', async 
   const world = settings.getByRole('checkbox', { name: '动态世界', exact: true });
   const original = await world.isChecked();
   await world.setChecked(!original);
+  await expect(settings.locator('[data-settings-category="运行"] .dirty')).toBeAttached();
   await page.keyboard.press('Escape');
   const confirmation = page.getByRole('dialog', { name: '本地偏好尚未保存' });
-  await expect(confirmation).toBeVisible();
+  try { await expect(confirmation).toBeVisible(); }
+  catch (error) { console.error(await page.getByRole('dialog').allTextContents()); throw error; }
   await confirmation.getByRole('button', { name: '继续编辑' }).click();
   if (original) await expect(world).not.toBeChecked();
   else await expect(world).toBeChecked();

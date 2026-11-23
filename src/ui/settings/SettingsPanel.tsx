@@ -6,7 +6,7 @@ import { MemorySummarySettings } from './MemorySummarySettings';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import { VariableManager } from './VariableManager';
 import type { SaveRepository, VariableSnapshot } from '../../services/storage/saveRepository';
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, cloneElement, isValidElement } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, cloneElement, isValidElement } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { AiConnections } from './AiConnections';
 import { UnsavedAiChanges } from './UnsavedAiChanges';
@@ -89,7 +89,7 @@ export function SettingsPanel({
     onAiDirtyChange?.(dirty);
   }, [onAiDirtyChange]);
   const localDirty=JSON.stringify(editing.prompts)!==JSON.stringify(settings.prompts)||JSON.stringify(editing.runtime)!==JSON.stringify(settings.runtime);
-  useEffect(() => { onLocalDirtyChange?.(localDirty); }, [localDirty, onLocalDirtyChange]);
+  useLayoutEffect(() => { onLocalDirtyChange?.(localDirty); }, [localDirty, onLocalDirtyChange]);
   useEffect(() => () => onLocalDirtyChange?.(false), [onLocalDirtyChange]);
   const prompt = <K extends keyof Settings['prompts']>(key: K, value: Settings['prompts'][K]) => {
     setNotice('');
