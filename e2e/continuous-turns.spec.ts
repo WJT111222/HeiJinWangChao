@@ -297,11 +297,11 @@ test('下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完�
 
 test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', async ({ page, isMobile }) => {
   await configure(page);
-  await mock(page);
+  const server = await mock(page);
   await createCharacter(page);
   await ready(page);
   const before = await stored(page);
-  await page.evaluate(() => {
+  await page.evaluate(baseRevision => {
     const original = IDBObjectStore.prototype.put;
     Object.defineProperty(window, '__restoreTurnPut', {
       value: () => {
@@ -310,23 +310,31 @@ test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', a
       configurable: true,
     });
     IDBObjectStore.prototype.put = function (value, key) {
-      if (this.name === 'drafts') throw new DOMException('isolated test', 'QuotaExceededError');
+      if (this.name === 'drafts' && value?.baseSaveRevision === baseRevision + 1)
+        throw new DOMException('isolated test', 'QuotaExceededError');
       return original.call(this, value, key);
     };
-  });
+  }, before.state.revision);
   await page.getByLabel('你的行动', { exact: true }).fill('等待下一轮');
   await page.getByRole('button', { name: '发送', exact: true }).click();
+  await expect.poll(() => server.calls.length).toBe(6);
   if (isMobile) await openWorkflow(page);
-  await expect(page.getByRole('alert').filter({ hasText: '行动未发送' })).toBeVisible();
-  await closeWorkflowSheet(page);
-  expect(await stored(page)).toEqual(before);
+  await expect(page.getByRole('alert').filter({ hasText: '正式结算' })).toBeVisible();
+  const failed = await stored(page);
+  expect(failed.state).toEqual(before.state);
+  expect(failed.draft.userInput).toBe('等待下一轮');
+  expect(failed.draft.stageStatus).toMatchObject({ story: 'ready', variables: 'ready', world: 'ready' });
   await page.evaluate(() => {
     const restore = Reflect.get(window, '__restoreTurnPut');
     if (typeof restore === 'function') restore();
   });
-  await page.getByRole('button', { name: '发送', exact: true }).click();
+  await workflow(page).getByRole('button', { name: '完成本回合结算', exact: true }).click();
   await ready(page, 2);
-  expect((await stored(page)).state.turnNumber).toBe(2);
+  const saved = await stored(page);
+  expect(saved.state.turnNumber).toBe(2);
+  expect(saved.state.revision).toBe(before.state.revision + 1);
+  expect(saved.draft.baseSaveRevision).toBe(saved.state.revision);
+  expect(server.calls).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
 });
 
 test('快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿', async ({
