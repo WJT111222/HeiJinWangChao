@@ -1,0 +1,91 @@
+name: 发布候选全量端到端对照
+
+# Keep the runner, lockfile, Chromium, workers and shards aligned with ci.yml.
+on:
+  push:
+    branches: [release/1.0-rc, "review/rc-e2e/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-candidate-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: 候选 Chromium 分片 ${{ matrix.shard }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: 运行完整分片
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: e2e-report.json
+        run: |
+          set -o pipefail
+          git rev-parse HEAD
+          node --version
+          npx playwright --version
+          npm run test:e2e -- --shard=${{ matrix.shard }}/4 --reporter=line,json 2>&1 | tee e2e-output.txt
+      - name: 记录失败和跳过索引
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { stripVTControlCharacters } from 'node:util';
+
+          const report = JSON.parse(readFileSync('e2e-report.json', 'utf8'));
+          function visit(suite, titles) {
+            const path = suite.file && suite.title === suite.file ? titles : [...titles, suite.title];
+            for (const spec of suite.specs ?? []) {
+              for (const test of spec.tests) {
+                if (test.status === 'expected') continue;
+                const result = test.results.at(-1);
+                const error = result?.errors?.[0];
+                console.log('RC_E2E_CASE ' + JSON.stringify({
+                  file: spec.file, line: spec.line, title: [...path, spec.title].join(' › '),
+                  project: test.projectName, status: test.status, result: result?.status,
+                  annotations: result?.annotations ?? test.annotations ?? [],
+                  message: stripVTControlCharacters(error?.message ?? '').slice(0, 1200),
+                  location: error?.location,
+                }));
+              }
+            }
+            for (const child of suite.suites ?? []) visit(child, path);
+          }
+
+          for (const suite of report.suites) visit(suite, []);
+          console.log('RC_E2E_STATS ' + JSON.stringify(report.stats));
+          JS
+
+      - name: 保存机器可读报告
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: rc-e2e-json-${{ matrix.shard }}
+          path: e2e-report.json
+          retention-days: 30
+
+      - name: 保存全量证据
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: rc-e2e-${{ matrix.shard }}
+          path: |
+            e2e-output.txt
+            e2e-report.json
+            test-results/
+          retention-days: 30
+          if-no-files-found: ignore
