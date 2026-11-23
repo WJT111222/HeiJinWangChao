@@ -28,8 +28,10 @@ async function metrics(page:Page) {
     return {viewport:{width:innerWidth,height:innerHeight},header:box('.app-header'),main:box('.creation-page'),footer:box('.wizard-footer'),card:box('.creation-card'),dossier:box('.creation-dossier'),scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight};
   });
 }
+test.use({ fixedTime: '2026-11-13T04:00:00Z' });
+
 let posts=0;
-test.beforeEach(async({page})=>{posts=0;await page.clock.setFixedTime(new Date('2026-11-13T04:00:00Z'));await page.route('**/*',r=>{if(r.request().method()==='POST'){posts++;return r.abort();}if(r.request().url().startsWith('https://')||r.request().url().endsWith('/api/announcement'))return r.abort();return r.continue();});});
+test.beforeEach(async({page})=>{posts=0;await page.route('**/*',r=>{if(r.request().method()==='POST'){posts++;return r.abort();}if(r.request().url().startsWith('https://')||r.request().url().endsWith('/api/announcement'))return r.abort();return r.continue();});});
 test.afterEach(()=>expect(posts).toBe(0));
 for(const [width,height] of [[901,800],[1100,800],[1440,900],[1600,900],[1920,1080],[901,500],[1100,420],[1440,500]]) {
  test(`视口边界与五步 ${width}x${height}`,async({page},info)=>{
