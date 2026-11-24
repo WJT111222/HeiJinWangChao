@@ -482,7 +482,21 @@ export class AiClient {
         }
         try { if (inspectionId) requestInspections.finish(inspectionId, usage); }
         catch { /* 诊断观察器失败不改变响应。 */ }
-        return { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics, protocol: snapshot.channel.protocol, model: snapshot.model };
+        const result = { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics, protocol: snapshot.channel.protocol, model: snapshot.model };
+        // 成功返回后，校验失败仍要带上这次请求已经看见的事实，不能事后从原文猜。
+        attachObservedRequest(result, {
+          model: snapshot.model,
+          protocol: snapshot.channel.protocol,
+          stream: trace?.requestedStream ?? options.stream === true,
+          relayEnabled, relayUsed: relay.used,
+          httpStatus: lastHttp,
+          ...(typeof options.timeoutSeconds === 'number' ? { timeoutSeconds: options.timeoutSeconds } : {}),
+          elapsedMs: Math.max(0, Math.round(performance.now() - started)),
+          ...(trace ? { bytes: trace.bytes, complete: trace.complete } : seen.complete !== undefined ? { complete: seen.complete } : {}),
+          finishReason: trace?.finish ?? trace?.rawFinish ?? seen.finishReasons?.[0],
+          ...(typeof seen.errorPresent === 'boolean' ? { errorInBody: seen.errorPresent } : {}),
+        });
+        return result;
       }, trace?.clock);
     } catch (error) {
       const failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
@@ -505,7 +519,7 @@ export class AiClient {
         stream: trace?.requestedStream ?? options.stream === true,
         relayEnabled, relayUsed: relay.used,
         httpStatus: status,
-        timeoutSeconds: options.timeoutSeconds ?? 120,
+        ...(typeof options.timeoutSeconds === 'number' ? { timeoutSeconds: options.timeoutSeconds } : {}),
         elapsedMs: Math.max(0, Math.round(performance.now() - started)),
         ...(trace ? { bytes: trace.bytes, complete: trace.complete } : seen.complete !== undefined ? { complete: seen.complete } : {}),
         finishReason: trace?.finish ?? trace?.rawFinish ?? seen.finishReasons?.[0],

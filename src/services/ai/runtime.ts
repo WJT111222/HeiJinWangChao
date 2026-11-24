@@ -26,6 +26,7 @@ import type { RequestOptions } from './client';
 import { variableFailure } from '../validation/variableDiagnostics';
 import { storyFailure } from '../validation/storyDiagnostics';
 import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, failurePhase, reasoningTagPresence, scanStoryTags } from './failureDiagnostic';
+import type { FailureDiagnostic } from './failureDiagnostic';
 import { stageResponses, safeStreamResponseText, responseLimitsFor } from './stageResponses';
 import { safeAiError } from './errors';
 import { mergeResponseDiagnostics } from './responseContent';
@@ -130,11 +131,12 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     }, 50);
   };
   let step: 'request' | 'response' = 'request';
-  // 本次请求模型返回的原始文字（续写时不含已写部分）；诊断展示用的 received 在续写成功接收后会换成拼接全文。
+  // 本次模型增量（续写不含已写部分）。addition 在拼接前定格，诊断用它区分提取前原文。
   let addition: string | undefined;
   let modelText: string | undefined;
   let formalText: string | undefined;
   let responseReasoning: string | undefined;
+  let response: Awaited<ReturnType<AiClient['generate']>> | undefined;
   try {
   let playerWorldbook: PlayerWorldbook | undefined;
   const storyNotes: string[] = [];
@@ -168,7 +170,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   if (presetSelection === nativeDeliveryId && !captured.draft)
     throw new AiError('configuration', undefined, { fieldPath: 'tavern.native_delivery.action' });
   const nativeDeliveryReference = presetSelection === nativeDeliveryId ? nativeReferenceRecords(messages) : undefined;
-  const response = await client.generate(snapshot, scripted ? await promptReady(messages, false) : messages, {
+  const responseResult = await client.generate(snapshot, scripted ? await promptReady(messages, false) : messages, {
     ...options,
     tavernType: scripted ? type : undefined,
     playerWorldbook,
@@ -215,6 +217,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     timeoutSeconds: options.timeoutSeconds ?? captured.settings.runtime.timeoutSeconds,
     stream: options.stream ?? captured.stage === 'story',
   });
+  response = responseResult;
   modelText = response.text;
   responseReasoning = response.nativeReasoning;
   if (captured.stage === 'story') formalText = merged(response.text);
@@ -223,7 +226,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   step = 'response';
   if (!rawObserved) received = append('', response.text, responseLimits.text);
   addition = received;
-  // 续写时诊断原文与解析输入都是拼接后的全文；非续写时与原来完全一致。
+  // 临时原文视图在续写时改成拼接全文。诊断仍分开记提取前原文、提取后正文和解析输入。
   if (continuation) received = append('', merged(received), responseLimits.text);
   stageResponses.update(responseId, { text: received, nativeReasoning: publicReasoning, diagnostics, truncated, ...display(), status: 'received' }, secrets);
   const responseText = merged(response.text);
@@ -318,23 +321,34 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     const preset = captured.stage !== 'story' || !presetSelection ? 'off' as const
       : presetSelection === nativeDeliveryId ? 'native' as const : 'script' as const;
     const field = failure instanceof AiError ? failure.details?.fieldPath : path;
-    const raw = modelText ?? (truncated ? undefined : addition ?? received);
+    if (response && failure !== response) carryFailureDiagnostic(response, failure);
+    const actions = captured.settings.prompts.actionOptions;
+    // 提取前原文只来自 onRawTextDelta。response.text 已去掉前导思考，不能当成原文。
+    const observedRaw = rawObserved && !truncated ? (addition ?? received) : undefined;
+    const extracted = modelText;
+    const parsedInput = formalText;
     const reasoningText = responseReasoning ?? (truncated ? undefined : publicReasoning);
     attachObservedRequest(failure, {
       preset,
       phase: failurePhase(field, deadline) ?? (step === 'response' && captured.stage === 'story' && !String(field ?? '').startsWith('tavern.') ? 'story_validation' : undefined),
       ...(typeof diagnostics.errorPresent === 'boolean' ? { errorInBody: diagnostics.errorPresent } : {}),
-      ...(raw !== undefined ? { contentChars: raw.length } : {}),
+      ...(observedRaw !== undefined ? { contentChars: observedRaw.length } : {}),
       ...(reasoningText !== undefined ? { reasoningChars: reasoningText.length } : {}),
     });
-    if (captured.stage === 'story' && raw !== undefined) {
-      const actions = captured.settings.prompts.actionOptions;
-      attachFailureDiagnostic(failure, {
-        storyTags: scanStoryTags(raw, actions),
-        ...(formalText !== undefined && formalText !== raw ? { parseTags: scanStoryTags(formalText, actions) } : {}),
-      });
+    if (captured.stage === 'story') {
+      const patch: Partial<FailureDiagnostic> = {};
+      if (observedRaw !== undefined) patch.storyTags = scanStoryTags(observedRaw, actions);
+      if (extracted !== undefined && extracted !== observedRaw) {
+        patch.extractedChars = extracted.length;
+        patch.extractedTags = scanStoryTags(extracted, actions);
+      }
+      if (parsedInput !== undefined && parsedInput !== observedRaw && parsedInput !== extracted) {
+        patch.parseInputChars = parsedInput.length;
+        patch.parseTags = scanStoryTags(parsedInput, actions);
+      }
+      if (Object.keys(patch).length) attachFailureDiagnostic(failure, patch);
+      if (reasoningText) attachFailureDiagnostic(failure, { reasoningTags: reasoningTagPresence(reasoningText) });
     }
-    if (captured.stage === 'story' && reasoningText) attachFailureDiagnostic(failure, { reasoningTags: reasoningTagPresence(reasoningText) });
     stageResponses.update(responseId, { status: 'failed',
       ...(captured.stage === 'story' ? { failureLayer: storyLayer } : {}),
       ...(storyLayer === 'story_validation' && options.storyClock ? { validationEndMs: options.storyClock.elapsed() } : {}),

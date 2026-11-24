@@ -1,5 +1,5 @@
 import { AiError, manualRetryOnly } from '../services/ai/errors';
-import { carryFailureDiagnostic, noteRetryDecision } from '../services/ai/failureDiagnostic';
+import { carryFailureDiagnostic, markRetryIssued, noteRetryDecision } from '../services/ai/failureDiagnostic';
 import { AiConfigSchema } from '../services/ai/configuration';
 import type { AiConfig } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
@@ -162,8 +162,10 @@ export async function executeWithAutoRetry<T>(options: {
   onRetry: (notice: RetryNotice) => void;
 }): Promise<T> {
   const settings = SettingsSchema.parse(options.settings);
+  let previousFailure: unknown;
   for (let attempt = 1; ; attempt += 1) {
     if (options.signal.aborted) throw new AiError('cancelled');
+    if (previousFailure) markRetryIssued(previousFailure);
     try {
       return await options.run();
     } catch (error) {
@@ -177,6 +179,7 @@ export async function executeWithAutoRetry<T>(options: {
       noteRetryDecision(reported, settings, attempt, plan, settings.runtime.failureAutoRetry ? extendedStageRetryable(error) : transientStageError(error));
       options.onFailure(reported);
       if (plan.action === 'stop') throw reported;
+      previousFailure = reported;
       await waitForRetry(plan.ms, options.signal, (remainingMs) => {
         options.onRetry({ count: plan.retryIndex, max: plan.max, reason: plan.reason, remainingMs });
       });

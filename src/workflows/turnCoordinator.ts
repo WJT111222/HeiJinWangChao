@@ -22,7 +22,7 @@ import { canContinueStory } from '../domain/storyContinuation';
 import { VariableStage } from './variableStage';
 import { WorldStage } from './worldStage';
 import { planRetry, recordedRetryable, retryStopError, waitForRetry, extendedStageRetryable, transientStageError } from './stageRetry';
-import { carryFailureDiagnostic, noteRetryDecision } from '../services/ai/failureDiagnostic';
+import { carryFailureDiagnostic, markRetryIssued, noteRetryDecision } from '../services/ai/failureDiagnostic';
 import type { RetryNotice } from './stageRetry';
 
 export { transientStageError } from './stageRetry';
@@ -184,9 +184,11 @@ export class TurnCoordinator {
           input.onDraft?.(next);
         };
         for (const stage of needed) {
+          let previousFailure: unknown;
           for (let number = 1; ; number += 1) {
             await reread();
             check();
+            if (previousFailure) markRetryIssued(previousFailure);
             const onProgress = (phase: 'generating' | 'saving', narrative?: string) => {
               check();
               input.onProgress?.({ stage, phase, attempt: number, narrative });
@@ -269,6 +271,7 @@ export class TurnCoordinator {
                 if (stopped !== error) carryFailureDiagnostic(error, stopped);
                 throw stopped;
               }
+              previousFailure = error;
               // 失败记录由原执行器 CAS 保存；如果其他标签已写入，不能接受它的新版本重试。
               await reread();
               await waitForRetry(plan.ms, attempt.controller.signal, (remainingMs) => {

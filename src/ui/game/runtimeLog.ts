@@ -159,14 +159,24 @@ export function memoryRuntimeLogEvent(id: number, saveRef: string, failure: Memo
     ...(failure.request ? { diagnostic: failure.request } : {}) };
 }
 
-/** 后来的完成记录把同回合仍留在本页的失败标成已恢复。不改失败次数，只补一个实际观察。 */
+function sameLogScope(entry: RuntimeLogEntry, other: RuntimeLogEntry) {
+  return Boolean(entry.scope && other.scope && entry.scope.saveRef === other.scope.saveRef && entry.scope.turnRef === other.scope.turnRef);
+}
+
+/** 同一次已经发出的自动重试成功后标成已恢复。必须改原对象，否则反馈原文的 WeakMap 对不上。 */
 export function markRecoveredFailures(entries: readonly RuntimeLogEntry[], completed: RuntimeLogEntry) {
   if (completed.kind !== 'completed' || !completed.scope) return entries;
-  return entries.map(entry => {
-    if (entry.kind !== 'failed' || !entry.diagnostic?.retry || entry.diagnostic.retry.recovered) return entry;
-    const same = entry.scope?.saveRef === completed.scope?.saveRef && entry.scope?.turnRef === completed.scope?.turnRef;
-    if (!same || !(completed.stage === entry.stage || completed.stage === 'workflow' || completed.stage === 'story')) return entry;
-    return { ...entry, diagnostic: { ...entry.diagnostic, retry: { ...entry.diagnostic.retry, recovered: true } } };
+  const completedAt = entries.indexOf(completed);
+  return entries.map((entry, index) => {
+    const retry = entry.diagnostic?.retry;
+    if (entry.kind !== 'failed' || !retry?.issued || retry.recovered || !sameLogScope(entry, completed)) return entry;
+    if (!(completed.stage === entry.stage || completed.stage === 'workflow' || completed.stage === 'story')) return entry;
+    const restarted = entries.some((later, laterIndex) => laterIndex > index && (completedAt < 0 || laterIndex < completedAt)
+      && later.kind === 'started' && sameLogScope(later, entry)
+      && (later.stage === entry.stage || later.stage === 'workflow' || later.stage === 'story'));
+    if (restarted) return entry;
+    retry.recovered = true;
+    return entry;
   });
 }
 

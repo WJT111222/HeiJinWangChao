@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { PRODUCT_VERSION } from '../../app/product';
+import { modelIdSchema } from './configuration';
+import { browserCredentials } from './credentials';
 import { manualRetryOnly, AiError } from './errors';
+import { redactInspection, requestInspections } from './inspection';
+import { cleanFeedbackText, containsPrivateDump } from '../feedback/textSafety';
 import type { Settings } from '../../ui/settings/model';
 
 /** 只记录实际看见的结构化标记。对不上白名单就是无法识别，没有字段就是未知。 */
@@ -62,12 +66,13 @@ const tagScan = z.strictObject({
   close: z.boolean(),
   duplicate: z.boolean(),
   malformed: z.boolean(),
+  nested: z.boolean().optional(),
   order: z.enum(['ok', 'early', 'missing', 'unknown']),
 });
 export const failureDiagnosticSchema = z.strictObject({
   version: z.string().regex(/^[A-Za-z0-9 ._+-]{1,40}$/),
   build: z.union([z.string().regex(/^[0-9a-f]{40}$/), z.enum(['development', 'unavailable', 'unknown'])]).optional(),
-  model: z.union([z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:@/+-]{0,199}$/), z.literal('unknown')]).optional(),
+  model: z.union([modelIdSchema, z.literal('unknown')]).optional(),
   protocol: z.enum(['openai', 'deepseek', 'gemini', 'anthropic']).optional(),
   stream: z.boolean().optional(),
   preset: z.enum(['off', 'native', 'script']).optional(),
@@ -82,6 +87,7 @@ export const failureDiagnosticSchema = z.strictObject({
   finishReason: z.string().regex(finishToken).optional(),
   contentChars: count.optional(),
   reasoningChars: count.optional(),
+  extractedChars: count.optional(),
   parseInputChars: count.optional(),
   complete: z.boolean().optional(),
   phase: z.enum(failurePhases).optional(),
@@ -89,6 +95,7 @@ export const failureDiagnosticSchema = z.strictObject({
   upstreamCode: z.string().regex(token).optional(),
   upstreamType: z.string().regex(token).optional(),
   storyTags: z.array(tagScan).max(5).optional(),
+  extractedTags: z.array(tagScan).max(5).optional(),
   parseTags: z.array(tagScan).max(5).optional(),
   reasoningTags: z.array(z.strictObject({ tag: z.enum(storyTagNames), present: z.boolean() })).max(5).optional(),
   recovery: z.strictObject({
@@ -103,6 +110,7 @@ export const failureDiagnosticSchema = z.strictObject({
     max: z.number().int().min(0).max(3),
     eligible: z.boolean(),
     scheduled: z.boolean(),
+    issued: z.boolean().optional(),
     stop: z.enum(retryStops).optional(),
     waitMs: count.optional(),
     recovered: z.boolean().optional(),
@@ -122,45 +130,98 @@ function observedBuild(): NonNullable<FailureDiagnostic['build']> {
   if (value === 'development' || value === 'unavailable' || value === 'unknown') return value;
   return typeof value === 'string' && /^[0-9a-f]{40}$/.test(value) ? value : 'unknown';
 }
+const urlText = /[a-z][a-z0-9+.-]*:\/\//i;
+function knownCode(token: string) {
+  const key = token.toLowerCase();
+  return Object.hasOwn(classByToken, key) ? key : undefined;
+}
+/** 模型名沿用配置校验。密钥、URL、本地标识或脱敏后变样的名字只丢掉这一项。 */
+export function publishDiagnosticModel(model: string, sanitize?: (value: string) => string | undefined) {
+  if (model === 'unknown') return 'unknown';
+  if (containsPrivateDump(model) || urlText.test(model) || !modelIdSchema.safeParse(model).success) return undefined;
+  const cleaned = redactInspection(cleanFeedbackText(model), browserCredentials());
+  if (cleaned !== model) return undefined;
+  const ids = requestInspections.getSnapshot().flatMap(record => [record.scope?.saveId, record.id, record.scope?.responseId])
+    .filter((id): id is string => Boolean(id && id.length >= 6));
+  if (ids.some(id => model.includes(id))) return undefined;
+  if (sanitize && sanitize(model) !== model) return undefined;
+  return model;
+}
+function acceptDiagnostic(value: Record<string, unknown>) {
+  const current = { ...value };
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const parsed = failureDiagnosticSchema.safeParse(current);
+    if (parsed.success) return parsed.data;
+    const key = parsed.error.issues[0]?.path?.[0];
+    if (typeof key !== 'string' || !Object.hasOwn(current, key)) return undefined;
+    delete current[key];
+  }
+  return undefined;
+}
 export function readFailureDiagnostic(error: unknown) {
   return typeof error === 'object' && error !== null ? attached.get(error) : undefined;
 }
 export function carryFailureDiagnostic(from: unknown, to: unknown) {
   const diagnostic = readFailureDiagnostic(from);
-  if (diagnostic && typeof to === 'object' && to !== null && to !== from) attached.set(to, diagnostic);
+  if (!diagnostic || typeof to !== 'object' || to === null || to === from) return;
+  if (!readFailureDiagnostic(to)) attached.set(to, diagnostic);
+  else attachFailureDiagnostic(to, diagnostic);
 }
 export function attachFailureDiagnostic(error: unknown, patch: Partial<FailureDiagnostic>) {
   if (typeof error !== 'object' || error === null) return;
   const previous = attached.get(error);
   const retry = patch.retry || previous?.retry ? { ...previous?.retry, ...defined(patch.retry ?? {}) } : undefined;
-  const merged = failureDiagnosticSchema.safeParse({
+  const preferred = typeof patch.model === 'string' ? patch.model : previous?.model;
+  const model = typeof preferred === 'string' ? publishDiagnosticModel(preferred) : undefined;
+  const keptModel = model ?? (preferred !== previous?.model && previous?.model ? publishDiagnosticModel(previous.model) : undefined);
+  const upstreamCode = knownCode(patch.upstreamCode ?? previous?.upstreamCode ?? '');
+  const upstreamType = knownCode(patch.upstreamType ?? previous?.upstreamType ?? '');
+  const merged = acceptDiagnostic({
     version: PRODUCT_VERSION,
     build: observedBuild(),
     ...previous,
     ...defined(patch),
+    ...(keptModel ? { model: keptModel } : {}),
     ...(retry ? { retry } : {}),
     ...(patch.storyTags ? { storyTags: patch.storyTags } : {}),
+    ...(patch.extractedTags ? { extractedTags: patch.extractedTags } : {}),
     ...(patch.parseTags ? { parseTags: patch.parseTags } : {}),
     ...(patch.reasoningTags ? { reasoningTags: patch.reasoningTags } : {}),
     ...(patch.recovery ? { recovery: patch.recovery } : {}),
+    ...(upstreamCode ? { upstreamCode } : {}),
+    ...(upstreamType && upstreamType !== upstreamCode ? { upstreamType } : {}),
   });
-  if (merged.success) attached.set(error, merged.data);
+  if (!merged) return;
+  if (!keptModel) delete merged.model;
+  if (!upstreamCode) delete merged.upstreamCode;
+  if (!upstreamType || upstreamType === upstreamCode) delete merged.upstreamType;
+  const parsed = failureDiagnosticSchema.safeParse(merged);
+  if (parsed.success) attached.set(error, parsed.data);
 }
 export function safeFailureDiagnostic(error: unknown) {
-  const parsed = failureDiagnosticSchema.safeParse(readFailureDiagnostic(error));
-  return parsed.success ? parsed.data : undefined;
+  const current = readFailureDiagnostic(error);
+  return current && failureDiagnosticSchema.safeParse(current).success ? current : undefined;
+}
+/** 上报前再过一遍脱敏。某个文本字段不合格就去掉它，其余诊断保留。 */
+export function presentFailureDiagnostic(diagnostic: FailureDiagnostic | undefined, sanitize?: (value: string) => string | undefined) {
+  if (!diagnostic) return undefined;
+  const model = diagnostic.model ? publishDiagnosticModel(diagnostic.model, sanitize) : undefined;
+  const upstreamCode = diagnostic.upstreamCode ? knownCode(diagnostic.upstreamCode) : undefined;
+  const upstreamType = diagnostic.upstreamType ? knownCode(diagnostic.upstreamType) : undefined;
+  const next: FailureDiagnostic = { ...diagnostic };
+  if (model) next.model = model;
+  else delete next.model;
+  if (upstreamCode) next.upstreamCode = upstreamCode;
+  else delete next.upstreamCode;
+  if (upstreamType && upstreamType !== upstreamCode) next.upstreamType = upstreamType;
+  else delete next.upstreamType;
+  return failureDiagnosticSchema.safeParse(next).success ? next : acceptDiagnostic(next);
 }
 
 function tokenOf(value: unknown) {
   return typeof value === 'string' && token.test(value) ? value : undefined;
 }
-const secretLike = /sk-|api[_-]?key|secret|password|bearer|authorization/i;
-function publishable(code: string) {
-  if (secretLike.test(code) || code.length > 32) return false;
-  if (code.length >= 16 && !/[_.:-]/.test(code)) return false;
-  return true;
-}
-/** 从已经拿到的 JSON 里摘安全字段。不读 message、URL 或任意长文本。 */
+/** 从已经拿到的 JSON 里摘白名单代码。不读 message、URL 或任意长文本。 */
 export function classifyUpstreamPayload(value: unknown, observed: { transport: 'json' | 'sse' | 'http'; httpStatus?: number; errorEvent?: boolean }): Partial<FailureDiagnostic> {
   const data = value && typeof value === 'object' ? value as Record<string, unknown> : undefined;
   const error = data?.error && typeof data.error === 'object' ? data.error as Record<string, unknown> : undefined;
@@ -168,14 +229,13 @@ export function classifyUpstreamPayload(value: unknown, observed: { transport: '
   let upstreamClass: (typeof upstreamClasses)[number] | undefined;
   let upstreamCode: string | undefined;
   for (const item of tokens) {
-    const known = classByToken[item.toLowerCase()];
-    if (known) { upstreamClass = known; upstreamCode = item; break; }
+    const code = knownCode(item);
+    const known = code ? classByToken[code] : undefined;
+    if (known) { upstreamClass = known; upstreamCode = code; break; }
   }
   const errorInBody = Boolean(error || data?.error || data?.type === 'error' || observed.errorEvent);
-  const visible = tokens.filter(publishable);
   if (!upstreamClass && errorInBody) upstreamClass = tokens.length ? 'unrecognized' : 'unknown';
-  if (!upstreamCode && upstreamClass === 'unrecognized') upstreamCode = visible[0];
-  const upstreamType = tokens.filter(item => item !== upstreamCode && publishable(item))[0];
+  const upstreamType = tokens.map(item => knownCode(item)).find(code => code && code !== upstreamCode);
   const httpStatus = typeof observed.httpStatus === 'number' && observed.httpStatus >= 100 && observed.httpStatus <= 599 ? observed.httpStatus : undefined;
   return {
     ...(upstreamClass ? { upstreamClass, phase: 'upstream_error' as const } : {}),
@@ -195,14 +255,12 @@ export function attachObservedRequest(error: unknown, observed: {
   contentChars?: number; reasoningChars?: number; parseInputChars?: number;
 }) {
   const existing = readFailureDiagnostic(error);
-  const model = observed.model === undefined ? undefined
-    : /^[A-Za-z0-9][A-Za-z0-9._:@/+-]{0,199}$/.test(observed.model) ? observed.model : 'unknown';
   const finish = observed.finishReason?.toLowerCase();
   const finishReason = finish && finishToken.test(finish) ? finish : finish ? 'unrecognized' as const : undefined;
   const httpStatus = typeof observed.httpStatus === 'number' && observed.httpStatus >= 100 && observed.httpStatus <= 599
     ? Math.trunc(observed.httpStatus) : undefined;
   attachFailureDiagnostic(error, {
-    ...(model ? { model } : {}),
+    ...(observed.model ? { model: observed.model } : {}),
     ...(observed.protocol ? { protocol: observed.protocol } : {}),
     ...(observed.stream !== undefined ? { stream: observed.stream } : {}),
     ...(observed.preset ? { preset: observed.preset } : {}),
@@ -223,22 +281,38 @@ export function attachObservedRequest(error: unknown, observed: {
 }
 
 const tags = storyTagNames;
-function tagFacts(text: string, tag: (typeof tags)[number], required: boolean, previous: number) {
+function tagFacts(text: string, tag: (typeof tags)[number], required: boolean, previous: { open: number; close: number }) {
   const open = text.indexOf(`<${tag}>`);
   const close = text.indexOf(`</${tag}>`);
   const duplicate = text.split(`<${tag}>`).length > 2 || text.split(`</${tag}>`).length > 2;
-  const malformed = new RegExp(`<[^<>\\p{L}\\p{N}]*${tag}`, 'iu').test(text) && open < 0 && close < 0;
-  const order = open < 0 ? 'missing' as const : previous >= 0 && open < previous ? 'early' as const : 'ok' as const;
-  return { tag, required, open: open >= 0, close: close >= 0, duplicate, malformed, order, at: open };
+  const spelled = new RegExp(`<[^<>\\p{L}\\p{N}]*${tag}`, 'iu').test(text) && open < 0 && close < 0;
+  const oneSided = (open >= 0) !== (close >= 0);
+  const bounded = previous.open >= 0 && previous.close > previous.open;
+  const inside = bounded && open > previous.open && close > open && close < previous.close;
+  const crosses = bounded && open >= 0 && close > open && open < previous.close && close > previous.open && !inside;
+  const start = open >= 0 ? open : close;
+  let order: 'ok' | 'early' | 'missing' | 'unknown' = 'ok';
+  if (start < 0) order = 'missing';
+  else if ((previous.open >= 0 && start < previous.open) || crosses || (open >= 0 && close >= 0 && close < open)) order = 'early';
+  else if (previous.close >= 0 && !inside && start < previous.close) order = 'early';
+  return { tag, required, open: open >= 0, close: close >= 0, duplicate, malformed: oneSided || spelled, nested: inside, order, at: start, end: close >= 0 ? close : open };
 }
 export function scanStoryTags(text: string, actions: boolean) {
-  let previous = -1;
+  const previous = { open: -1, close: -1 };
   return tags.map(tag => {
     const required = tag === '正文' || tag === '短期记忆' || (tag === '行动选项' && actions);
     const fact = tagFacts(text, tag, required, previous);
-    const { at, ...scan } = fact;
-    if (fact.open && at > previous) previous = at;
-    return scan;
+    if (fact.open && fact.close && fact.end >= previous.close) {
+      previous.open = fact.at;
+      previous.close = fact.end;
+    } else if (!fact.nested && fact.end > previous.close) {
+      previous.open = fact.at;
+      previous.close = fact.end;
+    }
+    return {
+      tag: fact.tag, required: fact.required, open: fact.open, close: fact.close,
+      duplicate: fact.duplicate, malformed: fact.malformed, nested: fact.nested, order: fact.order,
+    };
   });
 }
 export function reasoningTagPresence(text: string) {
@@ -248,25 +322,35 @@ export function reasoningTagPresence(text: string) {
 export function noteRetryDecision(error: unknown, settings: Settings, attempt: number, plan: RetryDecision, eligible: boolean) {
   const extended = settings.runtime.failureAutoRetry === true;
   const max = extended ? Math.min(3, settings.runtime.maxAutoRetries) : 1;
+  const seen = readFailureDiagnostic(error);
+  const field = error instanceof AiError ? error.details?.fieldPath : undefined;
+  const relayUsed = seen?.relayUsed === true;
   let stop: (typeof retryStops)[number] | undefined;
   if (plan.action === 'stop') {
-    const field = error instanceof AiError ? error.details?.fieldPath : undefined;
+    const manual = error instanceof AiError && manualRetryOnly.has(error);
     if (plan.reason === 'budget') stop = 'budget';
     else if (plan.reason === 'retry_after') stop = 'retry_after';
     else if (error instanceof AiError && error.code === 'cancelled') stop = 'cancelled';
     else if (error instanceof AiError && error.details?.quota === true) stop = 'quota';
-    else if (error instanceof AiError && manualRetryOnly.has(error) && field?.startsWith('channel.relay')) stop = 'relay_manual';
-    else if (error instanceof AiError && (manualRetryOnly.has(error) || field?.startsWith('tavern.'))) stop = 'tavern_manual';
+    else if ((field?.startsWith('tavern.') || seen?.preset === 'native' || seen?.preset === 'script') && (manual || Boolean(field?.startsWith('tavern.')))) stop = 'tavern_manual';
+    else if (manual && (Boolean(field?.startsWith('channel.relay')) || relayUsed)) stop = 'relay_manual';
     else if (error instanceof AiError && programCodes.has(error.code)) stop = 'program';
     else if (!extended) stop = 'disabled';
     else stop = 'not_retryable';
   }
+  const scheduled = plan.action === 'wait';
   attachFailureDiagnostic(error, {
     retry: {
-      extended, attempt, max, eligible, scheduled: plan.action === 'wait', stop,
+      extended, attempt, max, eligible, scheduled, ...(scheduled ? { issued: false } : {}), stop,
       ...(plan.action === 'wait' ? { waitMs: plan.ms } : {}),
     },
   });
+}
+/** 下一次请求真正开始时才记为已发出。取消或保存失败不会走到这里。 */
+export function markRetryIssued(error: unknown) {
+  const diagnostic = readFailureDiagnostic(error);
+  if (!diagnostic?.retry?.scheduled || diagnostic.retry.issued === true) return;
+  diagnostic.retry.issued = true;
 }
 
 export function failurePhase(fieldPath?: string, deadline?: string): (typeof failurePhases)[number] | undefined {
@@ -295,10 +379,12 @@ export function failureDiagnosticSummary(diagnostic: FailureDiagnostic) {
     diagnostic.errorInBody === true && diagnostic.httpError === true ? 'HTTP 错误响应里带有错误对象' : undefined,
     diagnostic.errorInBody === true && diagnostic.httpError === undefined ? '看到错误对象，HTTP 状态未知' : undefined,
     diagnostic.relayUsed === true ? '本次经过中转' : diagnostic.relayEnabled === true ? '允许中转，本次未经过中转' : diagnostic.relayEnabled === false ? '未开启自动中转' : undefined,
-    diagnostic.retry ? (diagnostic.retry.scheduled
-      ? `已安排自动重试，本次是第 ${diagnostic.retry.attempt} 次请求`
-      : `未再自动重试：${diagnostic.retry.stop ? stopNames[diagnostic.retry.stop] : '未知'}`) : undefined,
-    diagnostic.retry?.recovered === true ? '后续重试已恢复' : undefined,
+    diagnostic.retry ? (diagnostic.retry.issued
+      ? `已发出下一次自动重试，本次是第 ${diagnostic.retry.attempt} 次请求`
+      : diagnostic.retry.scheduled
+        ? '已计划自动重试，下一次请求尚未发出'
+        : `未再自动重试：${diagnostic.retry.stop ? stopNames[diagnostic.retry.stop] : '未知'}`) : undefined,
+    diagnostic.retry?.recovered === true ? '同一次自动重试已恢复' : undefined,
   ];
   return parts.filter(Boolean).join('。') + '。';
 }
