@@ -80,7 +80,12 @@ test('五站创角与模型设置：中性费用提示、技术字段及密钥�
   // 安全说明默认收起，点开后完整显示。
   await backToList(settings);
   await settings.getByRole('button', { name: '安全说明', exact: true }).click();
-  await settings.getByText('浏览器会直接连接你填写的服务地址', { exact: false }).scrollIntoViewIfNeeded();
+  const disclosure = settings.locator('.ai-sec');
+  await disclosure.scrollIntoViewIfNeeded();
+  await expect(disclosure).toBeVisible();
+  await expect(disclosure).toContainText('直连时密钥只发往你填写的服务');
+  await expect(disclosure).toContainText('启用中转时，本站服务器也会处理密钥和请求内容');
+  await expect(settings).toContainText('个别情况下可能造成重复计费');
   await page.screenshot({ path: info.outputPath('ai-settings-security.png'), animations: 'disabled' });
   await expect(settings).toContainText('浏览器存储不是安全的密钥库');
   await expect(settings).toContainText('密钥不会进入游戏存档、提示词或诊断详情');

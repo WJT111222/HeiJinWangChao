@@ -4,6 +4,10 @@ import { mkdir, writeFile } from 'node:fs/promises';
 const root = 'test-results/action-recovery-evidence';
 const oldOptions = ['沿江走一走', '去书店看看', '留下观察街道'];
 async function setup(page: Page, options = true, timeoutSeconds = 30) {
+    // The app captures its base fetch at startup. Install before app scripts in
+    // every document, including reloads and the second tab in the recovery test.
+    await page.context().route('https://actions-recovery.mock.invalid/**', route => route.abort('blockedbyclient'));
+    await installTransport(page);
     await page.goto('/');
     await page.evaluate(async ({ options, oldOptions, timeoutSeconds }) => {
         const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/world.ts', '/src/tests/fixtures/turn.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/ui/settings/model.ts'];
@@ -43,10 +47,9 @@ async function setup(page: Page, options = true, timeoutSeconds = 30) {
     await page.goto('/#game/save-a');
     await page.reload();
     await expect(page.getByTestId('story-reader')).toBeVisible();
-    await transport(page);
 }
-async function transport(page: Page) {
-    await page.evaluate(() => {
+async function installTransport(page: Page) {
+    await page.context().addInitScript(() => {
         const native = window.fetch.bind(window), encoder = new TextEncoder();
         const control = { mode: 'ok', stage: 'story', calls: [] as {
                 stage: string;
@@ -106,4 +109,4 @@ const button = (page: Page) => page.locator('.composer-workflow-action');
 async function stopped(page: Page) { await expect(button(page)).toHaveAttribute('data-kind', 'continue'); await expect(page.locator('[aria-label="流式正文预览"]')).toHaveCount(0); }
 async function snapshot(page: Page) { const d = await data(page); return { state: { revision: d.state.revision, turnNumber: d.state.turnNumber, journalCount: d.state.journal.length, oldOptions: d.state.journal.at(-1)?.story.actionOptions }, draft: d.draft && { turnId: d.draft.turnId, story: !!d.draft.story, variables: !!d.draft.variables, world: !!d.draft.world, stageStatus: d.draft.stageStatus, failures: d.draft.failures, executionRevision: d.draft.executionRevision, userInput: d.draft.userInput }, ui: { action: await button(page).getAttribute('aria-label') || await button(page).innerText(), kind: await button(page).getAttribute('data-kind'), sendDisabled: await page.getByRole('button', { name: '发送', exact: true }).isDisabled(), input: await page.locator('#player-input').inputValue(), suggestions: await page.locator('.action-options button').allTextContents(), placeholder: await page.getByText('行动建议将在正文生成后显示。', { exact: true }).count(), workflow: await page.locator('.workflow-summary').innerText() }, calls: await calls(page) }; }
 async function record(page: Page, name: string, project: string) { await mkdir(`${root}/before-screenshots`, { recursive: true }); await mkdir(`${root}/logs`, { recursive: true }); await writeFile(`${root}/logs/${project}-${name}.json`, JSON.stringify(await snapshot(page), null, 2)); await page.screenshot({ path: `${root}/before-screenshots/${project}-${name}.png` }); }
-export { setup, transport, plan, calls, data, closeError, send, button, stopped, record, snapshot, oldOptions };
+export { setup, plan, calls, data, closeError, send, button, stopped, record, snapshot, oldOptions };

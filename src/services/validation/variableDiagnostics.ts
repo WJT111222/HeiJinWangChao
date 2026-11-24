@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { CommandDataError, DataError, IdSchema } from '../../domain/common';
 import { aggregateDomainDiagnostic, isTimeDomainRule } from '../../executors/variableText/aggregateDiagnostics';
 import { DomainCommandSchema } from '../../domain/commands';
-import { AiError } from '../ai/errors';
+import { manualRetryOnly, AiError } from '../ai/errors';
 import type { VariableStep } from '../ai/errors';
 
 // 不输出校验器原文、非法值、动态实体ID或供应商响应。路径只保留白名单字段。
@@ -53,6 +53,8 @@ export function variableFailure(error: unknown, step: VariableStep): AiError {
   const base = error instanceof AiError ? error
     : error instanceof DataError || error instanceof z.ZodError ? variableValidationError(error)
     : new AiError(storage || error instanceof Error && ['QuotaExceededError', 'SecurityError', 'InvalidStateError'].includes(error.name) ? 'storage' : 'variable_runtime');
-  return new AiError(base.code, base.status, { ...base.details,
+  const failure = new AiError(base.code, base.status, { ...base.details,
     variableStep: base.details?.variableStep ?? (['stream_interrupted', 'output_limit', 'empty', 'invalid_json'].includes(base.code) && step === 'request' ? 'response' : step) });
+  if (manualRetryOnly.has(base)) manualRetryOnly.add(failure);
+  return failure;
 }

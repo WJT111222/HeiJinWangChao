@@ -45,7 +45,12 @@ export async function openWorkflowStage(page:Page,stage:WorkflowStage){
 export async function openStageTab(page:Page,stage:WorkflowStage,tab:'概览'|'候选'|'模型原文'|'校验结果'){
   await openWorkflowStage(page,stage);await page.locator('.wf-stage').getByRole('tab',{name:new RegExp(`^${tab}`)}).click();
 }
-export async function openStageRaw(page:Page,stage:WorkflowStage){await openStageTab(page,stage,'模型原文');return page.locator('.stage-responses');}
+export async function openStageRaw(page: Page, stage: WorkflowStage) {
+  await openStageTab(page, stage, '模型原文');
+  return page.locator(`.wf-stage[data-stage="${stage}"]`)
+    .getByRole('tabpanel', { name: '模型原文', exact: true })
+    .getByRole('region', { name: '模型原文', exact: true });
+}
 export async function openStageCandidates(page:Page,stage:'variables'|'world'){await openStageTab(page,stage,'候选');return page.locator('.wf-stage');}
 export async function openCandidateRaw(page:Page,stage:'variables'|'world'){await openStageTab(page,stage,'模型原文');return page.getByRole('region',{name:'模型原文',exact:true});}
 export async function openStoryInspection(page:Page){return openStageRaw(page,'story');}

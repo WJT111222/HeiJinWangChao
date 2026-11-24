@@ -215,6 +215,11 @@ for (const failed of ['variables', 'world'] as const) {
 }
 test('瞬时服务失败重试一次后完成，费用与次数可见', async ({ page }) => {
   await seed(page);
+  // Direct-only mode retains the existing transient 5xx recovery and cost contract.
+  await page.evaluate(async () => {
+    const modulePath = '/src/services/ai/corsRelay.ts';
+    (await import(modulePath)).setRelayMode('off');
+  });
   const plan = await mock(page, { serverOnce: 'variables' });
   await expect(workflow(page)).toContainText('生成可能产生费用');
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
