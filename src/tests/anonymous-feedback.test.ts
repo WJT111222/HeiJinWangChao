@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
+import { parseConfigFileTextToJson } from 'typescript';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import worker from '../worker';
 import type { FeedbackDatabase } from '../feedback/database';
@@ -42,6 +43,7 @@ function action(id: string, values: Record<string, string>, origin = base) {
 beforeEach(() => {
   sqlite = new DatabaseSync(':memory:');
   sqlite.exec(readFileSync(new URL('../../migrations/feedback/0001_feedback.sql', import.meta.url), 'utf8'));
+  sqlite.exec(readFileSync(new URL('../../migrations/feedback/0002_feedback_digest.sql', import.meta.url), 'utf8'));
   db = { prepare(sql) {
     const statement = sqlite.prepare(sql);
     function bind(...args: Parameters<ReturnType<FeedbackDatabase['prepare']>['bind']>): ReturnType<FeedbackDatabase['prepare']> {
@@ -178,4 +180,177 @@ it('反馈不可用不会影响公告、静态资产或既有 API 路由', async
   expect((await worker.fetch(new Request(base + '/api/announcement'), missing)).status).toBe(200);
   expect(await (await worker.fetch(new Request(base + '/'), missing)).text()).toBe('game assets');
   expect((await worker.fetch(new Request(base + '/api/ai-relay'), missing)).status).toBe(400);
+});
+
+const end = Date.parse('2026-11-24T12:00:00Z');
+const halfDay = 12 * 60 * 60 * 1000;
+const recipient = 'maintainer@example.test';
+const mail = () => vi.fn<(message: { from: string; to: string; subject: string; text: string }) => Promise<void>>()
+  .mockResolvedValue(undefined);
+function configured(send = mail()) {
+  return env({ FEEDBACK_DIGEST_ENABLED: 'true', FEEDBACK_DIGEST_TO: recipient, FEEDBACK_EMAIL: { send } });
+}
+function addReceipt(payload: FeedbackPayload, time: number) {
+  sqlite.prepare(`INSERT INTO feedback (id, submission_id, digest, created_at, kind, category, payload, note)
+    VALUES (?, ?, 'synthetic', ?, ?, ?, ?, 'private admin note')`)
+    .run(crypto.randomUUID(), crypto.randomUUID(), time, payload.kind,
+      payload.kind === 'suggestion' ? payload.category : null, JSON.stringify(payload));
+}
+const checkpoint = () => sqlite.prepare('SELECT through_ms, lease_id FROM feedback_digest_checkpoint WHERE id = 1').get();
+
+it('定时邮件统计半开区间，按报告与日志聚合，并只输出白名单字段', async () => {
+  const build = '0123456789abcdef0123456789abcdef01234567';
+  const secret = 'AnyPrivateTokenInAnAllowedFormat_987654321';
+  const error = { ref: 1, time: new Date(end - 1).toISOString(), stage: 'story', code: 'invalid_json', model: 'gpt-5', fieldPath: 'privateFieldPath' } as const;
+  addReceipt({ ...report, build, text: 'private reply text', attachments: [
+    { errorRef: 1, content: 'private model output', reasoning: 'private reasoning', truncated: true },
+  ], errors: [error, { ...error, ref: 2 }, { ...error, ref: 3, stage: 'world', model: secret, code: secret }] }, end - halfDay);
+  addReceipt({ ...report, build, errors: [error] }, end - 1);
+  for (const category of ['suggestion', 'problem', 'experience', 'other'] as const) {
+    addReceipt({ ...suggestion, category, text: 'private player story' }, end - 200);
+  }
+  addReceipt(suggestion, end - halfDay - 1);
+  addReceipt(suggestion, end);
+  const before = sqlite.prepare('SELECT * FROM feedback ORDER BY id').all();
+  const send = mail(), runtime = configured(send);
+  await worker.scheduled({ scheduledTime: end }, runtime);
+  expect(send).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+    from: 'feedback@heijinwangchao.de5.net', to: recipient, subject: '【黑金王朝】玩家反馈简报',
+  }));
+  const text = send.mock.calls[0][0].text;
+  for (const line of [
+    '2026-11-24 08:00 至 2026-11-24 20:00', '新增反馈 6 份', '错误报告 2 份，失败日志 4 条',
+    '功能建议 · 1 份', '游戏问题 · 1 份', '游玩体验 · 1 份', '其他反馈 · 1 份',
+    '正文生成 · 2 份报告 / 3 条日志', '动态世界 · 1 份报告 / 1 条日志',
+    'invalid_json · 2 份报告 / 3 条日志', 'gpt-5 · 2 份报告 / 3 条日志', '其他或未提供 · 1 份报告 / 1 条日志',
+    '0123456789ab · 2 份', '未记录 · 4 份', 'https://heijinwangchao.de5.net/admin/feedback',
+  ]) expect(text).toContain(line);
+  for (const privateValue of [secret, build, recipient, 'private ', 'privateFieldPath', report.text!]) {
+    expect(text).not.toContain(privateValue);
+  }
+  expect(sqlite.prepare('SELECT * FROM feedback ORDER BY id').all()).toEqual(before);
+  await worker.scheduled({ scheduledTime: end }, runtime);
+  await worker.scheduled({ scheduledTime: end - halfDay }, runtime);
+  expect(send).toHaveBeenCalledTimes(1);
+  await worker.scheduled({ scheduledTime: end + halfDay }, runtime);
+  expect(send).toHaveBeenCalledTimes(2);
+  expect(send.mock.calls[1][0].text).toContain('新增反馈 1 份');
+});
+
+it('空窗口不发送邮件并推进检查点，重复及过期定时事件保持幂等', async () => {
+  const send = mail(), runtime = configured(send);
+  await worker.scheduled({ scheduledTime: end }, runtime);
+  expect(send).not.toHaveBeenCalled();
+  expect(checkpoint()).toMatchObject({ through_ms: end, lease_id: null });
+  addReceipt(suggestion, end - 1);
+  for (const scheduledTime of [end, end - halfDay]) await worker.scheduled({ scheduledTime }, runtime);
+  expect(send).not.toHaveBeenCalled();
+  expect(checkpoint()).toMatchObject({ through_ms: end, lease_id: null });
+});
+
+it('并发定时执行只发一次，发送中的检查点保留旧范围', async () => {
+  addReceipt(suggestion, end - 1);
+  let entered!: () => void, release!: () => void;
+  const sending = new Promise<void>(resolve => { entered = resolve; });
+  const paused = new Promise<void>(resolve => { release = resolve; });
+  const send = mail().mockImplementation(async () => { entered(); await paused; });
+  const runtime = configured(send);
+  const first = worker.scheduled({ scheduledTime: end }, runtime);
+  await sending;
+  try {
+    await worker.scheduled({ scheduledTime: end }, runtime);
+    await worker.scheduled({ scheduledTime: end + halfDay }, runtime);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(checkpoint()).toMatchObject({ through_ms: end - halfDay, lease_id: expect.any(String) });
+  } finally {
+    release();
+    await first;
+  }
+  expect(checkpoint()).toMatchObject({ through_ms: end, lease_id: null });
+});
+
+it('发送失败后下一时段补报，异常脱敏，反馈和公告照常服务', async () => {
+  addReceipt(suggestion, end - 1);
+  const send = mail().mockRejectedValueOnce(new Error('private provider error including ' + recipient));
+  const runtime = configured(send);
+  await expect(worker.scheduled({ scheduledTime: end }, runtime)).rejects.toThrow(/^feedback_digest_failed$/);
+  expect(checkpoint()).toMatchObject({ through_ms: end - halfDay, lease_id: null });
+  expect((await worker.fetch(new Request(base + '/api/announcement'), runtime)).status).toBe(200);
+  addReceipt(suggestion, end + 1);
+  await worker.scheduled({ scheduledTime: end + halfDay }, runtime);
+  expect(send).toHaveBeenCalledTimes(2);
+  expect(send.mock.calls[1][0].text).toContain('2026-11-24 08:00 至 2026-11-25 08:00');
+  expect(send.mock.calls[1][0].text).toContain('新增反馈 2 份');
+  expect(checkpoint()).toMatchObject({ through_ms: end + halfDay, lease_id: null });
+  expect((await submit(suggestion, undefined, {}, runtime)).status).toBe(201);
+});
+
+it('上次执行中断留下的过期租约可恢复', async () => {
+  sqlite.prepare('INSERT INTO feedback_digest_checkpoint VALUES (1, ?, ?, ?)').run(end - halfDay, 'expired', Date.now() - 1);
+  addReceipt(suggestion, end - 1);
+  const send = mail();
+  await worker.scheduled({ scheduledTime: end }, configured(send));
+  expect(send).toHaveBeenCalledTimes(1);
+  expect(checkpoint()).toMatchObject({ through_ms: end, lease_id: null });
+});
+
+it('邮件已接收但确认写入失败时，租约到期前不重复发送', async () => {
+  addReceipt(suggestion, end - 1);
+  const send = mail(), runtime = configured(send);
+  sqlite.exec(`CREATE TRIGGER fail_digest_confirmation BEFORE UPDATE OF through_ms ON feedback_digest_checkpoint
+    BEGIN SELECT RAISE(ABORT, 'private database error'); END;`);
+  await expect(worker.scheduled({ scheduledTime: end }, runtime)).rejects.toThrow(/^feedback_digest_failed$/);
+  expect(checkpoint()).toMatchObject({ through_ms: end - halfDay, lease_id: expect.any(String) });
+  await worker.scheduled({ scheduledTime: end }, runtime);
+  expect(send).toHaveBeenCalledTimes(1);
+  sqlite.exec('DROP TRIGGER fail_digest_confirmation');
+  sqlite.prepare('UPDATE feedback_digest_checkpoint SET lease_until_ms = ?').run(Date.now() - 1);
+  await worker.scheduled({ scheduledTime: end }, runtime);
+  expect(send).toHaveBeenCalledTimes(2);
+  expect(checkpoint()).toMatchObject({ through_ms: end, lease_id: null });
+});
+
+it('构建版本仅输出缩写和有界分布，其余计数仍在邮件中', async () => {
+  for (let n = 0; n < 17; n++) {
+    addReceipt({ ...suggestion, build: String(n).padStart(12, '0') + 'a'.repeat(28) }, end - 1);
+  }
+  const send = mail();
+  await worker.scheduled({ scheduledTime: end }, configured(send));
+  const text = send.mock.calls[0][0].text;
+  expect(text).toContain('新增反馈 17 份');
+  expect(text.match(/^- \d{12} · 1 份$/gm)).toHaveLength(15);
+  expect(text).toContain('其余构建 · 2 份');
+});
+
+it('预览和缺少配置时不读取 D1，公开路径不能触发发信', async () => {
+  const runtime = configured();
+  const prepare = vi.fn(() => { throw new Error('must not touch database'); });
+  for (const cfg of [
+    { FEEDBACK: undefined },
+    { FEEDBACK_DIGEST_ENABLED: undefined },
+    { FEEDBACK_DIGEST_ENABLED: 'false' },
+    { FEEDBACK_EMAIL: undefined },
+    { FEEDBACK_DIGEST_TO: undefined },
+    { FEEDBACK_DIGEST_TO: 'a@example.test, b@example.test' },
+  ]) await worker.scheduled({ scheduledTime: end }, { ...runtime, FEEDBACK: { prepare }, ...cfg });
+  await worker.scheduled({ scheduledTime: end - 1 }, { ...runtime, FEEDBACK: { prepare } });
+  expect(prepare).not.toHaveBeenCalled();
+  expect(runtime.FEEDBACK_EMAIL.send).not.toHaveBeenCalled();
+  expect(checkpoint()).toBeUndefined();
+  const response = await worker.fetch(new Request(base + '/api/feedback/digest', {
+    method: 'POST', body: JSON.stringify({ to: 'player@example.test' }),
+  }), runtime);
+  expect(response.status).toBe(404);
+  expect(runtime.FEEDBACK_EMAIL.send).not.toHaveBeenCalled();
+
+  const parsed = parseConfigFileTextToJson('wrangler.jsonc',
+    readFileSync(new URL('../../wrangler.jsonc', import.meta.url), 'utf8'));
+  expect(parsed.error).toBeUndefined();
+  expect(parsed.config).toMatchObject({
+    triggers: { crons: ['0 0,12 * * *'] }, preview_urls: false,
+    send_email: [{ name: 'FEEDBACK_EMAIL', allowed_sender_addresses: ['feedback@heijinwangchao.de5.net'] }],
+    previews: { vars: { FEEDBACK_DIGEST_ENABLED: 'false' } },
+  });
+  for (const field of ['d1_databases', 'send_email', 'triggers']) expect(parsed.config.previews).not.toHaveProperty(field);
+  expect(parsed.config.vars).not.toHaveProperty('FEEDBACK_DIGEST_TO');
 });

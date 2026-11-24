@@ -17,6 +17,13 @@
       "migrations_dir": "migrations/feedback"
     }
   ],
+  "vars": { "FEEDBACK_DIGEST_ENABLED": "true" },
+  "send_email": [
+    { "name": "FEEDBACK_EMAIL", "allowed_sender_addresses": ["feedback@heijinwangchao.de5.net"] }
+  ],
+  "triggers": { "crons": ["0 0,12 * * *"] },
+  // Version URLs can use production bindings. Use isolated branch Previews instead.
+  "preview_urls": false,
   "observability": { "enabled": false },
   "logpush": false,
   "compatibility_date": "2026-10-20",
@@ -25,5 +32,5 @@
     "binding": "ASSETS",
     "run_worker_first": ["/api/*", "/admin/feedback", "/admin/feedback/*"]
   },
-  "previews": {}
+  "previews": { "vars": { "FEEDBACK_DIGEST_ENABLED": "false" } }
 }
