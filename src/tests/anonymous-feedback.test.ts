@@ -19,6 +19,7 @@ const report: FeedbackPayload = { ...runtime, kind: 'error', text: '变量错误
 ], attachments: [{ errorRef: 1, content: '</pre><img src=x onerror=demo()> 正文', reasoning: '合成思考' }] };
 
 let sqlite: DatabaseSync, db: FeedbackDatabase;
+let d1BindCounts: number[];
 const asset = vi.fn(async () => new Response('game assets'));
 function env(overrides: Partial<Parameters<typeof worker.fetch>[1]> = {}) {
   return { FEEDBACK: db, FEEDBACK_ADMIN_PASSWORD: password, ASSETS: { fetch: asset }, ...overrides };
@@ -42,11 +43,15 @@ function action(id: string, values: Record<string, string>, origin = base) {
 
 beforeEach(() => {
   sqlite = new DatabaseSync(':memory:');
+  d1BindCounts = [];
   sqlite.exec(readFileSync(new URL('../../migrations/feedback/0001_feedback.sql', import.meta.url), 'utf8'));
   sqlite.exec(readFileSync(new URL('../../migrations/feedback/0002_feedback_digest.sql', import.meta.url), 'utf8'));
   db = { prepare(sql) {
     const statement = sqlite.prepare(sql);
     function bind(...args: Parameters<ReturnType<FeedbackDatabase['prepare']>['bind']>): ReturnType<FeedbackDatabase['prepare']> {
+      d1BindCounts.push(args.length);
+      // SQLite permits more variables than a D1 prepared statement.
+      if (args.length > 100) throw new Error(`D1 bind limit exceeded: ${args.length}`);
       return {
         bind,
         first: async <T>() => (statement.get(...args) as T | undefined) ?? null,
@@ -197,6 +202,15 @@ function addReceipt(payload: FeedbackPayload, time: number) {
       payload.kind === 'suggestion' ? payload.category : null, JSON.stringify(payload));
 }
 const checkpoint = () => sqlite.prepare('SELECT through_ms, lease_id FROM feedback_digest_checkpoint WHERE id = 1').get();
+
+it('简报白名单的绑定数量固定，完整调度低于 D1 的 100 参数上限', async () => {
+  addReceipt(report, end - 1);
+  const send = mail();
+  await worker.scheduled({ scheduledTime: end }, configured(send));
+  expect(Math.max(...d1BindCounts)).toBe(10);
+  expect(send).toHaveBeenCalledTimes(1);
+  expect(checkpoint()).toMatchObject({ through_ms: end, lease_id: null });
+});
 
 it('记忆日志与旧报告共存，后台任务筛选和邮件只汇总安全字段', async () => {
   const requestedAt = new Date(end - 1).toISOString();

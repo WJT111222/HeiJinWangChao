@@ -20,7 +20,6 @@ const publicModels = [
   'gemini-2.5-flash', 'gemini-2.5-pro', 'claude-sonnet-4-5', 'claude-opus-4-5',
 ];
 const unknown = '其他或未提供';
-const placeholders = (values: readonly string[]) => values.map(() => '?').join(', ');
 
 type Mail = { from: string; to: string; subject: string; text: string };
 export interface FeedbackDigestEnv {
@@ -39,7 +38,8 @@ interface CountRow {
 }
 
 async function collect(db: FeedbackDatabase, start: number, end: number) {
-  // Project only counts and allowlisted labels out of one database snapshot.
+  // Project only counts and allowlisted labels from one snapshot.
+  // Bind each allowlist as one JSON array so it can grow within D1's 100-parameter limit.
   const { results } = await db.prepare(`
     WITH receipts AS (
       SELECT id, kind, category, json_extract(payload, '$.build') AS build,
@@ -61,11 +61,11 @@ async function collect(db: FeedbackDatabase, start: number, end: number) {
       WHERE log.type = 'object'
     ), labels AS (
       SELECT id,
-        CASE WHEN data ->> '$.stage' IN (${placeholders(Object.keys(stages))}) THEN data ->> '$.stage' ELSE ? END AS stage,
-        CASE WHEN data ->> '$.code' IN (${placeholders(codes)}) THEN data ->> '$.code' ELSE ? END AS code,
-        CASE WHEN data ->> '$.model' IN (${placeholders(publicModels)}) THEN data ->> '$.model' ELSE ? END AS model,
-        CASE WHEN data ->> '$.stage' = 'memory' AND data ->> '$.memory.task' IN (${placeholders(memoryTasks)}) THEN data ->> '$.memory.task' END AS memory_task,
-        CASE WHEN data ->> '$.stage' = 'memory' AND data ->> '$.memory.reason' IN (${placeholders(memoryReasons)}) THEN data ->> '$.memory.reason' END AS memory_reason
+        CASE WHEN data ->> '$.stage' IN (SELECT value FROM json_each(?)) THEN data ->> '$.stage' ELSE ? END AS stage,
+        CASE WHEN data ->> '$.code' IN (SELECT value FROM json_each(?)) THEN data ->> '$.code' ELSE ? END AS code,
+        CASE WHEN data ->> '$.model' IN (SELECT value FROM json_each(?)) THEN data ->> '$.model' ELSE ? END AS model,
+        CASE WHEN data ->> '$.stage' = 'memory' AND data ->> '$.memory.task' IN (SELECT value FROM json_each(?)) THEN data ->> '$.memory.task' END AS memory_task,
+        CASE WHEN data ->> '$.stage' = 'memory' AND data ->> '$.memory.reason' IN (SELECT value FROM json_each(?)) THEN data ->> '$.memory.reason' END AS memory_reason
       FROM entries
     ), totals AS (
       SELECT 'all' AS label, count(*) AS reports, 0 AS logs FROM receipts
@@ -81,7 +81,8 @@ async function collect(db: FeedbackDatabase, start: number, end: number) {
     UNION ALL SELECT 'build', CASE WHEN rank <= 15 THEN label ELSE '其余构建' END AS bucket, sum(reports), 0
       FROM ranked_builds GROUP BY bucket
     UNION ALL SELECT dimension, label, reports, logs FROM log_groups
-  `).bind(start, end, ...Object.keys(stages), unknown, ...codes, unknown, ...publicModels, unknown, ...memoryTasks, ...memoryReasons).all<CountRow>();
+  `).bind(start, end, JSON.stringify(Object.keys(stages)), unknown, JSON.stringify(codes), unknown,
+    JSON.stringify(publicModels), unknown, JSON.stringify(memoryTasks), JSON.stringify(memoryReasons)).all<CountRow>();
   return results;
 }
 
