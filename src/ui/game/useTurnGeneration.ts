@@ -71,7 +71,7 @@ export function useTurnGeneration(
             // A ready candidate by itself must not hide a later failed preflight.
             for (const stage of ['story', 'variables', 'world'] as const)
               if (next.stageStatus[stage] === 'ready' && observed.stageStatus[stage] !== 'ready')
-                onRuntimeEvent?.(stage, 'completed');
+                onRuntimeEvent?.(stage, 'completed', undefined, expected.turnId);
             observed = next;
             onSaved(next);
           }
@@ -82,7 +82,7 @@ export function useTurnGeneration(
           pending.current = next;
           if (next.stage !== lastLoggedStage.current) {
             lastLoggedStage.current = next.stage;
-            onRuntimeEvent?.(next.stage, 'started');
+            onRuntimeEvent?.(next.stage, 'started', undefined, expected.turnId);
           }
           if (next.stage !== 'story' || next.phase !== 'generating' || bodyStarted) {
             clearTimeout(timer.current);
@@ -106,7 +106,7 @@ export function useTurnGeneration(
       if (token.current === id) {
         errorTurn.current = turnKey(observed);
         const stage = saving.current ? 'commit' : lastProgress()?.stage;
-        onRuntimeEvent?.(stage ?? 'workflow', 'failed', failure);
+        onRuntimeEvent?.(stage ?? 'workflow', 'failed', failure, expected.turnId);
         setError(
           `${stage ? { story: '正文生成', variables: '变量管理', world: '动态世界', commit: '正式结算' }[stage] + '：' : ''}${storyError(failure)}`,
         );

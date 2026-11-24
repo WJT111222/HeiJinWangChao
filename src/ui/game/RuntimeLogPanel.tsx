@@ -1,3 +1,4 @@
+import { ErrorFeedbackDialog } from '../feedback/FeedbackForms';
 import { storyRuleNames } from '../../domain/storyDiagnostics';
 import { variableStepNames } from '../../services/ai/errors';
 import { useEffect, useRef, useState } from 'react';
@@ -20,16 +21,19 @@ const ruleNames = {
 
 export function RuntimeLogPanel({
   entries,
+  feedbackLogs,
   onClear,
   draft,
   recovery,
 }: {
   entries: readonly RuntimeLogEntry[];
+  feedbackLogs?: readonly RuntimeLogEntry[];
   onClear: () => void;
   draft?: TurnDraft;
   recovery?: string;
 }) {
   const [copyFeedback, setCopyFeedback] = useState<{ id: number; ok: boolean } | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const logElement = useRef<HTMLDetailsElement>(null);
   const errors = entries.filter((entry) => entry.kind === 'failed');
   const latestError = errors[errors.length - 1];
@@ -60,6 +64,8 @@ export function RuntimeLogPanel({
         <p className="field-hint">仅显示当前存档、当前回合的本页临时日志；已恢复的失败不再计为当前错误。每条可单独复制安全诊断，不含原始模型响应、请求正文或密钥。刷新即清空。</p>
         {cancelled && <p className="field-hint">最近操作已取消，未计入生成失败。</p>}
         <div className="runtime-log-actions">
+          {feedbackLogs && <button type="button" disabled={!feedbackLogs.some(entry => entry.kind === 'failed')}
+            onClick={() => setFeedbackOpen(true)}>上报错误</button>}
           <button type="button" disabled={!entries.length} onClick={onClear}>清空日志</button>
         </div>
         {errors.length ? (
@@ -99,6 +105,8 @@ export function RuntimeLogPanel({
           </ol>
         ) : <p className="muted">{failures.length ? '本页暂无该次失败的详细运行日志；请查看上方持久失败摘要。' : '本页暂无错误。'}</p>}
       </div>
-    </details></>
+    </details>
+    {feedbackOpen && feedbackLogs && <ErrorFeedbackDialog entries={feedbackLogs} onClose={() => setFeedbackOpen(false)} />}
+    </>
   );
 }

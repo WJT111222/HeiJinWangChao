@@ -16,7 +16,7 @@ import type { WorldRule } from '../../services/validation/worldDiagnostics';
 
 export type RuntimeLogStage = AiStage | 'workflow' | 'commit';
 export type RuntimeLogKind = 'started' | 'completed' | 'failed' | 'cancelled';
-export type RuntimeLogReporter = (stage: RuntimeLogStage, kind: RuntimeLogKind, failure?: unknown) => void;
+export type RuntimeLogReporter = (stage: RuntimeLogStage, kind: RuntimeLogKind, failure?: unknown, turnId?: string) => void;
 
 /** Anonymous, page-local correlation tokens, never actual save/turn IDs or player text. */
 export interface RuntimeLogScope { saveRef: string; turnRef: string }
