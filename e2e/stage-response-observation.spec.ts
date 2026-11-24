@@ -10,22 +10,27 @@ async function stored(page: Page) {
     try { return await repo.loadGame('save-a'); } finally { repo.close(); }
   });
 }
-async function seed(page: Page, stage: 'variables' | 'world') {
+async function seed(page: Page, stage: 'variables' | 'world', deepseekV4?: { stream: boolean }) {
   await page.goto('/');
-  await page.evaluate(async ({ stage, key }) => {
+  await page.evaluate(async ({ stage, key, deepseekV4 }) => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/world.ts', '/src/ui/settings/model.ts',
       '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/domain/drafts.ts'];
     const [{ SaveRepository }, { worldState, worldDraft }, { defaultSettings, settingsKey }, { newChannel, defaultAiConfig, saveAiConfig }, { CredentialVault }, { createTurnDraft }] = await Promise.all(paths.map(p => import(p)));
     const repo = await SaveRepository.open(); await repo.create(worldState());
-    await repo.saveDraft(createTurnDraft('save-a', 0, 'turn-a', 'regular', ''), null);
-    await repo.saveDraft(worldDraft(false), 0);
+    const mode = deepseekV4 ? 'opening' : 'regular';
+    await repo.saveDraft(createTurnDraft('save-a', 0, 'turn-a', mode, ''), null);
+    await repo.saveDraft(worldDraft(false, mode), 0);
     if (stage === 'world') await repo.saveDraft({ ...worldDraft(true), draftRevision: 2 }, 1);
     repo.close();
-    const settings = defaultSettings(); localStorage.setItem(settingsKey, JSON.stringify(settings));
-    const channel = newChannel('deepseek'), config = defaultAiConfig(); channel.baseUrl = 'http://127.0.0.1:19991/v1'; channel.defaultModel = 'mock-observation';
+    const settings = defaultSettings();
+    if (deepseekV4) settings.runtime.streamVariables = deepseekV4.stream;
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
+    const channel = newChannel('deepseek'), config = defaultAiConfig();
+    if (!deepseekV4) channel.baseUrl = 'http://127.0.0.1:19991/v1';
+    channel.defaultModel = deepseekV4 ? 'deepseek-v4-pro' : 'mock-observation';
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: '' }; saveAiConfig(localStorage, config);
     new CredentialVault(sessionStorage, localStorage).set(channel.id, key);
-  }, { stage, key });
+  }, { stage, key, deepseekV4 });
   await page.goto('/#game/save-a'); await page.reload();
   await expect(page.locator('.game-layout')).toBeVisible();
   return stored(page);
@@ -87,5 +92,42 @@ for (const stage of ['variables', 'world'] as const) {
     const after = await stored(page); expect(after.state).toEqual(before.state);
     await page.reload(); const cleared = await openStageRaw(page, stage);
     await expect(cleared).toContainText('没有可恢复的模型原文'); expect(await stored(page)).toEqual(after); expect(calls).toBe(2);
+  });
+}
+
+for (const stream of [false, true]) {
+  test(`官方 DeepSeek V4 Pro 变量从 content 保存候选（stream=${stream}）`, async ({ page }, info) => {
+    const envelope = '<thinking>核对本回合支出。</thinking>\n<说明>记录已经支付的午餐。</说明>\n<命令>\nadd economy.cash = -3000\n</命令>';
+    const payloads: Record<string, unknown>[] = [];
+    await page.route('https://**', route => route.abort());
+    await page.route('https://api.deepseek.com/chat/completions', async route => {
+      const payload = route.request().postDataJSON();
+      payloads.push(payload);
+      const output = payload.thinking?.type === 'disabled' ? { content: envelope } : { content: null, reasoning_content: envelope };
+      if (!stream) {
+        await route.fulfill({ json: { choices: [{ message: output, finish_reason: 'stop' }] } });
+      } else {
+        const event = JSON.stringify({ choices: [{ delta: output, finish_reason: 'stop' }] });
+        await route.fulfill({ contentType: 'text/event-stream', body: `data: ${event}\n\ndata: [DONE]\n\n` });
+      }
+    });
+    const before = await seed(page, 'variables', { stream });
+    await openWorkflowStage(page, 'variables');
+    await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
+    await expect.poll(async () => (await stored(page)).draft?.stageStatus.variables).toBe('ready');
+    expect(payloads).toHaveLength(1);
+    expect(payloads[0]).toMatchObject({ model: 'deepseek-v4-pro', stream, thinking: { type: 'disabled' }, max_tokens: 8192 });
+    expect(payloads[0]).not.toHaveProperty('response_format');
+    const saved = await stored(page);
+    expect(saved.state).toEqual(before.state);
+    expect(saved.draft?.variables?.result.commands).toMatchObject([{ type: 'SpendFunds', account: 'cash', amount: 3000 }]);
+    const panel = await openStageRaw(page, 'variables');
+    await expect(panel.getByRole('textbox', { name: '变量模型完整原文', exact: true })).toHaveValue(envelope);
+    await panel.getByLabel('变量原文内容', { exact: true }).selectOption('reasoning');
+    await expect(panel.getByRole('textbox')).toHaveCount(0);
+    await page.screenshot({ path: info.outputPath('deepseek-variables.png') });
+    await page.reload();
+    expect(await stored(page)).toEqual(saved);
+    expect(payloads).toHaveLength(1);
   });
 }

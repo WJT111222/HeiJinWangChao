@@ -3,7 +3,7 @@ import type { Sampling } from '../../presets/package';
 import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
 import { AiError } from './errors';
-import { thinkingParameters } from './thinking';
+import { deepseekVariablesThinking, thinkingParameters } from './thinking';
 import { checkFinish, knownSamplingLimit, samplingFields, skipsPresetSampling, skipsTemperature, usesCompletionTokens } from './compat';
 import type { PresetSamplingInspection } from './compat';
 import { isOpenAiCompatible } from './configuration';
@@ -152,6 +152,8 @@ export function wireRequest(
     };
   }
   const url = endpoint(snapshot, path);
+  const deepseekThinking = isOpenAiCompatible(protocol) ? deepseekVariablesThinking(url, snapshot.model, snapshot.stage) : undefined;
+  if (deepseekThinking) body.thinking = deepseekThinking;
   let presetSamplingInspection: PresetSamplingInspection[] | undefined;
   if (sampling) {
     if (isOpenAiCompatible(protocol)) {

@@ -1,4 +1,16 @@
-import type { Channel } from './configuration';
+import { defaultUrls } from './configuration';
+import type { AiTask, Channel } from './configuration';
+
+/** DeepSeek defaults to native thinking if neither mode nor effort is sent.
+ * Variables has its own planning envelope and only executes final content.
+ * https://api-docs.deepseek.com/zh-cn/guides/thinking_mode/
+ */
+export function deepseekVariablesThinking(url: string, model: string, stage: AiTask) {
+  if (stage !== 'variables' || model !== 'deepseek-v4-pro') return;
+  const { origin, pathname } = new URL(url);
+  if (origin === defaultUrls.deepseek && (pathname === '/chat/completions' || pathname === '/v1/chat/completions'))
+    return { type: 'disabled' };
+}
 
 // 官方原生协议的已核实型号契约（不是玩家白名单）。未知型号不外推未来能力。
 // https://ai.google.dev/gemini-api/docs/generate-content/thinking

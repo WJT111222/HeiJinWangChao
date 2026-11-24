@@ -114,6 +114,31 @@ describe('原生 DeepSeek 协议（Chat Completions）', () => {
     await expect(rejected.generate(a.snapshot(), messages)).rejects.toMatchObject({ code: 'content_filter' });
   });
 });
+
+it.each([
+  ['deepseek', 'https://api.deepseek.com', 'deepseek-v4-pro', 'variables', true],
+  ['openai', 'https://api.deepseek.com/v1/chat/completions', 'deepseek-v4-pro', 'variables', true],
+  ['deepseek', 'https://api.deepseek.com', 'deepseek-v4-pro', 'story', false],
+  ['deepseek', 'https://api.deepseek.com', 'deepseek-v4-pro', 'world', false],
+  ['deepseek', 'https://api.deepseek.com', 'deepseek-v4-pro', 'memory', false],
+  ['deepseek', 'https://api.deepseek.com', 'deepseek-flash', 'variables', false],
+  ['deepseek', 'https://api.deepseek.com', 'deepseek-v4-pro-custom', 'variables', false],
+  ['deepseek', 'https://relay.example/v1', 'deepseek-v4-pro', 'variables', false],
+  ['openai', 'https://api.deepseek.com.relay.example/v1', 'deepseek-v4-pro', 'variables', false],
+  ['openai', 'https://api.openai.com/v1', 'deepseek-v4-pro', 'variables', false],
+] as const)('%s %s %s %s：只在已核实的官方 V4 Pro 变量请求中禁用思考', async (protocol, baseUrl, model, stage, disabled) => {
+  const { channel, vault } = setup();
+  const route = channelSnapshot({ ...channel, protocol, baseUrl, parameters: { maxOutputTokens: 1024, temperature: 0 } }, vault, model, stage);
+  const transport = vi.fn<typeof fetch>(async () => Response.json(reply('合成回复')));
+  await new AiClient(transport).generate(route, messages);
+  expect(transport).toHaveBeenCalledTimes(1);
+  const body = JSON.parse(String(transport.mock.calls[0][1]?.body));
+  const budget = baseUrl === 'https://api.openai.com/v1' ? { max_completion_tokens: 1024 } : { max_tokens: 1024 };
+  expect(body).toEqual({
+    model, messages, stream: false, temperature: 0, ...budget,
+    ...(disabled ? { thinking: { type: 'disabled' } } : {}),
+  });
+});
 it('DeepSeek 官方尾部内容块包含 usage，无需 include_usage，流式正文与思考均保留', async () => {
   const a = setup();
   // Official contract: usage is on the last single-choice chunk even when stream_options is absent.
