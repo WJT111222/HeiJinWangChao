@@ -8,6 +8,15 @@
       "id": "0a998f91824b45dba8dfe52896a89b99"
     }
   ],
+  // 正式反馈数据库。分支预览的存储绑定仅在 previews 中声明。
+  "d1_databases": [
+    {
+      "binding": "FEEDBACK",
+      "database_name": "heijin-feedback",
+      "database_id": "69af3c48-b4e1-4d5b-80f7-b6e6e1ea6c57",
+      "migrations_dir": "migrations/feedback"
+    }
+  ],
   "observability": { "enabled": false },
   "logpush": false,
   "compatibility_date": "2026-10-20",
