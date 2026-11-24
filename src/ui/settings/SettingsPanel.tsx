@@ -28,7 +28,7 @@ const WorldbookLibraryPanel = lazy(() =>
   import('./WorldbookLibrary').then((module) => ({ default: module.WorldbookLibraryPanel })),
 );
 
-const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关与超时','外观':'日间 / 夜间配色','世界书':'导入酒馆世界书与开关','提示词管理':'查看与编辑提示词','变量管理':'查看并修正当前存档','反馈建议':'向开发者匿名反馈'};
+const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关、超时与失败重试','外观':'日间 / 夜间配色','世界书':'导入酒馆世界书与开关','提示词管理':'查看与编辑提示词','变量管理':'查看并修正当前存档','反馈建议':'向开发者匿名反馈'};
 const tabs = ['AI 连接', '提示词', '记忆', '运行', '外观', '世界书', '提示词管理', '变量管理', '反馈建议'] as const;
 const appearances = [['night', '夜间', '黑金配色，适合夜里或暗处'], ['day', '日间', '浅色纸页，适合白天或光线充足时'], ['system', '跟随系统', '随设备的深浅色自动切换']] as const;
 export function SettingsPanel({
@@ -352,7 +352,40 @@ export function SettingsPanel({
                   }
                 />
               </label>
+              <label className="toggle">
+                <input
+                  type="checkbox"
+                  checked={editing.runtime.failureAutoRetry}
+                  onChange={(e) =>
+                    setEditing({
+                      ...editing,
+                      runtime: { ...editing.runtime, failureAutoRetry: e.target.checked },
+                    })
+                  }
+                />
+                失败自动重试
+              </label>
+              <label>
+                最大自动重试次数
+                <select
+                  value={editing.runtime.maxAutoRetries}
+                  disabled={!editing.runtime.failureAutoRetry}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    if (value !== 1 && value !== 3) return;
+                    setEditing({
+                      ...editing,
+                      runtime: { ...editing.runtime, maxAutoRetries: value },
+                    });
+                  }}
+                >
+                  <option value={1}>1 次</option>
+                  <option value={3}>3 次</option>
+                </select>
+              </label>
             </div>
+            <p className="muted">开启后，正文、变量和动态世界只要生成失败就会自动再试，不限于 500 一类服务错误。次数不含第一次请求，最多 3 次。自动重试可能产生额外 API 费用。</p>
+            <p className="muted">取消、密钥或鉴权失败、配置错误、明确额度不足、存档冲突和保存失败不会自动重试。关闭本项时，仍只对 500/502/503/504 自动再试一次。</p>
             <p className="muted">开启流式传输后可实时查看模型返回的内容。部分中转服务可能不支持流式传输；不会因流式不兼容自动重试。</p>
             <p className="muted">
               三个阶段的流式传输分别控制。关闭正文流式传输后，等待完整响应并在校验保存后展示正文。切换只影响后续尝试，不修改进行中的请求或正式世界状态。

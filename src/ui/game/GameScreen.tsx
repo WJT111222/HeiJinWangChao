@@ -194,9 +194,9 @@ export function GameScreen({
   const feedbackCorrelation = useMemo(() => new FeedbackCorrelation(), [diagnosticScope]);
   // 失败事件序号：用于判断错误横幅是否是「新的一次失败」；清空日志不回退。
   const [failureSeq, setFailureSeq] = useState(0);
-  const reportRuntimeEvent = useCallback<RuntimeLogReporter>((stage, kind, failure, turnId = draft?.turnId) => {
+  const reportRuntimeEvent = useCallback<RuntimeLogReporter>((stage, kind, failure, turnId = draft?.turnId, options) => {
     // The callback captures the request's turn, not whatever turn is current when it finishes.
-    const entry = runtimeLogEvent(++runtimeLogId.current, stage, kind, failure, diagnosticScope);
+    const entry = runtimeLogEvent(++runtimeLogId.current, stage, kind, failure, diagnosticScope, options);
     feedbackCorrelation.record(entry, state.saveId, turnId);
     setRuntimeLogs((current) => [...current.slice(-49), entry]);
     if (entry.kind === 'failed') setFailureSeq((current) => current + 1);
@@ -212,6 +212,7 @@ export function GameScreen({
     cancel,
     progress: manualProgress,
     error,
+    retry: storyRetry,
   } = useStoryGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent);
   const variables = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
   const world = useWorldGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
@@ -540,9 +541,11 @@ export function GameScreen({
     ?? (error ? 'story' : variables.error ? 'variables' : world.error ? 'world' : undefined);
   const errorLabel = errorStage && errorStage in stageLabels ? stageLabels[errorStage as keyof typeof stageLabels]
     : errorStage === 'commit' ? '结算' : '';
+  const retryNotice = automatic.progress?.retry ?? variables.retry ?? world.retry ?? storyRetry;
+  const retrySeconds = retryNotice ? Math.max(0, Math.ceil(retryNotice.remainingMs / 1000)) : 0;
   const workflowLabel = submitting ? (awaitingAction ? '正在发送行动' : '正在正式结算')
     : automatic.settling ? '正在正式结算'
-    : activeStage ? `${stageLabels[activeStage]}${activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? '重试中' : '生成中'} · ${{ story: 1, variables: 2, world: 3 }[activeStage]}/3`
+    : activeStage ? `${stageLabels[activeStage]}${activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? `自动重试 ${retryNotice?.count ?? ''}/${retryNotice?.max ?? ''}` : '生成中'} · ${{ story: 1, variables: 2, world: 3 }[activeStage]}/3`
     : automatic.running ? '正在准备生成'
     : hasWorkflowError && submitError ? `${awaitingAction || rebindAction ? '行动发送' : '结算'}失败 · 查看详情`
     : hasWorkflowError && (currentFailure?.kind === 'cancelled' || currentFailure?.code === 'cancelled') ? '已取消 · 可恢复'
@@ -562,7 +565,7 @@ export function GameScreen({
     const skipped = automatic.outcome?.draft.draftRevision === draft?.draftRevision && automatic.outcome?.skipped.includes(stage);
     const enabled = stage === 'story' || (busy && draft ? stage === 'variables' ? draft.useVariableStage : draft.useWorldStage : stage === 'variables' ? settings.runtime.useVariableStage : settings.runtime.useWorldStage);
     const text = !enabled ? '已关闭' : awaitingAction ? '已结算'
-      : auto ? auto.phase === 'saving' ? '保存中' : auto.phase === 'retrying' ? '重试中' : '生成中'
+      : auto ? auto.phase === 'saving' ? '保存中' : auto.phase === 'retrying' ? `重试 ${auto.retry?.count ?? ''}/${auto.retry?.max ?? ''}` : '生成中'
       : activeStage === stage ? activePhase === 'saving' ? '保存中' : '生成中'
       : skipped || status === 'skipped' ? '已跳过'
       : status === 'failed' || errorStage === stage && hasWorkflowError ? '失败 · 可重试'
@@ -923,6 +926,14 @@ export function GameScreen({
               aria-label="三阶段工作流"
               data-state={workflowState}
             >
+              {retryNotice && (
+                <p className="retry-status" role="status">
+                  <span>{activeStage ? stageLabels[activeStage] : '当前阶段'} · 第 {retryNotice.count}/{retryNotice.max} 次自动重试</span>
+                  <span>上次失败：{retryNotice.reason}</span>
+                  <span>{retrySeconds > 0 ? `${retrySeconds} 秒后重试` : '即将重试'}</span>
+                  <button type="button" onClick={() => (automatic.running ? automatic.cancel() : variables.phase ? variables.cancel() : world.phase ? world.cancel() : cancel())}>取消</button>
+                </p>
+              )}
               {compactSidebars ? (
                 <div className="workflow-disclosure mobile-workflow-line" data-open={workflowOpen} {...(workflowOpen?{open:true}:{})}>
                   <div className="workflow-summary"><button type="button" className="workflow-toggle" ref={workflowToggle} aria-label="三阶段工作流详情" aria-expanded={workflowOpen} aria-controls="workflow-pop" onClick={()=>setWorkflowOpen(true)}>

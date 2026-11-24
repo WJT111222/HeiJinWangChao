@@ -5,7 +5,7 @@ import { TurnDraftSchema, configureTurnStages } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import { browserPromptOrder } from '../prompts/order';
 import type { OrderPreferences } from '../prompts/order';
-import { AiClient, manualRetryOnly } from '../services/ai/client';
+import { AiClient } from '../services/ai/client';
 import { AiConfigSchema } from '../services/ai/configuration';
 import type { AiConfig, AiStage } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
@@ -21,12 +21,18 @@ import { StoryStage, storyPartialAfterFailure } from './storyStage';
 import { canContinueStory } from '../domain/storyContinuation';
 import { VariableStage } from './variableStage';
 import { WorldStage } from './worldStage';
+import { planRetry, recordedRetryable, retryStopError, waitForRetry } from './stageRetry';
+import type { RetryNotice } from './stageRetry';
+
+export { transientStageError } from './stageRetry';
 
 type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>;
 export interface TurnProgress {
   stage: AiStage;
   phase: 'generating' | 'saving' | 'retrying';
-  attempt: 1 | 2;
+  /** 含首次请求。1 是第一次，之后为自动重试。 */
+  attempt: number;
+  retry?: RetryNotice;
   narrative?: string;
   readingPhase?: 'thinking' | 'body' | 'waiting';
   planning?: string;
@@ -47,6 +53,8 @@ export interface TurnInput {
   orderPreferences?: OrderPreferences;
   onDraft?: (draft: TurnDraft) => void;
   onProgress?: (progress: TurnProgress) => void;
+  /** 每一次实际失败的请求都会通知，包括随后自动重试成功的那一次。 */
+  onAttemptFailure?: (stage: AiStage, error: unknown) => void;
 }
 interface ActiveTurn {
   cancelled: boolean;
@@ -55,14 +63,8 @@ interface ActiveTurn {
   stage?: StoryStage | VariableStage | WorldStage;
   release: () => void;
 }
-// 网络错误可能是固定 CORS/TLS/地址问题，429 也可能是额度耗尽；不据此盲目自动付费重试。
-export function transientStageError(error: unknown) {
-  return (
-    error instanceof AiError &&
-    error.code === 'server' && !manualRetryOnly.has(error) &&
-    [500, 502, 503, 504].includes(error.status ?? 0)
-  );
-}
+// 网络错误可能是固定 CORS/TLS/地址问题，429 也可能是额度耗尽；扩展关闭时不据此盲目自动付费重试。
+// 扩展开启后，生成失败都会重试，最多 3 次；分类在 stageRetry。
 
 export class TurnCoordinator {
   private attempt?: ActiveTurn;
@@ -181,7 +183,7 @@ export class TurnCoordinator {
           input.onDraft?.(next);
         };
         for (const stage of needed) {
-          for (const number of [1, 2] as const) {
+          for (let number = 1; ; number += 1) {
             await reread();
             check();
             const onProgress = (phase: 'generating' | 'saving', narrative?: string) => {
@@ -214,6 +216,7 @@ export class TurnCoordinator {
             } catch (error) {
               check();
               attempt.stage = undefined;
+              if (!(error instanceof AiError && error.code === 'cancelled')) input.onAttemptFailure?.(stage, error);
               if (stage === 'story' && error instanceof AiError && error.code !== 'cancelled') {
                 // 原 StoryStage 只保存成功正文；协调器额外记录安全失败码，刷新后仍可恢复。
                 await reread();
@@ -229,7 +232,7 @@ export class TurnCoordinator {
                       attempt: number,
                       storyRevision: draft.storyRevision,
                       errorCode: error.code,
-                      retryable: transientStageError(error),
+                      retryable: recordedRetryable(error, settings),
                     },
                   ],
                 });
@@ -247,12 +250,23 @@ export class TurnCoordinator {
                   attempt.savingFailure = false;
                 }
               }
-              if (number === 2 || !transientStageError(error)) throw error;
               // 续写次数已用完：停下并保留已写部分，由玩家决定是否重新生成。
               if (stage === 'story' && continueStory && !canContinueStory(draft, settings.prompts.minNarrativeChars)) throw error;
+              const plan = planRetry(error, settings, number);
+              if (plan.action === 'stop') {
+                throw plan.reason === 'retry_after' && error instanceof AiError ? retryStopError(error) : error;
+              }
               // 失败记录由原执行器 CAS 保存；如果其他标签已写入，不能接受它的新版本重试。
               await reread();
-              input.onProgress?.({ stage, phase: 'retrying', attempt: 2 });
+              await waitForRetry(plan.ms, attempt.controller.signal, (remainingMs) => {
+                check();
+                input.onProgress?.({
+                  stage,
+                  phase: 'retrying',
+                  attempt: number + 1,
+                  retry: { count: plan.retryIndex, max: plan.max, reason: plan.reason, remainingMs },
+                });
+              });
             }
           }
         }

@@ -63,7 +63,7 @@ export function RuntimeLogPanel({
         {latestError?.code && <strong className="runtime-log-error-count">最近错误 · {latestError.code}</strong>}
       </summary>
       <div className="runtime-log-content">
-        <p className="field-hint">显示当前回合的本页临时日志及当前存档的记忆总结错误；已恢复的回合失败不再计为当前错误。每条可单独复制安全诊断，不含原始模型响应、请求正文或密钥。刷新即清空。</p>
+        <p className="field-hint">显示当前回合的本页临时日志及当前存档的记忆总结错误。自动重试里的每次失败都会留下，包括后来恢复成功的请求；其他已恢复的回合失败不再计为当前错误。每条可单独复制安全诊断，不含原始模型响应、请求正文或密钥。刷新即清空。</p>
         {cancelled && <p className="field-hint">最近操作已取消，未计入生成失败。</p>}
         <div className="runtime-log-actions">
           {feedbackLogs && <button type="button" disabled={!feedbackLogs.some(entry => entry.kind === 'failed')}

@@ -20,6 +20,7 @@ import type { AiConfig } from '../services/ai/configuration';
 import type { CredentialVault } from '../services/ai/credentials';
 import { AiError, safeAiError } from '../services/ai/errors';
 import { redactInspection } from '../services/ai/inspection';
+import { recordedRetryable } from './stageRetry';
 import { runStageRequest, storyFailureText } from '../services/ai/runtime';
 import { canContinueStory, ContinuationPreview, nextStoryPartial, trimIncompleteTag } from '../domain/storyContinuation';
 import { SettingsSchema } from '../ui/settings/model';
@@ -250,7 +251,7 @@ export class StoryStage {
             storyPartial: storyPartialAfterFailure(draft, error, continuation, secrets),
             stageStatus: { ...draft.stageStatus, story: 'failed' },
             failures: [...draft.failures, { stage: 'story', attempt: previousAttempt + 1,
-              storyRevision: draft.storyRevision, errorCode: error.code, retryable: false }],
+              storyRevision: draft.storyRevision, errorCode: error.code, retryable: recordedRetryable(error, input.settings) }],
           });
           // Still inside the original stage lock. Cancellation and the full request basis
           // must remain valid; a failed CAS must never overwrite a newer timeline.

@@ -99,6 +99,7 @@ const fieldMessages = new Map<string, string>([
   ['channel.relay_unavailable', '网络请求失败：本站中转接口不可用，未能确认模型服务的响应。请检查站点的 Worker 配置。'],
   ['channel.model', '服务明确报告模型或推理接入点不存在，或当前账户无权使用。请核对模型 ID 和授权。'],
   ['channel.parameter', '模型明确拒绝了本次发送的参数，请核对渠道高级设置。'],
+  ['channel.retry_after', '服务要求的等待时间过长，已停止自动重试。请稍后再手动继续。'],
   ['tavern.wrapper.http', '预设脚本返回了失败响应。'],
   ['tavern.unhandled_tool', '预设脚本未将工具结果还原为正文。'],
   ['tavern.upstream.tool', '上游工具数据不完整或结构无效。'],
@@ -108,7 +109,7 @@ export class AiError extends Error {
   constructor(
     public readonly code: AiErrorCode,
     public readonly status?: number,
-    public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[]; worldRule?: WorldRule; eventEntryReason?: EventEntryReason; variableStep?: VariableStep } & Partial<ExecutionDiagnostic> & Partial<StoryDiagnostic>,
+    public readonly details?: { fieldPath?: string; commandType?: string; commandIndex?: number; relatedCommandIndices?: number[]; worldRule?: WorldRule; eventEntryReason?: EventEntryReason; variableStep?: VariableStep; retryAfterMs?: number; quota?: boolean } & Partial<ExecutionDiagnostic> & Partial<StoryDiagnostic>,
   ) {
     super(details?.storyRule ? storyDiagnosticMessage(safeStoryDiagnostic(details)) : (fieldMessages.get(details?.fieldPath ?? '') ?? messages[code])
       + (isTimeDomainRule(details?.domainRule) ? ` ${details?.commandIndex === undefined ? '整批约束' : `第${details.commandIndex + 1}条命令`}：${domainRuleNames[details!.domainRule!]}。` : '')

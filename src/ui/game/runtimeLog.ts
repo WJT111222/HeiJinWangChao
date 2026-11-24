@@ -19,7 +19,13 @@ import type { WorldRule } from '../../services/validation/worldDiagnostics';
 
 export type RuntimeLogStage = AiTask | 'workflow' | 'commit';
 export type RuntimeLogKind = 'started' | 'completed' | 'failed' | 'cancelled';
-export type RuntimeLogReporter = (stage: RuntimeLogStage, kind: RuntimeLogKind, failure?: unknown, turnId?: string) => void;
+export type RuntimeLogReporter = (
+  stage: RuntimeLogStage,
+  kind: RuntimeLogKind,
+  failure?: unknown,
+  turnId?: string,
+  options?: { retain?: boolean },
+) => void;
 
 /** Anonymous, page-local correlation tokens, never actual save/turn IDs or player text. */
 export interface RuntimeLogScope { saveRef: string; turnRef: string }
@@ -48,6 +54,8 @@ export interface RuntimeLogEntry extends Partial<StoryDiagnostic> {
   variableStep?: VariableStep;
   memory?: MemoryDiagnostic;
   memorySaveRef?: string;
+  /** 自动重试中的失败在随后成功后仍留在日志和反馈材料里。 */
+  retained?: boolean;
 }
 
 export const runtimeStageNames: Record<RuntimeLogStage, string> = {
@@ -82,11 +90,13 @@ export function runtimeLogEvent(
   kind: RuntimeLogKind,
   failure?: unknown,
   scope?: RuntimeLogScope,
+  options?: { retain?: boolean },
 ): RuntimeLogEntry {
   const label = runtimeStageNames[stage];
   const entry: RuntimeLogEntry = {
     id, timestamp: new Date().toISOString(), stage, kind,
     ...(scope ? { scope: { ...scope } } : {}),
+    ...(options?.retain ? { retained: true } : {}),
     message: kind === 'started' ? `${label}已开始`
       : kind === 'completed' ? (stage === 'workflow' ? '本次自动执行已结束' : `${label}已完成`)
       : kind === 'cancelled' ? (stage === 'workflow' ? '已请求取消自动执行' : `${label}已取消`)
@@ -144,7 +154,7 @@ export function memoryRuntimeLogEvent(id: number, saveRef: string, { diagnostic 
 export function currentRuntimeLogs(entries: readonly RuntimeLogEntry[], scope: RuntimeLogScope) {
   const scoped = entries.filter(e => e.stage === 'memory' ? e.memorySaveRef === scope.saveRef : e.scope?.saveRef === scope.saveRef && e.scope.turnRef === scope.turnRef);
   return scoped.filter((entry, index) => {
-    if (entry.kind !== 'failed' || entry.stage === 'memory') return true;
+    if (entry.kind !== 'failed' || entry.stage === 'memory' || entry.retained) return true;
     return !scoped.slice(index + 1).some(later => later.kind === 'completed' &&
       (later.stage === entry.stage || later.stage === 'workflow' || later.stage === 'story'));
   });

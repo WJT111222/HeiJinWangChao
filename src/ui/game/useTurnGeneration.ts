@@ -58,6 +58,7 @@ export function useTurnGeneration(
     setProgress(undefined);
     pending.current = undefined;
     let observed = expected;
+    let reported: unknown;
     try {
       const result = await generateAndSettleTurn(runner, repository, {
         draft: expected,
@@ -65,6 +66,10 @@ export function useTurnGeneration(
         companionProfile,
         config: readAiConfig(localStorage),
         vault: new CredentialVault(sessionStorage, localStorage),
+        onAttemptFailure: (stage, error) => {
+          reported = error;
+          if (token.current === id) onRuntimeEvent?.(stage, 'failed', error, expected.turnId, { retain: true });
+        },
         onDraft: (next) => {
           if (token.current === id) {
             // Only a newly saved ready stage retires its earlier diagnostic errors.
@@ -106,7 +111,7 @@ export function useTurnGeneration(
       if (token.current === id) {
         errorTurn.current = turnKey(observed);
         const stage = saving.current ? 'commit' : lastProgress()?.stage;
-        onRuntimeEvent?.(stage ?? 'workflow', 'failed', failure, expected.turnId);
+        if (failure !== reported) onRuntimeEvent?.(stage ?? 'workflow', 'failed', failure, expected.turnId);
         setError(
           `${stage ? { story: '正文生成', variables: '变量管理', world: '动态世界', commit: '正式结算' }[stage] + '：' : ''}${storyError(failure)}`,
         );

@@ -151,6 +151,27 @@ async function observeMemorySse(response: Response, protocol: RequestSnapshot['c
 }
 
 export { manualRetryOnly } from './errors';
+const quotaCodes = new Set([
+  'insufficient_quota', 'insufficient_quota_error', 'billing_hard_limit_reached',
+  'exceeded_current_quota_error', 'insufficient_balance', 'arrearage',
+]);
+function parseRetryAfter(header: string | null, now = Date.now()) {
+  if (!header) return undefined;
+  const trimmed = header.trim();
+  if (!trimmed || trimmed.length > 64) return undefined;
+  if (/^\d+$/.test(trimmed)) {
+    const seconds = Number(trimmed);
+    return Number.isSafeInteger(seconds) ? seconds * 1000 : undefined;
+  }
+  const date = Date.parse(trimmed);
+  if (Number.isNaN(date)) return undefined;
+  const delta = date - now;
+  return Number.isFinite(delta) ? Math.max(0, delta) : undefined;
+}
+function quotaExhausted(body: unknown) {
+  const root = record(body), nested = record(root.error);
+  return [root.code, root.type, nested.code, nested.type].some((code) => typeof code === 'string' && quotaCodes.has(code.toLowerCase()));
+}
 function residualTool(data: unknown, delta: boolean) {
   return array(record(data).choices).some(value => {
     const choice = record(value), message = record(delta ? choice.delta : choice.message);
@@ -211,6 +232,14 @@ export class AiClient {
             throw new AiError('rejected', status, {fieldPath:'channel.parameter'});
         } catch (error) { if (error instanceof AiError) throw error; /* 错误正文不外传，不猜测兼容能力，也不重发当前请求。 */ }
       }
+      const retryAfterMs = status === 429 || status >= 500 ? parseRetryAfter(response.headers.get('retry-after')) : undefined;
+      const quota = status === 429 && response.headers.get('content-type')?.toLowerCase().includes('json')
+        ? await response.json().then(quotaExhausted, () => false)
+        : false;
+      const failureDetails = {
+        ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
+        ...(quota ? { quota: true as const } : {}),
+      };
       throw new AiError(
         status === 401 || status === 403
           ? 'authorization'
@@ -222,6 +251,7 @@ export class AiClient {
                 ? 'server'
                 : 'rejected',
         status,
+        Object.keys(failureDetails).length ? failureDetails : undefined,
       );
     }
     return response;
