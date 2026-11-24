@@ -665,4 +665,3 @@ it('成功响应之后的正文校验仍保留请求事实，并分开原文、�
   expect(saved?.text).not.toContain('<think>');
   expect(JSON.stringify(continuedDiagnostic)).not.toContain('补记');
 });
-
