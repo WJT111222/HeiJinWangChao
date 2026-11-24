@@ -1,12 +1,14 @@
 import { z } from 'zod';
 import { DataError } from '../domain/common';
+import { memoryDiagnosticSchema } from '../domain/memories/diagnostics';
+import type { MemoryDiagnostic } from '../domain/memories/diagnostics';
 import { summaryKinds } from '../domain/memories/configuration';
 import type { SummaryKind } from '../domain/memories/configuration';
 import type { GameState } from '../domain/state';
 import { AiError, safeAiError } from '../services/ai/errors';
 
 type StorageAccess = Pick<Storage, 'getItem' | 'setItem'>;
-const scope = { kind: z.enum(summaryKinds), npcId: z.string().optional(), identityKey: z.string().optional() };
+const scope = { kind: z.enum(summaryKinds), npcId: z.string().optional(), identityKey: z.string().optional(), diagnostic: memoryDiagnosticSchema.optional().catch(undefined) };
 const code = z.string().regex(/^[a-z_]+$/i);
 const pendingSchema = z.strictObject({
   ...scope, status: z.literal('pending'), code, manual: z.boolean().optional(), retryId: z.string(), resultId: z.string(),
@@ -23,7 +25,7 @@ export type PendingSummary = Omit<z.infer<typeof pendingSchema>, 'sourceIds' | '
 };
 
 export type SummaryIssue = {
-  kind: SummaryKind; code: string; message: string; npcId?: string; identityKey?: string; pending?: boolean; retryId?: string; legacy?: true; manual?: boolean;
+  kind: SummaryKind; code: string; message: string; diagnostic?: MemoryDiagnostic; npcId?: string; identityKey?: string; pending?: boolean; retryId?: string; legacy?: true; manual?: boolean;
 };
 
 export const unconfirmedSummaryMessage = '有未确认保存的请求，可能已计费。发送行动不会自动重试，须由你确认重新生成。';
@@ -34,6 +36,7 @@ export const summaryAttemptKey = (state: GameState, kind: SummaryKind) =>
   `heijin.summary.attempt:${state.saveId}:${state.createdAt}:${kind}`;
 export const summaryRecordsKey = (state: GameState) => `heijin.summary.records:${state.saveId}:${state.createdAt}`;
 const legacyKey = (state: GameState) => `heijin.summary.failures:${state.saveId}`;
+const fingerprintDiagnostic = (diagnostic?: MemoryDiagnostic) => JSON.stringify(diagnostic && { ...diagnostic, requestedAt: undefined });
 const storageError = () => new DataError('MEMORY_STORAGE', '无法核对总结请求记录，未发起新请求。');
 
 function read<T>(storage: StorageAccess, key: string, schema: z.ZodType<T>) {
@@ -98,15 +101,16 @@ export class SummaryRecords {
     if (old && (!old.npcId || old.npcId === npcId) && !this.storage.getItem(summaryAttemptKey(this.state, kind))) this.clearLegacyFailure(kind);
   }
   preflight(item: z.infer<typeof preflightSchema>) {
-    if (this.entries.some(entry => entry.status === 'preflight' && entry.kind === item.kind && entry.npcId === item.npcId && entry.code === item.code && entry.identityKey === item.identityKey)) return;
+    if (this.entries.some(entry => entry.status === 'preflight' && entry.kind === item.kind && entry.npcId === item.npcId && entry.code === item.code && entry.identityKey === item.identityKey &&
+      fingerprintDiagnostic(entry.diagnostic) === fingerprintDiagnostic(item.diagnostic))) return;
     this.write([...this.entries.filter(entry => entry.status !== 'preflight' || entry.kind !== item.kind || entry.npcId !== item.npcId), item]);
   }
   begin(item: z.infer<typeof pendingSchema>, previous?: PendingSummary) {
     this.write([...this.entries.filter(entry => entry.status === 'pending' ? entry.retryId !== previous?.retryId :
       entry.kind !== item.kind || entry.npcId !== item.npcId), item]);
   }
-  fail(retryId: string, code: string) {
-    this.write(this.entries.map(item => item.status === 'pending' && item.retryId === retryId ? { ...item, code } : item));
+  fail(retryId: string, code: string, diagnostic?: MemoryDiagnostic) {
+    this.write(this.entries.map(item => item.status === 'pending' && item.retryId === retryId ? { ...item, code, diagnostic } : item));
   }
   recover() {
     for (const item of this.pending) if (hasResult(this.state, item)) this.confirm(item);
@@ -154,7 +158,7 @@ export function authorizedSources(retry: PendingSummary, entries: readonly Sourc
     entry.sourceTurnIds.length > 0 && entry.sourceTurnIds.every(turn => turns.has(turn))).map(entry => entry.id);
 }
 
-export function summaryIssue(item: { kind: SummaryKind; code: string; npcId?: string; identityKey?: string; status?: string; retryId?: string; resultId?: string; legacy?: true; manual?: boolean }): SummaryIssue {
+export function summaryIssue(item: { kind: SummaryKind; code: string; npcId?: string; identityKey?: string; status?: string; retryId?: string; resultId?: string; legacy?: true; manual?: boolean; diagnostic?: MemoryDiagnostic }): SummaryIssue {
   const reasons: Partial<Record<string, string>> = {
     MEMORY_STORAGE: '无法核对本地总结记录。请检查存储权限，再刷新重试。',
     MEMORY_LOCK_UNAVAILABLE: '浏览器不支持安全跨标签互斥，未发送请求。',
@@ -178,6 +182,7 @@ export function summaryIssue(item: { kind: SummaryKind; code: string; npcId?: st
     : reasons[item.code] ?? (fallback && fallback !== 'undefined' ? fallback : '总结未完成，请检查设置和存档状态。');
   return {
     kind: item.kind, code: item.code, npcId: item.npcId, identityKey: item.identityKey,
+    ...(item.diagnostic ? { diagnostic: item.diagnostic } : {}),
     message: message + (item.status === 'pending' && item.code !== 'MEMORY_PREVIOUS' ? ' 发送行动不会自动重试。' : ''),
     pending: item.status === 'pending', retryId: canCheckOriginal ? item.retryId : undefined, legacy: item.legacy, manual: item.manual,
   };

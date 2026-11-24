@@ -1,5 +1,6 @@
 import { feedbackSchema } from '../services/feedback/contract';
-import type { FeedbackPayload, FeedbackStatus } from '../services/feedback/contract';
+import type { SummaryKind } from '../domain/memories/configuration';
+import type { FeedbackPayload, FeedbackStatus, feedbackErrorStages } from '../services/feedback/contract';
 
 type SqlValue = string | number | null;
 interface Statement {
@@ -52,7 +53,7 @@ export async function deleteFeedback(db: FeedbackDatabase, id: string) {
 }
 
 export interface FeedbackFilters {
-  q: string; type: string; model: string; code: string; order: 'newest' | 'oldest'; page: number;
+  q: string; type: string; model: string; code: string; stage?: keyof typeof feedbackErrorStages; memoryTask?: SummaryKind; order: 'newest' | 'oldest'; page: number;
 }
 export interface ListRow {
   id: string; created_at: number; status: FeedbackStatus; kind: 'suggestion' | 'error';
@@ -68,11 +69,14 @@ export async function listFeedback(db: FeedbackDatabase, filter: FeedbackFilters
     conditions.push("instr(lower(coalesce(json_extract(payload, '$.text'), '')), lower(?)) > 0");
     params.push(filter.q);
   }
-  for (const [field, value] of [['model', filter.model], ['code', filter.code]] as const) {
+  const logs = [];
+  for (const [field, value] of [['model', filter.model], ['code', filter.code],
+    ['stage', filter.stage], ['memory.task', filter.memoryTask]] as const) {
     if (!value) continue;
-    conditions.push(`EXISTS (SELECT 1 FROM json_each(payload, '$.errors') WHERE json_extract(value, '$.${field}') = ?)`);
+    logs.push(`json_extract(value, '$.${field}') = ?`);
     params.push(value);
   }
+  if (logs.length) conditions.push(`EXISTS (SELECT 1 FROM json_each(payload, '$.errors') WHERE ${logs.join(' AND ')})`);
   const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
   const order = filter.order === 'oldest' ? 'ASC' : 'DESC';
   const { results } = await db.prepare(`
@@ -86,7 +90,7 @@ export async function feedbackOverview(db: FeedbackDatabase) {
   const counts = db.prepare('SELECT status, count(*) AS count FROM feedback GROUP BY status')
     .all<{ status: FeedbackStatus; count: number }>();
   const recent = listFeedback(db, { type: '', q: '', model: '', code: '', order: 'newest', page: 1 });
-  const stats = Promise.all((['code', 'model', 'stage'] as const).map(async field => {
+  const stats = Promise.all((['code', 'model', 'stage', 'memory.task'] as const).map(async field => {
     const { results } = await db.prepare(`
       SELECT json_extract(err.value, '$.${field}') AS label, count(*) AS count
       FROM feedback, json_each(feedback.payload, '$.errors') AS err

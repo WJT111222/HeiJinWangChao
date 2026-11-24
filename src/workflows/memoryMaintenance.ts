@@ -16,6 +16,8 @@ import type { SaveRepository } from '../services/storage/saveRepository';
 import { defaultSummaryConfig, SummaryConfigSchema } from '../domain/memories/configuration';
 import type { SummaryConfig, SummaryKind } from '../domain/memories/configuration';
 import { AiError } from '../services/ai/errors';
+import { MemoryObservation } from '../services/ai/memoryObservation';
+import type { MemoryFailureObservation } from '../services/ai/memoryObservation';
 
 import {
   authorizedSources, hasLegacySummaryFingerprint, legacyBatchMismatchMessage, legacyBatchUnverifiableMessage,
@@ -50,14 +52,22 @@ export class MemoryMaintenance {
   async run(input: { saveId: string; config: AiConfig | (() => AiConfig); vault: CredentialVault; timeoutSeconds: number; task?: 'public' | 'npc'; npcId?: string;
     kind?: SummaryKind; summaryConfig?: SummaryConfig; immediate?: boolean; attempts?: Pick<Storage, 'getItem' | 'setItem'>; automatic?: boolean;
     retryId?: string; readSettings?: () => { summaryConfig: SummaryConfig; timeoutSeconds: number };
-    onPhase?: (phase: 'generating' | 'saving') => void }): Promise<GameState | undefined> {
-    const frozenConfig = input.summaryConfig ? SummaryConfigSchema.parse(structuredClone(input.summaryConfig)) : undefined;
+    onFailure?: (failure: MemoryFailureObservation) => void; onPhase?: (phase: 'generating' | 'saving') => void }): Promise<GameState | undefined> {
     if (this.active) throw new DataError('MEMORY_BUSY', '记忆维护已在运行');
     const attempt = { controller: new AbortController(), saving: false };
     this.active = attempt;
     const check = () => { if (attempt.controller.signal.aborted) throw new AiError('cancelled'); };
     const kind = input.kind ?? (input.task === 'npc' ? 'npc' : undefined);
     const npcId = input.npcId;
+    const observation = new MemoryObservation(input.saveId, kind ?? 'short');
+    let observedFailure = false;
+    const reportFailure = (code: string, error: unknown) => {
+      observedFailure = true;
+      const result = observation.failed(code, error);
+      try { input.onFailure?.(result); } catch { /* Observation cannot change summary results. */ }
+      return result.diagnostic;
+    };
+    let frozenConfig: SummaryConfig | undefined;
     const currentSettings = () => input.readSettings?.() ?? { summaryConfig: frozenConfig, timeoutSeconds: input.timeoutSeconds };
     const candidates = (state: GameState) => kind === 'npc' && npcId ? npcSummaryCandidates(state, npcId) :
       kind === 'short' || kind === 'medium' ? compressionCandidates(state, kind) : [];
@@ -78,6 +88,7 @@ export class MemoryMaintenance {
       requireData(!blocked.length, 'MEMORY_PREVIOUS', unconfirmedSummaryMessage);
     };
     try {
+      frozenConfig = input.summaryConfig ? SummaryConfigSchema.parse(structuredClone(input.summaryConfig)) : undefined;
       return await this.lock(input.saveId, async () => {
         let records: SummaryRecords | undefined;
         let started: PendingSummary | undefined;
@@ -106,6 +117,7 @@ export class MemoryMaintenance {
             if (kind) records?.clearPreflight(kind, npcId);
             return;
           }
+          observation.task = 'npcId' in batch ? 'npc' : batch.layer;
           const task = 'npcId' in batch ? 'memory.npc_summarize' : memoryTask(batch.layer);
           const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fingerprint(batch)));
           const id = 'memory-' + Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -117,8 +129,10 @@ export class MemoryMaintenance {
           const modules = resources.map(({ module, text }) => ({ id: module.id, version: module.version, contentSha256: module.contentSha256,
             role: 'system' as const, order: module.defaultOrder, characters: Array.from(text).length, estimatedTokens: estimateTokens(text).estimatedTokens }));
           const contentPrompt = settings.summaryConfig?.prompt ?? defaultSummaryConfig('npcId' in batch ? 'npc' : batch.layer).prompt;
+          const memoryInput = 'npcId' in batch ? npcSummaryInput(batch) : compressionInput(batch);
+          if ('groups' in memoryInput) observation.expectedGroups = memoryInput.groups.length;
           const messages = [{ role: 'system' as const, content: contentPrompt }, ...resources.map(({ text }) => ({ role: 'system' as const, content: text })),
-            { role: 'user' as const, content: contextMessage({ MEMORY_TASK: 'npcId' in batch ? npcSummaryInput(batch) : compressionInput(batch) }) }];
+            { role: 'user' as const, content: contextMessage({ MEMORY_TASK: memoryInput }) }];
           const size = contextStatistics(messages);
           requireData(size.characters <= compressionPolicy.requestCharacters && size.estimatedTokens <= compressionPolicy.requestEstimatedTokens, 'MEMORY_BUDGET', '完整请求超出预算，未调用模型');
           // Prompt assembly can yield. Check the actual saved settings, lineage, batch and ledger again
@@ -138,6 +152,8 @@ export class MemoryMaintenance {
           const channel = typeof input.config === 'function' ? input.config() : input.config;
           const snapshot = requestSnapshot(channel, 'memory', input.vault);
           const keys = channel.channels.map(item => input.vault.get(item.id)).filter((key): key is string => Boolean(key));
+          const secrets = [secretFor(snapshot), ...keys];
+          observation.route(snapshot, secrets, [input.saveId, npcId, identityKey].filter((value): value is string => Boolean(value)));
           requireData(!keys.some(key => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some(value => JSON.stringify(messages).includes(value))),
             'MEMORY_PERMISSION', '输入包含凭证内容，未发送；原条目已保留');
           if (input.automatic && input.attempts) {
@@ -159,33 +175,43 @@ export class MemoryMaintenance {
             started = marker;
           }
           input.onPhase?.('generating');
-          const response = await this.client.generate(snapshot, messages, { timeoutSeconds: freshSettings.timeoutSeconds, signal: attempt.controller.signal,
-            inspection: { kind: 'memory', memoryTask: task, mode: 'regular', saveId: state.saveId, revision: state.revision, modules } });
+          const response = await this.client.generate(snapshot, messages, {
+            ...observation.begin(started?.retryId),
+            timeoutSeconds: freshSettings.timeoutSeconds, signal: attempt.controller.signal,
+            inspection: { kind: 'memory', responseId: observation.id, memoryTask: task, mode: 'regular', saveId: state.saveId, revision: state.revision, modules },
+          });
           check();
-          if ([secretFor(snapshot), ...keys].some((key) => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some((value) => response.text.includes(value))))
+          observation.received(response.text);
+          if (secrets.some((key) => [key, encodeURIComponent(key), JSON.stringify(key).slice(1, -1)].some((value) => response.text.includes(value))))
             throw new AiError('invalid_output');
           if ('npcId' in batch) {
             const results = parseNpcSummary(response.text, batch, id);
-            if ([secretFor(snapshot), ...keys].some((key) => results.some((result) => result.text.includes(key)))) throw new AiError('invalid_output');
-            check(); attempt.saving = true; input.onPhase?.('saving');
+            if (secrets.some((key) => results.some((result) => result.text.includes(key)))) throw new AiError('invalid_output');
+            check(); attempt.saving = true; observation.step = 'save'; input.onPhase?.('saving');
             const saved = await this.repository.saveNpcSummary(batch, results, lineage, attempt.controller.signal);
             if (started && records) records.confirm(started);
+            observation.validated();
             return saved;
           }
           const result = parseCompression(response.text, batch, id);
-          if ([secretFor(snapshot), ...keys].some((key) => result.text.includes(key))) throw new AiError('invalid_output');
-          check(); attempt.saving = true; input.onPhase?.('saving');
+          if (secrets.some((key) => result.text.includes(key))) throw new AiError('invalid_output');
+          check(); attempt.saving = true; observation.step = 'save'; input.onPhase?.('saving');
           const saved = await this.repository.saveMemoryCompression(batch, result, lineage, attempt.controller.signal);
           if (started && records) records.confirm(started);
+          observation.validated();
           return saved;
         } catch (error) {
           const code = summaryErrorCode(error);
-          if (started) records?.fail(started.retryId, code);
+          const diagnostic = reportFailure(code, error);
+          if (started) records?.fail(started.retryId, code, diagnostic);
           else if (kind && !['MEMORY_BUSY', 'MEMORY_THROTTLED', 'MEMORY_PREVIOUS', 'cancelled', 'MEMORY_CHANGED'].includes(code))
-            records?.preflight({ status: 'preflight', kind, npcId, identityKey, code, manual: input.immediate });
+            records?.preflight({ status: 'preflight', kind, npcId, identityKey, code, manual: input.immediate, diagnostic });
           throw error;
         }
       });
+    } catch (error) {
+      if (!observedFailure) reportFailure(summaryErrorCode(error), error);
+      throw error;
     } finally { if (this.active === attempt) this.active = undefined; }
   }
 }

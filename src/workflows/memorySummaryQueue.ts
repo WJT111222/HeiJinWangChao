@@ -5,6 +5,7 @@ import type { SummaryKind } from '../domain/memories/configuration';
 import { compressionCandidates } from '../domain/memories/compression';
 import { npcSummaryCandidates, npcMemoryIdCounts } from '../domain/memories/npcMemory';
 import { pendingFor, SummaryRecords, summaryErrorCode, summaryIssue } from './memorySummaryRecords';
+import { observedMemoryFailure } from '../services/ai/memoryObservation';
 import type { SummaryIssue } from './memorySummaryRecords';
 
 export type SummaryFailure = SummaryIssue;
@@ -56,7 +57,7 @@ export class MemorySummaryQueue {
     } catch (error) {
       const code = summaryErrorCode(error);
       if (['MEMORY_BUSY', 'MEMORY_THROTTLED', 'MEMORY_CHANGED', 'MEMORY_PREVIOUS', 'cancelled'].includes(code)) return;
-      return summaryIssue({ kind, code, npcId, manual: immediate });
+      return summaryIssue({ kind, code, npcId, manual: immediate, diagnostic: observedMemoryFailure(error) });
     }
   }
   refresh() { return this.enqueue('read', () => this.publish()); }

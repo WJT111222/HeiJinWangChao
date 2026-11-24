@@ -10,11 +10,14 @@ import { isSafeVariablePath } from '../../executors/variableText/diagnostics';
 import { isDomainRule } from '../../executors/variableText/aggregateDiagnostics';
 import type { DomainRule } from '../../executors/variableText/aggregateDiagnostics';
 import type { DiagnosticType, DiagnosticRule } from '../../executors/variableText/diagnostics';
-import type { AiStage } from '../../services/ai/configuration';
+import { memoryFailureReasons } from '../../domain/memories/diagnostics';
+import type { MemoryDiagnostic } from '../../domain/memories/diagnostics';
+import type { MemoryFailureObservation } from '../../services/ai/memoryObservation';
+import type { AiTask } from '../../services/ai/configuration';
 import { eventEntryReasonNames, isEventEntryReason, isWorldRule } from '../../services/validation/worldDiagnostics';
 import type { WorldRule } from '../../services/validation/worldDiagnostics';
 
-export type RuntimeLogStage = AiStage | 'workflow' | 'commit';
+export type RuntimeLogStage = AiTask | 'workflow' | 'commit';
 export type RuntimeLogKind = 'started' | 'completed' | 'failed' | 'cancelled';
 export type RuntimeLogReporter = (stage: RuntimeLogStage, kind: RuntimeLogKind, failure?: unknown, turnId?: string) => void;
 
@@ -43,6 +46,8 @@ export interface RuntimeLogEntry extends Partial<StoryDiagnostic> {
   relatedNpcId?: string;
   worldRule?: WorldRule;
   variableStep?: VariableStep;
+  memory?: MemoryDiagnostic;
+  memorySaveRef?: string;
 }
 
 export const runtimeStageNames: Record<RuntimeLogStage, string> = {
@@ -51,6 +56,7 @@ export const runtimeStageNames: Record<RuntimeLogStage, string> = {
   world: '动态世界',
   workflow: '自动工作流',
   commit: '正式结算',
+  memory: '记忆总结',
 };
 
 const diagnosticTypes = new Set<DiagnosticType>([
@@ -129,11 +135,16 @@ export function runtimeLogEvent(
   };
 }
 
+export function memoryRuntimeLogEvent(id: number, saveRef: string, { diagnostic }: MemoryFailureObservation): RuntimeLogEntry {
+  return { id, stage: 'memory', kind: 'failed', memorySaveRef: saveRef,
+    timestamp: diagnostic.requestedAt, code: diagnostic.code, message: memoryFailureReasons[diagnostic.reason], memory: diagnostic };
+}
+
 /** Retain session records in memory, but show only this turn's still-relevant events. */
 export function currentRuntimeLogs(entries: readonly RuntimeLogEntry[], scope: RuntimeLogScope) {
-  const scoped = entries.filter(e => e.scope?.saveRef === scope.saveRef && e.scope.turnRef === scope.turnRef);
+  const scoped = entries.filter(e => e.stage === 'memory' ? e.memorySaveRef === scope.saveRef : e.scope?.saveRef === scope.saveRef && e.scope.turnRef === scope.turnRef);
   return scoped.filter((entry, index) => {
-    if (entry.kind !== 'failed') return true;
+    if (entry.kind !== 'failed' || entry.stage === 'memory') return true;
     return !scoped.slice(index + 1).some(later => later.kind === 'completed' &&
       (later.stage === entry.stage || later.stage === 'workflow' || later.stage === 'story'));
   });

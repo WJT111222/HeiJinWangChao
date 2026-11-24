@@ -9,6 +9,7 @@ import { DataError } from '../../domain/common';
 import { MemoryMaintenance } from '../../workflows/memoryMaintenance';
 import { MemorySummaryQueue } from '../../workflows/memorySummaryQueue';
 import type { SummaryFailure, SummaryQueueSnapshot } from '../../workflows/memorySummaryQueue';
+import type { MemoryFailureObservation } from '../../services/ai/memoryObservation';
 import { summaryKinds } from '../../domain/memories/configuration';
 import type { SummaryKind } from '../../domain/memories/configuration';
 
@@ -32,14 +33,14 @@ function readMemorySettings() {
 const failureKey = (failure: SummaryFailure) => failure.retryId ?? JSON.stringify([failure.kind, failure.npcId, failure.code]);
 
 export function useMemoryMaintenance(repository: SaveRepository, saveId: string, settings: Settings, onSaved: (state: GameState) => void,
-  onSettings?: (settings: Settings) => void) {
+  onSettings?: (settings: Settings) => void, onFailure?: (failure: MemoryFailureObservation) => void) {
   const runner = useMemo(() => new MemoryMaintenance(repository), [repository, saveId]);
   const [phase, setPhase] = useState<'generating' | 'saving'>();
   const [activity, setActivity] = useState<{ kind: SummaryKind; npcId?: string }>();
   const [snapshot, setSnapshot] = useState<SummaryQueueSnapshot>({ paused: false, failures: [] });
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [notice, setNotice] = useState('');
-  const current = useRef({ onSaved, onSettings }); current.current = { onSaved, onSettings };
+  const current = useRef({ onSaved, onSettings, onFailure, settings }); current.current = { onSaved, onSettings, onFailure, settings };
   const queue = useRef<MemorySummaryQueue | undefined>(undefined);
   const scheduleKey = memoryScheduleKey(settings);
   const previousScheduleKey = useRef(scheduleKey);
@@ -60,10 +61,14 @@ export function useMemoryMaintenance(repository: SaveRepository, saveId: string,
         try {
           const state = await runner.run({ saveId, kind, npcId, retryId, immediate, automatic: !immediate,
             attempts: localStorage, config: () => readAiConfig(localStorage),
-            vault: new CredentialVault(sessionStorage, localStorage), timeoutSeconds: readMemorySettings().runtime.timeoutSeconds,
+            vault: new CredentialVault(sessionStorage, localStorage), timeoutSeconds: current.current.settings.runtime.timeoutSeconds,
             readSettings: () => {
               const saved = readMemorySettings();
               return { summaryConfig: saved.memory.summaries[kind], timeoutSeconds: saved.runtime.timeoutSeconds };
+            },
+            onFailure: failure => {
+              if (mounted && !['MEMORY_BUSY', 'MEMORY_THROTTLED', 'MEMORY_PREVIOUS', 'MEMORY_CHANGED', 'cancelled'].includes(failure.diagnostic.code))
+                current.current.onFailure?.(failure);
             },
             onPhase: next => { if (mounted) { setPhase(next); setActivity({ kind, npcId }); } } });
           if (mounted) {

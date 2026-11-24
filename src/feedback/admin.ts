@@ -1,4 +1,6 @@
-import { categorySchema, feedbackAdminPath, feedbackTextLimit, statusSchema, submissionIdSchema } from '../services/feedback/contract';
+import { summaryKinds } from '../domain/memories/configuration';
+import { z } from 'zod';
+import { categorySchema, feedbackStageSchema, feedbackAdminPath, feedbackTextLimit, statusSchema, submissionIdSchema } from '../services/feedback/contract';
 import { cleanFeedbackText } from '../services/feedback/textSafety';
 import { deleteFeedback, feedbackOverview, getFeedback, listFeedback, updateFeedback } from './database';
 import { adminMessage, detailView, listView, overviewView } from './adminView';
@@ -45,6 +47,8 @@ export async function feedbackAdmin(request: Request, env: FeedbackEnv) {
         const page = Number(filterValue('page', 8));
         const filter = {
           q: filterValue('q', 150), model: filterValue('model', 200), code: filterValue('code', 64),
+          stage: feedbackStageSchema.safeParse(filterValue('stage', 24)).data,
+          memoryTask: z.enum(summaryKinds).safeParse(filterValue('memoryTask', 24)).data,
           type: requestedType === 'error' ? 'error' : parsed.data ?? '',
           order: searchParams.get('order') === 'oldest' ? 'oldest' as const : 'newest' as const,
           page: Number.isSafeInteger(page) && page > 0 ? Math.min(page, 100_000) : 1,

@@ -119,6 +119,37 @@ async function operation<T>(
     if (rejectAbort) controller.signal.removeEventListener('abort', rejectAbort);
   }
 }
+/** Non-streaming Memory never saves from this observer. Only extract public provider fields. */
+async function observeMemorySse(response: Response, protocol: RequestSnapshot['channel']['protocol'], signal: AbortSignal,
+  options: RequestOptions): Promise<ResponseDiagnostics | undefined> {
+  let complete = false;
+  try {
+    const body = response.clone().body;
+    if (!body) return;
+    for await (const event of readSse(body, signal, { detachCleanup: true })) {
+      if (event.event === 'error') throw new AiError('rejected');
+      if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) { complete = true; break; }
+      let data: Record<string, unknown>;
+      try { data = record(JSON.parse(event.data)); } catch { throw new AiError('invalid_json'); }
+      if (data.error || data.type === 'error') throw new AiError('rejected');
+      if (!signal.aborted) {
+        const raw = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);
+        if (raw) options.onRawTextDelta?.(raw);
+        if (native) options.onNativeReasoningDelta?.(native);
+      }
+      if (isOpenAiCompatible(protocol)) complete = checkFinish(record(array(data.choices)[0]).finish_reason) === true || complete;
+      else if (protocol === 'gemini') complete = checkFinish(record(array(data.candidates)[0]).finishReason) === true || complete;
+      else {
+        checkFinish(record(data.delta).stop_reason);
+        complete ||= data.type === 'message_stop';
+      }
+    }
+    return { transport: 'sse', complete, memorySseFailure: complete ? 'unexpected_transport' : 'stream_interrupted' };
+  } catch (error) {
+    return { transport: 'sse', complete: false, memorySseFailure: error instanceof AiError ? error.code : 'unknown' };
+  }
+}
+
 export { manualRetryOnly } from './errors';
 function residualTool(data: unknown, delta: boolean) {
   return array(record(data).choices).some(value => {
@@ -239,11 +270,17 @@ export class AiClient {
         const wholeJson = options.stream === true && /application\/json/i.test(response.headers.get('content-type') ?? '');
         const streaming = trace ? safeMime(response.headers) === 'text/event-stream' : options.stream && !wholeJson;
         if (!streaming) {
+          // Inspect an unsolicited SSE copy without accepting it as a summary or
+          // changing the ordinary JSON path (including mislabeled valid JSON).
+          const observedSse = snapshot.stage === 'memory' && options.onResponseDiagnostics && safeMime(response.headers) === 'text/event-stream'
+            ? observeMemorySse(response, protocol, signal, options) : undefined;
           let data: unknown;
           try {
             data = await response.json();
             if (trace) trace.wrapperBodyRead = true;
           } catch {
+            const diagnostic = await observedSse;
+            if (diagnostic && !signal.aborted) observe(diagnostic);
             throw new AiError('invalid_json');
           }
           if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol), httpStatus: response.status, complete: true });

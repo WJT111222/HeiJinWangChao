@@ -1,0 +1,187 @@
+[
+  {
+    "version": "V1.0 Beta",
+    "build": "development",
+    "browser": "chrome",
+    "device": "desktop",
+    "kind": "error",
+    "errors": [
+      {
+        "ref": 1,
+        "time": "2026-11-24T11:32:23.857Z",
+        "stage": "memory",
+        "code": "MEMORY_OUTPUT",
+        "memory": {
+          "reason": "missing_groups",
+          "fieldPath": "summaries",
+          "expectedGroups": 1,
+          "actualGroups": 0,
+          "task": "npc",
+          "step": "output",
+          "code": "MEMORY_OUTPUT",
+          "model": "memory",
+          "protocol": "openai",
+          "httpStatus": 200,
+          "outputLength": 52,
+          "requestedAt": "2026-11-24T11:32:23.857Z",
+          "build": "development"
+        },
+        "model": "memory",
+        "protocol": "openai",
+        "httpStatus": 200
+      },
+      {
+        "ref": 2,
+        "time": "2026-11-24T11:32:26.011Z",
+        "stage": "memory",
+        "code": "MEMORY_OUTPUT",
+        "memory": {
+          "reason": "invalid_json",
+          "expectedGroups": 1,
+          "task": "npc",
+          "step": "output",
+          "code": "MEMORY_OUTPUT",
+          "model": "memory",
+          "protocol": "openai",
+          "httpStatus": 200,
+          "outputLength": 13,
+          "requestedAt": "2026-11-24T11:32:26.011Z",
+          "build": "development"
+        },
+        "model": "memory",
+        "protocol": "openai",
+        "httpStatus": 200
+      }
+    ]
+  },
+  {
+    "version": "V1.0 Beta",
+    "build": "development",
+    "browser": "chrome",
+    "device": "desktop",
+    "kind": "error",
+    "errors": [
+      {
+        "ref": 1,
+        "time": "2026-11-24T11:32:23.857Z",
+        "stage": "memory",
+        "code": "MEMORY_OUTPUT",
+        "memory": {
+          "reason": "missing_groups",
+          "fieldPath": "summaries",
+          "expectedGroups": 1,
+          "actualGroups": 0,
+          "task": "npc",
+          "step": "output",
+          "code": "MEMORY_OUTPUT",
+          "model": "memory",
+          "protocol": "openai",
+          "httpStatus": 200,
+          "outputLength": 52,
+          "requestedAt": "2026-11-24T11:32:23.857Z",
+          "build": "development"
+        },
+        "model": "memory",
+        "protocol": "openai",
+        "httpStatus": 200
+      },
+      {
+        "ref": 2,
+        "time": "2026-11-24T11:32:26.011Z",
+        "stage": "memory",
+        "code": "MEMORY_OUTPUT",
+        "memory": {
+          "reason": "invalid_json",
+          "expectedGroups": 1,
+          "task": "npc",
+          "step": "output",
+          "code": "MEMORY_OUTPUT",
+          "model": "memory",
+          "protocol": "openai",
+          "httpStatus": 200,
+          "outputLength": 13,
+          "requestedAt": "2026-11-24T11:32:26.011Z",
+          "build": "development"
+        },
+        "model": "memory",
+        "protocol": "openai",
+        "httpStatus": 200
+      }
+    ],
+    "attachments": [
+      {
+        "errorRef": 2,
+        "content": "{第二人物的合成未完成总结"
+      },
+      {
+        "errorRef": 1,
+        "content": "{\"summaries\":[],\"unresolved\":[],\"contradictions\":[]}"
+      }
+    ]
+  },
+  {
+    "version": "V1.0 Beta",
+    "build": "development",
+    "browser": "chrome",
+    "device": "desktop",
+    "kind": "error",
+    "errors": [
+      {
+        "ref": 1,
+        "time": "2026-11-24T11:32:23.857Z",
+        "stage": "memory",
+        "code": "MEMORY_OUTPUT",
+        "memory": {
+          "reason": "missing_groups",
+          "fieldPath": "summaries",
+          "expectedGroups": 1,
+          "actualGroups": 0,
+          "task": "npc",
+          "step": "output",
+          "code": "MEMORY_OUTPUT",
+          "model": "memory",
+          "protocol": "openai",
+          "httpStatus": 200,
+          "outputLength": 52,
+          "requestedAt": "2026-11-24T11:32:23.857Z",
+          "build": "development"
+        },
+        "model": "memory",
+        "protocol": "openai",
+        "httpStatus": 200
+      },
+      {
+        "ref": 2,
+        "time": "2026-11-24T11:32:26.011Z",
+        "stage": "memory",
+        "code": "MEMORY_OUTPUT",
+        "memory": {
+          "reason": "invalid_json",
+          "expectedGroups": 1,
+          "task": "npc",
+          "step": "output",
+          "code": "MEMORY_OUTPUT",
+          "model": "memory",
+          "protocol": "openai",
+          "httpStatus": 200,
+          "outputLength": 13,
+          "requestedAt": "2026-11-24T11:32:26.011Z",
+          "build": "development"
+        },
+        "model": "memory",
+        "protocol": "openai",
+        "httpStatus": 200
+      }
+    ],
+    "attachments": [
+      {
+        "errorRef": 2,
+        "reasoning": "第二人物公开思考"
+      },
+      {
+        "errorRef": 1,
+        "reasoning": "第一人物公开思考 [密钥已隐藏] [本地标识已隐藏]"
+      }
+    ]
+  }
+]
