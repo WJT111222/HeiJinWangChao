@@ -56,13 +56,17 @@ function initial(): { draft: Draft; vault?: CredentialVault; notice: string } {
 }
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
-export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSeconds: number; onDirtyChange?: (dirty: boolean) => void }) {
+export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditingChange }: {
+  timeoutSeconds: number;
+  onDirtyChange?: (dirty: boolean) => void;
+  editing: boolean;
+  onEditingChange: (editing: boolean) => void;
+}) {
   const desktop = useDesktopFeedback();
   const [start] = useState(initial);
   const [saved, setSaved] = useState<Draft>(() => clone(start.draft));
   const [draft, setDraft] = useState<Draft>(() => clone(start.draft));
   const [selectedId, setSelectedId] = useState(start.draft.config.channels[0]?.id ?? '');
-  const [editing, setEditing] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [urlEditing, setUrlEditing] = useState<Record<string, boolean>>({});
   const [manual, setManual] = useState<Partial<Record<AiTask, boolean>>>({});
@@ -188,7 +192,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
       next.keys[created.id] = ''; next.remember[created.id] = true; next.presets[created.id] = '';
       if (!next.config.routes.story.channelId) next.config.routes.story = { channelId: created.id, modelId: '' };
     });
-    setSelectedId(created.id); setEditing(true); setShowKey(false);
+    setSelectedId(created.id); onEditingChange(true); setShowKey(false);
   }
   function applyPreset(id: string, preset: PresetId) {
     const target = config.channels.find((item) => item.id === id);
@@ -233,7 +237,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
       }
     });
     const rest = config.channels.filter((item) => item.id !== id);
-    setSelectedId(rest[0]?.id ?? ''); setEditing(false);
+    setSelectedId(rest[0]?.id ?? ''); onEditingChange(false);
   }
   function setRoute(stage: AiTask, values: { channelId?: string; modelId?: string }) {
     update((next) => {
@@ -296,7 +300,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
   }
   function discard() {
     setDraft(clone(saved));
-    if (!saved.config.channels.some((item) => item.id === selectedId)) { setSelectedId(saved.config.channels[0]?.id ?? ''); setEditing(false); }
+    if (!saved.config.channels.some((item) => item.id === selectedId)) { setSelectedId(saved.config.channels[0]?.id ?? ''); onEditingChange(false); }
     setNotice('已放弃未保存的修改。', 'info');
   }
 
@@ -401,7 +405,6 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
     const locked = Boolean(chosen?.official) && !urlEditing[channel.id];
     const urlOk = validEndpoint(channel.baseUrl);
     return <section className="ai-card ai-editor" aria-label={`编辑渠道：${channel.name || '未命名渠道'}`}>
-      {!desktop && <button type="button" className="ai-back" onClick={() => setEditing(false)}>‹ 返回渠道列表</button>}
       <div className="ai-ed-hd">
         <input className="ai-name" aria-label="渠道名称" value={channel.name} onChange={(event) => patchChannel(channel.id, { name: event.target.value })} />
         <button type="button" className="ai-del" onClick={() => setConfirm({ kind: 'delete', id: channel.id })}>删除渠道</button>
@@ -516,7 +519,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange }: { timeoutSecond
           {config.channels.map((item) => {
             const status = channelStatus(item.id), used = usedBy(item.id);
             return <button type="button" key={item.id} className="ai-chi" aria-pressed={desktop && selectedId === item.id}
-              aria-label={`编辑渠道：${item.name || '未命名渠道'}`} onClick={() => { setSelectedId(item.id); setShowKey(false); setEditing(true); }}>
+              aria-label={`编辑渠道：${item.name || '未命名渠道'}`} onClick={() => { setSelectedId(item.id); setShowKey(false); onEditingChange(true); }}>
               <span className="ai-chi-t"><span className="ai-chi-nm">{item.name || '未命名渠道'}</span>
                 {draft.presets[item.id] && <span className="ai-pill">{protocolNames[item.protocol]}</span>}{!desktop && <span className="ai-arrow" aria-hidden="true">›</span>}</span>
               <span className="ai-chi-s"><span className={`ai-dot is-${status.tone}`} aria-hidden="true" />

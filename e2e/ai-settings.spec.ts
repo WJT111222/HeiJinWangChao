@@ -1,5 +1,5 @@
 import { expect, test } from './helpers/test';
-import { addChannel, backToList, chooseText, follow, openAiSettings, openChannel, saveAi, stageModel, testReply } from './helpers/aiSettings';
+import { addChannel, backToList, choosePreset, chooseText, follow, openAiSettings, openChannel, saveAi, stageModel, testReply } from './helpers/aiSettings';
 import { writeFile } from 'node:fs/promises';
 
 test.beforeEach(async ({ page }) => {
@@ -81,6 +81,97 @@ test('真实浏览器加载原文、校验哈希并组装六种模式，记录�
   const artifact = testInfo.outputPath('prompt-order.json');
   await writeFile(artifact, JSON.stringify(examples, null, 2));
   await testInfo.attach('prompt-order.json', { path: artifact, contentType: 'application/json' });
+});
+
+test('新玩家测试回复后返回渠道列表，继续选正文模型并保存', async ({ page, isMobile }, info) => {
+  if (isMobile) await page.setViewportSize({ width: 390, height: 640 });
+  const url = 'https://channel-nav.mock.invalid/v1';
+  const key = 'synthetic-channel-nav-key';
+  const requests: string[] = [];
+  await page.route('**/api/ai-relay?*', async (route) => {
+    requests.push('unexpected relay');
+    await route.abort();
+  });
+  await page.route(`${url}/**`, async (route) => {
+    const request = route.request();
+    requests.push(`${request.method()} ${new URL(request.url()).pathname}`);
+    expect(request.headers().authorization).toBe(`Bearer ${key}`);
+    await route.fulfill({ json: request.method() === 'GET'
+      ? { data: [{ id: 'mock-narrator' }, { id: 'mock-other' }] }
+      : { choices: [{ message: { content: 'OK' }, finish_reason: 'stop' }] } });
+  });
+  await page.goto('/');
+  const settings = await openAiSettings(page);
+  const add = settings.getByRole('button', { name: '＋ 添加渠道', exact: true });
+  await add.scrollIntoViewIfNeeded();
+  const body = settings.locator('.modal-body');
+  const listPosition = isMobile ? await body.evaluate((element) => element.scrollTop) : 0;
+  await add.click();
+  const back = settings.getByRole('button', { name: '返回渠道列表', exact: true });
+  const editor = settings.getByRole('region', { name: '编辑渠道：测试渠道', exact: true });
+  const route = settings.getByRole('combobox', { name: '正文生成模型', exact: true });
+  const save = settings.getByRole('button', { name: '保存 AI 配置', exact: true });
+  const warning = page.getByRole('dialog', { name: 'AI 配置尚未保存', exact: true });
+  if (isMobile) {
+    expect(listPosition).toBeGreaterThan(200);
+    await expect(back).toBeFocused();
+    await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBe(0);
+    await expect(route).toHaveCount(0);
+    await expect(settings.locator('.ai-editor').getByRole('button', { name: /渠道列表/ })).toHaveCount(0);
+    await expect(settings.getByRole('button', { name: '返回设置', exact: true })).toHaveCount(0);
+  } else {
+    await expect(back).toHaveCount(0);
+    await expect(route).toBeVisible();
+    await expect(settings.getByRole('region', { name: 'API 渠道列表' })).toBeVisible();
+  }
+  await choosePreset(settings, 'OpenAI 兼容');
+  await settings.getByLabel('渠道名称', { exact: true }).fill('测试渠道');
+  await editor.getByLabel('服务地址', { exact: true }).fill(url);
+  await editor.getByLabel('API 密钥', { exact: true }).fill(key);
+  await expect(editor.getByRole('status')).toContainText('模型列表连接正常');
+  await testReply(editor);
+  await expect(editor.getByRole('status')).toContainText('测试回复成功');
+  await expect(save).toBeDisabled();
+  await expect(settings.locator('.ai-save-bar')).toContainText('正文生成还没选模型');
+  const beforeSave = await page.evaluate(() => localStorage.getItem('heijin.ai.v1'));
+  expect(beforeSave).toBeNull();
+  if (isMobile) {
+    await body.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(300);
+    await expect(back).toBeInViewport({ ratio: 1 });
+    await info.attach('手机渠道详情滚动后', { body: await page.screenshot(), contentType: 'image/png' });
+    await back.click();
+    await expect(warning).toHaveCount(0);
+    await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThanOrEqual(listPosition - 2);
+    await expect(settings.getByRole('button', { name: '编辑渠道：测试渠道', exact: true })).toContainText('测试回复成功 · 2 个模型');
+    await info.attach('手机返回渠道列表', { body: await page.screenshot(), contentType: 'image/png' });
+
+    const categoryBack = settings.getByRole('button', { name: '返回设置', exact: true });
+    await categoryBack.click();
+    await expect(warning).toBeVisible();
+    await warning.getByRole('button', { name: '继续编辑', exact: true }).click();
+    await openChannel(settings, '测试渠道');
+    await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBe(0);
+    await expect(editor.getByLabel('API 密钥', { exact: true })).toHaveValue(key);
+    await expect(editor.getByLabel('服务地址', { exact: true })).toHaveValue(url);
+    await expect(editor.getByRole('status')).toContainText('测试回复成功');
+    await settings.getByRole('button', { name: '关闭资料界面', exact: true }).click();
+    await expect(warning).toBeVisible();
+    await warning.getByRole('button', { name: '继续编辑', exact: true }).click();
+    await expect(editor.getByRole('status')).toContainText('测试回复成功');
+    await back.click();
+  }
+  await expect(route).toHaveAttribute('value', '');
+  await stageModel(settings, '正文生成', '测试渠道', 'mock-narrator', 'list');
+  await saveAi(settings);
+  expect(await page.evaluate(() => {
+    const config = JSON.parse(localStorage.getItem('heijin.ai.v1')!);
+    const { channelId, modelId } = config.routes.story;
+    return { modelId, savedKey: localStorage.getItem(`heijin.credential.v1:${channelId}`) };
+  })).toEqual({ modelId: 'mock-narrator', savedKey: key });
+  expect(requests).toEqual(['GET /v1/models', 'POST /v1/chat/completions']);
+  await settings.getByRole('button', { name: '关闭资料界面', exact: true }).click();
+  await expect(settings).toHaveCount(0);
 });
 
 test('AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置', async ({ page }) => {
