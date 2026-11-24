@@ -32,7 +32,7 @@ import type { OrderPreferences } from '../prompts/order';
 type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>
   & Partial<Pick<SaveRepository,'saveRecoveredStory' | 'recentStoryActions'>>;
 export interface StoryProgress {
-  phase: 'generating' | 'saving';
+  phase: 'generating' | 'saving' | 'retrying';
   narrative: string;
   readingPhase?: 'thinking' | 'body' | 'waiting';
   planning?: string;

@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TurnDraft } from '../../domain/drafts';
 import type { SaveRepository } from '../../services/storage/saveRepository';
+import { AiClient } from '../../services/ai/client';
 import { readAiConfig } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
 import { WorldStage } from '../../workflows/worldStage';
 import { storyError } from '../../workflows/storyStage';
-import { executeWithAutoRetry } from '../../workflows/stageRetry';
+import { captureRunInputs, executeWithAutoRetry } from '../../workflows/stageRetry';
 import type { RetryNotice } from '../../workflows/stageRetry';
-import { SettingsSchema } from '../settings/model';
+import { withHeldStageLock } from '../../workflows/stageGuard';
 import type { Settings } from '../settings/model';
 import type { RuntimeLogReporter } from './runtimeLog';
 
@@ -18,7 +19,6 @@ export function useWorldGeneration(
   onSaved: (draft: TurnDraft) => void,
   onRuntimeEvent?: RuntimeLogReporter,
 ) {
-  const [runner] = useState(() => new WorldStage(repository));
   const [phase, setPhase] = useState<'generating' | 'saving' | 'retrying'>();
   const [retry, setRetry] = useState<RetryNotice>();
   const [error, setError] = useState('');
@@ -27,14 +27,15 @@ export function useWorldGeneration(
   const turnKey = (value: TurnDraft | undefined) => value && `${value.saveId}:${value.turnId}`;
   const token = useRef(0),
     running = useRef(false),
-    waitAbort = useRef<AbortController | undefined>(undefined);
+    waitAbort = useRef<AbortController | undefined>(undefined),
+    activeStage = useRef<WorldStage | undefined>(undefined);
   useEffect(
     () => () => {
       token.current++;
       waitAbort.current?.abort();
-      runner.dispose();
+      activeStage.current?.dispose();
     },
-    [runner],
+    [],
   );
   async function generate() {
     if (!draft || running.current) return;
@@ -50,33 +51,49 @@ export function useWorldGeneration(
     waitAbort.current = controller;
     let current = draft;
     let reported: unknown;
-    const frozen = SettingsSchema.parse(settings);
     try {
-      const saved = await executeWithAutoRetry({
-        settings: frozen,
-        signal: controller.signal,
-        onFailure: (failure) => {
-          reported = failure;
-          if (token.current === id) onRuntimeEvent?.('world', 'failed', failure, current.turnId, { retain: true });
-        },
-        onRetry: (notice) => {
-          if (token.current !== id) return;
-          setRetry(notice);
-          setPhase('retrying');
-        },
-        run: () => runner.generate({
-          draft: current,
-          settings: frozen,
-          config: readAiConfig(localStorage),
-          vault: new CredentialVault(sessionStorage, localStorage),
-          onDraft: (next) => {
-            current = next;
-            if (token.current === id) onSaved(next);
-          },
-          onProgress: (next) => {
-            if (token.current === id) setPhase(next);
-          },
-        }),
+      const frozen = captureRunInputs({
+        settings,
+        config: readAiConfig(localStorage),
+        vault: new CredentialVault(sessionStorage, localStorage),
+      });
+      const saved = await withHeldStageLock(draft.saveId, async (guard) => {
+        const stage = new WorldStage(repository, new AiClient(), guard);
+        activeStage.current = stage;
+        try {
+          return await executeWithAutoRetry({
+            settings: frozen.settings,
+            signal: controller.signal,
+            onFailure: (failure) => {
+              reported = failure;
+              if (token.current === id) onRuntimeEvent?.('world', 'failed', failure, current.turnId, { retain: true });
+            },
+            onRetry: (notice) => {
+              if (token.current !== id) return;
+              setRetry(notice);
+              setPhase('retrying');
+            },
+            run: () => stage.generate({
+              draft: current,
+              settings: frozen.settings,
+              config: frozen.config,
+              vault: frozen.vault,
+              orderPreferences: frozen.orderPreferences,
+              onDraft: (next) => {
+                current = next;
+                if (token.current === id) onSaved(next);
+              },
+              onProgress: (next) => {
+                if (token.current !== id) return;
+                setRetry(undefined);
+                setPhase(next);
+              },
+            }),
+          });
+        } finally {
+          stage.dispose();
+          if (activeStage.current === stage) activeStage.current = undefined;
+        }
       });
       if (token.current === id) {
         onSaved(saved);
@@ -89,20 +106,17 @@ export function useWorldGeneration(
       }
     } finally {
       if (waitAbort.current === controller) waitAbort.current = undefined;
-      if (token.current === id) {
-        running.current = false;
-        setPhase(undefined);
-        setRetry(undefined);
-      }
+      running.current = false;
+      setPhase(undefined);
+      setRetry(undefined);
     }
   }
   function cancel() {
-    if (!runner.cancel()) return;
+    const stage = activeStage.current;
+    if (stage && !stage.cancel()) return;
+    if (!stage && !waitAbort.current) return;
     waitAbort.current?.abort();
     token.current++;
-    running.current = false;
-    setPhase(undefined);
-    setRetry(undefined);
     setError('世界请求已取消，正文与正式世界状态保持不变。');
     onRuntimeEvent?.('world', 'cancelled');
   }

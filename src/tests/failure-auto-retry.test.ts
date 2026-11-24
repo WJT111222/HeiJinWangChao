@@ -7,11 +7,13 @@ import type { AiStage } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
 import { createTurnDraft } from '../domain/drafts';
 import { SaveRepository } from '../services/storage/saveRepository';
+import { DataError } from '../domain/common';
 import { defaultSettings, SettingsSchema } from '../ui/settings/model';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
 import { VariableStage } from '../workflows/variableStage';
+import { reserveStageSession, withHeldStageLock } from '../workflows/stageGuard';
 import {
-  backoffMs, executeWithAutoRetry, extendedStageRetryable, planRetry, RETRY_AFTER_MAX_MS, retryDelays,
+  backoffMs, captureRunInputs, executeWithAutoRetry, extendedStageRetryable, planRetry, RETRY_AFTER_MAX_MS, retryDelays,
 } from '../workflows/stageRetry';
 import { worldDraft, worldNarrative, worldResult, worldState } from './fixtures/world';
 import { variableReply } from './fixtures/variableReply';
@@ -98,6 +100,10 @@ describe('失败自动重试', () => {
       new AiError('storage'),
       new AiError('data_integrity'),
       new AiError('permission'),
+      new AiError('invalid_output', undefined, { storyRule: 'credential_output' }),
+      new AiError('invalid_output', undefined, { storyRule: 'request_basis' }),
+      new AiError('invalid_output', undefined, { storyRule: 'draft_conflict' }),
+      new AiError('invalid_output', undefined, { worldRule: 'secret_in_output' }),
     ]) expect(extendedStageRetryable(error)).toBe(false);
     const marked = new AiError('server', 503);
     manualRetryOnly.add(marked);
@@ -115,6 +121,31 @@ describe('失败自动重试', () => {
     expect(planRetry(new AiError('rate_limit', 429, { retryAfterMs: RETRY_AFTER_MAX_MS + 1 }), settings, 1)).toMatchObject({ action: 'stop', reason: 'retry_after' });
     expect(planRetry(new AiError('server', 503), defaultSettings(), 1)).toMatchObject({ action: 'wait', ms: 0, max: 1 });
     expect(planRetry(new AiError('server', 503), defaultSettings(), 2)).toMatchObject({ action: 'stop', reason: 'budget' });
+  });
+
+  it('一次运行冻结渠道、密钥和设置；等待重试时不放开阶段会话', async () => {
+    const { config, vault, settings } = setup();
+    const captured = captureRunInputs({ settings, config, vault });
+    const model = captured.config.channels[0].defaultModel;
+    config.channels[0].defaultModel = 'changed-later';
+    vault.set(config.channels[0].id, 'other-key');
+    settings.runtime.maxAutoRetries = 1;
+    expect(captured.config.channels[0].defaultModel).toBe(model);
+    expect(config.channels[0].defaultModel).toBe('changed-later');
+    expect(captured.vault.get(config.channels[0].id)).toBe('mock-turn-key');
+    expect(captured.settings.runtime.maxAutoRetries).toBe(3);
+    expect(SettingsSchema.safeParse(captured.settings).success).toBe(true);
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    const running = withHeldStageLock('retry-lock', async () => { await held; });
+    try {
+      expect(() => reserveStageSession('retry-lock')).toThrow(DataError);
+    } finally {
+      release();
+    }
+    await running;
+    const session = reserveStageSession('retry-lock');
+    session.release();
   });
 
   it('等待期间可以取消，成功前的每一次失败都会记下来', async () => {

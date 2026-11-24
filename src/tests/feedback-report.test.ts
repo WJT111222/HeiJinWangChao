@@ -45,6 +45,25 @@ it('只关联新失败且匹配存档、回合、阶段、错误码的原文，�
   expect(result.attachments).toBeUndefined();
 });
 
+it('同一次开始后的连续失败各自关联当次原文', () => {
+  const correlation = new FeedbackCorrelation();
+  correlation.record(runtimeLogEvent(1, 'variables', 'started', undefined, scope), ids.saveId, ids.turnId);
+  const firstId = stageResponses.begin(ids);
+  stageResponses.update(firstId, { status: 'failed', text: '第一次原文', error: { code: 'empty', message: 'empty' } }, []);
+  const first = runtimeLogEvent(2, 'variables', 'failed', failure, scope);
+  correlation.record(first, ids.saveId, ids.turnId);
+  const secondId = stageResponses.begin(ids);
+  stageResponses.update(secondId, { status: 'failed', text: '第二次原文', error: { code: 'invalid_output', message: 'bad' } }, []);
+  const second = runtimeLogEvent(3, 'variables', 'failed', new AiError('invalid_output'), scope);
+  correlation.record(second, ids.saveId, ids.turnId);
+  const report = prepareErrorPayload([first, second], stageResponses.getSnapshot(), { content: true, reasoning: false })('');
+  expect(report.errors).toHaveLength(2);
+  expect(report.attachments).toEqual(expect.arrayContaining([
+    expect.objectContaining({ errorRef: 1, content: '第一次原文' }),
+    expect.objectContaining({ errorRef: 2, content: '第二次原文' }),
+  ]));
+});
+
 it('仅投影失败结构，去除凭证、响应关联 ID、提示词回显和存档结构', () => {
   const snapshot = configure();
   const correlation = new FeedbackCorrelation();

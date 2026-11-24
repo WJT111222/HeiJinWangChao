@@ -1,4 +1,10 @@
 import { AiError, manualRetryOnly } from '../services/ai/errors';
+import { AiConfigSchema } from '../services/ai/configuration';
+import type { AiConfig } from '../services/ai/configuration';
+import { CredentialVault } from '../services/ai/credentials';
+import { freeze } from '../services/ai/snapshot';
+import type { CompanionProfile } from '../services/local/companionProfile';
+import { browserPromptOrder } from '../prompts/order';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 
@@ -40,10 +46,41 @@ export function transientStageError(error: unknown) {
   );
 }
 
-/** 开启扩展后：生成失败都会重试，不限于 500/502/503/504。 */
+/** 开启扩展后：生成失败都会重试，不限于 500/502/503/504。
+ * 凭证回显和请求/草稿版本冲突不是可再生成的失败。 */
 export function extendedStageRetryable(error: unknown) {
   if (!(error instanceof AiError) || manualRetryOnly.has(error) || error.details?.quota === true) return false;
+  const storyRule = error.details?.storyRule;
+  if (storyRule === 'credential_output' || storyRule === 'request_basis' || storyRule === 'draft_conflict') return false;
+  const worldRule = error.details?.worldRule;
+  if (worldRule === 'secret_in_output' || worldRule === 'request_basis') return false;
   return !NOT_GENERATION.has(error.code);
+}
+
+/** 本次运行的设置、渠道、密钥和提示词顺序。重试不得再读之后改过的本地配置。 */
+export function captureRunInputs(input: {
+  settings: Settings;
+  config: AiConfig;
+  vault: CredentialVault;
+  companionProfile?: CompanionProfile;
+}) {
+  const settings = freeze(SettingsSchema.parse(input.settings));
+  const config = freeze(AiConfigSchema.parse(input.config));
+  const memory = new Map<string, string>();
+  const store = {
+    getItem: (key: string) => memory.get(key) ?? null,
+    setItem: (key: string, value: string) => { memory.set(key, value); },
+    removeItem: (key: string) => { memory.delete(key); },
+  };
+  const vault = new CredentialVault(store, store);
+  for (const channel of config.channels) vault.set(channel.id, input.vault.get(channel.id));
+  return {
+    settings,
+    config,
+    vault,
+    companionProfile: input.companionProfile && freeze(structuredClone(input.companionProfile)),
+    orderPreferences: freeze(structuredClone(browserPromptOrder())),
+  };
 }
 
 /** 写入失败记录的“这类错误可自动重试”，与本次预算是否还够无关。 */

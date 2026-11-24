@@ -79,14 +79,15 @@ it.each(['openai', 'deepseek', 'gemini', 'anthropic'] as const)('%s exposes only
   expect(JSON.stringify(r)).not.toMatch(/隐藏签名|隐藏思考/);
 });
 
-it.each([400, 401, 429, 500])('HTTP %i observes status and only reuses existing error-body reads, never retries or publishes error prose', async status => {
+it.each([400, 401, 429, 500])('HTTP %i observes status without publishing error prose or sending another request', async status => {
   const a = fixture('openai'), response = Response.json({ error: { type: 'content_filter', message: '任意错误与密钥' + key, other: '隐藏信息' } }, { status });
   const json = vi.spyOn(response, 'json'), fetcher = vi.fn<typeof fetch>(async () => response);
   await expect(runStageRequest({ settings: a.settings, state: a.state, draft: a.draft, stage: 'variables', mode: 'regular', userInput: '' }, a.config, a.vault, {}, new AiClient(fetcher))).rejects.toBeDefined();
   const r = stageResponses.getSnapshot()[0]; expect(r.diagnostics).toMatchObject({ transport: 'http', httpStatus: status });
   if (status === 400) expect(r.diagnostics).toMatchObject({ filtered: true, errorPresent: true });
   else expect(r.diagnostics?.filtered).not.toBe(true);
-  expect(json).toHaveBeenCalledTimes(status === 400 ? 1 : 0); expect(fetcher).toHaveBeenCalledTimes(1);
+  // 400 读取正文做参数诊断。429 只读一次，用来区分额度耗尽和暂时限流。其余状态不读错误正文。
+  expect(json).toHaveBeenCalledTimes(status === 400 || status === 429 ? 1 : 0); expect(fetcher).toHaveBeenCalledTimes(1);
   expect(JSON.stringify(r)).not.toMatch(/任意错误|隐藏信息|mock-observation-secret/);
 });
 

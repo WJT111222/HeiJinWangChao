@@ -121,3 +121,13 @@ export async function withBrowserLock<T>(
   if (options?.required && typeof window !== 'undefined') throw new AiError('concurrency_unavailable');
   return run();
 }
+
+/** 手动阶段的整段自动重试都占着同一会话和浏览器锁，等待期间也不能让出。 */
+export async function withHeldStageLock<T>(saveId: string, work: (guard: StageGuard) => Promise<T>): Promise<T> {
+  const session = reserveStageSession(saveId);
+  try {
+    return await withBrowserLock(saveId, (scope) => work(session.guard(scope)), { required: true });
+  } finally {
+    session.release();
+  }
+}
