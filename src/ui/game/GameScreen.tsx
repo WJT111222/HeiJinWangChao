@@ -1,3 +1,4 @@
+import { FeedbackCorrelation } from '../../services/feedback/report';
 import { assistantView, bindTavernPage, enterTavernChat } from '../../presets/tavern/hostState';
 import { ScriptButtons } from '../settings/TavernAssistant';
 import { stageResponses } from '../../services/ai/stageResponses';
@@ -188,14 +189,16 @@ export function GameScreen({
   const diagnosticScope = useMemo(() => ({ saveRef: diagnosticSaveRef.current, turnRef: crypto.randomUUID() }), [draft?.turnId]);
   const runtimeLogs = currentRuntimeLogs(runtimeEntries, diagnosticScope);
   const runtimeLogId = useRef(0);
+  const feedbackCorrelation = useMemo(() => new FeedbackCorrelation(), [diagnosticScope]);
   // 失败事件序号：用于判断错误横幅是否是「新的一次失败」；清空日志不回退。
   const [failureSeq, setFailureSeq] = useState(0);
-  const reportRuntimeEvent = useCallback<RuntimeLogReporter>((stage, kind, failure) => {
+  const reportRuntimeEvent = useCallback<RuntimeLogReporter>((stage, kind, failure, turnId = draft?.turnId) => {
     // The callback captures the request's turn, not whatever turn is current when it finishes.
     const entry = runtimeLogEvent(++runtimeLogId.current, stage, kind, failure, diagnosticScope);
+    feedbackCorrelation.record(entry, state.saveId, turnId);
     setRuntimeLogs((current) => [...current.slice(-49), entry]);
     if (entry.kind === 'failed') setFailureSeq((current) => current + 1);
-  }, [diagnosticScope]);
+  }, [diagnosticScope, feedbackCorrelation, state.saveId, draft?.turnId]);
   useEffect(
     () => () => {
       submitToken.current++;
@@ -771,6 +774,7 @@ export function GameScreen({
                         rawTurnId={rawTurnId}
                         summary={summaryQuality}
                         runtimeLogs={runtimeLogs}
+                        feedbackLogs={layout === 'desktop' ? runtimeEntries : undefined}
                         recovery={diagnosticRecovery}
                         onClearLogs={() => setRuntimeLogs([])}
                       />
@@ -1017,7 +1021,7 @@ export function GameScreen({
             if (!busy) void generate(selection);
           }} />
       )}
-      {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} recovery={diagnosticRecovery} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)}/>}
+      {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} feedbackLogs={runtimeEntries} recovery={diagnosticRecovery} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)}/>}
       {compactSidebars && mobileStatusOpen && <Dialog title="此时此地" mobileVariant="sheet" sheetExpandable seal={mobileCitySeal(state)} eyebrow="NOW · HERE" className="mobile-status-sheet" onClose={()=>setMobileStatusOpen(false)} returnFocus={()=>document.querySelector<HTMLElement>('[data-mobile-status]')??mobileReturnFocus('hero')}>
         <MobileStatus state={state} equipment={equipment} onProfile={()=>{setMobileStatusOpen(false);setPanel('人物档案');}} onEconomy={()=>{setMobileStatusOpen(false);setPanel('经济与资产');}}/>
       </Dialog>}

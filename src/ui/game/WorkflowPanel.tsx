@@ -57,6 +57,7 @@ export function DesktopWorkflowPanel(props: {
   rawTurnId?: string;
   summary?: { hanCharacters: number; status: string };
   runtimeLogs: RuntimeLogEntry[];
+  feedbackLogs?: readonly RuntimeLogEntry[];
   onClearLogs: () => void;
   recovery?: string;
 }) {
@@ -500,7 +501,7 @@ function Diagnostics(props: Parameters<typeof DesktopWorkflowPanel>[0] & { hidde
             {props.summary.status === 'empty' ? '缺少有效摘要，无法正式结算。' : props.summary.status === 'within_target' ? '符合目标范围。' : '可继续。'}
           </p>
         )}
-        <RuntimeLogPanel draft={draft} entries={props.runtimeLogs} onClear={props.onClearLogs} recovery={props.recovery} />
+        <RuntimeLogPanel draft={draft} entries={props.runtimeLogs} feedbackLogs={props.feedbackLogs} onClear={props.onClearLogs} recovery={props.recovery} />
         <RequestUsage saveId={props.saveId} />
       </div>
     </section>

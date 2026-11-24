@@ -1,0 +1,24 @@
+.feedback-form { display: grid; gap: .8rem; min-width: 0; max-width: 45rem; }
+.feedback-form p { margin: 0; overflow-wrap: anywhere; }
+.feedback-form label { display: grid; gap: .4rem; }
+.feedback-form :is(textarea, select) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: .65rem;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.feedback-form textarea { resize: vertical; max-height: 40dvh; overflow: auto; }
+.feedback-form label.feedback-option { grid-template-columns: auto 1fr; align-items: center; min-height: 2.5rem; }
+.feedback-form .feedback-option input { accent-color: var(--gold); }
+.feedback-form summary { padding-block: .45rem; cursor: pointer; }
+.feedback-form > button { justify-self: start; min-height: 2.75rem; }
+.feedback-form-error { color: var(--warning-text); }
+.feedback-form-receipt { color: var(--success); }
+@media (max-width: 900px) {
+  .feedback-form :is(textarea, select) { font-size: 1rem; }
+  .feedback-form > button { width: 100%; }
+}
