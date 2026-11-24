@@ -31,7 +31,7 @@ import { checkFinish, LeadingThink, rememberPresetSamplingRejection, rememberUns
 import { isOpenAiCompatible } from './configuration';
 import { rawResponseObservation, responseContent, responseDiagnostics, mergeResponseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
-import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, classifyUpstreamPayload, failurePhase } from './failureDiagnostic';
+import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, classifyUpstreamPayload, diagnosticSecrets, failurePhase } from './failureDiagnostic';
 
 export interface RequestOptions {
   storyClock?: import('../../presets/tavern/timing').StoryClock;
@@ -495,7 +495,7 @@ export class AiClient {
           ...(trace ? { bytes: trace.bytes, complete: trace.complete } : seen.complete !== undefined ? { complete: seen.complete } : {}),
           finishReason: trace?.finish ?? trace?.rawFinish ?? seen.finishReasons?.[0],
           ...(typeof seen.errorPresent === 'boolean' ? { errorInBody: seen.errorPresent } : {}),
-        });
+        }, diagnosticSecrets(snapshot));
         return result;
       }, trace?.clock);
     } catch (error) {
@@ -525,7 +525,7 @@ export class AiClient {
         finishReason: trace?.finish ?? trace?.rawFinish ?? seen.finishReasons?.[0],
         phase,
         ...(typeof seen.errorPresent === 'boolean' ? { errorInBody: seen.errorPresent } : {}),
-      });
+      }, diagnosticSecrets(snapshot));
       try { if (inspectionId) requestInspections.finish(inspectionId, trace ? trace.usage : observedUsage, safeAiError(failure).code); }
       catch { /* 保留原始失败语义。 */ }
       throw failure;

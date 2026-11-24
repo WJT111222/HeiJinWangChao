@@ -25,7 +25,7 @@ import { AiClient } from './client';
 import type { RequestOptions } from './client';
 import { variableFailure } from '../validation/variableDiagnostics';
 import { storyFailure } from '../validation/storyDiagnostics';
-import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, failurePhase, reasoningTagPresence, scanStoryTags } from './failureDiagnostic';
+import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, diagnosticSecrets, failurePhase, reasoningTagPresence, scanStoryTags } from './failureDiagnostic';
 import type { FailureDiagnostic } from './failureDiagnostic';
 import { stageResponses, safeStreamResponseText, responseLimitsFor } from './stageResponses';
 import { safeAiError } from './errors';
@@ -328,13 +328,14 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     const extracted = modelText;
     const parsedInput = formalText;
     const reasoningText = responseReasoning ?? (truncated ? undefined : publicReasoning);
+    const requestSecrets = diagnosticSecrets(snapshot);
     attachObservedRequest(failure, {
       preset,
       phase: failurePhase(field, deadline) ?? (step === 'response' && captured.stage === 'story' && !String(field ?? '').startsWith('tavern.') ? 'story_validation' : undefined),
       ...(typeof diagnostics.errorPresent === 'boolean' ? { errorInBody: diagnostics.errorPresent } : {}),
       ...(observedRaw !== undefined ? { contentChars: observedRaw.length } : {}),
       ...(reasoningText !== undefined ? { reasoningChars: reasoningText.length } : {}),
-    });
+    }, requestSecrets);
     if (captured.stage === 'story') {
       const patch: Partial<FailureDiagnostic> = {};
       if (observedRaw !== undefined) patch.storyTags = scanStoryTags(observedRaw, actions);
@@ -346,8 +347,8 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
         patch.parseInputChars = parsedInput.length;
         patch.parseTags = scanStoryTags(parsedInput, actions);
       }
-      if (Object.keys(patch).length) attachFailureDiagnostic(failure, patch);
-      if (reasoningText) attachFailureDiagnostic(failure, { reasoningTags: reasoningTagPresence(reasoningText) });
+      if (Object.keys(patch).length) attachFailureDiagnostic(failure, patch, requestSecrets);
+      if (reasoningText) attachFailureDiagnostic(failure, { reasoningTags: reasoningTagPresence(reasoningText) }, requestSecrets);
     }
     stageResponses.update(responseId, { status: 'failed',
       ...(captured.stage === 'story' ? { failureLayer: storyLayer } : {}),

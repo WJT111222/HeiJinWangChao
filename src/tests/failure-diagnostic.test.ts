@@ -510,6 +510,29 @@ it('脱敏只丢掉不合格字段，中文模型名保留，密钥、URL 和未
   requestInspections.clear();
 });
 
+it('模型名同时对照本次请求快照的凭证，本地密钥删掉后也不会留下', async () => {
+  const snapshotSecret = 'snap+shot/key-99';
+  const encoded = encodeURIComponent(snapshotSecret);
+  const model = `vendor-${encoded}`;
+  expect(model.includes(snapshotSecret)).toBe(false);
+  expect(publishDiagnosticModel(model)).toBe(model);
+  const isolated = memory();
+  const channel = { ...newChannel(), baseUrl: 'https://diag.example/v1', defaultModel: 'diag-model' };
+  const vault = new CredentialVault(isolated, isolated);
+  vault.set(channel.id, snapshotSecret);
+  const snap = channelSnapshot(channel, vault, model, 'story');
+  vi.stubGlobal('window', { localStorage: memory(), sessionStorage: memory() });
+  const send = vi.fn<typeof fetch>().mockResolvedValue(new Response('down', { status: 500 }));
+  const error = await fail(new AiClient(send).generate(snap, messages, { stream: false }));
+  expect(error).toMatchObject({ code: 'server', status: 500 });
+  expect(safeFailureDiagnostic(error)?.model).toBeUndefined();
+  expect(JSON.stringify(safeFailureDiagnostic(error))).not.toContain(snapshotSecret);
+  expect(JSON.stringify(safeFailureDiagnostic(error))).not.toContain(encoded);
+  const kept = new AiError('rejected');
+  attachFailureDiagnostic(kept, { model: '深夜剧场' }, [snapshotSecret]);
+  expect(safeFailureDiagnostic(kept)?.model).toBe('深夜剧场');
+});
+
 it('开闭边界能分开单侧、嵌套、重复和交叉标签', () => {
   expect(scanStoryTags('<正文>只有开头', false).find(tag => tag.tag === '正文')).toMatchObject({ open: true, close: false, malformed: true, duplicate: false, nested: false });
   expect(scanStoryTags('<正文>外<短期记忆>内</短期记忆>外</正文>', false).find(tag => tag.tag === '短期记忆')).toMatchObject({ nested: true, open: true, close: true, order: 'ok' });
@@ -519,7 +542,7 @@ it('开闭边界能分开单侧、嵌套、重复和交叉标签', () => {
   expect(scanStoryTags('<正文>头</正文><短期记忆>记</短期记忆>', false).find(tag => tag.tag === '短期记忆')).toMatchObject({ order: 'ok', nested: false, malformed: false });
 });
 
-it('取消等待或保存前都还没发出下一次请求', async () => {
+it('取消等待时只记下已计划，下一次尝试还没开始', async () => {
   retryDelays.scale = 0;
   const controller = new AbortController();
   let seen: unknown;
@@ -532,13 +555,14 @@ it('取消等待或保存前都还没发出下一次请求', async () => {
   })).rejects.toMatchObject({ code: 'cancelled' });
   const diagnostic = safeFailureDiagnostic(seen);
   expect(diagnostic?.retry).toMatchObject({ scheduled: true, issued: false });
-  expect(failureDiagnosticSummary(diagnostic!)).toContain('已计划自动重试，下一次请求尚未发出');
-  expect(failureDiagnosticSummary(diagnostic!)).not.toContain('已发出下一次自动重试');
+  expect(failureDiagnosticSummary(diagnostic!)).toContain('已计划自动重试，下一次尝试尚未开始');
+  expect(failureDiagnosticSummary(diagnostic!)).not.toContain('已发出');
   const saved = new AiError('server', 500);
   noteRetryDecision(saved, settingsFor({ failureAutoRetry: true, maxAutoRetries: 3 }), 1, { action: 'wait', ms: 0, retryIndex: 1, max: 3, reason: '生成失败' }, true);
   expect(markRetryIssued(saved)).toBeUndefined();
   expect(safeFailureDiagnostic(saved)?.retry?.issued).toBe(true);
-  expect(failureDiagnosticSummary(safeFailureDiagnostic(saved)!)).toContain('已发出下一次自动重试，本次是第 1 次请求');
+  expect(failureDiagnosticSummary(safeFailureDiagnostic(saved)!)).toContain('已开始重试尝试，本次是第 1 次');
+  expect(failureDiagnosticSummary(safeFailureDiagnostic(saved)!)).not.toContain('已发出');
 });
 
 it('两次失败被同一次自动重试恢复后，原文和公开思考仍分别挂在各自记录上', () => {

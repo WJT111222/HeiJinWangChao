@@ -4,6 +4,7 @@ import { modelIdSchema } from './configuration';
 import { browserCredentials } from './credentials';
 import { manualRetryOnly, AiError } from './errors';
 import { redactInspection, requestInspections } from './inspection';
+import { secretFor, type RequestSnapshot } from './snapshot';
 import { cleanFeedbackText, containsPrivateDump } from '../feedback/textSafety';
 import type { Settings } from '../../ui/settings/model';
 
@@ -135,11 +136,11 @@ function knownCode(token: string) {
   const key = token.toLowerCase();
   return Object.hasOwn(classByToken, key) ? key : undefined;
 }
-/** 模型名沿用配置校验。密钥、URL、本地标识或脱敏后变样的名字只丢掉这一项。 */
-export function publishDiagnosticModel(model: string, sanitize?: (value: string) => string | undefined) {
+/** 模型名沿用配置校验。同时对照当前本地密钥和本次请求快照里的凭证；任一命中就丢掉这一项。 */
+export function publishDiagnosticModel(model: string, sanitize?: (value: string) => string | undefined, secrets?: readonly string[]) {
   if (model === 'unknown') return 'unknown';
   if (containsPrivateDump(model) || urlText.test(model) || !modelIdSchema.safeParse(model).success) return undefined;
-  const cleaned = redactInspection(cleanFeedbackText(model), browserCredentials());
+  const cleaned = redactInspection(cleanFeedbackText(model), [...browserCredentials(), ...(secrets ?? [])]);
   if (cleaned !== model) return undefined;
   const ids = requestInspections.getSnapshot().flatMap(record => [record.scope?.saveId, record.id, record.scope?.responseId])
     .filter((id): id is string => Boolean(id && id.length >= 6));
@@ -167,13 +168,17 @@ export function carryFailureDiagnostic(from: unknown, to: unknown) {
   if (!readFailureDiagnostic(to)) attached.set(to, diagnostic);
   else attachFailureDiagnostic(to, diagnostic);
 }
-export function attachFailureDiagnostic(error: unknown, patch: Partial<FailureDiagnostic>) {
+export function diagnosticSecrets(snapshot: RequestSnapshot) {
+  try { return [secretFor(snapshot)]; }
+  catch { return []; }
+}
+export function attachFailureDiagnostic(error: unknown, patch: Partial<FailureDiagnostic>, secrets?: readonly string[]) {
   if (typeof error !== 'object' || error === null) return;
   const previous = attached.get(error);
   const retry = patch.retry || previous?.retry ? { ...previous?.retry, ...defined(patch.retry ?? {}) } : undefined;
   const preferred = typeof patch.model === 'string' ? patch.model : previous?.model;
-  const model = typeof preferred === 'string' ? publishDiagnosticModel(preferred) : undefined;
-  const keptModel = model ?? (preferred !== previous?.model && previous?.model ? publishDiagnosticModel(previous.model) : undefined);
+  const model = typeof preferred === 'string' ? publishDiagnosticModel(preferred, undefined, secrets) : undefined;
+  const keptModel = model ?? (preferred !== previous?.model && previous?.model ? publishDiagnosticModel(previous.model, undefined, secrets) : undefined);
   const upstreamCode = knownCode(patch.upstreamCode ?? previous?.upstreamCode ?? '');
   const upstreamType = knownCode(patch.upstreamType ?? previous?.upstreamType ?? '');
   const merged = acceptDiagnostic({
@@ -253,7 +258,7 @@ export function attachObservedRequest(error: unknown, observed: {
   relayEnabled?: boolean; relayUsed?: boolean; httpStatus?: number; timeoutSeconds?: number; elapsedMs?: number;
   bytes?: number; finishReason?: string; complete?: boolean; phase?: FailureDiagnostic['phase']; errorInBody?: boolean;
   contentChars?: number; reasoningChars?: number; parseInputChars?: number;
-}) {
+}, secrets?: readonly string[]) {
   const existing = readFailureDiagnostic(error);
   const finish = observed.finishReason?.toLowerCase();
   const finishReason = finish && finishToken.test(finish) ? finish : finish ? 'unrecognized' as const : undefined;
@@ -277,7 +282,7 @@ export function attachObservedRequest(error: unknown, observed: {
     ...(safeCount(observed.contentChars) !== undefined && existing?.contentChars === undefined ? { contentChars: safeCount(observed.contentChars) } : {}),
     ...(safeCount(observed.reasoningChars) !== undefined && existing?.reasoningChars === undefined ? { reasoningChars: safeCount(observed.reasoningChars) } : {}),
     ...(safeCount(observed.parseInputChars) !== undefined && existing?.parseInputChars === undefined ? { parseInputChars: safeCount(observed.parseInputChars) } : {}),
-  });
+  }, secrets);
 }
 
 const tags = storyTagNames;
@@ -346,7 +351,7 @@ export function noteRetryDecision(error: unknown, settings: Settings, attempt: n
     },
   });
 }
-/** 下一次请求真正开始时才记为已发出。取消或保存失败不会走到这里。 */
+/** 下一次重试尝试开始时标记。只表示尝试已经开始，不表示网络请求已经发出。取消或保存失败不会走到这里。 */
 export function markRetryIssued(error: unknown) {
   const diagnostic = readFailureDiagnostic(error);
   if (!diagnostic?.retry?.scheduled || diagnostic.retry.issued === true) return;
@@ -380,9 +385,9 @@ export function failureDiagnosticSummary(diagnostic: FailureDiagnostic) {
     diagnostic.errorInBody === true && diagnostic.httpError === undefined ? '看到错误对象，HTTP 状态未知' : undefined,
     diagnostic.relayUsed === true ? '本次经过中转' : diagnostic.relayEnabled === true ? '允许中转，本次未经过中转' : diagnostic.relayEnabled === false ? '未开启自动中转' : undefined,
     diagnostic.retry ? (diagnostic.retry.issued
-      ? `已发出下一次自动重试，本次是第 ${diagnostic.retry.attempt} 次请求`
+      ? `已开始重试尝试，本次是第 ${diagnostic.retry.attempt} 次`
       : diagnostic.retry.scheduled
-        ? '已计划自动重试，下一次请求尚未发出'
+        ? '已计划自动重试，下一次尝试尚未开始'
         : `未再自动重试：${diagnostic.retry.stop ? stopNames[diagnostic.retry.stop] : '未知'}`) : undefined,
     diagnostic.retry?.recovered === true ? '同一次自动重试已恢复' : undefined,
   ];

@@ -120,7 +120,7 @@ export class MemoryObservation {
       ...(typeof this.diagnostics.errorPresent === 'boolean' ? { errorInBody: this.diagnostics.errorPresent } : {}),
       ...(this.diagnostics.httpStatus !== undefined ? { httpStatus: this.diagnostics.httpStatus } : {}),
       ...(phase ? { phase } : {}),
-    });
+    }, this.secrets);
     this.publish('failed', diagnostic);
     const request = safeFailureDiagnostic(error);
     return { diagnostic, responseId: this.id, ...(request ? { request } : {}) };

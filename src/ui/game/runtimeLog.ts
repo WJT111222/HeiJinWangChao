@@ -163,7 +163,7 @@ function sameLogScope(entry: RuntimeLogEntry, other: RuntimeLogEntry) {
   return Boolean(entry.scope && other.scope && entry.scope.saveRef === other.scope.saveRef && entry.scope.turnRef === other.scope.turnRef);
 }
 
-/** 同一次已经发出的自动重试成功后标成已恢复。必须改原对象，否则反馈原文的 WeakMap 对不上。 */
+/** 同一次已经开始的自动重试成功后标成已恢复。必须改原对象，否则反馈原文的 WeakMap 对不上。 */
 export function markRecoveredFailures(entries: readonly RuntimeLogEntry[], completed: RuntimeLogEntry) {
   if (completed.kind !== 'completed' || !completed.scope) return entries;
   const completedAt = entries.indexOf(completed);
