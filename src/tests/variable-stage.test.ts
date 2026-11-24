@@ -163,7 +163,8 @@ describe('DeepSeek V4 Pro 官方 Variables', () => {
       expect(await repo.loadDraft('save-a')).toEqual(saved);
       expect(await repo.load('save-a')).toEqual(before);
       const committed = await repo.commitTurn({ ...submission(saved), useWorldStage: false });
-      expect(committed.state.economy.cash).toBe(before.economy.cash - 3000);
+      expect(before.economy.cash).toBe(10000);
+      expect(committed.state.economy.cash).toBe(7000);
       expect(committed.state.revision).toBe(before.revision + 1);
       expect(await repo.load('save-a')).toEqual(committed.state);
       expect(transport).toHaveBeenCalledTimes(1);
