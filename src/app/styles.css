@@ -1693,6 +1693,8 @@ summary {
 .workflow-details { padding: .7rem; border-top: 1px solid var(--line); }
 .workflow-primary { display: flex; flex-wrap: wrap; gap: .4rem; }
 .workflow-fee { color: var(--muted); font-size: .7rem; margin: .4rem 0; }
+.retry-status { display: flex; flex-wrap: wrap; gap: .35rem .7rem; align-items: center; margin: 0; padding: .4rem .7rem; font-size: .72rem; line-height: 1.45; color: var(--text); background: var(--selected); border-bottom: 1px solid var(--line); }
+.retry-status button { min-height: 28px; padding: .2rem .55rem; }
 .workflow-stages > li > .variable-actions { align-content: start; grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .35rem; margin: 0; }
 .workflow-stages button { max-width: 100%; min-height: 36px; padding: .35rem .5rem; }
 .workflow-primary button { font-size: .72rem; padding: .35rem .6rem; min-height: 32px; }

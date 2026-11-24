@@ -194,9 +194,9 @@ export function GameScreen({
   const feedbackCorrelation = useMemo(() => new FeedbackCorrelation(), [diagnosticScope]);
   // 失败事件序号：用于判断错误横幅是否是「新的一次失败」；清空日志不回退。
   const [failureSeq, setFailureSeq] = useState(0);
-  const reportRuntimeEvent = useCallback<RuntimeLogReporter>((stage, kind, failure, turnId = draft?.turnId) => {
+  const reportRuntimeEvent = useCallback<RuntimeLogReporter>((stage, kind, failure, turnId = draft?.turnId, options) => {
     // The callback captures the request's turn, not whatever turn is current when it finishes.
-    const entry = runtimeLogEvent(++runtimeLogId.current, stage, kind, failure, diagnosticScope);
+    const entry = runtimeLogEvent(++runtimeLogId.current, stage, kind, failure, diagnosticScope, options);
     feedbackCorrelation.record(entry, state.saveId, turnId);
     setRuntimeLogs((current) => [...current.slice(-49), entry]);
     if (entry.kind === 'failed') setFailureSeq((current) => current + 1);
@@ -212,6 +212,7 @@ export function GameScreen({
     cancel,
     progress: manualProgress,
     error,
+    retry: storyRetry,
   } = useStoryGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent);
   const variables = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
   const world = useWorldGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
@@ -246,8 +247,12 @@ export function GameScreen({
     automatic.progress?.stage === 'story' && automatic.progress.phase !== 'retrying'
       ? { ...automatic.progress, phase: automatic.progress.phase, narrative: automatic.progress.narrative ?? '' }
       : manualProgress;
+  const streamingPreview = progress && progress.phase !== 'retrying' ? progress : undefined;
+  const storyRetryWait = Boolean(
+    progress?.phase === 'retrying' || (automatic.progress?.stage === 'story' && automatic.progress.phase === 'retrying'),
+  );
   const workflowBusy = Boolean(
-    submitting || automatic.running || progress || variables.phase || world.phase,
+    submitting || automatic.running || progress || storyRetry || variables.phase || world.phase,
   );
   const npcManagement = useNpcManagement(repository, state, draft, workflowBusy, onNpcManaged, instance);
   const busy = workflowBusy || Boolean(npcManagement.pendingId);
@@ -333,7 +338,7 @@ export function GameScreen({
   const minNarrativeChars = settings.prompts.minNarrativeChars;
   const storyContinuable = !busy && canContinueStory(draft, minNarrativeChars);
   const partialBlock = continuationBlock(draft, minNarrativeChars);
-  const partialText = !busy && storyPartialVisible(draft) ? draft?.storyPartial?.text : undefined;
+  const partialText = (!busy || storyRetryWait) && storyPartialVisible(draft) ? draft?.storyPartial?.text : undefined;
   const partialNarrative = useMemo(() => partialText === undefined ? undefined : new StoryStream().push(partialText).trim(), [partialText]);
   const partialCount = useMemo(() => partialText === undefined ? undefined : countPartialNarrative(partialText), [partialText]);
   const [partialCopy, setPartialCopy] = useState<{ text: string; ok: boolean }>();
@@ -540,9 +545,14 @@ export function GameScreen({
     ?? (error ? 'story' : variables.error ? 'variables' : world.error ? 'world' : undefined);
   const errorLabel = errorStage && errorStage in stageLabels ? stageLabels[errorStage as keyof typeof stageLabels]
     : errorStage === 'commit' ? '结算' : '';
+  const retryNotice = automatic.progress?.retry ?? variables.retry ?? world.retry ?? storyRetry;
+  const retrySeconds = retryNotice ? Math.max(0, Math.ceil(retryNotice.remainingMs / 1000)) : 0;
+  const retryIndex = retryNotice?.count;
+  // 手机诊断页会在失败时自动弹出。自动重试进行中先让出，避免挡住次数、等待和取消。
+  useEffect(() => { if (retryIndex !== undefined) setDiagnosticsOpen(false); }, [retryIndex, activeStage]);
   const workflowLabel = submitting ? (awaitingAction ? '正在发送行动' : '正在正式结算')
     : automatic.settling ? '正在正式结算'
-    : activeStage ? `${stageLabels[activeStage]}${activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? '重试中' : '生成中'} · ${{ story: 1, variables: 2, world: 3 }[activeStage]}/3`
+    : activeStage ? `${stageLabels[activeStage]}${activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? `自动重试 ${retryNotice?.count ?? ''}/${retryNotice?.max ?? ''}` : '生成中'} · ${{ story: 1, variables: 2, world: 3 }[activeStage]}/3`
     : automatic.running ? '正在准备生成'
     : hasWorkflowError && submitError ? `${awaitingAction || rebindAction ? '行动发送' : '结算'}失败 · 查看详情`
     : hasWorkflowError && (currentFailure?.kind === 'cancelled' || currentFailure?.code === 'cancelled') ? '已取消 · 可恢复'
@@ -562,8 +572,8 @@ export function GameScreen({
     const skipped = automatic.outcome?.draft.draftRevision === draft?.draftRevision && automatic.outcome?.skipped.includes(stage);
     const enabled = stage === 'story' || (busy && draft ? stage === 'variables' ? draft.useVariableStage : draft.useWorldStage : stage === 'variables' ? settings.runtime.useVariableStage : settings.runtime.useWorldStage);
     const text = !enabled ? '已关闭' : awaitingAction ? '已结算'
-      : auto ? auto.phase === 'saving' ? '保存中' : auto.phase === 'retrying' ? '重试中' : '生成中'
-      : activeStage === stage ? activePhase === 'saving' ? '保存中' : '生成中'
+      : auto ? auto.phase === 'saving' ? '保存中' : auto.phase === 'retrying' ? `重试 ${auto.retry?.count ?? ''}/${auto.retry?.max ?? ''}` : '生成中'
+      : activeStage === stage ? activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? `重试 ${retryNotice?.count ?? ''}/${retryNotice?.max ?? ''}` : '生成中'
       : skipped || status === 'skipped' ? '已跳过'
       : status === 'failed' || errorStage === stage && hasWorkflowError ? '失败 · 可重试'
       : status === 'preview' ? '仅预览' : status === 'ready' ? '已完成' : '待生成';
@@ -795,7 +805,7 @@ export function GameScreen({
         }
         if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey ||
           (event.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
-        if (/^[1-5]$/.test(event.key) && settings.prompts.actionOptions && !progress && !referenceOptions && options && options.length >= 3 && options.length <= 5) {
+        if (/^[1-5]$/.test(event.key) && settings.prompts.actionOptions && !busy && !progress && !referenceOptions && options && options.length >= 3 && options.length <= 5) {
           const option = options[Number(event.key) - 1];
           if (option) { event.preventDefault(); setInput((current) => appendActionOption(current, option)); document.getElementById('player-input')?.focus(); }
         }
@@ -805,7 +815,7 @@ export function GameScreen({
       {!compactSidebars&&<PlayerStatus state={state} equipment={equipment} activePanel={compactSidebars || desktopSettings ? undefined : panel} onProfile={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined); setPanel(desktopArchive === '人物档案' ? undefined : '人物档案'); })} onEconomy={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);setPanel(desktopArchive === '经济与资产' ? undefined : '经济与资产'); })} />}
       <section inert={Boolean(desktopArchive||desktopSettings)} className="story-column" aria-label="剧情与行动">
         <div
-          className={`reader ${!view.journal.length && !draft?.story && !progress ? 'reader-empty' : ''}`}
+          className={`reader ${!view.journal.length && !draft?.story && !streamingPreview && !storyRetryWait ? 'reader-empty' : ''}`}
           ref={reader}
           onScroll={() => {
             const element = reader.current!;
@@ -821,9 +831,11 @@ export function GameScreen({
             <span className="eyebrow">THE STORY</span>
             {!compactSidebars && <ScriptButtons/>}
             <span className="tag">
-              {progress
-                ? progress.readingPhase === 'waiting' ? '完整响应 · 尚未保存' : '生成预览 · 尚未保存'
-                : draft?.story
+              {streamingPreview
+                ? streamingPreview.readingPhase === 'waiting' ? '完整响应 · 尚未保存' : '生成预览 · 尚未保存'
+                : storyRetryWait
+                  ? '自动重试 · 已写内容保留'
+                  : draft?.story
                   ? '已保存草稿'
                   : state.journal.length
                     ? '已结算历史'
@@ -831,23 +843,25 @@ export function GameScreen({
             </span>
           </div>
           {view.journal.map((entry, index) => (
-            <article className={`story-entry glass ${index < view.journal.length - 1 || draft?.story || progress ? 'past' : 'latest'}`} key={entry.turnId}>
+            <article className={`story-entry glass ${index < view.journal.length - 1 || draft?.story || streamingPreview || storyRetryWait ? 'past' : 'latest'}`} key={entry.turnId}>
               <CityChapter number={index + 1} state={state} scene={state.journal[index]?.scene} desktop={!compactSidebars} />
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
               <SettlementNotice settlement={state.journal[index]?.settlement} />
               {index===view.journal.length-1&&showChanges&&<TurnChanges state={state} comparison={turnComparison} mobile={compactSidebars} onOpen={openChange}/>}
             </article>
           ))}
-          {progress ? (
-            <article className="story-entry glass latest" aria-label={progress.readingPhase === 'waiting' ? '完整正文等待' : '流式正文预览'} aria-busy="true">
+          {streamingPreview ? (
+            <article className="story-entry glass latest" aria-label={streamingPreview.readingPhase === 'waiting' ? '完整正文等待' : '流式正文预览'} aria-busy="true">
               <CityChapter number={state.turnNumber + 1} state={state} scene={draftScene} status="preview" desktop={!compactSidebars} />
-              <span className="tag preview-tag">{progress.readingPhase === 'waiting' ? '完整响应模式 · 校验保存后展示' : '临时预览 · 完整校验前不保存'}</span>
-              <StoryStreamReading progress={progress} caret={!compactSidebars} />
+              <span className="tag preview-tag">{streamingPreview.readingPhase === 'waiting' ? '完整响应模式 · 校验保存后展示' : '临时预览 · 完整校验前不保存'}</span>
+              <StoryStreamReading progress={streamingPreview} caret={!compactSidebars} />
             </article>
           ) : partialNarrative !== undefined ? (
             <article className="story-entry glass latest story-partial">
               <CityChapter number={state.turnNumber + 1} state={state} scene={draftScene} status="draft" desktop={!compactSidebars} />
-              <span className="tag preview-tag">{partialBlock === 'used_up'
+              <span className="tag preview-tag">{storyRetryWait
+                ? '正在自动重试 · 已写出的内容先留在这里'
+                : partialBlock === 'used_up'
                 ? `正文未写完 · 已续写 ${STORY_CONTINUATION_LIMIT} 次，不能再续写；可复制已写内容，按「发送」重新生成`
                 : partialBlock === 'closed_short'
                   ? `正文已结束但只有 ${partialCount?.chars ?? 0} 字，低于最低 ${minNarrativeChars} 字，续写无法补足 · 可复制已写内容，按「发送」重新生成`
@@ -923,6 +937,14 @@ export function GameScreen({
               aria-label="三阶段工作流"
               data-state={workflowState}
             >
+              {retryNotice && (
+                <p className="retry-status" role="status">
+                  <span>{activeStage ? stageLabels[activeStage] : '当前阶段'} · 第 {retryNotice.count}/{retryNotice.max} 次自动重试</span>
+                  <span>上次失败：{retryNotice.reason}</span>
+                  <span>{retrySeconds > 0 ? `${retrySeconds} 秒后重试` : '即将重试'}</span>
+                  <button type="button" onClick={() => (automatic.running ? automatic.cancel() : variables.phase ? variables.cancel() : world.phase ? world.cancel() : cancel())}>取消</button>
+                </p>
+              )}
               {compactSidebars ? (
                 <div className="workflow-disclosure mobile-workflow-line" data-open={workflowOpen} {...(workflowOpen?{open:true}:{})}>
                   <div className="workflow-summary"><button type="button" className="workflow-toggle" ref={workflowToggle} aria-label="三阶段工作流详情" aria-expanded={workflowOpen} aria-controls="workflow-pop" onClick={()=>setWorkflowOpen(true)}>
@@ -1028,7 +1050,7 @@ export function GameScreen({
             if (!busy) void generate(selection);
           }} />
       )}
-      {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} feedbackLogs={runtimeEntries} recovery={diagnosticRecovery} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)}/>}
+      {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} feedbackLogs={runtimeEntries} recovery={diagnosticRecovery} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)} retrying={Boolean(retryNotice)}/>}
       {compactSidebars && mobileStatusOpen && <Dialog title="此时此地" mobileVariant="sheet" sheetExpandable seal={mobileCitySeal(state)} eyebrow="NOW · HERE" className="mobile-status-sheet" onClose={()=>setMobileStatusOpen(false)} returnFocus={()=>document.querySelector<HTMLElement>('[data-mobile-status]')??mobileReturnFocus('hero')}>
         <MobileStatus state={state} equipment={equipment} onProfile={()=>{setMobileStatusOpen(false);setPanel('人物档案');}} onEconomy={()=>{setMobileStatusOpen(false);setPanel('经济与资产');}}/>
       </Dialog>}

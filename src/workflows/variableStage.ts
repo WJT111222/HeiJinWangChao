@@ -124,7 +124,7 @@ export class VariableStage {
             ),
           )
         )
-          throw new AiError('invalid_output');
+          throw new AiError('invalid_output', undefined, { worldRule: 'secret_in_output' });
         const next = TurnDraftSchema.parse({
           ...draft,
           draftRevision: draft.draftRevision + 1,

@@ -16,6 +16,8 @@ const links = new WeakMap<RuntimeLogEntry, LinkedResponse>();
 /** Attach only a response produced after the matching stage started. Keep IDs in memory. */
 export class FeedbackCorrelation {
   private starts = new Map<string, Set<string>>();
+  /** 同一次开始后的多次失败各自对应自己的原文，不能都绑到第一次。 */
+  private linked = new Map<string, Set<string>>();
 
   record(entry: RuntimeLogEntry, saveId: string, turnId?: string) {
     if (!turnId || !entry.scope || !['story', 'variables', 'world'].includes(entry.stage)) return;
@@ -23,15 +25,28 @@ export class FeedbackCorrelation {
     const records = stageResponses.getSnapshot().filter(record =>
       record.saveId === saveId && record.turnId === turnId && record.stage === entry.stage);
     if (entry.kind === 'started') {
-      if (this.starts.size >= 12) this.starts.delete(this.starts.keys().next().value!);
+      if (this.starts.size >= 12 && !this.starts.has(key)) {
+        const oldest = this.starts.keys().next().value!;
+        this.starts.delete(oldest);
+        this.linked.delete(oldest);
+      }
       this.starts.set(key, new Set(records.map(record => record.id)));
+      this.linked.set(key, new Set());
+      return;
+    }
+    if (entry.kind !== 'failed') {
+      this.starts.delete(key);
+      this.linked.delete(key);
       return;
     }
     const before = this.starts.get(key);
-    this.starts.delete(key);
-    if (!before || entry.kind !== 'failed') return;
-    const candidate = records.find(record => !before.has(record.id));
-    if (!candidate || candidate.status !== 'failed' || candidate.error?.code !== entry.code) return;
+    if (!before) return;
+    const used = this.linked.get(key) ?? new Set<string>();
+    const candidate = records.find(record => !before.has(record.id) && !used.has(record.id)
+      && record.status === 'failed' && record.error?.code === entry.code);
+    if (!candidate) return;
+    used.add(candidate.id);
+    this.linked.set(key, used);
     const request = requestInspections.getSnapshot().find(item => item.scope?.responseId === candidate.id);
     links.set(entry, { id: candidate.id, protocol: candidate.protocol ?? request?.route.protocol, model: request?.route.model });
   }

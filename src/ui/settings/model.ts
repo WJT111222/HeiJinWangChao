@@ -59,6 +59,9 @@ export const SettingsSchema = z.strictObject({
     streamVariables: z.boolean().default(false),
     streamWorld: z.boolean().default(false),
     timeoutSeconds: z.number().int().min(1).max(3600),
+    /** 关闭时只保留 500/502/503/504 的一次基础重试。开启后生成失败都会重试，最多 3 次，不含首次请求。 */
+    failureAutoRetry: z.boolean().default(false),
+    maxAutoRetries: z.union([z.literal(1), z.literal(3)]).default(3),
   }),
   // 外观：夜间（原黑金）、日间（档案纸）、跟随系统。旧设置缺字段时为夜间，原样保持现有观感。
   display: z.strictObject({ appearance: z.enum(['night', 'day', 'system']) }).default({ appearance: 'night' }),
@@ -79,7 +82,7 @@ export function defaultSettings(): Settings {
       realWorld: true,
     },
     memory: { immediateWindowSize: 10, automaticMaintenance: true, summaries: defaultSummarySettings() },
-    runtime: { useVariableStage: true, useWorldStage: true, streamStory: true, streamVariables: false, streamWorld: false, timeoutSeconds: 120 },
+    runtime: { useVariableStage: true, useWorldStage: true, streamStory: true, streamVariables: false, streamWorld: false, timeoutSeconds: 120, failureAutoRetry: false, maxAutoRetries: 3 },
     display: { appearance: 'night' },
   };
 }
