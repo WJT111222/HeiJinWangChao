@@ -15,10 +15,13 @@
 | --- | --- |
 | `submissionId` | 每次明确提交随机生成的 UUID。同一打开表单、同载荷的失败重试复用。 |
 | `feedback.kind` | `suggestion` 或 `error` |
-| `version`, `browser`, `device` | 展示版本、粗粒度浏览器类别、桌面／手机／平板等分类 |
+| `version`, `browser`, `device` | 产品版本、粗粒度浏览器类别、桌面／手机／平板等分类 |
+| `build` | 构建提交 SHA。反馈建议和错误上报均附带此字段。旧记录允许缺失。 |
 | `category`, `text` | 分类和必填文本，建议入口。错误报告仅有选填 `text`。 |
 | `errors` | 错误报告的编号、时间、阶段、错误码，以及可用的模型、协议和安全诊断字段，例如 HTTP 状态、白名单路径、结构标签与长度。 |
 | `attachments` | 错误报告的选填附件。各项有 `errorRef`，按勾选分别附带 `content` 或 `reasoning`，截短时有 `truncated: true`。可识别的兼容前置 `<think>` 公开思考也从原文选项分离。 |
+
+生产包优先使用 Cloudflare Workers Builds 提供的 `WORKERS_CI_COMMIT_SHA`，其次读取构建工作区的 Git HEAD。无 Git 元数据的生产包标记为 `unavailable`，本地 Vite 开发服务器标记为 `development`。后台详情和「复制技术诊断」均提供此字段。旧记录在后台显示「未记录」。
 
 D1 使用服务器接收时间并分配独立反馈编号。请求上限 512 KiB，反馈正文 4,000 字符，错误日志最多 50 条，附件最多 6 份。单个内容字段最多 30,000 字符，所有附件合计最多 60,000 字符。分配容量时保留完整日志，截短附件会在预览显示。服务端每滚动一分钟最多接收 30 条新记录，限流计算使用接收时间。相同提交 UUID 与载荷返回同一回执，重复使用 UUID 发送不同载荷会拒绝。
 

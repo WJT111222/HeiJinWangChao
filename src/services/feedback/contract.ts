@@ -29,6 +29,7 @@ const index = z.number().int().min(1).max(100_000);
 const measured = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const base = {
   version: z.string().regex(/^[a-zA-Z0-9 ._+-]{1,40}$/),
+  build: z.union([z.string().regex(/^[0-9a-f]{40}$/), z.enum(['development', 'unavailable'])]).optional(),
   browser: z.enum(['chrome', 'edge', 'firefox', 'safari', 'other']),
   device: z.enum(['desktop', 'phone', 'tablet', 'other']),
 };

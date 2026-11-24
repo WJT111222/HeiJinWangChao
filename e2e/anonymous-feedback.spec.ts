@@ -118,6 +118,7 @@ test('错误日志统一上报：完整日志、可选字段严格分离、原�
   await form.getByRole('button', { name: '提交错误报告' }).click();
   await expect(form.getByRole('status')).toContainText(receipt);
   expect(uploads[0].feedback).toEqual(projected);
+  expect(uploads[0].feedback).toMatchObject({ version: 'V1.0 Beta', build: 'development' });
   for (const marker of [key, 'save-a', 'turn-a', 'saveRef', 'turnRef', '合成动作不上传', '公开思考', 'GAME_CONTEXT']) {
     expect(JSON.stringify(uploads)).not.toContain(marker);
   }
@@ -165,7 +166,12 @@ test('设置反馈不发送日志，网络失败保留输入，同一尝试使�
     await expect(page.locator('html')).toHaveAttribute('data-appearance', 'day');
     await page.getByRole('button', { name: '返回设置', exact: true }).click();
   }
+  await page.getByRole('button', { name: '运行', exact: true }).click();
+  const saveSettings = page.getByRole('button', { name: '保存本地设置', exact: true });
+  await expect(saveSettings).toBeVisible();
+  if (isMobile) await page.getByRole('button', { name: '返回设置', exact: true }).click();
   await page.getByRole('button', { name: '反馈建议', exact: true }).click();
+  await expect(saveSettings).toHaveCount(0);
   await page.getByLabel('反馈类型').selectOption('experience');
   const input = page.getByLabel('反馈内容');
   await input.fill('合成反馈：希望保留阅读进度。');
@@ -180,7 +186,10 @@ test('设置反馈不发送日志，网络失败保留输入，同一尝试使�
   await expect(page.getByRole('status').filter({ hasText: receipt })).toBeVisible();
   expect(uploads).toHaveLength(2);
   expect(uploads[1]).toEqual(uploads[0]);
-  expect(Object.keys(uploads[0].feedback).sort()).toEqual(['browser', 'category', 'device', 'kind', 'text', 'version']);
-  expect(uploads[0].feedback).toMatchObject({ kind: 'suggestion', category: 'experience', text: '合成反馈：希望保留阅读进度。' });
+  expect(Object.keys(uploads[0].feedback).sort()).toEqual(['browser', 'build', 'category', 'device', 'kind', 'text', 'version']);
+  expect(uploads[0].feedback).toMatchObject({
+    kind: 'suggestion', category: 'experience', text: '合成反馈：希望保留阅读进度。',
+    version: 'V1.0 Beta', build: 'development',
+  });
   await expect(page.getByRole('button', { name: '提交反馈', exact: true })).toBeDisabled();
 });

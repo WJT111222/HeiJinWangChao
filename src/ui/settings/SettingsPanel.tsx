@@ -360,7 +360,7 @@ export function SettingsPanel({
           </>
         )}
         <div className="local-save-bar"><Feedback role="status" level={noticeLevel} className="field-hint">{notice||(localDirty&&(tab==='提示词管理'||(desktop&&(tab==='提示词'||tab==='运行')))?'本地设置尚未保存。':'')}</Feedback>
-        {tab !== 'AI 连接' && tab !== '记忆' && tab !== '外观' && tab !== '世界书' && tab !== '变量管理' && (
+        {tab !== 'AI 连接' && tab !== '记忆' && tab !== '外观' && tab !== '世界书' && tab !== '变量管理' && tab !== '反馈建议' && (
           <button className="primary" onClick={save}>
             保存本地设置
           </button>

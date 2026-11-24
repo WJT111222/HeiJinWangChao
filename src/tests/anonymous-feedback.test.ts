@@ -148,6 +148,31 @@ it('后台搜索、筛选、统计、纯文本显示、状态、备注和删除�
   expect((await adminRequest(feedbackAdminPath + '/' + id)).status).toBe(404);
   expect(sqlite.prepare('SELECT * FROM feedback').all()).toHaveLength(1);
 });
+it('两个反馈入口均保存构建版本，后台可查看和复制，旧记录仍可读取', async () => {
+  const build = '0123456789abcdef0123456789abcdef01234567';
+  for (const payload of [suggestion, report]) {
+    const response = await submit({ ...payload, build });
+    expect(response.status).toBe(201);
+    const { id } = await response.json();
+    const stored = sqlite.prepare('SELECT payload FROM feedback WHERE id = ?').get(id);
+    expect(JSON.parse(String(stored?.payload))).toEqual({ ...payload, build });
+    const detail = await adminRequest(feedbackAdminPath + '/' + id);
+    expect(detail.status).toBe(200);
+    const html = await detail.text();
+    expect(html).toContain('<p class="muted">产品版本 V1.0 Beta · 构建版本 <code>' + build + '</code></p>');
+    expect(html).toContain('&quot;build&quot;: &quot;' + build + '&quot;');
+  }
+
+  const legacy = await submit(suggestion);
+  const { id } = await legacy.json();
+  const oldDetail = await adminRequest(feedbackAdminPath + '/' + id);
+  expect(oldDetail.status).toBe(200);
+  const oldHtml = await oldDetail.text();
+  expect(oldHtml).toContain('构建版本 <code>未记录</code>');
+  expect(oldHtml).not.toContain('&quot;build&quot;');
+  expect((await submit({ ...suggestion, build: 'unspecified arbitrary value' })).status).toBe(400);
+});
+
 it('反馈不可用不会影响公告、静态资产或既有 API 路由', async () => {
   const missing = env({ FEEDBACK: undefined, FEEDBACK_ADMIN_PASSWORD: undefined });
   expect((await worker.fetch(new Request(base + '/api/announcement'), missing)).status).toBe(200);

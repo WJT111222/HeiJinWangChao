@@ -12,7 +12,7 @@ header h1{margin:.25rem 0;font:700 clamp(1.5rem,5vw,2.4rem)/1.2 'Noto Serif SC',
 a{color:var(--gold);text-underline-offset:.2em}p{margin:.4rem 0 .85rem}h2{margin:1.3rem 0 .6rem}h3{margin:.25rem 0 .55rem}
 section,.card,fieldset{min-width:0;border:1px solid var(--line);border-radius:.3rem;background:var(--panel);padding:1rem;margin-bottom:1rem}
 section h2:first-child{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:.7rem}.number{font-size:1.65rem;color:var(--gold)}
-ul{padding-left:1.1rem;margin:.25rem 0}li{margin:.35rem 0;overflow-wrap:anywhere}.muted,time{color:var(--muted)}.text{white-space:pre-wrap;overflow-wrap:anywhere}
+ul{padding-left:1.1rem;margin:.25rem 0}li{margin:.35rem 0;overflow-wrap:anywhere}.muted,time{color:var(--muted)}code{overflow-wrap:anywhere}.text{white-space:pre-wrap;overflow-wrap:anywhere}
 form{display:grid;gap:.75rem}label{display:grid;gap:.3rem;min-width:0}
 input,select,textarea,button{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);padding:.55rem;border-radius:.25rem;min-width:0}
 input,select,textarea{width:100%}textarea{resize:vertical}button{cursor:pointer;justify-self:start;min-height:2.6rem}button.primary{border-color:var(--gold);color:var(--gold)}
@@ -74,7 +74,7 @@ export function listView(filter: FeedbackFilters, rows: ListRow[], more: boolean
 export function detailView(row: NonNullable<Awaited<ReturnType<typeof getFeedback>>>, updated: boolean) {
   const payload = row.payload, path = `${feedbackAdminPath}/${e(row.id)}`;
   const diagnostic = { id: row.id, receivedAt: new Date(row.created_at).toISOString(), version: payload.version,
-    browser: payload.browser, device: payload.device, ...(payload.kind === 'error' ? { errors: payload.errors } : { category: payload.category }) };
+    build: payload.build, browser: payload.browser, device: payload.device, ...(payload.kind === 'error' ? { errors: payload.errors } : { category: payload.category }) };
   const pretty = (value: unknown) => e(JSON.stringify(value, null, 2));
   const attachments = payload.kind === 'error' && payload.attachments?.map(item => `<section><h3>错误 ${item.errorRef} 的附件</h3>
 ${item.truncated ? '<p class="muted">部分内容已截短。</p>' : ''}
@@ -86,7 +86,9 @@ ${updated ? '<p role="status">处理状态和备注已保存。</p>' : ''}
 <section><h3>玩家反馈</h3><p class="text">${e(payload.text || '没有补充说明。')}</p></section>
 ${payload.kind === 'error' ? `<section><h3>错误日志 · ${payload.errors.length} 条</h3><pre>${pretty(payload.errors)}</pre></section>` : ''}
 ${attachments || ''}
-<section><h3>技术诊断</h3><label>可复制的脱敏诊断<textarea id="diagnostics" readonly rows="5" spellcheck="false">${pretty(diagnostic)}</textarea></label>
+<section><h3>技术诊断</h3>
+<p class="muted">产品版本 ${e(payload.version)} · 构建版本 <code>${e(payload.build ?? '未记录')}</code></p>
+<label>可复制的脱敏诊断<textarea id="diagnostics" readonly rows="5" spellcheck="false">${pretty(diagnostic)}</textarea></label>
 <button type="button" id="copy-diagnostics">复制技术诊断</button><span id="copy-status" role="status"></span></section>
 <section><h3>处理反馈</h3><form method="post" action="${path}"><label>处理状态<select name="status">${statusChoices(row.status)}</select></label>
 <label>开发者内部备注<textarea name="note" rows="5" maxlength="4000">${e(row.note)}</textarea></label>

@@ -42,7 +42,7 @@ function runtimeInfo(userAgent = globalThis.navigator?.userAgent ?? '') {
     : /(?:Chrome|CriOS)\//i.test(userAgent) ? 'chrome' : /Safari\//i.test(userAgent) ? 'safari' : 'other';
   const device = /iPad|Tablet|Android(?!.*Mobile)/i.test(userAgent) ? 'tablet'
     : /iPhone|Mobile/i.test(userAgent) ? 'phone' : /Windows|Macintosh|Linux|CrOS/i.test(userAgent) ? 'desktop' : 'other';
-  return { version: PRODUCT_VERSION, browser, device } as const;
+  return { version: PRODUCT_VERSION, build: import.meta.env.VITE_FEEDBACK_BUILD, browser, device } as const;
 }
 
 function textSanitizer(extraIds: readonly string[] = []) {
