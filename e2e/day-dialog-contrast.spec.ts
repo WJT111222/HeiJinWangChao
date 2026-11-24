@@ -1,6 +1,6 @@
 import { test, expect } from './helpers/test';
 import type { Locator, Page, TestInfo } from '@playwright/test';
-import { setup, transport, plan, send, data, calls, closeError } from './helpers/actionRecovery';
+import { setup, plan, send, data, calls, closeError } from './helpers/actionRecovery';
 import { openWorkflow, openWorkflowStage } from './helpers/gameLayout';
 import { settingsTextContrast } from './helpers/settingsContrast';
 import { writeFile } from 'node:fs/promises';
@@ -20,7 +20,7 @@ async function seedWorkflow(page: Page, ready: boolean) {
       await completeDraft(repo, { variables: { commands: [{ type: 'SetWorldClock', commandId: 'contrast-clock', evidence: '经过一分钟', worldClock: new Date(Date.parse(state.worldClock) + 60000).toISOString() }], rejectedSuggestions: [], unresolved: [] } });
     } finally { repo.close(); }
   }, ready);
-  await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible(); await transport(page);
+  await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-appearance', 'day');
 }
 async function measure(root: Locator, text: string) {

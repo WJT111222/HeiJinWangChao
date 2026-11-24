@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import type { Server, ServerResponse } from 'node:http';
 import { test, expect } from './helpers/test';
 import type { Page, TestInfo } from '@playwright/test';
+import { expectStoryRaw } from './helpers/storyRaw';
 import { closeWorkflowSheet, openGameTools, openStageRaw, openWorkflowStage, workflowTrigger, openTurnTools } from './helpers/gameLayout';
 
 const key = 'fictional-unified-browser-key';
@@ -85,10 +86,9 @@ async function raw(page: Page, expected: string, info: TestInfo, name: string, s
   await closeTools(page);
   const diagnostic = page.getByRole('dialog', { name: '重试与变更详情', exact: true });
   if (await diagnostic.isVisible()) await page.keyboard.press('Escape');
-  const panel = await openStageRaw(page, 'story'), box = panel.getByRole('textbox', { name: '正文模型完整原文', exact: true });
-  await expect(box).toHaveCount(1); await expect(box).toHaveValue(expected); await expect(box).toHaveAttribute('readonly', '');
+  const panel = await openStageRaw(page, 'story');
+  const box = await expectStoryRaw(panel, expected);
   expect(await box.evaluate(el => el.getBoundingClientRect().height)).toBeGreaterThanOrEqual(160);
-  await expect(panel.locator('pre, .story-native-response')).toHaveCount(0);
   await expect(panel.getByRole('heading', { name: /供应商公开/ })).toHaveCount(0);
   await expect(panel.getByLabel('供应商公开原生思考全文', { exact: true })).toHaveCount(0);
   await box.focus(); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.press('ControlOrMeta+C');
