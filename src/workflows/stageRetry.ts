@@ -21,14 +21,15 @@ function scaled(ms: number) {
   return Math.round(ms * retryDelays.scale);
 }
 
-/** 不是生成失败，重试也没有意义：取消、密钥、配置、明确额度不足、存档冲突、保存失败。 */
+/** 程序自身的失败，再生成同一段没有意义。模型输出没通过业务校验不在这里。 */
 const NOT_GENERATION = new Set([
   'cancelled', 'configuration', 'credentials', 'authorization', 'not_found', 'unsupported',
   'parameter_adjusted', 'resource', 'placeholder', 'storage', 'variable_runtime',
-  'data_integrity', 'amount_balance', 'time_data', 'candidate_conflict', 'permission',
-  'event_entry', 'time_preflight', 'money_unit', 'concurrency_unavailable',
+  'candidate_conflict', 'permission', 'concurrency_unavailable',
   'model_list_format', 'model_list_pagination',
 ]);
+/** 中转基础设施失败，以及渠道明确拒绝的模型/参数配置。 */
+const CHANNEL_STOP = new Set(['channel.relay', 'channel.relay_unavailable', 'channel.parameter', 'channel.model']);
 
 export interface RetryNotice {
   /** 即将开始的自动重试序号，从 1 起，不含首次请求。 */
@@ -47,11 +48,13 @@ export function transientStageError(error: unknown) {
 }
 
 /** 开启扩展后：生成失败都会重试，不限于 500/502/503/504。
- * 凭证回显和请求/草稿版本冲突不是可再生成的失败。 */
+ * 模型内容没通过业务校验会重试。存档、权限、事务、渠道参数配置、额度耗尽不会。
+ * manualRetryOnly 只留给真正走了中转或酒馆包装、必须手动处理的失败。 */
 export function extendedStageRetryable(error: unknown) {
   if (!(error instanceof AiError) || manualRetryOnly.has(error) || error.details?.quota === true) return false;
+  if (CHANNEL_STOP.has(error.details?.fieldPath ?? '')) return false;
   const storyRule = error.details?.storyRule;
-  if (storyRule === 'credential_output' || storyRule === 'request_basis' || storyRule === 'draft_conflict') return false;
+  if (storyRule === 'credential_output' || storyRule === 'request_basis' || storyRule === 'draft_conflict' || storyRule === 'opening_missing') return false;
   const worldRule = error.details?.worldRule;
   if (worldRule === 'secret_in_output' || worldRule === 'request_basis') return false;
   return !NOT_GENERATION.has(error.code);

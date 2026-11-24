@@ -547,6 +547,9 @@ export function GameScreen({
     : errorStage === 'commit' ? '结算' : '';
   const retryNotice = automatic.progress?.retry ?? variables.retry ?? world.retry ?? storyRetry;
   const retrySeconds = retryNotice ? Math.max(0, Math.ceil(retryNotice.remainingMs / 1000)) : 0;
+  const retryIndex = retryNotice?.count;
+  // 手机诊断页会在失败时自动弹出。自动重试进行中先让出，避免挡住次数、等待和取消。
+  useEffect(() => { if (retryIndex !== undefined) setDiagnosticsOpen(false); }, [retryIndex, activeStage]);
   const workflowLabel = submitting ? (awaitingAction ? '正在发送行动' : '正在正式结算')
     : automatic.settling ? '正在正式结算'
     : activeStage ? `${stageLabels[activeStage]}${activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? `自动重试 ${retryNotice?.count ?? ''}/${retryNotice?.max ?? ''}` : '生成中'} · ${{ story: 1, variables: 2, world: 3 }[activeStage]}/3`
@@ -1047,7 +1050,7 @@ export function GameScreen({
             if (!busy) void generate(selection);
           }} />
       )}
-      {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} feedbackLogs={runtimeEntries} recovery={diagnosticRecovery} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)}/>}
+      {compactSidebars&&<MobileDiagnostics saveId={state.saveId} turnId={rawTurnId} draft={draft} entries={runtimeLogs} feedbackLogs={runtimeEntries} recovery={diagnosticRecovery} onClear={()=>setRuntimeLogs([])} open={diagnosticsOpen} onOpen={()=>setDiagnosticsOpen(true)} onClose={()=>setDiagnosticsOpen(false)} retrying={Boolean(retryNotice)}/>}
       {compactSidebars && mobileStatusOpen && <Dialog title="此时此地" mobileVariant="sheet" sheetExpandable seal={mobileCitySeal(state)} eyebrow="NOW · HERE" className="mobile-status-sheet" onClose={()=>setMobileStatusOpen(false)} returnFocus={()=>document.querySelector<HTMLElement>('[data-mobile-status]')??mobileReturnFocus('hero')}>
         <MobileStatus state={state} equipment={equipment} onProfile={()=>{setMobileStatusOpen(false);setPanel('人物档案');}} onEconomy={()=>{setMobileStatusOpen(false);setPanel('经济与资产');}}/>
       </Dialog>}

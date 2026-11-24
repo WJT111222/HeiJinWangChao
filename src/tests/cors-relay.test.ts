@@ -4,6 +4,7 @@ import { channelSnapshot } from '../services/ai/snapshot';
 import { CredentialVault } from '../services/ai/credentials';
 import { newChannel, type AiTask } from '../services/ai/configuration';
 import { setRelayMode } from '../services/ai/corsRelay';
+import { manualRetryOnly } from '../services/ai/errors';
 import { transientStageError } from '../workflows/turnCoordinator';
 import { variableFailure } from '../services/validation/variableDiagnostics';
 
@@ -79,13 +80,14 @@ it.each(['story', 'variables', 'world', 'memory'] as const)(
   },
 );
 it.each([400, 401, 403, 404, 429, 500])(
-  '收到 HTTP %i 后保留错误、不切换路径且不触发外层重试',
+  '收到 HTTP %i 后保留错误且不切换到中转；直连 500 仍允许外层基本重试',
   async (status) => {
     const send = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status }));
     const error = await new AiClient(send).generate(snapshot(), messages).catch((e) => e);
     expect(error.status).toBe(status);
-    expect(transientStageError(error)).toBe(false);
-    expect(transientStageError(variableFailure(error, 'request'))).toBe(false);
+    expect(manualRetryOnly.has(error)).toBe(false);
+    expect(transientStageError(error)).toBe(status === 500);
+    expect(transientStageError(variableFailure(error, 'request'))).toBe(status === 500);
     expect(send).toHaveBeenCalledTimes(1);
   },
 );
@@ -114,6 +116,8 @@ it.each([400, 401, 403, 404, 429, 500])('中转上游 HTTP %i 保留直连错误
   const relayed = await client.generate(route, messages).catch(e => e);
   expect(relayed).toMatchObject({ code: direct.code, status });
   expect(relayed.details).toEqual(direct.details);
+  expect(manualRetryOnly.has(direct)).toBe(false);
+  expect(manualRetryOnly.has(relayed)).toBe(true);
   expect(transientStageError(relayed)).toBe(false);
   expect(send).toHaveBeenCalledTimes(3);
 });
@@ -132,6 +136,7 @@ it.each([200, 404])('站点路由返回 HTTP %i 的页面时，准确报告中�
   const error = await new AiClient(send).generate(snapshot(), messages).catch(e => e);
   expect(error).toMatchObject({ code: 'network', status, details: { fieldPath: 'channel.relay_unavailable' } });
   expect(error.message).not.toContain('synthetic-private-page');
+  expect(manualRetryOnly.has(error)).toBe(true);
   expect(transientStageError(error)).toBe(false);
   expect(send).toHaveBeenCalledTimes(2);
 });

@@ -72,7 +72,7 @@ describe('失败自动重试', () => {
     expect(SettingsSchema.safeParse({ ...defaultSettings(), runtime: { ...defaultSettings().runtime, maxAutoRetries: 10 } }).success).toBe(false);
   });
 
-  it('开启后生成失败都会重试，不限于 500；密钥、额度、取消和存档冲突不会', () => {
+  it('开启后生成失败都会重试，业务校验也算；权限、存档、事务和渠道参数不会', () => {
     for (const error of [
       new AiError('server', 501),
       new AiError('server', 500),
@@ -83,11 +83,18 @@ describe('失败自动重试', () => {
       new AiError('invalid_json'),
       new AiError('variable_text_syntax'),
       new AiError('schema_fields'),
+      new AiError('data_integrity'),
+      new AiError('amount_balance'),
+      new AiError('time_data'),
+      new AiError('event_entry'),
+      new AiError('time_preflight'),
+      new AiError('money_unit'),
       new AiError('invalid_output'),
       new AiError('invalid_output', undefined, { storyRule: 'narrative_short' }),
       new AiError('content_filter'),
       new AiError('stream_interrupted'),
       new AiError('output_limit'),
+      new AiError('rejected', 400),
     ]) expect(extendedStageRetryable(error)).toBe(true);
     for (const error of [
       new AiError('cancelled'),
@@ -95,11 +102,17 @@ describe('失败自动重试', () => {
       new AiError('credentials'),
       new AiError('configuration'),
       new AiError('not_found', 404),
+      new AiError('parameter_adjusted', 400),
+      new AiError('rejected', 400, { fieldPath: 'channel.parameter' }),
+      new AiError('not_found', 404, { fieldPath: 'channel.model' }),
+      new AiError('network', undefined, { fieldPath: 'channel.relay' }),
+      new AiError('network', undefined, { fieldPath: 'channel.relay_unavailable' }),
       new AiError('rate_limit', 429, { quota: true }),
       new AiError('candidate_conflict'),
       new AiError('storage'),
-      new AiError('data_integrity'),
       new AiError('permission'),
+      new AiError('variable_runtime'),
+      new AiError('time_data', undefined, { storyRule: 'opening_missing' }),
       new AiError('invalid_output', undefined, { storyRule: 'credential_output' }),
       new AiError('invalid_output', undefined, { storyRule: 'request_basis' }),
       new AiError('invalid_output', undefined, { storyRule: 'draft_conflict' }),
@@ -109,6 +122,7 @@ describe('失败自动重试', () => {
     manualRetryOnly.add(marked);
     expect(extendedStageRetryable(marked)).toBe(false);
     expect(planRetry(new AiError('invalid_output'), defaultSettings(), 1).action).toBe('stop');
+    expect(planRetry(new AiError('data_integrity'), defaultSettings(), 1).action).toBe('stop');
   });
 
   it('最多自动重试 3 次，退避从 3 秒递增到 30 秒；过长的 Retry-After 停下', () => {
@@ -248,6 +262,97 @@ describe('失败自动重试', () => {
     } finally {
       retryDelays.scale = 1;
       opener.dispose();
+    }
+  });
+
+  it('业务校验失败按次数重试；权限、存档、事务和渠道参数只请求一次', async () => {
+    retryDelays.scale = 0;
+    const settings = armed(3);
+    const controller = new AbortController();
+    async function callsFor(error: AiError) {
+      let calls = 0;
+      await executeWithAutoRetry({
+        settings,
+        signal: controller.signal,
+        run: async () => {
+          calls += 1;
+          throw error;
+        },
+        onFailure: () => {},
+        onRetry: () => {},
+      }).catch((caught) => { expect(caught).toBe(error); });
+      return calls;
+    }
+    try {
+      for (const code of ['data_integrity', 'amount_balance', 'time_data', 'event_entry', 'time_preflight', 'money_unit', 'schema_fields'] as const)
+        expect(await callsFor(new AiError(code))).toBe(4);
+      for (const error of [
+        new AiError('permission'),
+        new AiError('storage'),
+        new AiError('candidate_conflict'),
+        new AiError('parameter_adjusted', 400),
+        new AiError('rejected', 400, { fieldPath: 'channel.parameter' }),
+        new AiError('time_data', undefined, { storyRule: 'opening_missing' }),
+        new AiError('network', undefined, { fieldPath: 'channel.relay' }),
+      ]) expect(await callsFor(error)).toBe(1);
+    } finally {
+      retryDelays.scale = 1;
+    }
+  });
+
+  it('网页自动中转开启时，直连失败按次数重试且不改走中转；真正用了中转就停止', async () => {
+    const storage = new Map<string, string>();
+    const localStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => { storage.set(key, value); },
+      removeItem: (key: string) => { storage.delete(key); },
+    };
+    vi.stubGlobal('localStorage', localStorage);
+    vi.stubGlobal('window', { location: new URL('https://game.example'), localStorage });
+    const repo = await SaveRepository.open('retry-relay-direct', new IDBFactory());
+    await repo.create(worldState());
+    const draft = createTurnDraft('save-a', 0, 'turn-relay', 'opening', '');
+    await repo.saveDraft(draft, null);
+    retryDelays.scale = 0;
+    const urls: string[] = [];
+    let story = 0;
+    const direct = new TurnCoordinator(repo, new AiClient(async (url, init) => {
+      urls.push(String(url));
+      const stage = model(init);
+      if (stage === 'story' && (story += 1) <= 3) return new Response('down', { status: 500 });
+      return wire(stage);
+    }));
+    try {
+      const result = await direct.generate({ ...setup(), draft });
+      expect(result.status).toBe('complete');
+      expect(story).toBe(4);
+      expect(urls.filter((url) => url.includes('/api/ai-relay'))).toEqual([]);
+      expect(urls.filter((url) => url.endsWith('/chat/completions'))).toHaveLength(6);
+    } finally {
+      retryDelays.scale = 1;
+      direct.dispose();
+    }
+
+    const other = await SaveRepository.open('retry-relay-used', new IDBFactory());
+    await other.create(worldState());
+    const fresh = createTurnDraft('save-a', 0, 'turn-relay-used', 'opening', '');
+    await other.saveDraft(fresh, null);
+    const relayed: string[] = [];
+    const stopped = new TurnCoordinator(other, new AiClient(async (url) => {
+      relayed.push(String(url));
+      if (relayed.length === 1) throw new TypeError('Failed to fetch');
+      return new Response('down', { status: 500, headers: { 'X-Heijin-Relay-Upstream': '1' } });
+    }));
+    retryDelays.scale = 0;
+    try {
+      await expect(stopped.generate({ ...setup(), draft: fresh })).rejects.toMatchObject({ code: 'server', status: 500 });
+      expect(relayed).toHaveLength(2);
+      expect(relayed[0]).not.toContain('/api/ai-relay');
+      expect(relayed[1]).toContain('/api/ai-relay?target=');
+    } finally {
+      retryDelays.scale = 1;
+      stopped.dispose();
+      vi.unstubAllGlobals();
     }
   });
 });

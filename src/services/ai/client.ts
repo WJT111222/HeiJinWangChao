@@ -439,7 +439,9 @@ export class AiClient {
       }, trace?.clock);
     } catch (error) {
       const failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
-      if (relay.eligible && failure instanceof AiError) manualRetryOnly.add(failure);
+      // 页面允许中转，不代表这次用了中转。直连已经返回的生成失败仍可自动重试。
+      // 真正发出本站中转后仍失败，以及酒馆包装失败，继续只允许手动处理，避免再付一笔。
+      if (relay.used && failure instanceof AiError) manualRetryOnly.add(failure);
       if (trace && failure instanceof AiError) {
         manualRetryOnly.add(failure);
         trace.cancelled = failure.code === 'cancelled' || failure.code === 'timeout';
