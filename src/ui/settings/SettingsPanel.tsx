@@ -62,9 +62,30 @@ export function SettingsPanel({
   const [mobileHome,setMobileHome]=useState(!desktop);
   const host=useRef<HTMLDivElement>(null),lastCategory=useRef<(typeof tabs)[number]>('AI 连接'),homeScroll=useRef(0),categoryHeading=useRef<HTMLHeadingElement>(null);
   const [tab, setTab] = useState<(typeof tabs)[number]>('AI 连接');
+  const [editingChannel, setEditingChannel] = useState(false);
+  const channelListScroll = useRef(0);
+  const channelScrollPending = useRef(false);
+  const mobileBack = useRef<HTMLButtonElement>(null);
+  const channelDetail = tab === 'AI 连接' && editingChannel;
   // Once a desktop editor is visible, crossing back to phone must keep that same form mounted.
   useEffect(()=>{if(desktop)setMobileHome(false);},[desktop]);
   useEffect(()=>{if(!desktop&&!mobileHome&&document.querySelector('dialog:modal')===host.current?.closest('dialog')){const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=0;categoryHeading.current?.focus({preventScroll:true});}},[desktop,mobileHome,tab]);
+  useLayoutEffect(() => {
+    if (!channelScrollPending.current) return;
+    channelScrollPending.current = false;
+    if (desktop || mobileHome || tab !== 'AI 连接') return;
+    const body = host.current?.closest<HTMLElement>('.modal-body');
+    if (body) body.scrollTop = channelDetail ? 0 : channelListScroll.current;
+    mobileBack.current?.focus({ preventScroll: true });
+  }, [channelDetail, desktop, mobileHome, tab]);
+  function changeChannelEditor(open: boolean) {
+    if (open === editingChannel) return;
+    if (!desktop) {
+      if (open) channelListScroll.current = host.current?.closest<HTMLElement>('.modal-body')?.scrollTop ?? 0;
+      channelScrollPending.current = true;
+    }
+    setEditingChannel(open);
+  }
   const [editing, setEditing] = useState(settings);
   const [editingBase, setEditingBase] = useState(settings);
   // 玩家点了「自定义」或手动改过数字：即使数字恰好等于某一档，也保持自定义选中。
@@ -152,9 +173,31 @@ export function SettingsPanel({
       setNotice('本地保存失败，请检查浏览器存储权限后重试。');
     }
   }
-  function showCategory(name:(typeof tabs)[number]){if(!desktop&&mobileHome)homeScroll.current=host.current?.closest<HTMLElement>('.modal-body')?.scrollTop??0;setTab(name);lastCategory.current=name;setMobileHome(false);setNotice('');const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=0;}
+  function showCategory(name: (typeof tabs)[number]) {
+    const body = host.current?.closest<HTMLElement>('.modal-body');
+    if (!desktop && mobileHome) homeScroll.current = body?.scrollTop ?? 0;
+    if (name !== tab) setEditingChannel(false);
+    setTab(name);
+    lastCategory.current = name;
+    setMobileHome(false);
+    setNotice('');
+    if (body) body.scrollTop = 0;
+  }
   const categoryDirty = variablesDirty || worldbookDirty || (tab === 'AI 连接' && aiDirty) || (tab === '记忆' && summaryDirty);
-  function back(){if(categoryDirty){setPendingTab('home');return;}setMobileHome(true);requestAnimationFrame(()=>{const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=homeScroll.current;host.current?.querySelector<HTMLButtonElement>(`[data-settings-category="${lastCategory.current}"]`)?.focus({preventScroll:true});});}
+  function showMobileHome() {
+    setEditingChannel(false);
+    setMobileHome(true);
+    requestAnimationFrame(() => {
+      const body = host.current?.closest<HTMLElement>('.modal-body');
+      if (body) body.scrollTop = homeScroll.current;
+      host.current?.querySelector<HTMLButtonElement>(`[data-settings-category="${lastCategory.current}"]`)?.focus({ preventScroll: true });
+    });
+  }
+  function back() {
+    if (channelDetail) { changeChannelEditor(false); return; }
+    if (categoryDirty) { setPendingTab('home'); return; }
+    showMobileHome();
+  }
   return (
     <div ref={host} data-tab={tab} className={`settings-layout st-wrap ${tab === '提示词管理' ? 'prompt-settings-layout' : ''}`}>
       {(!desktop || tab !== '变量管理') && <nav aria-label="设置分类" className="settings-nav" hidden={!desktop&&!mobileHome}>
@@ -175,7 +218,8 @@ export function SettingsPanel({
       </nav>}
       {(desktop||!mobileHome)&&<div className="settings-content">
         {desktop && tab === '变量管理' && <button className="vm-back" onClick={() => variablesDirty ? setPendingTab('AI 连接') : showCategory('AI 连接')}>‹ 返回设置分类</button>}
-        {!desktop&&<button className="paper-back" aria-label="返回设置" onClick={back}>‹ 设置</button>}
+        {!desktop && <button ref={mobileBack} type="button" className={`paper-back${channelDetail ? ' ai-channel-back' : ''}`}
+          aria-label={channelDetail ? '返回渠道列表' : '返回设置'} onClick={back}>{channelDetail ? '‹ 渠道列表' : '‹ 设置'}</button>}
         <h3 ref={categoryHeading} tabIndex={!desktop?-1:undefined}>{tab}</h3>
         {tab === '变量管理' && variableSaveId && repository && onVariablesSaved && <VariableManager key={variableSaveId} saveId={variableSaveId} instance={variableInstance} companion={companion} repository={repository} onSaved={onVariablesSaved} onDirtyChange={variablesDirtyChanged}/>}
         {tab === '提示词管理' && (
@@ -193,7 +237,8 @@ export function SettingsPanel({
             <WorldbookLibraryPanel onDirtyChange={worldbookDirtyChanged} />
           </Suspense>
         )}
-        {tab === 'AI 连接' && <AiConnections timeoutSeconds={settings.runtime.timeoutSeconds} onDirtyChange={aiDirtyChanged} />}
+        {tab === 'AI 连接' && <AiConnections timeoutSeconds={settings.runtime.timeoutSeconds} onDirtyChange={aiDirtyChanged}
+          editing={editingChannel} onEditingChange={changeChannelEditor} />}
         {tab === '提示词' && (
           <>
             <p className="muted">{presetOwnsWriting ? '文风、人称和叙事偏好由预设接管；篇幅、行动选项和剧情难度继续由游戏控制。关闭预设后沿用原偏好。' : '这些叙事偏好和剧情难度用于下一次正文请求的提示词与输出校验。'}</p>
@@ -321,7 +366,7 @@ export function SettingsPanel({
       </div>}
       {pendingTab && <UnsavedAiChanges subject={tab === '变量管理' ? '存档变量' : tab === '世界书' ? '世界书' : tab === '记忆' ? '记忆设置' : undefined} onContinue={() => setPendingTab(undefined)} onDiscard={() => {
         aiDirtyChanged(false);
-        if(pendingTab==='home'){setMobileHome(true);requestAnimationFrame(()=>{const body=host.current?.closest<HTMLElement>('.modal-body');if(body)body.scrollTop=homeScroll.current;host.current?.querySelector<HTMLButtonElement>(`[data-settings-category="${lastCategory.current}"]`)?.focus({preventScroll:true});});}else showCategory(pendingTab);
+        if (pendingTab === 'home') showMobileHome(); else showCategory(pendingTab);
         setPendingTab(undefined);
         setNotice('');
       }} />}

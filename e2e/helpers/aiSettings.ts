@@ -24,13 +24,14 @@ export async function settingsCategory(page: Page, name: string) {
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   const entry = settings.getByRole('button', { name, exact: true });
   if (!await entry.isVisible()) {
+    await backToList(settings);
     await settings.getByRole('button', { name: '返回设置', exact: true }).click();
   }
   await entry.click();
 }
 /** 手机端如果正在编辑渠道，先返回渠道列表（各阶段模型在列表页）。 */
 export async function backToList(scope: Scope) {
-  const back = scope.getByRole('button', { name: '‹ 返回渠道列表', exact: true });
+  const back = scope.getByRole('button', { name: '返回渠道列表', exact: true });
   if (await back.isVisible().catch(() => false)) await back.click();
 }
 export async function openChannel(scope: Scope, name: string) {

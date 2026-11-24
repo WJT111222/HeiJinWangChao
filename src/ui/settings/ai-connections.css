@@ -58,7 +58,6 @@
 .ai-conn .ai-dot.is-loading,.ai-conn .ai-connect.is-loading .ai-dot{background:var(--ac-warn);animation:ai-pulse 1s infinite}
 @keyframes ai-pulse{50%{opacity:.35}}
 .ai-conn .ai-editor{display:flex;flex-direction:column;min-width:0}
-.ai-conn .ai-back{align-self:flex-start;border:0;background:none;padding:0 0 .4rem;color:var(--ac-muted);font-size:.84rem}
 .ai-conn .ai-ed-hd{display:flex;align-items:center;gap:.6rem}
 .ai-conn .ai-ed-hd .ai-name{flex:1;max-width:16rem;min-width:0;border:0;border-bottom:1px dashed var(--ac-line-2);border-radius:0;background:transparent;padding:.2rem 0;font:600 1rem var(--font-body,inherit);letter-spacing:0;color:var(--ac-head)}
 .ai-conn .ai-del{margin-left:auto;border:0;background:none;padding:0;font-size:.78rem;color:var(--ac-err)}
