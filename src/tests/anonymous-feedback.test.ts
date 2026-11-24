@@ -323,7 +323,7 @@ it('构建版本仅输出缩写和有界分布，其余计数仍在邮件中', a
 });
 
 it('预览和缺少配置时不读取 D1，公开路径不能触发发信', async () => {
-  const runtime = configured();
+  const send = mail(), runtime = configured(send);
   const prepare = vi.fn(() => { throw new Error('must not touch database'); });
   for (const cfg of [
     { FEEDBACK: undefined },
@@ -335,13 +335,13 @@ it('预览和缺少配置时不读取 D1，公开路径不能触发发信', asyn
   ]) await worker.scheduled({ scheduledTime: end }, { ...runtime, FEEDBACK: { prepare }, ...cfg });
   await worker.scheduled({ scheduledTime: end - 1 }, { ...runtime, FEEDBACK: { prepare } });
   expect(prepare).not.toHaveBeenCalled();
-  expect(runtime.FEEDBACK_EMAIL.send).not.toHaveBeenCalled();
+  expect(send).not.toHaveBeenCalled();
   expect(checkpoint()).toBeUndefined();
   const response = await worker.fetch(new Request(base + '/api/feedback/digest', {
     method: 'POST', body: JSON.stringify({ to: 'player@example.test' }),
   }), runtime);
   expect(response.status).toBe(404);
-  expect(runtime.FEEDBACK_EMAIL.send).not.toHaveBeenCalled();
+  expect(send).not.toHaveBeenCalled();
 
   const parsed = parseConfigFileTextToJson('wrangler.jsonc',
     readFileSync(new URL('../../wrangler.jsonc', import.meta.url), 'utf8'));
