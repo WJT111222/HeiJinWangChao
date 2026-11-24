@@ -13,6 +13,8 @@ import type { DiagnosticType, DiagnosticRule } from '../../executors/variableTex
 import { memoryFailureReasons } from '../../domain/memories/diagnostics';
 import type { MemoryDiagnostic } from '../../domain/memories/diagnostics';
 import type { MemoryFailureObservation } from '../../services/ai/memoryObservation';
+import { safeFailureDiagnostic } from '../../services/ai/failureDiagnostic';
+import type { FailureDiagnostic } from '../../services/ai/failureDiagnostic';
 import type { AiTask } from '../../services/ai/configuration';
 import { eventEntryReasonNames, isEventEntryReason, isWorldRule } from '../../services/validation/worldDiagnostics';
 import type { WorldRule } from '../../services/validation/worldDiagnostics';
@@ -56,6 +58,8 @@ export interface RuntimeLogEntry extends Partial<StoryDiagnostic> {
   memorySaveRef?: string;
   /** 自动重试中的失败在随后成功后仍留在日志和反馈材料里。 */
   retained?: boolean;
+  /** 错误发生时摘下的脱敏诊断。原文缓存淘汰后仍然保留。 */
+  diagnostic?: FailureDiagnostic;
 }
 
 export const runtimeStageNames: Record<RuntimeLogStage, string> = {
@@ -110,7 +114,9 @@ export function runtimeLogEvent(
     }
     return { ...entry, code: failure.code, message: safeCommitCodes[failure.code] };
   }
-  const safe = safeAiError(stage === 'commit' ? variableFailure(failure, 'commit') : stage === 'variables' ? variableFailure(failure, 'context') : stage === 'story' ? storyFailure(failure, true) : failure);
+  const presented = stage === 'commit' ? variableFailure(failure, 'commit') : stage === 'variables' ? variableFailure(failure, 'context') : stage === 'story' ? storyFailure(failure, true) : failure;
+  const safe = safeAiError(presented);
+  const diagnostic = safeFailureDiagnostic(presented);
   if (safe.code === 'cancelled') return { ...entry, kind: 'cancelled', code: 'cancelled', message: `${label}已取消，未计入生成失败。` };
   const details = 'details' in safe ? safe.details : undefined;
   const status = 'status' in safe ? safe.status : undefined;
@@ -142,12 +148,36 @@ export function runtimeLogEvent(
       ? { relatedCommandIndices: [...new Set(details.relatedCommandIndices
         .filter((index) => Number.isSafeInteger(index) && index > 0))].slice(0, 20) }
       : {}),
+    ...(diagnostic ? { diagnostic } : {}),
   };
 }
 
-export function memoryRuntimeLogEvent(id: number, saveRef: string, { diagnostic }: MemoryFailureObservation): RuntimeLogEntry {
+export function memoryRuntimeLogEvent(id: number, saveRef: string, failure: MemoryFailureObservation): RuntimeLogEntry {
+  const { diagnostic } = failure;
   return { id, stage: 'memory', kind: 'failed', memorySaveRef: saveRef,
-    timestamp: diagnostic.requestedAt, code: diagnostic.code, message: memoryFailureReasons[diagnostic.reason], memory: diagnostic };
+    timestamp: diagnostic.requestedAt, code: diagnostic.code, message: memoryFailureReasons[diagnostic.reason], memory: diagnostic,
+    ...(failure.request ? { diagnostic: failure.request } : {}) };
+}
+
+function sameLogScope(entry: RuntimeLogEntry, other: RuntimeLogEntry) {
+  return Boolean(entry.scope && other.scope && entry.scope.saveRef === other.scope.saveRef && entry.scope.turnRef === other.scope.turnRef);
+}
+
+/** 同一次已经开始的自动重试成功后标成已恢复。必须改原对象，否则反馈原文的 WeakMap 对不上。 */
+export function markRecoveredFailures(entries: readonly RuntimeLogEntry[], completed: RuntimeLogEntry) {
+  if (completed.kind !== 'completed' || !completed.scope) return entries;
+  const completedAt = entries.indexOf(completed);
+  return entries.map((entry, index) => {
+    const retry = entry.diagnostic?.retry;
+    if (entry.kind !== 'failed' || !retry?.issued || retry.recovered || !sameLogScope(entry, completed)) return entry;
+    if (!(completed.stage === entry.stage || completed.stage === 'workflow' || completed.stage === 'story')) return entry;
+    const restarted = entries.some((later, laterIndex) => laterIndex > index && (completedAt < 0 || laterIndex < completedAt)
+      && later.kind === 'started' && sameLogScope(later, entry)
+      && (later.stage === entry.stage || later.stage === 'workflow' || later.stage === 'story'));
+    if (restarted) return entry;
+    retry.recovered = true;
+    return entry;
+  });
 }
 
 /** Retain session records in memory, but show only this turn's still-relevant events. */

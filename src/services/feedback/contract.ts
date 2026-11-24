@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { buildVersionSchema, memoryDiagnosticSchema } from '../../domain/memories/diagnostics';
+import { failureDiagnosticSchema } from '../ai/failureDiagnostic';
 
 export const feedbackPath = '/api/feedback';
 export const feedbackAdminPath = '/admin/feedback';
@@ -63,6 +64,7 @@ const error = z.strictObject({
   maximumCount: measured.optional(),
   worldRule: code.optional(),
   variableStep: code.optional(),
+  diagnostic: failureDiagnosticSchema.optional(),
 });
 const attachment = z.strictObject({
   errorRef: index,

@@ -8,6 +8,7 @@ import { safeStreamResponseText, stageResponses } from '../ai/stageResponses';
 import type { StageResponse } from '../ai/stageResponses';
 import { feedbackAttachmentLimit, feedbackAttachmentTotal, feedbackTextLimit } from './contract';
 import type { FeedbackCategory, FeedbackReport } from './contract';
+import { presentFailureDiagnostic } from '../ai/failureDiagnostic';
 import { cleanFeedbackText, containsPrivateDump } from './textSafety';
 
 type LinkedResponse = Pick<StageResponse, 'id' | 'protocol'> & { model?: string };
@@ -91,11 +92,12 @@ export function suggestionPayload(category: FeedbackCategory, text: string) {
 function logData(entry: RuntimeLogEntry, ref: number, sanitize: ReturnType<typeof textSanitizer>): FeedbackReport['errors'][number] {
   const link = links.get(entry);
   const safe = (value?: string) => value && sanitize(value) === value ? value : undefined;
+  const diagnostic = presentFailureDiagnostic(entry.diagnostic, sanitize);
   if (entry.stage === 'memory' && entry.memory) {
     const { model, protocol, httpStatus, ...fields } = entry.memory;
     const safeModel = safe(model);
     return { ref, time: entry.timestamp, stage: 'memory', code: fields.code, model: safeModel, protocol, httpStatus,
-      memory: { ...fields, model: safeModel, protocol, httpStatus } };
+      memory: { ...fields, model: safeModel, protocol, httpStatus }, ...(diagnostic ? { diagnostic } : {}) };
   }
   return {
     ref, time: entry.timestamp, stage: entry.stage, code: safe(entry.code) ?? 'unknown',
@@ -111,6 +113,7 @@ function logData(entry: RuntimeLogEntry, ref: number, sanitize: ReturnType<typeo
     storyTag: entry.storyTag, storyIssue: safe(entry.storyIssue), guideIndex: entry.guideIndex,
     actualCount: entry.actualCount, minimumCount: entry.minimumCount, maximumCount: entry.maximumCount,
     worldRule: safe(entry.worldRule), domainRule: safe(entry.domainRule), variableStep: safe(entry.variableStep),
+    ...(diagnostic ? { diagnostic } : {}),
   };
 }
 

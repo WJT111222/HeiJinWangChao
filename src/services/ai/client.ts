@@ -1,4 +1,4 @@
-import { fetchWithRelay, relayAttempt } from './corsRelay';
+import { fetchWithRelay, relayAttempt, relayMode } from './corsRelay';
 import { relayUpstreamHeader } from './relayTarget';
 import { nativeFetch } from '../../presets/tavern/fetch';
 import type { GenerationType } from '../../presets/tavern/events';
@@ -29,8 +29,9 @@ import { readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
 import { checkFinish, LeadingThink, rememberPresetSamplingRejection, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
 import { isOpenAiCompatible } from './configuration';
-import { rawResponseObservation, responseContent, responseDiagnostics } from './responseContent';
+import { rawResponseObservation, responseContent, responseDiagnostics, mergeResponseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
+import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, classifyUpstreamPayload, diagnosticSecrets, failurePhase } from './failureDiagnostic';
 
 export interface RequestOptions {
   storyClock?: import('../../presets/tavern/timing').StoryClock;
@@ -127,11 +128,11 @@ async function observeMemorySse(response: Response, protocol: RequestSnapshot['c
     const body = response.clone().body;
     if (!body) return;
     for await (const event of readSse(body, signal, { detachCleanup: true })) {
-      if (event.event === 'error') throw new AiError('rejected');
+      if (event.event === 'error') throw rejectedUpstream(ssePayload(event.data), 'sse', response.status, true);
       if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) { complete = true; break; }
       let data: Record<string, unknown>;
       try { data = record(JSON.parse(event.data)); } catch { throw new AiError('invalid_json'); }
-      if (data.error || data.type === 'error') throw new AiError('rejected');
+      if (data.error || data.type === 'error') throw rejectedUpstream(data, 'sse', response.status);
       if (!signal.aborted) {
         const raw = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);
         if (raw) options.onRawTextDelta?.(raw);
@@ -146,10 +147,19 @@ async function observeMemorySse(response: Response, protocol: RequestSnapshot['c
     }
     return { transport: 'sse', complete, memorySseFailure: complete ? 'unexpected_transport' : 'stream_interrupted' };
   } catch (error) {
+    carryFailureDiagnostic(error, response);
     return { transport: 'sse', complete: false, memorySseFailure: error instanceof AiError ? error.code : 'unknown' };
   }
 }
 
+function rejectedUpstream(payload: unknown, transport: 'json' | 'sse', httpStatus?: number, errorEvent = false) {
+  const failure = new AiError('rejected');
+  attachFailureDiagnostic(failure, classifyUpstreamPayload(payload, { transport, httpStatus, errorEvent }));
+  return failure;
+}
+function ssePayload(data: string) {
+  try { return JSON.parse(data) as unknown; } catch { return undefined; }
+}
 export { manualRetryOnly } from './errors';
 const quotaCodes = new Set([
   'insufficient_quota', 'insufficient_quota_error', 'billing_hard_limit_reached',
@@ -203,44 +213,56 @@ export class AiClient {
       if (!signal.aborted) observe?.({ transport: 'http', httpStatus: status, complete: false });
       if (relayUnavailable) {
         void response.body?.cancel().catch(() => {});
-        throw new AiError('network', status, { fieldPath: 'channel.relay_unavailable' });
+        const failure = new AiError('network', status, { fieldPath: 'channel.relay_unavailable' });
+        attachFailureDiagnostic(failure, { phase: 'upstream_connect', ...(status >= 100 && status <= 599 ? { httpStatus: status, httpError: status < 200 || status >= 300 } : {}) });
+        throw failure;
       }
-      if (relayError)
-        throw new AiError(status >= 500 ? 'server' : 'rejected', status, { fieldPath: 'channel.relay' });
+      if (relayError) {
+        const failure = new AiError(status >= 500 ? 'server' : 'rejected', status, { fieldPath: 'channel.relay' });
+        attachFailureDiagnostic(failure, { phase: 'upstream_connect', ...(status >= 100 && status <= 599 ? { httpStatus: status, httpError: status < 200 || status >= 300 } : {}) });
+        throw failure;
+      }
+      let parsedProvider: unknown;
       if (snapshot && (snapshot.thinkingCapability !== 'none' || snapshot.channel.protocol === 'openai' || presetSampling) && ([400, 422].includes(status) || (status === 404 && snapshot.channel.protocol === 'openai'))
         && response.headers.get('content-type')?.includes('application/json')) {
         try {
           const error: unknown = await response.json();
+          parsedProvider = error;
           if (!signal.aborted) observe?.({ ...responseDiagnostics(error, snapshot.channel.protocol), transport: 'http', httpStatus: status, complete: true });
           const provider = record(record(error).error);
+          const note = (failure: AiError): never => {
+            attachFailureDiagnostic(failure, classifyUpstreamPayload(error, { transport: 'json', httpStatus: status }));
+            throw failure;
+          };
           if (snapshot.channel.protocol === 'openai' && typeof provider.code === 'string' && ['model_not_found', 'InvalidEndpointOrModel.NotFound', 'ModelNotFound'].includes(provider.code))
-            throw new AiError('not_found', status, {fieldPath:'channel.model'});
-          if (status === 404) throw new AiError('not_found', status);
+            note(new AiError('not_found', status, {fieldPath:'channel.model'}));
+          if (status === 404) note(new AiError('not_found', status));
           if (!signal.aborted && snapshot.thinkingCapability !== 'none' && unsupportedThinkingParameter(error)) blockThinkingCapability(snapshot.channel, snapshot.model);
           const sentBody = record(typeof init.body === 'string' ? JSON.parse(init.body) : undefined);
           if (!signal.aborted && presetSampling && rememberPresetSamplingRejection(snapshot.channel, url, snapshot.model, error, sentBody))
-            throw new AiError('parameter_adjusted', status);
+            note(new AiError('parameter_adjusted', status));
           const parameter = snapshot.channel.protocol === 'openai' ? unsupportedParameter(error, {
             maxTokens: Object.hasOwn(sentBody, 'max_tokens'),
             temperature: !presetSampling && Object.hasOwn(sentBody, 'temperature'),
           }) : undefined;
           if (!signal.aborted && parameter) {
             rememberUnsupported(snapshot.channel, snapshot.model, parameter);
-            throw new AiError('parameter_adjusted', status);
+            note(new AiError('parameter_adjusted', status));
           }
           if (provider.code === 'unsupported_parameter' && typeof provider.param === 'string' && Object.hasOwn(sentBody, provider.param))
-            throw new AiError('rejected', status, {fieldPath:'channel.parameter'});
+            note(new AiError('rejected', status, {fieldPath:'channel.parameter'}));
         } catch (error) { if (error instanceof AiError) throw error; /* 错误正文不外传，不猜测兼容能力，也不重发当前请求。 */ }
       }
       const retryAfterMs = status === 429 || status >= 500 ? parseRetryAfter(response.headers.get('retry-after')) : undefined;
-      const quota = status === 429 && response.headers.get('content-type')?.toLowerCase().includes('json')
-        ? await response.json().then(quotaExhausted, () => false)
+      let quotaBody: unknown;
+      const quota = parsedProvider === undefined && status === 429 && response.headers.get('content-type')?.toLowerCase().includes('json')
+        ? await response.json().then((body) => { quotaBody = body; return quotaExhausted(body); }, () => false)
         : false;
       const failureDetails = {
         ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
         ...(quota ? { quota: true as const } : {}),
       };
-      throw new AiError(
+      const failure = new AiError(
         status === 401 || status === 403
           ? 'authorization'
           : status === 404
@@ -253,6 +275,10 @@ export class AiClient {
         status,
         Object.keys(failureDetails).length ? failureDetails : undefined,
       );
+      const body = quotaBody ?? parsedProvider;
+      if (body !== undefined) attachFailureDiagnostic(failure, classifyUpstreamPayload(body, { transport: 'http', httpStatus: status }));
+      else if (status >= 100 && status <= 599) attachFailureDiagnostic(failure, { httpStatus: status, httpError: true });
+      throw failure;
     }
     return response;
   }
@@ -262,6 +288,8 @@ export class AiClient {
     options: RequestOptions = {},
   ): Promise<AiResponse> {
     const relay = relayAttempt(snapshot.channel.protocol);
+    const relayEnabled = relayMode() === 'auto';
+    const started = performance.now();
     const compat = snapshot.stage === 'story' && options.tavernType !== undefined;
     const trace = compat ? newTrace(options.storyClock) : undefined;
     const cleanup = compat ? new AbortController() : undefined;
@@ -269,13 +297,17 @@ export class AiClient {
     let inspectionId: string | undefined;
     let observedUsage: Usage | undefined;
     let outputLimited = false, unhandledTool = false;
+    let lastHttp: number | undefined;
+    let seen: ResponseDiagnostics = {};
     const finish = (reason: unknown) => {
       if (options.validateStoryOutputLimit && typeof reason === 'string' && ['length', 'max_tokens'].includes(reason.toLowerCase())) outputLimited = true;
       if (trace && reason === 'tool_calls') return true;
       return checkFinish(reason, options.validateStoryOutputLimit === true);
     };
     const observe = (value: ResponseDiagnostics) => {
-      try { options.onResponseDiagnostics?.(value); } catch { /* Observation never changes request semantics. */ }
+      seen = mergeResponseDiagnostics(seen, value);
+      if (!options.onResponseDiagnostics) return;
+      try { options.onResponseDiagnostics(value); } catch { /* Observation never changes request semantics. */ }
     };
     try {
       return await operation(options, async (signal) => {
@@ -284,7 +316,7 @@ export class AiClient {
           diagnostics = wire.diagnostics;
           try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
           catch { /* Inspection cannot affect transport. */ }
-          return this.response(wire.url, wire.init, requestSignal, relay, snapshot, options.onResponseDiagnostics ? observe : undefined,
+          return this.response(wire.url, wire.init, requestSignal, relay, snapshot, observe,
             wire.presetSamplingInspection !== undefined, trace);
         };
         const playerWorldbook = snapshot.stage === 'story' ? options.playerWorldbook : undefined;
@@ -293,6 +325,7 @@ export class AiClient {
             AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryReference, playerWorldbook)
           : await send(wireRequest(snapshot, insertPlayerWorldbook(messages, playerWorldbook), options.stream === true, options.presetSampling), signal);
         const protocol = trace ? 'openai' : snapshot.channel.protocol;
+        lastHttp = response.status;
         if (!signal.aborted) observe({ httpStatus: response.status, complete: false });
         let text = '', reasoning = '',
           usage: Usage | undefined;
@@ -311,7 +344,9 @@ export class AiClient {
           } catch {
             const diagnostic = await observedSse;
             if (diagnostic && !signal.aborted) observe(diagnostic);
-            throw new AiError('invalid_json');
+            const failure = new AiError('invalid_json');
+            carryFailureDiagnostic(response, failure);
+            throw failure;
           }
           if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol), httpStatus: response.status, complete: true });
           if (trace && residualTool(data, false)) throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.unhandled_tool' });
@@ -326,7 +361,11 @@ export class AiClient {
             const d = record(data);
             finish(isOpenAiCompatible(protocol) ? record(array(d.choices)[0]).finish_reason : protocol === 'gemini' ? record(array(d.candidates)[0]).finishReason : d.stop_reason);
           }
-          if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol).refusal) throw new AiError('content_filter');
+          if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol).refusal) {
+            const failure = new AiError('content_filter');
+            attachFailureDiagnostic(failure, { phase: 'upstream_error', upstreamClass: 'content_filter' });
+            throw failure;
+          }
           text = responseText(data, protocol, options.validateStoryOutputLimit === true);
           reasoning = nativeReasoning(data, protocol);
           if (isOpenAiCompatible(protocol)) {
@@ -345,7 +384,7 @@ export class AiClient {
           let terminal = false, nativeSeen = false;
           const think = isOpenAiCompatible(protocol) ? new LeadingThink() : undefined;
           for await (const event of readSse(response.body, signal, trace ? { detachCleanup: true } : undefined)) {
-            if (event.event === 'error') throw new AiError('rejected');
+            if (event.event === 'error') throw rejectedUpstream(ssePayload(event.data), 'sse', response.status, true);
             if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
               terminal = true;
               break;
@@ -358,7 +397,7 @@ export class AiClient {
             }
             if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol, true), httpStatus: response.status, complete: false });
             if (data.error || data.type === 'error')
-              throw new AiError('rejected');
+              throw rejectedUpstream(data, 'sse', response.status);
             if (trace && residualTool(data, true)) unhandledTool = true;
             const rawDelta = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);
             if (!signal.aborted) {
@@ -366,7 +405,11 @@ export class AiClient {
               if (rawDelta) options.onRawTextDelta?.(rawDelta);
               if (native) options.onNativeReasoningDelta?.(native);
             }
-            if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol, true).refusal) throw new AiError('content_filter');
+            if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol, true).refusal) {
+              const failure = new AiError('content_filter');
+              attachFailureDiagnostic(failure, { phase: 'upstream_error', upstreamClass: 'content_filter' });
+              throw failure;
+            }
             const nextUsage = usageFrom(data, protocol);
             if (nextUsage) usage = { ...usage, ...nextUsage };
             observedUsage = usage;
@@ -378,7 +421,11 @@ export class AiClient {
               const split = think!.push(string(record(choice.delta).content));
               delta = split.content; thinkReasoning = split.reasoning;
             } else if (protocol === 'gemini') {
-              if (record(data.promptFeedback).blockReason) throw new AiError('content_filter');
+              if (record(data.promptFeedback).blockReason) {
+                const failure = new AiError('content_filter');
+                attachFailureDiagnostic(failure, { phase: 'upstream_error', upstreamClass: 'content_filter' });
+                throw failure;
+              }
               const candidate = record(array(data.candidates)[0]);
               if (finish(candidate.finishReason)) terminal = true;
               delta = array(record(candidate.content).parts)
@@ -435,7 +482,21 @@ export class AiClient {
         }
         try { if (inspectionId) requestInspections.finish(inspectionId, usage); }
         catch { /* 诊断观察器失败不改变响应。 */ }
-        return { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics, protocol: snapshot.channel.protocol, model: snapshot.model };
+        const result = { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics, protocol: snapshot.channel.protocol, model: snapshot.model };
+        // 成功返回后，校验失败仍要带上这次请求已经看见的事实，不能事后从原文猜。
+        attachObservedRequest(result, {
+          model: snapshot.model,
+          protocol: snapshot.channel.protocol,
+          stream: trace?.requestedStream ?? options.stream === true,
+          relayEnabled, relayUsed: relay.used,
+          httpStatus: lastHttp,
+          ...(typeof options.timeoutSeconds === 'number' ? { timeoutSeconds: options.timeoutSeconds } : {}),
+          elapsedMs: Math.max(0, Math.round(performance.now() - started)),
+          ...(trace ? { bytes: trace.bytes, complete: trace.complete } : seen.complete !== undefined ? { complete: seen.complete } : {}),
+          finishReason: trace?.finish ?? trace?.rawFinish ?? seen.finishReasons?.[0],
+          ...(typeof seen.errorPresent === 'boolean' ? { errorInBody: seen.errorPresent } : {}),
+        }, diagnosticSecrets(snapshot));
+        return result;
       }, trace?.clock);
     } catch (error) {
       const failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
@@ -446,6 +507,25 @@ export class AiClient {
         manualRetryOnly.add(failure);
         trace.cancelled = failure.code === 'cancelled' || failure.code === 'timeout';
       }
+      const status = failure instanceof AiError && typeof failure.status === 'number' && failure.status >= 100 ? failure.status : lastHttp;
+      const field = failure instanceof AiError ? failure.details?.fieldPath : undefined;
+      const headersSeen = trace?.clock.marks.headersMs !== undefined || lastHttp !== undefined;
+      const phase = failurePhase(field, trace?.clock.marks.deadlinePhase)
+        ?? (failure instanceof AiError && failure.code === 'network' && !headersSeen ? 'upstream_connect' as const : undefined)
+        ?? (failure instanceof AiError && failure.code === 'stream_interrupted' ? 'upstream_read' as const : undefined);
+      attachObservedRequest(failure, {
+        model: snapshot.model,
+        protocol: snapshot.channel.protocol,
+        stream: trace?.requestedStream ?? options.stream === true,
+        relayEnabled, relayUsed: relay.used,
+        httpStatus: status,
+        ...(typeof options.timeoutSeconds === 'number' ? { timeoutSeconds: options.timeoutSeconds } : {}),
+        elapsedMs: Math.max(0, Math.round(performance.now() - started)),
+        ...(trace ? { bytes: trace.bytes, complete: trace.complete } : seen.complete !== undefined ? { complete: seen.complete } : {}),
+        finishReason: trace?.finish ?? trace?.rawFinish ?? seen.finishReasons?.[0],
+        phase,
+        ...(typeof seen.errorPresent === 'boolean' ? { errorInBody: seen.errorPresent } : {}),
+      }, diagnosticSecrets(snapshot));
       try { if (inspectionId) requestInspections.finish(inspectionId, trace ? trace.usage : observedUsage, safeAiError(failure).code); }
       catch { /* 保留原始失败语义。 */ }
       throw failure;

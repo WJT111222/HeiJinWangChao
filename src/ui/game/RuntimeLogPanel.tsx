@@ -6,6 +6,7 @@ import { variableStepNames } from '../../services/ai/errors';
 import { useEffect, useRef, useState } from 'react';
 import type { RuntimeLogEntry } from './runtimeLog';
 import { runtimeStageNames } from './runtimeLog';
+import { failureDiagnosticSummary } from '../../services/ai/failureDiagnostic';
 import { domainRuleNames } from '../../executors/variableText/aggregateDiagnostics';
 import { worldRuleNames } from '../../services/validation/worldDiagnostics';
 import type { TurnDraft } from '../../domain/drafts';
@@ -49,7 +50,7 @@ export function RuntimeLogPanel({
   async function copyOne(entry: RuntimeLogEntry) {
     try {
       // Copy exactly one already-sanitized failed event; never include earlier workflow events.
-      await navigator.clipboard.writeText(JSON.stringify(entry.memory ?? entry, null, 2));
+      await navigator.clipboard.writeText(JSON.stringify(entry.diagnostic ? entry : entry.memory ?? entry, null, 2));
       setCopyFeedback({ id: entry.id, ok: true });
     } catch {
       setCopyFeedback({ id: entry.id, ok: false });
@@ -86,6 +87,8 @@ export function RuntimeLogPanel({
                   <small role="status">{copyFeedback.ok ? '已复制此条错误日志' : '复制失败，请检查浏览器剪贴板权限'}</small>
                 )}
                 <p>{entry.message}</p>
+                {entry.diagnostic && <p>{failureDiagnosticSummary(entry.diagnostic)}</p>}
+                {entry.diagnostic && <details><summary>诊断详情</summary><pre>{JSON.stringify(entry.diagnostic, null, 2)}</pre></details>}
                 {entry.scope && <small>本页存档标识：{entry.scope.saveRef} · 本页回合标识：{entry.scope.turnRef}（匿名关联标识）</small>}
                 {entry.memory && <small>步骤：{memorySteps[entry.memory.step]}{entry.memory.httpStatus && ` · HTTP ${entry.memory.httpStatus}`}</small>}
                 {entry.code && <small>错误码：{entry.code}</small>}

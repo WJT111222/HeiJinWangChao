@@ -61,7 +61,7 @@ import { fingerprint } from '../../domain/commands';
 import { SettingsSchema, settingsKey } from '../settings/model';
 import { summaryFailureTitle } from '../../workflows/memorySummaryQueue';
 import type { OpeningStart } from './openingStart';
-import { currentRuntimeLogs, memoryRuntimeLogEvent, runtimeLogEvent } from './runtimeLog';
+import { currentRuntimeLogs, markRecoveredFailures, memoryRuntimeLogEvent, runtimeLogEvent } from './runtimeLog';
 import { errorBannerKey } from './errorBanner';
 import { DesktopWorkflowPanel } from './WorkflowPanel';
 
@@ -198,7 +198,7 @@ export function GameScreen({
     // The callback captures the request's turn, not whatever turn is current when it finishes.
     const entry = runtimeLogEvent(++runtimeLogId.current, stage, kind, failure, diagnosticScope, options);
     feedbackCorrelation.record(entry, state.saveId, turnId);
-    setRuntimeLogs((current) => [...current.slice(-49), entry]);
+    setRuntimeLogs((current) => [...markRecoveredFailures(current, entry).slice(-49), entry]);
     if (entry.kind === 'failed') setFailureSeq((current) => current + 1);
   }, [diagnosticScope, feedbackCorrelation, state.saveId, draft?.turnId]);
   useEffect(

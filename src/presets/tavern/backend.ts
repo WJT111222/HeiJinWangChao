@@ -1,5 +1,6 @@
 import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
 import { AiError } from '../../services/ai/errors';
+import { attachFailureDiagnostic } from '../../services/ai/failureDiagnostic';
 import type { RequestSnapshot } from '../../services/ai/snapshot';
 import type { AiMessage } from '../../services/ai/protocols';
 import type { Sampling } from '../package';
@@ -16,7 +17,11 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
   const data: GenerationData = { type, messages, ...sampling, stream, n: 1, enable_web_search: false, request_images: false, model: snapshot.model,
     max_tokens: snapshot.channel.parameters.maxOutputTokens, chat_completion_source: 'custom', custom_prompt_post_processing: '' };
   try { await tavernTools.apply(data); }
-  catch { throw new AiError('configuration', undefined, { fieldPath: 'tavern.shouldRegister' }); }
+  catch {
+    const failure = new AiError('configuration', undefined, { fieldPath: 'tavern.shouldRegister' });
+    attachFailureDiagnostic(failure, { phase: 'preset_init' });
+    throw failure;
+  }
   await tavernEvents.emit('chat_completion_settings_ready', data);
   trace.clock.first('settingsReadyMs');
   signal.throwIfAborted();
@@ -42,7 +47,12 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
     const mime = safeMime(result.headers);
     trace.wrapperFormat = mime === 'text/event-stream' ? 'sse' : mime === 'application/json' ? 'json' : 'unknown';
     if (trace.error && !(trace.complete && trace.error.code === 'empty')) throw trace.error;
-    if (!result.ok) throw new AiError('rejected', result.status, { fieldPath: 'tavern.wrapper.http' });
+    if (!result.ok) {
+      const failure = new AiError('rejected', result.status, { fieldPath: 'tavern.wrapper.http' });
+      const status = result.status;
+      attachFailureDiagnostic(failure, { phase: 'wrapper_restore', ...(status >= 100 && status <= 599 ? { httpStatus: status, httpError: true } : {}) });
+      throw failure;
+    }
     return result;
   } catch (error) {
     if (trace.wrapper === 'pending') trace.wrapper = 'failed';

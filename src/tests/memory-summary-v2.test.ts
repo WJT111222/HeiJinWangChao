@@ -479,9 +479,15 @@ describe('记忆总结的安全诊断与原文', () => {
       prepareErrorPayload([entry], stageResponses.getSnapshot(), { content, reasoning })(''));
     expect(report(false, false)).not.toHaveProperty('attachments');
     expect(report(true, false)).toMatchObject({ attachments: [{ errorRef: 1, content: '{合成文本包含 [本地标识已隐藏]' }] });
-    expect(JSON.stringify(report(true, false))).not.toContain('reasoning');
+    const contentOnly = report(true, false);
+    expect(JSON.stringify(contentOnly)).not.toContain('仅供测试的公开思考');
+    expect(JSON.stringify(contentOnly)).not.toContain('mock-secret');
+    if (contentOnly.kind === 'error') expect(contentOnly.attachments?.[0]?.reasoning).toBeUndefined();
     expect(report(false, true)).toMatchObject({ attachments: [{ errorRef: 1, reasoning: '仅供测试的公开思考 [密钥已隐藏]' }] });
-    expect(JSON.stringify(report(false, true))).not.toContain('content');
+    const reasoningOnly = report(false, true);
+    expect(JSON.stringify(reasoningOnly)).not.toContain('合成文本');
+    expect(JSON.stringify(reasoningOnly)).not.toContain('mock-secret');
+    if (reasoningOnly.kind === 'error') expect(reasoningOnly.attachments?.[0]?.content).toBeUndefined();
     stageResponses.clear();
     expect(report(true, true)).not.toHaveProperty('attachments');
     expect(new SummaryRecords(a.storage, initial).issues[0].diagnostic?.reason).toBe('invalid_json');

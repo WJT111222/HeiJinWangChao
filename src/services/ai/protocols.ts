@@ -3,6 +3,7 @@ import type { Sampling } from '../../presets/package';
 import type { RequestSnapshot } from './snapshot';
 import { secretFor } from './snapshot';
 import { AiError } from './errors';
+import { attachFailureDiagnostic, classifyUpstreamPayload } from './failureDiagnostic';
 import { deepseekVariablesThinking, thinkingParameters } from './thinking';
 import { checkFinish, knownSamplingLimit, samplingFields, skipsPresetSampling, skipsTemperature, usesCompletionTokens } from './compat';
 import type { PresetSamplingInspection } from './compat';
@@ -241,7 +242,11 @@ export function usageFrom(
 }
 export function responseText(value: unknown, protocol: RequestSnapshot['channel']['protocol'], allowOutputLimit = false) {
   const data = record(value);
-  if (data.error) throw new AiError('rejected');
+  if (data.error) {
+    const failure = new AiError('rejected');
+    attachFailureDiagnostic(failure, classifyUpstreamPayload(data, { transport: 'json' }));
+    throw failure;
+  }
   if (isOpenAiCompatible(protocol)) {
     const choice = record(array(data.choices)[0]);
     checkFinish(choice.finish_reason, allowOutputLimit);
