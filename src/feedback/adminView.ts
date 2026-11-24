@@ -1,4 +1,6 @@
-import { feedbackAdminPath, feedbackCategories, feedbackStatuses } from '../services/feedback/contract';
+import { summaryNames } from '../domain/memories/configuration';
+import { memoryFailureReasons, memorySteps } from '../domain/memories/diagnostics';
+import { feedbackAdminPath, feedbackCategories, feedbackStatuses, feedbackErrorStages } from '../services/feedback/contract';
 import type { FeedbackStatus } from '../services/feedback/contract';
 import type { FeedbackFilters, ListRow, feedbackOverview, getFeedback } from './database';
 import { feedbackHeaders } from './http';
@@ -26,7 +28,8 @@ const typeName = (kind: string, category: string | null) =>
   kind === 'error' ? '错误报告' : feedbackCategories[category as keyof typeof feedbackCategories] ?? '反馈建议';
 const statusChoices = (status: FeedbackStatus) => Object.entries(feedbackStatuses).map(([value, label]) =>
   `<option value="${value}"${value === status ? ' selected' : ''}>${label}</option>`).join('');
-const stages: Record<string, string> = { story: '正文', variables: '变量', world: '动态世界', workflow: '工作流', commit: '结算' };
+const stages = { ...feedbackErrorStages, story: '正文', variables: '变量', workflow: '工作流', commit: '结算' };
+const labelFor = (labels: Record<string, string>, value: string) => Object.hasOwn(labels, value) ? labels[value] : value;
 
 export function adminPage(title: string, content: string, status = 200, headers?: Record<string, string>) {
   const nonce = crypto.randomUUID().replaceAll('-', '');
@@ -52,14 +55,16 @@ export function overviewView(data: Awaited<ReturnType<typeof feedbackOverview>>)
   const metrics = [['反馈总数', data.totals.reduce((total, row) => total + row.count, 0)],
     ['待处理', count('pending')], ['处理中', count('reviewing')], ['已处理', count('fixed') + count('closed')]];
   return adminPage('总览', `<h2>总览</h2><div class="grid counts">${metrics.map(([label, number]) => `<section><div>${label}</div><strong class="number">${number}</strong></section>`).join('')}</div>
-<h2>错误分布</h2><div class="grid">${['错误代码', '模型', '失败阶段'].map((label, i) =>
-  `<section><h3>${label}</h3>${data.groups[i].length ? `<ul>${data.groups[i].map(row => `<li>${e(i === 2 ? stages[row.label] ?? row.label : row.label)} · ${row.count}</li>`).join('')}</ul>` : '<p class="muted">暂无记录</p>'}</section>`).join('')}</div>
+<h2>错误分布</h2><div class="grid">${['错误代码', '模型', '失败阶段', '记忆总结任务'].map((label, i) =>
+  `<section><h3>${label}</h3>${data.groups[i].length ? `<ul>${data.groups[i].map(row => `<li>${e(i === 2 ? labelFor(stages, row.label) : i === 3 ? labelFor(summaryNames, row.label) : row.label)} · ${row.count}</li>`).join('')}</ul>` : '<p class="muted">暂无记录</p>'}</section>`).join('')}</div>
 <h2>最近收到的反馈</h2>${cards(data.newest)}`);
 }
 export function listView(filter: FeedbackFilters, rows: ListRow[], more: boolean) {
   const options = Object.entries({ '': '全部', error: '错误报告', ...feedbackCategories });
+  const select = (labels: Record<string, string>, selected?: string) => Object.entries({ '': '全部', ...labels })
+    .map(([value, label]) => `<option value="${e(value)}"${value === selected ? ' selected' : ''}>${e(label)}</option>`).join('');
   const nav = (page: number) => {
-    const params = new URLSearchParams({ q: filter.q, type: filter.type, model: filter.model, code: filter.code, order: filter.order, page: String(page) });
+    const params = new URLSearchParams({ q: filter.q, type: filter.type, model: filter.model, code: filter.code, stage: filter.stage ?? '', memoryTask: filter.memoryTask ?? '', order: filter.order, page: String(page) });
     return `${feedbackAdminPath}/list?${e(params.toString())}`;
   };
   return adminPage('反馈列表', `<h2>反馈列表</h2><section><form method="get" action="${feedbackAdminPath}/list">
@@ -67,6 +72,8 @@ export function listView(filter: FeedbackFilters, rows: ListRow[], more: boolean
 <label>反馈类型<select name="type">${options.map(([value, label]) => `<option value="${value}"${filter.type === value ? ' selected' : ''}>${label}</option>`).join('')}</select></label>
 <label>模型<input name="model" value="${e(filter.model)}" maxlength="200"></label>
 <label>错误代码<input name="code" value="${e(filter.code)}" maxlength="64"></label>
+<label>失败阶段<select name="stage">${select(stages, filter.stage)}</select></label>
+<label>记忆总结任务<select name="memoryTask">${select(summaryNames, filter.memoryTask)}</select></label>
 <label>时间排序<select name="order"><option value="newest">最新优先</option><option value="oldest"${filter.order === 'oldest' ? ' selected' : ''}>最早优先</option></select></label></div>
 <button class="primary" type="submit">筛选</button></form></section>${cards(rows)}
 <nav aria-label="翻页">${filter.page > 1 ? `<a href="${nav(filter.page - 1)}">上一页</a>` : ''}<span>第 ${filter.page} 页</span>${more ? `<a href="${nav(filter.page + 1)}">下一页</a>` : ''}</nav>`);
@@ -76,6 +83,8 @@ export function detailView(row: NonNullable<Awaited<ReturnType<typeof getFeedbac
   const diagnostic = { id: row.id, receivedAt: new Date(row.created_at).toISOString(), version: payload.version,
     build: payload.build, browser: payload.browser, device: payload.device, ...(payload.kind === 'error' ? { errors: payload.errors } : { category: payload.category }) };
   const pretty = (value: unknown) => e(JSON.stringify(value, null, 2));
+  const memory = payload.kind === 'error' ? payload.errors.flatMap(log => log.memory ?
+    [`<li>错误 ${log.ref} · ${e(summaryNames[log.memory.task])} · ${e(memorySteps[log.memory.step])} · ${e(memoryFailureReasons[log.memory.reason])}</li>`] : []) : [];
   const attachments = payload.kind === 'error' && payload.attachments?.map(item => `<section><h3>错误 ${item.errorRef} 的附件</h3>
 ${item.truncated ? '<p class="muted">部分内容已截短。</p>' : ''}
 ${item.content ? `<details><summary>模型原文</summary><pre>${e(item.content)}</pre></details>` : ''}
@@ -84,7 +93,7 @@ ${item.reasoning ? `<details><summary>公开思考</summary><pre>${e(item.reason
 <p class="muted">编号 ${e(row.id)} · <time>${time(row.created_at)}</time></p>
 ${updated ? '<p role="status">处理状态和备注已保存。</p>' : ''}
 <section><h3>玩家反馈</h3><p class="text">${e(payload.text || '没有补充说明。')}</p></section>
-${payload.kind === 'error' ? `<section><h3>错误日志 · ${payload.errors.length} 条</h3><pre>${pretty(payload.errors)}</pre></section>` : ''}
+${payload.kind === 'error' ? `<section><h3>错误日志 · ${payload.errors.length} 条</h3>${memory.length ? `<ul>${memory.join('')}</ul>` : ''}<pre>${pretty(payload.errors)}</pre></section>` : ''}
 ${attachments || ''}
 <section><h3>技术诊断</h3>
 <p class="muted">产品版本 ${e(payload.version)} · 构建版本 <code>${e(payload.build ?? '未记录')}</code></p>

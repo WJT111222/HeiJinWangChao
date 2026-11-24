@@ -11,6 +11,7 @@ import { worldRuleNames } from '../../services/validation/worldDiagnostics';
 import { RequestUsage } from './RequestUsage';
 import { RuntimeLogPanel } from './RuntimeLogPanel';
 import { StageResponseContent } from './StageResponsesPanel';
+import { MemoryResponses } from './MemoryResponses';
 import type { RuntimeLogEntry } from './runtimeLog';
 
 // 三阶段详情：只重排展示，不新增数据或请求。
@@ -456,6 +457,7 @@ function StageRaw({ saveId, turnId, stage, draft }: { saveId: string; turnId?: s
       {record?.error && <p className="wf-raw-error" role="note">{record.error.message}{'details' in record.error && record.error.details?.worldRule ? ` · ${worldRuleNames[record.error.details.worldRule]}` : ''}</p>}
       {record?.error && 'details' in record.error && record.error.details?.storyRule && <small className="wf-raw-error">正文失败类型：{record.error.details.storyRule} · {storyRuleNames[record.error.details.storyRule]}</small>}
       <Note>仅本页面临时保存，刷新或淘汰后无法恢复；模型原文不等于已执行结果。不会写入正式世界或剧情历史，不会发起请求。系统凭证会隐藏。</Note>
+      {stage === 'story' && <MemoryResponses saveId={saveId} />}
     </section>
   );
 }

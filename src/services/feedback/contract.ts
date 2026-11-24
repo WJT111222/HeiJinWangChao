@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { buildVersionSchema, memoryDiagnosticSchema } from '../../domain/memories/diagnostics';
 
 export const feedbackPath = '/api/feedback';
 export const feedbackAdminPath = '/admin/feedback';
@@ -21,7 +22,9 @@ export const feedbackStatuses = {
 
 export const categorySchema = z.enum(Object.keys(feedbackCategories) as (keyof typeof feedbackCategories)[]);
 export const statusSchema = z.enum(Object.keys(feedbackStatuses) as (keyof typeof feedbackStatuses)[]);
-const stage = z.enum(['story', 'variables', 'world', 'workflow', 'commit']);
+export const feedbackErrorStages = { story: '正文生成', variables: '变量管理', world: '动态世界',
+  workflow: '自动工作流', commit: '正式结算', memory: '记忆总结' } as const;
+export const feedbackStageSchema = z.enum(Object.keys(feedbackErrorStages) as (keyof typeof feedbackErrorStages)[]);
 const protocol = z.enum(['openai', 'deepseek', 'gemini', 'anthropic']);
 const code = z.string().regex(/^[a-zA-Z0-9_]{1,64}$/);
 const path = z.string().regex(/^[a-zA-Z0-9_.[\]*-]{1,160}$/);
@@ -29,15 +32,16 @@ const index = z.number().int().min(1).max(100_000);
 const measured = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const base = {
   version: z.string().regex(/^[a-zA-Z0-9 ._+-]{1,40}$/),
-  build: z.union([z.string().regex(/^[0-9a-f]{40}$/), z.enum(['development', 'unavailable'])]).optional(),
+  build: buildVersionSchema.optional(),
   browser: z.enum(['chrome', 'edge', 'firefox', 'safari', 'other']),
   device: z.enum(['desktop', 'phone', 'tablet', 'other']),
 };
 const error = z.strictObject({
   ref: index,
   time: z.iso.datetime(),
-  stage,
+  stage: feedbackStageSchema,
   code,
+  memory: memoryDiagnosticSchema.optional(),
   model: z.string().min(1).max(200).regex(/^[^\p{Cc}\p{Cf}]+$/u).optional(),
   protocol: protocol.optional(),
   httpStatus: z.number().int().min(100).max(599).optional(),
@@ -83,6 +87,8 @@ const report = z.strictObject({
 
 export const feedbackSchema = z.discriminatedUnion('kind', [suggestion, report]).superRefine((value, ctx) => {
   if (value.kind !== 'error') return;
+  if (value.errors.some(error => error.stage === 'memory' ? !error.memory || error.memory.code !== error.code : error.memory !== undefined))
+    ctx.addIssue({ code: 'custom', message: 'Invalid memory diagnostic' });
   if (value.errors.some((error, index) => error.ref !== index + 1)) ctx.addIssue({ code: 'custom', message: 'Invalid report references' });
   const refs = new Set<number>();
   let size = 0;

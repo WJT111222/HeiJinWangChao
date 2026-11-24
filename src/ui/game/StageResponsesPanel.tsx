@@ -5,6 +5,7 @@ import { stageResponses, selectStageResponse } from '../../services/ai/stageResp
 import type { StageResponse } from '../../services/ai/stageResponses';
 import { worldRuleNames } from '../../services/validation/worldDiagnostics';
 import type { AiStage } from '../../services/ai/configuration';
+import { MemoryResponses } from './MemoryResponses';
 
 export function StageResponseContent({ record, label }: { record?: StageResponse; label: string }) {
   const story = record?.stage === 'story';
@@ -112,6 +113,7 @@ export function StageResponsesPanel({ saveId, turnId, draft }: { saveId: string;
         {record?.normalized && <details><summary>{label}程序校验后的结果</summary><pre className="candidate-json" tabIndex={0} aria-label={`${label}规范化结果`}>{record.normalized}</pre></details>}
       </ResponseDetail>;
     })}
+    {expanded && <MemoryResponses saveId={saveId} />}
   </details>;
 }
 

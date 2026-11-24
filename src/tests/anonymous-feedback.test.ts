@@ -19,6 +19,7 @@ const report: FeedbackPayload = { ...runtime, kind: 'error', text: '变量错误
 ], attachments: [{ errorRef: 1, content: '</pre><img src=x onerror=demo()> 正文', reasoning: '合成思考' }] };
 
 let sqlite: DatabaseSync, db: FeedbackDatabase;
+let d1BindCounts: number[];
 const asset = vi.fn(async () => new Response('game assets'));
 function env(overrides: Partial<Parameters<typeof worker.fetch>[1]> = {}) {
   return { FEEDBACK: db, FEEDBACK_ADMIN_PASSWORD: password, ASSETS: { fetch: asset }, ...overrides };
@@ -42,11 +43,15 @@ function action(id: string, values: Record<string, string>, origin = base) {
 
 beforeEach(() => {
   sqlite = new DatabaseSync(':memory:');
+  d1BindCounts = [];
   sqlite.exec(readFileSync(new URL('../../migrations/feedback/0001_feedback.sql', import.meta.url), 'utf8'));
   sqlite.exec(readFileSync(new URL('../../migrations/feedback/0002_feedback_digest.sql', import.meta.url), 'utf8'));
   db = { prepare(sql) {
     const statement = sqlite.prepare(sql);
     function bind(...args: Parameters<ReturnType<FeedbackDatabase['prepare']>['bind']>): ReturnType<FeedbackDatabase['prepare']> {
+      d1BindCounts.push(args.length);
+      // SQLite permits more variables than a D1 prepared statement.
+      if (args.length > 100) throw new Error(`D1 bind limit exceeded: ${args.length}`);
       return {
         bind,
         first: async <T>() => (statement.get(...args) as T | undefined) ?? null,
@@ -197,6 +202,59 @@ function addReceipt(payload: FeedbackPayload, time: number) {
       payload.kind === 'suggestion' ? payload.category : null, JSON.stringify(payload));
 }
 const checkpoint = () => sqlite.prepare('SELECT through_ms, lease_id FROM feedback_digest_checkpoint WHERE id = 1').get();
+
+it('简报白名单的绑定数量固定，完整调度低于 D1 的 100 参数上限', async () => {
+  addReceipt(report, end - 1);
+  const send = mail();
+  await worker.scheduled({ scheduledTime: end }, configured(send));
+  expect(Math.max(...d1BindCounts)).toBe(10);
+  expect(send).toHaveBeenCalledTimes(1);
+  expect(checkpoint()).toMatchObject({ through_ms: end, lease_id: null });
+});
+
+it('记忆日志与旧报告共存，后台任务筛选和邮件只汇总安全字段', async () => {
+  const requestedAt = new Date(end - 1).toISOString();
+  const privateModel = 'AnonMemoryModel_PRIVATE_ONLY';
+  const memory = { task: 'npc', step: 'output', reason: 'duplicate_groups', code: 'MEMORY_OUTPUT',
+    requestedAt, model: privateModel, protocol: 'openai', fieldPath: 'summaries',
+    expectedGroups: 2, actualGroups: 3, httpStatus: 200, build: 'development' } as const;
+  const memoryReport: FeedbackPayload = { ...report, text: '玩家补充内容，只供后台查看',
+    errors: [{ ...report.errors[0], model: 'different-log', ref: 1 },
+      { ref: 2, stage: 'memory', time: requestedAt, code: memory.code, model: privateModel, memory }],
+    attachments: [{ errorRef: 2, content: 'NPC 私密原文', reasoning: 'NPC 私密思考' }] };
+  const received = await submit(memoryReport);
+  expect(received.status).toBe(201);
+  const { id } = await received.json();
+  expect((await submit({ ...memoryReport, errors: [{ ...memoryReport.errors[1], ref: 1, memory: { ...memory, fieldPath: 'private-id' } }], attachments: undefined })).status).toBe(400);
+  const legacy = await (await submit(report)).json();
+  const query = (filters: string) => adminRequest(feedbackAdminPath + '/list?' + filters).then(response => response.text());
+  expect(await query('stage=memory&memoryTask=npc')).toContain(id);
+  expect(await query('stage=memory&memoryTask=npc')).not.toContain(legacy.id);
+  expect(await query('stage=memory&memoryTask=short')).not.toContain(id);
+  expect(await query('stage=memory&model=different-log')).not.toContain(id);
+  const overview = await (await adminRequest()).text();
+  expect(overview).toContain('记忆总结 · 1');
+  expect(overview).toContain('NPC 短期 → 中期 · 1');
+  const detail = await (await adminRequest(feedbackAdminPath + '/' + id)).text();
+  expect(detail).toContain('NPC 短期 → 中期 · 校验总结 · NPC 认知分组重复');
+  expect(detail).toContain('NPC 私密原文');
+
+  sqlite.prepare('UPDATE feedback SET created_at = ?').run(end - halfDay - 1);
+  addReceipt(memoryReport, end - 1);
+  // Also validate aggregation's own allowlist, beyond service-side validation.
+  addReceipt({ ...report, errors: [{ ...memoryReport.errors[1], code: 'PRIVATE_DEBUG_VALUE',
+    memory: { ...memory, reason: 'private-debug-value' } }] } as unknown as FeedbackPayload, end - 1);
+  const send = mail();
+  await worker.scheduled({ scheduledTime: end }, configured(send));
+  const text = send.mock.calls[0][0].text;
+  expect(text).toContain('记忆总结 · 2 份报告 / 2 条日志');
+  expect(text).toContain('NPC 短期 → 中期 · 2 份报告 / 2 条日志');
+  expect(text).toContain('MEMORY_OUTPUT · 1 份报告 / 1 条日志');
+  expect(text).toContain('NPC 认知分组重复 · 1 份报告 / 1 条日志');
+  for (const value of [privateModel, 'NPC 私密原文', 'NPC 私密思考', '玩家补充内容', 'PRIVATE_DEBUG_VALUE', 'private-debug-value']) {
+    expect(text).not.toContain(value);
+  }
+});
 
 it('定时邮件统计半开区间，按报告与日志聚合，并只输出白名单字段', async () => {
   const build = '0123456789abcdef0123456789abcdef01234567';

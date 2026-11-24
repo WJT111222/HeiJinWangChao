@@ -27,13 +27,18 @@ import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
 import { applyCompression, parseCompression } from '../domain/memories/compression';
 import { describe, vi } from 'vitest';
+import { stageResponses } from '../services/ai/stageResponses';
+import { linkMemoryFeedback, prepareErrorPayload } from '../services/feedback/report';
+import { feedbackSchema } from '../services/feedback/contract';
+import type { MemoryFailureObservation } from '../services/ai/memoryObservation';
+import { memoryRuntimeLogEvent, currentRuntimeLogs } from '../ui/game/runtimeLog';
 import { DataError } from '../domain/common';
 import { createHash } from 'node:crypto';
 import { fingerprint } from '../domain/commands';
 const store = () => { const values = new Map<string, string>(); return { getItem: (key: string) => values.get(key) ?? null,
   setItem: (key: string, value: string) => { values.set(key, value); } }; };
 const publicOutput = { summary: '这段时期的经历与关系发生了变化。', importantEvents: ['游戏内记录的一个重要约定及其后续。'] };
-function setupRuntime(state = compressionState('short', 100), response = () => Response.json({ choices: [{ message: { content: JSON.stringify(publicOutput) } }] })) {
+function setupRuntime(state = compressionState('short', 100), response: () => Response | Promise<Response> = () => Response.json({ choices: [{ message: { content: JSON.stringify(publicOutput) } }] })) {
   let current = structuredClone(state);
   const storage = store(), config = defaultAiConfig(), channel = newChannel();
   channel.defaultModel = 'memory-only'; config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'story' };
@@ -437,4 +442,167 @@ it.each(['{broken', 'null', '[]'])('损坏的轮询游标 %s 可恢复，旧付�
   expect(execute).toHaveBeenCalledWith('npc', false, 'npc-a', undefined);
   expect(JSON.parse(storage.getItem(cursor)!)).toMatchObject({ cursor: 1, npcCursor: 'npc-a' });
   expect(new SummaryRecords(storage, state).pending).toMatchObject([{ retryId: 'previous-short' }]);
+});
+
+function diagnosticWire(content: unknown, reasoning_content = '仅供测试的公开思考', finish_reason = 'stop') {
+  return Response.json({ choices: [{ message: { content, reasoning_content }, finish_reason }] });
+}
+
+describe('记忆总结的安全诊断与原文', () => {
+  it.each(['short', 'medium', 'npc'] as const)('%s 原文保留、旧待确认逻辑和显式重试仍按原批保存', async kind => {
+    stageResponses.clear();
+    const initial = kind === 'npc' ? npcMemoryState(20) : compressionState(kind, 60);
+    const raw = '{合成文本包含 save-a';
+    const good = kind === 'npc' ? npcSummaryOutput(planNpcSummary(initial, 'npc-a')!) : publicOutput;
+    let answer = raw;
+    const a = setupRuntime(initial, () => diagnosticWire(answer, '仅供测试的公开思考 mock-secret-v2'));
+    const onFailure = vi.fn<(failure: MemoryFailureObservation) => void>();
+    const input = { ...a, saveId: initial.saveId, kind, npcId: kind === 'npc' ? 'npc-a' : undefined,
+      timeoutSeconds: 10, attempts: a.storage, onFailure };
+    await expect(a.runner.run(input)).rejects.toMatchObject({ code: 'MEMORY_OUTPUT' });
+    expect(a.transport).toHaveBeenCalledTimes(1);
+    expect(a.current()).toEqual(initial);
+    const failure = onFailure.mock.calls[0][0];
+    expect(failure.diagnostic).toMatchObject({ task: kind, step: 'output', reason: 'invalid_json', protocol: 'openai',
+      model: 'memory-only', httpStatus: 200, outputLength: raw.length, build: 'development' });
+    const issues = new SummaryRecords(a.storage, initial).issues;
+    expect(issues[0].diagnostic).toEqual(JSON.parse(JSON.stringify(failure.diagnostic)));
+    expect(a.storage.getItem(summaryRecordsKey(initial))).not.toContain('合成文本');
+    expect(a.storage.getItem(summaryRecordsKey(initial))).not.toContain(failure.responseId);
+    const record = stageResponses.getSnapshot().find(item => item.id === failure.responseId)!;
+    expect(record).toMatchObject({ text: raw, nativeReasoning: '仅供测试的公开思考 [密钥已隐藏]',
+      memoryTask: kind, status: 'failed' });
+    const entry = memoryRuntimeLogEvent(1, 'anonymous-save-ref', failure);
+    expect(currentRuntimeLogs([entry], { saveRef: 'anonymous-save-ref', turnRef: 'a-new-turn' })).toEqual([entry]);
+    linkMemoryFeedback(entry, failure.responseId);
+    const report = (content: boolean, reasoning: boolean) => feedbackSchema.parse(
+      prepareErrorPayload([entry], stageResponses.getSnapshot(), { content, reasoning })(''));
+    expect(report(false, false)).not.toHaveProperty('attachments');
+    expect(report(true, false)).toMatchObject({ attachments: [{ errorRef: 1, content: '{合成文本包含 [本地标识已隐藏]' }] });
+    expect(JSON.stringify(report(true, false))).not.toContain('reasoning');
+    expect(report(false, true)).toMatchObject({ attachments: [{ errorRef: 1, reasoning: '仅供测试的公开思考 [密钥已隐藏]' }] });
+    expect(JSON.stringify(report(false, true))).not.toContain('content');
+    stageResponses.clear();
+    expect(report(true, true)).not.toHaveProperty('attachments');
+    expect(new SummaryRecords(a.storage, initial).issues[0].diagnostic?.reason).toBe('invalid_json');
+
+    answer = JSON.stringify(good);
+    await a.runner.run({ ...input, immediate: true, retryId: issues[0].retryId });
+    expect(a.transport).toHaveBeenCalledTimes(2);
+    expect(new SummaryRecords(a.storage, a.current()).pending).toHaveLength(0);
+    expect(stageResponses.getSnapshot()[0]).toMatchObject({ stage: 'memory', memoryTask: kind, status: 'validated', text: answer });
+    expect(a.current().journal).toEqual(initial.journal);
+    expect(a.current().revision).toBe(initial.revision);
+  });
+
+  it('只按真实 Schema 错误和分组校验生成原因，不记录未知字段名和分组 ID', () => {
+    const short = planCompression(compressionState('short', 32))!;
+    const shortCases = [
+      [{ importantEvents: ['事件'] }, 'required_field', 'summary'],
+      [{ summary: 4, importantEvents: ['事件'] }, 'field_type', 'summary'],
+      [{ summary: ' ', importantEvents: ['事件'] }, 'empty_summary', 'summary'],
+      [{ ...publicOutput, PRIVATE_FIELD_FROM_MODEL: '不能上传' }, 'unknown_field', undefined],
+      [{ ...publicOutput, summary: '长'.repeat(64001) }, 'output_capacity', 'summary'],
+    ] as const;
+    for (const [raw, reason, fieldPath] of shortCases) {
+      expect(() => parseCompression(JSON.stringify(raw), short, 'public-test')).toThrow(expect.objectContaining({
+        code: 'MEMORY_OUTPUT', diagnostic: expect.objectContaining({ reason, fieldPath }),
+      }));
+    }
+    const state = npcMemoryState(20);
+    state.npc['npc-a'].memories[0].knowledgeKind = 'reported';
+    state.npc['npc-a'].memories[0].text = '[转述]合成经历';
+    const batch = planNpcSummary(state, 'npc-a')!;
+    const good = npcSummaryOutput(batch);
+    expect(good.summaries).toHaveLength(2);
+    const npcCases = [
+      [{ ...good, summaries: [] }, 'missing_groups', 0],
+      [{ ...good, summaries: good.summaries.slice(0, 1) }, 'missing_groups', 1],
+      [{ ...good, summaries: [good.summaries[0], good.summaries[0]] }, 'duplicate_groups', 2],
+      [{ ...good, summaries: [good.summaries[0], { groupId: 'private-id', text: '另一个摘要' }] }, 'group_id_mismatch', 2],
+      [{ ...good, unresolved: ['未解决私密文本'] }, 'unresolved', 2],
+      [{ ...good, contradictions: ['矛盾私密文本'] }, 'contradictions', 2],
+      [{ ...good, summaries: good.summaries.map(group => ({ ...group, text: '字'.repeat(40000) })) }, 'output_capacity', 2],
+    ] as const;
+    for (const [raw, reason, actualGroups] of npcCases) {
+      expect(() => parseNpcSummary(JSON.stringify(raw), batch, 'npc-test')).toThrow(expect.objectContaining({
+        code: 'MEMORY_OUTPUT', diagnostic: expect.objectContaining({ reason, expectedGroups: 2, actualGroups }),
+      }));
+    }
+  });
+
+  it.each([
+    ['empty', 'empty_response', () => diagnosticWire(''), ''],
+    ['output_limit', 'output_truncated', () => diagnosticWire('{部分总结', '公开思考', 'length'), '{部分总结'],
+    ['invalid_json', 'stream_interrupted', () => {
+      const frame = new TextEncoder().encode('data: {"choices":[{"delta":{"content":"{流式片段","reasoning_content":"公开思考"}}]}\n\n');
+      let count = 0;
+      return new Response(new ReadableStream({ pull(controller) {
+        if (count++ === 0) controller.enqueue(frame);
+        else controller.error(new TypeError('private provider details'));
+      } }, { highWaterMark: 0 }), { headers: { 'Content-Type': 'text/event-stream' } });
+    }, '{流式片段'],
+    ['invalid_json', 'unexpected_transport', () => new Response(
+      'data: {"choices":[{"delta":{"content":"合成内容"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n',
+      { headers: { 'Content-Type': 'text/event-stream' } }), '合成内容'],
+  ] as const)('请求失败 %s 保留可取得的响应并区分 %s', async (code, reason, respond, text) => {
+    stageResponses.clear();
+    const initial = compressionState('short', 40);
+    const a = setupRuntime(initial, respond), onFailure = vi.fn<(failure: MemoryFailureObservation) => void>();
+    await expect(a.runner.run({ ...a, saveId: initial.saveId, kind: 'short', timeoutSeconds: 10, attempts: a.storage, onFailure }))
+      .rejects.toMatchObject({ code });
+    expect(a.transport).toHaveBeenCalledTimes(1);
+    expect(a.current()).toEqual(initial);
+    const record = stageResponses.getSnapshot()[0];
+    expect(record.text).toBe(text);
+    expect(onFailure).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      diagnostic: expect.objectContaining({ code, reason, step: 'request', httpStatus: 200, outputLength: text.length }),
+    }));
+    if (code === 'output_limit') expect(record.memoryDiagnostic?.outputTruncated).toBe(true);
+    if (reason === 'stream_interrupted') expect(JSON.parse(String(a.transport.mock.calls[0][1]?.body)).stream).toBe(false);
+  });
+
+  it('输入预算超限无传输，超时只发送一次且不会再次自动购买', async () => {
+    const initial = compressionState('short', 40);
+    const a = setupRuntime(initial, () => new Promise(() => {}));
+    const onFailure = vi.fn<(failure: MemoryFailureObservation) => void>();
+    const input = { ...a, saveId: initial.saveId, kind: 'short' as const, timeoutSeconds: 0.03, attempts: a.storage, onFailure };
+    await expect(a.runner.run({ ...input, summaryConfig: { ...defaultSummaryConfig('short'), prompt: '长'.repeat(30000) } }))
+      .rejects.toMatchObject({ code: 'MEMORY_BUDGET' });
+    expect(a.transport).not.toHaveBeenCalled();
+    expect(onFailure.mock.calls[0][0].diagnostic).toMatchObject({ step: 'preparation', reason: 'input_budget' });
+    await expect(a.runner.run(input)).rejects.toMatchObject({ code: 'timeout' });
+    expect(onFailure.mock.calls[1][0].diagnostic).toMatchObject({ step: 'request', reason: 'request_timeout' });
+    await expect(a.runner.run({ ...input, automatic: true })).rejects.toMatchObject({ code: 'MEMORY_PREVIOUS' });
+    expect(a.transport).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    [new DataError('MEMORY_TIMELINE_CHANGED', '私密旧时间线'), 'timeline_conflict'],
+    [new Error('私密存档异常'), 'save_failed'],
+  ] as const)('保存阶段按实际失败给出 %s 的安全诊断', async (error, reason) => {
+    stageResponses.clear();
+    const initial = compressionState('short', 40);
+    const a = setupRuntime(initial, () => diagnosticWire(JSON.stringify(publicOutput)));
+    vi.spyOn(a.repository, 'saveMemoryCompression').mockRejectedValue(error);
+    const onFailure = vi.fn<(failure: MemoryFailureObservation) => void>();
+    await expect(a.runner.run({ ...a, saveId: initial.saveId, kind: 'short', timeoutSeconds: 10, attempts: a.storage, onFailure }))
+      .rejects.toBe(error);
+    expect(onFailure).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      diagnostic: expect.objectContaining({ step: 'save', reason, httpStatus: 200 }),
+    }));
+    expect(stageResponses.getSnapshot()[0]).toMatchObject({ status: 'failed', text: JSON.stringify(publicOutput) });
+    expect(a.storage.getItem(summaryRecordsKey(initial))).not.toContain('私密');
+    expect(a.transport).toHaveBeenCalledTimes(1);
+    expect(a.current()).toEqual(initial);
+  });
+
+  it('合法 JSON 的媒体类型误标为 SSE 时仍使用原有 JSON 保存路径', async () => {
+    const a = setupRuntime(compressionState('short', 40), () => Response.json({
+      choices: [{ message: { content: JSON.stringify(publicOutput) }, finish_reason: 'stop' }],
+    }, { headers: { 'Content-Type': 'text/event-stream' } }));
+    const saved = await a.runner.run({ ...a, saveId: 'save-a', kind: 'short', timeoutSeconds: 10 });
+    expect(saved?.memories.medium).toHaveLength(1);
+    expect(a.transport).toHaveBeenCalledTimes(1);
+  });
 });

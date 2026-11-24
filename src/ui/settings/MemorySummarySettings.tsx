@@ -1,3 +1,4 @@
+import { MemoryIssueDetails } from '../game/MemoryResponses';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import type { Settings } from './model';
 import { SettingsSchema, settingsKey } from './model';
@@ -117,10 +118,11 @@ export function MemorySummarySettings({ settings, onSave, state, phase, activity
           <p>自动条件：{kind === 'npc' ? '单个人物达到' : '超过'} {saved.threshold} 条 · 每批 {saved.batchSize} 条</p>
           <p role="status">{status}</p>
           {oldSummary && <p>此人物有来源无法核对的旧总结，已保留记录并暂停自动整理。</p>}
-          {issues.map((issue, index) => <p key={`${issue.kind}-${issue.npcId}-${issue.code}-${index}`}>
-            {kind === 'npc' && issue.npcId && <>{state.npc[issue.npcId]?.name ?? '原人物'} · </>}
-            {issue.message}{issue.pending && issue.code !== 'MEMORY_PREVIOUS' && ' 此请求可能已计费，等待你确认处理。'}
-          </p>)}
+          {issues.map((issue, index) => <div key={`${issue.kind}-${issue.npcId}-${issue.code}-${index}`}>
+            <p>{kind === 'npc' && issue.npcId && <>{state.npc[issue.npcId]?.name ?? '原人物'} · </>}
+            {issue.message}{issue.pending && issue.code !== 'MEMORY_PREVIOUS' && ' 此请求可能已计费，等待你确认处理。'}</p>
+            <MemoryIssueDetails issue={issue} saveId={state.saveId} />
+          </div>)}
         </>}
         <label>完整内容提示词 · {summaryNames[kind]}<textarea rows={12} value={config.prompt} onChange={e => change(kind, { prompt: e.target.value })} /></label>
         <button onClick={() => change(kind, { prompt: defaultSummaryConfig(kind).prompt })}>恢复默认提示词 · {summaryNames[kind]}</button>

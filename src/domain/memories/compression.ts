@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { DataError, IdSchema, requireData } from '../common';
+import { IdSchema, requireData } from '../common';
+import { MemoryValidationError, memorySchemaFailure } from './diagnostics';
 import { GameStateSchema } from '../state';
 import type { GameState } from '../state';
 import { MemoryEntrySchema } from './schema';
@@ -59,7 +60,9 @@ export const PublicSummaryOutputSchema = z.strictObject({ summary: z.string().tr
 // AI 只归纳文本；来源、引用、可见性和时间均由程序重建，不能由模型伪造。
 export const CompressionOutputSchema = PublicSummaryOutputSchema;
 function entryFromText(text: string, batch: CompressionBatch, id: string) {
-  requireData(text.trim().length > 0 && text.length <= 64000, 'MEMORY_OUTPUT', '总结为空或超出技术输出预算');
+  if (!text.trim() || text.length > 64000) throw new MemoryValidationError('总结为空或超出技术输出预算', {
+    reason: text.length > 64000 ? 'output_capacity' : 'empty_summary', fieldPath: 'summary',
+  });
   return MemoryEntrySchema.parse({
     id, text,
     sourceTurnIds: sourceUnion(batch.entries),
@@ -71,9 +74,10 @@ function entryFromText(text: string, batch: CompressionBatch, id: string) {
 
 export function parseCompression(text: string, batch: CompressionBatch, id: string) {
   let raw: unknown;
-  try { raw = JSON.parse(text); } catch { throw new DataError('MEMORY_OUTPUT', '总结不是完整JSON，原始记忆已保留'); }
+  try { raw = JSON.parse(text); } catch { throw new MemoryValidationError('总结不是完整JSON，原始记忆已保留', { reason: 'invalid_json' }); }
   const parsed = CompressionOutputSchema.safeParse(raw);
-  requireData(parsed.success, 'MEMORY_OUTPUT', '总结缺少非空阶段概括或重要事件清单，原记录保留');
+  if (!parsed.success) throw new MemoryValidationError('总结缺少非空阶段概括或重要事件清单，原记录保留',
+    memorySchemaFailure(parsed.error.issues[0], raw));
   return entryFromText(`阶段概括\n${parsed.data.summary}\n\n重要事件\n${parsed.data.importantEvents.map(event => `- ${event}`).join('\n')}`, batch, id);
 }
 
@@ -94,7 +98,8 @@ export function applyCompression(state: GameState, input: CompressionBatch, resu
   const eligible = compressionCandidates(state, batch.layer);
   requireData(batch.entries.every((entry) => eligible.some((item) => item.id === entry.id)), 'MEMORY_CONFLICT', '来源已被整理或权限已变化');
   const expected = entryFromText(result.text, batch, result.id);
-  requireData(fingerprint(expected) === fingerprint(MemoryEntrySchema.parse(result)), 'MEMORY_OUTPUT', '来源、时间或可见性不符');
+  if (fingerprint(expected) !== fingerprint(MemoryEntrySchema.parse(result)))
+    throw new MemoryValidationError('来源、时间或可见性不符', { reason: 'source_permission' });
   requireData(![...state.memories.short, ...state.memories.medium, ...state.memories.long].some((entry) => entry.id === result.id), 'MEMORY_CONFLICT', '结果已存在');
   const ids = new Set(batch.entries.map((entry) => entry.id));
   const target = targetLayer(batch.layer);

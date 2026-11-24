@@ -1,4 +1,4 @@
-import { FeedbackCorrelation } from '../../services/feedback/report';
+import { FeedbackCorrelation, linkMemoryFeedback } from '../../services/feedback/report';
 import { assistantView, bindTavernPage, enterTavernChat } from '../../presets/tavern/hostState';
 import { ScriptButtons } from '../settings/TavernAssistant';
 import { stageResponses } from '../../services/ai/stageResponses';
@@ -61,11 +61,13 @@ import { fingerprint } from '../../domain/commands';
 import { SettingsSchema, settingsKey } from '../settings/model';
 import { summaryFailureTitle } from '../../workflows/memorySummaryQueue';
 import type { OpeningStart } from './openingStart';
-import { currentRuntimeLogs, runtimeLogEvent } from './runtimeLog';
+import { currentRuntimeLogs, memoryRuntimeLogEvent, runtimeLogEvent } from './runtimeLog';
 import { errorBannerKey } from './errorBanner';
 import { DesktopWorkflowPanel } from './WorkflowPanel';
 
 import type { StageAction, WorkflowStage, WorkflowTab, WorkflowView } from './WorkflowPanel';
+import type { MemoryFailureObservation } from '../../services/ai/memoryObservation';
+import { MemoryIssueDetails } from './MemoryResponses';
 import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
 import { CityAtmosphere, CityBar, CityChapter } from './CityNight';
 import { deriveAtmosphere } from './atmosphere';
@@ -226,7 +228,12 @@ export function GameScreen({
     });
     return () => { disposed = true; };
   }, [openingStart, state, draft, automatic.generate]);
-  const memory = useMemoryMaintenance(repository, state.saveId, settings, onMemorySaved, onSettings);
+  const reportMemoryFailure = useCallback((failure: MemoryFailureObservation) => {
+    const entry = memoryRuntimeLogEvent(++runtimeLogId.current, diagnosticSaveRef.current, failure);
+    linkMemoryFeedback(entry, failure.responseId);
+    setRuntimeLogs(current => [...current.slice(-49), entry]);
+  }, []);
+  const memory = useMemoryMaintenance(repository, state.saveId, settings, onMemorySaved, onSettings, reportMemoryFailure);
   const summaryFailure = memory.popup;
   const memoryState = memory.snapshot.state;
   const settingsMemoryState = memoryState?.saveId === state.saveId && memoryState.createdAt === state.createdAt &&
@@ -525,7 +532,7 @@ export function GameScreen({
   const activePhase = automatic.running ? automatic.progress?.phase
     : progress?.phase || variables.phase || world.phase;
   // Hook 错误可能在其他入口恢复成功后仍保留；展示优先使用最新运行结果。
-  const latestResult = [...runtimeLogs].reverse().find((entry) => entry.kind !== 'started');
+  const latestResult = [...runtimeLogs].reverse().find((entry) => entry.stage !== 'memory' && entry.kind !== 'started');
   const currentFailure = latestResult && latestResult.kind !== 'completed' ? latestResult : undefined;
   const hasWorkflowError = Boolean(failedStage || (workflowError && (!latestResult || currentFailure)));
   const errorStage = currentFailure?.stage
@@ -1114,6 +1121,7 @@ export function GameScreen({
         >
           {summaryFailure.npcId && <p>{state.npc[summaryFailure.npcId]?.name ?? '原人物'}</p>}
           <p>{summaryFailure.message}</p>
+          <MemoryIssueDetails issue={summaryFailure} saveId={state.saveId} />
           {summaryFailure.pending && !summaryFailure.legacy && <p>本次请求可能已计费。选择重新生成会再发一次请求。</p>}
           <div className="feedback-dialog-actions memory-feedback-actions">
             {summaryFailure.retryId && !summaryFailure.legacy && (summaryFailure.kind !== 'npc' || summaryFailure.npcId) ? (

@@ -1,22 +1,30 @@
 import { redactInspection } from './inspection';
 import { safeAiError } from './errors';
-import type { AiStage, Protocol } from './configuration';
+import type { AiStage, AiTask, Protocol } from './configuration';
 import { freeze } from './snapshot';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 
+import type { MemoryDiagnostic } from '../../domain/memories/diagnostics';
+import type { SummaryKind } from '../../domain/memories/configuration';
 import type { TurnDraft } from '../../domain/drafts';
 
 export const responseLimits = { text: 8_000_000, nativeReasoning: 2_000_000, displayText: 10_000_000, normalized: 8_000_000, diagnostics: 16_000 } as const;
 // Candidate raw output is a diagnostic preview, never the parser input.
 export const candidateResponseLimits = { text: 256_000, nativeReasoning: 64_000, displayText: 0, normalized: 256_000, diagnostics: 16_000 } as const;
 export const responseStoreBudget = 32_000_000;
-export const responseLimitsFor = (stage: AiStage) => stage === 'story' ? responseLimits : candidateResponseLimits;
+export const responseLimitsFor = (stage: AiTask) => stage === 'story' ? responseLimits : candidateResponseLimits;
 export function responseSize(record: StageResponse) {
   return (record.text?.length ?? 0) + (record.nativeReasoning?.length ?? 0) + (record.displayText?.length ?? 0)
     + (record.normalized?.length ?? 0) + (record.diagnostics ? JSON.stringify(record.diagnostics).length : 0);
 }
 export interface StageResponse {
-  id: string; saveId: string; turnId?: string; storyRevision?: number; stage: AiStage;
+  id: string; saveId: string; turnId?: string; storyRevision?: number; stage: AiTask;
+  memoryTask?: SummaryKind;
+  memoryDiagnostic?: MemoryDiagnostic;
+  /** Ledger join key used only in the local response cache. */
+  memoryRetryId?: string;
+  model?: string;
+  requestedAt?: string;
   baseSaveRevision?: number; draftRevision?: number; executionRevision?: number; stageRequestRevision?: number;
   basedOnVariableRevision?: number;
   diagnostics?: ResponseDiagnostics;
@@ -73,13 +81,13 @@ export class StageResponseStore {
   }
   clear = () => { this.epoch++; this.publish([]); };
   clearSave = (saveId: string) => { this.epoch++; this.publish(this.records.filter(item => item.saveId !== saveId)); };
-  begin(scope: Pick<StageResponse, 'saveId' | 'turnId' | 'stage' | 'storyRevision' | 'protocol' | 'baseSaveRevision' | 'draftRevision' | 'executionRevision' | 'stageRequestRevision' | 'basedOnVariableRevision'>, generation = this.epoch) {
+  begin(scope: Pick<StageResponse, 'saveId' | 'turnId' | 'stage' | 'storyRevision' | 'protocol' | 'baseSaveRevision' | 'draftRevision' | 'executionRevision' | 'stageRequestRevision' | 'basedOnVariableRevision' | 'memoryTask' | 'memoryRetryId' | 'model' | 'requestedAt'>, generation = this.epoch) {
     const id = crypto.randomUUID();
     if (generation !== this.epoch) return id; // A cleared/unmounted request cannot resurrect its record.
     this.publish([freeze({ ...scope, id, status: 'pending' as const }), ...this.records].slice(0, 6));
     return id;
   }
-  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error' | 'diagnostics' | 'truncated' | 'notes' | 'storyValidated' | 'candidateSaved' | 'failureLayer' | 'validationEndMs' | 'draftSavedMs'>>, secrets: readonly string[]) {
+  update(id: string, patch: Partial<Pick<StageResponse, 'text' | 'nativeReasoning' | 'displayText' | 'displayOrder' | 'normalized' | 'status' | 'error' | 'diagnostics' | 'truncated' | 'notes' | 'storyValidated' | 'candidateSaved' | 'failureLayer' | 'validationEndMs' | 'draftSavedMs' | 'memoryDiagnostic'>>, secrets: readonly string[]) {
     const current = this.records.find(item => item.id === id);
     if (!current) return;
     const limits = responseLimitsFor(current.stage);

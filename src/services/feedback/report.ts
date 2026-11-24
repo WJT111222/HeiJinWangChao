@@ -37,6 +37,13 @@ export class FeedbackCorrelation {
   }
 }
 
+// No turn lookup: a summary may run before, after or independently of any draft.
+export function linkMemoryFeedback(entry: RuntimeLogEntry, responseId?: string) {
+  if (entry.stage !== 'memory' || !responseId) return;
+  const record = stageResponses.getSnapshot().find(item => item.id === responseId && item.stage === 'memory' && item.status === 'failed');
+  if (record) links.set(entry, { id: record.id });
+}
+
 function runtimeInfo(userAgent = globalThis.navigator?.userAgent ?? '') {
   const browser = /Edg(?:e|A|iOS)?\//i.test(userAgent) ? 'edge' : /(?:Firefox|FxiOS)\//i.test(userAgent) ? 'firefox'
     : /(?:Chrome|CriOS)\//i.test(userAgent) ? 'chrome' : /Safari\//i.test(userAgent) ? 'safari' : 'other';
@@ -69,6 +76,12 @@ export function suggestionPayload(category: FeedbackCategory, text: string) {
 function logData(entry: RuntimeLogEntry, ref: number, sanitize: ReturnType<typeof textSanitizer>): FeedbackReport['errors'][number] {
   const link = links.get(entry);
   const safe = (value?: string) => value && sanitize(value) === value ? value : undefined;
+  if (entry.stage === 'memory' && entry.memory) {
+    const { model, protocol, httpStatus, ...fields } = entry.memory;
+    const safeModel = safe(model);
+    return { ref, time: entry.timestamp, stage: 'memory', code: fields.code, model: safeModel, protocol, httpStatus,
+      memory: { ...fields, model: safeModel, protocol, httpStatus } };
+  }
   return {
     ref, time: entry.timestamp, stage: entry.stage, code: safe(entry.code) ?? 'unknown',
     model: safe(link?.model),
@@ -92,7 +105,7 @@ export function prepareErrorPayload(
 ) {
   const errors = entries.filter(entry => entry.kind === 'failed');
   const ids = [
-    ...errors.flatMap(entry => [entry.scope?.saveRef, entry.scope?.turnRef, entry.relatedNpcId]),
+    ...errors.flatMap(entry => [entry.scope?.saveRef, entry.scope?.turnRef, entry.relatedNpcId, entry.memorySaveRef]),
     ...responses.flatMap(record => [record.saveId, record.turnId, record.id]),
   ].filter((id): id is string => Boolean(id));
   const sanitize = textSanitizer(ids);

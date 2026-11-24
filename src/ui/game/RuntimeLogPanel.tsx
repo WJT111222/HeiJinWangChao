@@ -1,3 +1,5 @@
+import { summaryNames } from '../../domain/memories/configuration';
+import { memorySteps } from '../../domain/memories/diagnostics';
 import { ErrorFeedbackDialog } from '../feedback/FeedbackForms';
 import { storyRuleNames } from '../../domain/storyDiagnostics';
 import { variableStepNames } from '../../services/ai/errors';
@@ -47,7 +49,7 @@ export function RuntimeLogPanel({
   async function copyOne(entry: RuntimeLogEntry) {
     try {
       // Copy exactly one already-sanitized failed event; never include earlier workflow events.
-      await navigator.clipboard.writeText(JSON.stringify(entry, null, 2));
+      await navigator.clipboard.writeText(JSON.stringify(entry.memory ?? entry, null, 2));
       setCopyFeedback({ id: entry.id, ok: true });
     } catch {
       setCopyFeedback({ id: entry.id, ok: false });
@@ -61,7 +63,7 @@ export function RuntimeLogPanel({
         {latestError?.code && <strong className="runtime-log-error-count">最近错误 · {latestError.code}</strong>}
       </summary>
       <div className="runtime-log-content">
-        <p className="field-hint">仅显示当前存档、当前回合的本页临时日志；已恢复的失败不再计为当前错误。每条可单独复制安全诊断，不含原始模型响应、请求正文或密钥。刷新即清空。</p>
+        <p className="field-hint">显示当前回合的本页临时日志及当前存档的记忆总结错误；已恢复的回合失败不再计为当前错误。每条可单独复制安全诊断，不含原始模型响应、请求正文或密钥。刷新即清空。</p>
         {cancelled && <p className="field-hint">最近操作已取消，未计入生成失败。</p>}
         <div className="runtime-log-actions">
           {feedbackLogs && <button type="button" disabled={!feedbackLogs.some(entry => entry.kind === 'failed')}
@@ -75,7 +77,7 @@ export function RuntimeLogPanel({
                 <div className="runtime-log-entry-header">
                   <div>
                     <time dateTime={entry.timestamp}>{new Date(entry.timestamp).toLocaleTimeString('zh-CN', { hour12: false })}</time>
-                    <strong>{runtimeStageNames[entry.stage]}</strong>
+                    <strong>{runtimeStageNames[entry.stage]}{entry.memory && ' · ' + summaryNames[entry.memory.task]}</strong>
                     <span className="runtime-log-failure">错误</span>
                   </div>
                   <button type="button" onClick={() => void copyOne(entry)}>复制此条</button>
@@ -85,6 +87,7 @@ export function RuntimeLogPanel({
                 )}
                 <p>{entry.message}</p>
                 {entry.scope && <small>本页存档标识：{entry.scope.saveRef} · 本页回合标识：{entry.scope.turnRef}（匿名关联标识）</small>}
+                {entry.memory && <small>步骤：{memorySteps[entry.memory.step]}{entry.memory.httpStatus && ` · HTTP ${entry.memory.httpStatus}`}</small>}
                 {entry.code && <small>错误码：{entry.code}</small>}
                 {entry.storyRule && <small>正文失败类型：{entry.storyRule} · {storyRuleNames[entry.storyRule]}</small>}
                 {entry.httpStatus && <small>HTTP 状态：{entry.httpStatus}</small>}

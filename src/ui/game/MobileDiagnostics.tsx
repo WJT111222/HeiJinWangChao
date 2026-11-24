@@ -11,7 +11,7 @@ import {SavedFailureSummary} from './SavedFailureSummary';
 
 const tabs=['概要','运行日志','请求用量','模型原文'] as const;
 export function MobileDiagnostics({saveId,turnId,draft,entries,feedbackLogs,onClear,open,onOpen,onClose,recovery}:{saveId:string;turnId?:string;draft?:TurnDraft;entries:readonly RuntimeLogEntry[];feedbackLogs?:readonly RuntimeLogEntry[];onClear:()=>void;open:boolean;onOpen:()=>void;onClose:()=>void;recovery?:string}){
- const id=useId(),[tab,setTab]=useState<typeof tabs[number]>('概要'),latest=entries.filter(e=>e.kind==='failed').at(-1)?.id,seen=useRef<number|undefined>(undefined),openLatest=useRef(onOpen);openLatest.current=onOpen;
+ const id=useId(),[tab,setTab]=useState<typeof tabs[number]>('概要'),latest=entries.filter(e=>e.stage!=='memory'&&e.kind==='failed').at(-1)?.id,seen=useRef<number|undefined>(undefined),openLatest=useRef(onOpen);openLatest.current=onOpen;
  const records=useSyncExternalStore(requestInspections.subscribe,requestInspections.getSnapshot),requests=records.filter(r=>r.scope?.saveId===saveId&&r.stage!=='memory').slice(0,6);
  useEffect(()=>{if(latest!==undefined&&latest!==seen.current){seen.current=latest;setTab('运行日志');openLatest.current();}},[latest]);
  const errors=entries.filter(e=>e.kind==='failed'),summary=draft?.story?assessSummary(draft.story.summary):undefined;
@@ -31,6 +31,6 @@ export function MobileDiagnostics({saveId,turnId,draft,entries,feedbackLogs,onCl
    {tab==='运行日志'&&<RuntimeLogPanel draft={draft} entries={entries} feedbackLogs={feedbackLogs} onClear={onClear} recovery={recovery}/>}
    {tab==='请求用量'&&<RequestUsage saveId={saveId}/>}
    {tab==='模型原文'&&<StageResponsesPanel draft={draft} saveId={saveId} turnId={turnId}/>}
-  </section><p className="diagnostic-temporary">本页日志与模型原文刷新即清空；持久失败摘要随当前草稿保存。</p>
+  </section><p className="diagnostic-temporary">本页日志与模型原文刷新即清空；可在草稿或记忆设置查看持久失败摘要。</p>
  </Dialog>;
 }

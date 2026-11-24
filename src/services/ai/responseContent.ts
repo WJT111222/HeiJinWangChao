@@ -59,6 +59,7 @@ export function responseContent(value: unknown, protocol: Protocol, streaming = 
  * provider object, error message, URL, signature or hidden reasoning block. */
 export interface ResponseDiagnostics {
   transport?: 'json' | 'sse' | 'http';
+  memorySseFailure?: import('./errors').AiErrorCode | 'unexpected_transport' | 'unknown';
   httpStatus?: number;
   tavern?: { timeline?: import('../../presets/tavern/timing').StoryTiming; calls: number; bytes: number; complete: boolean; upstreamStatus?: number; boundary?: string; upstreamFinish?: string;
     requestedStream?: boolean; contentType?: string | null; formatEvidence?: string; readerEof: boolean; readError: boolean; cancelled: boolean;

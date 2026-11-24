@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DataError, GameTimeSchema, IdSchema, requireData, TextSchema } from '../common';
+import { MemoryValidationError, memorySchemaFailure } from './diagnostics';
 import { GameStateSchema } from '../state';
 import type { GameState } from '../state';
 import { fingerprint } from '../commands';
@@ -84,14 +85,20 @@ export const NpcSummaryOutputSchema = z.strictObject({
 const labels = { observed: '[亲历]', reported: '[转述]', suspected: '[推测]', unknown: '[来源未分类]' };
 export function parseNpcSummary(text: string, batch: NpcMemoryBatch, id: string) {
   let raw: unknown;
-  try { raw = JSON.parse(text); } catch { throw new DataError('MEMORY_OUTPUT', '整理结果不是完整JSON，原始记忆已保留'); }
+  try { raw = JSON.parse(text); } catch { throw new MemoryValidationError('整理结果不是完整JSON，原始记忆已保留', { reason: 'invalid_json' }); }
   const parsed = NpcSummaryOutputSchema.safeParse(raw), groups = npcSummaryInput(batch).groups;
-  requireData(parsed.success && !parsed.data.unresolved.length && !parsed.data.contradictions.length,
-    'MEMORY_OUTPUT', '整理输出存在非法字段、未解决事项或矛盾，原始记忆已保留');
-  requireData(parsed.data.summaries.length === groups.length &&
-    new Set(parsed.data.summaries.map((entry) => entry.groupId)).size === groups.length &&
-    parsed.data.summaries.every((entry) => groups.some((group) => group.groupId === entry.groupId)) &&
-    parsed.data.summaries.reduce((sum, entry) => sum + entry.text.length, 0) <= 64000, 'MEMORY_OUTPUT', '认知分组不完整或超预算');
+  const schemaMessage = '整理输出存在非法字段、未解决事项或矛盾，原始记忆已保留';
+  if (!parsed.success) throw new MemoryValidationError(schemaMessage, memorySchemaFailure(parsed.error.issues[0], raw, groups.length));
+  const { summaries, unresolved, contradictions } = parsed.data;
+  const counts = { expectedGroups: groups.length, actualGroups: summaries.length };
+  if (unresolved.length) throw new MemoryValidationError(schemaMessage, { reason: 'unresolved', fieldPath: 'unresolved', ...counts });
+  if (contradictions.length) throw new MemoryValidationError(schemaMessage, { reason: 'contradictions', fieldPath: 'contradictions', ...counts });
+  const groupError = (reason: 'duplicate_groups' | 'group_id_mismatch' | 'missing_groups' | 'output_capacity') =>
+    new MemoryValidationError('认知分组不完整或超预算', { reason, fieldPath: 'summaries', ...counts });
+  if (new Set(summaries.map(entry => entry.groupId)).size !== summaries.length) throw groupError('duplicate_groups');
+  if (summaries.some(entry => !groups.some(group => group.groupId === entry.groupId))) throw groupError('group_id_mismatch');
+  if (summaries.length !== groups.length) throw groupError('missing_groups');
+  if (summaries.reduce((sum, entry) => sum + entry.text.length, 0) > 64000) throw groupError('output_capacity');
   return groups.map((group, index) => NpcSummarySchema.parse({
     id: `${id}-${index}`, text: labels[group.knowledgeKind] + parsed.data.summaries.find((entry) => entry.groupId === group.groupId)!.text,
     sourceTurnIds: sourceUnion(group.entries),
@@ -108,17 +115,18 @@ export function applyNpcSummary(state: GameState, input: NpcMemoryBatch, summari
   requireData(new Set(batch.entries.map((entry) => entry.id)).size === batch.entries.length && batch.entries.every((entry) =>
     eligible.some((current) => current.id === entry.id && fingerprint(current) === fingerprint(entry))), 'NPC_MEMORY_CONFLICT', '来源已变化或已被整理');
   const groups = npcSummaryInput(batch).groups;
-  requireData(summaries.length === groups.length && new Set(summaries.map((summary) => summary.id)).size === summaries.length, 'MEMORY_OUTPUT', '整理结果缺失或重复');
+  if (summaries.length !== groups.length || new Set(summaries.map(summary => summary.id)).size !== summaries.length)
+    throw new MemoryValidationError('整理结果缺失或重复', { reason: 'source_permission', expectedGroups: groups.length, actualGroups: summaries.length });
   const allIds = [...Object.values(state.npc).flatMap(rawNpcMemories), ...state.memories.short, ...state.memories.medium, ...state.memories.long, ...Object.values(state.memories.npcSummaries).flat()].map((entry) => entry.id);
   const texts = summaries.map((summary, index) => {
     requireData(!allIds.includes(summary.id), 'NPC_MEMORY_CONFLICT', '整理结果已存在');
     const group = groups[index], label = labels[group.knowledgeKind];
-    requireData(summary.text.startsWith(label), 'MEMORY_OUTPUT', '认知性质丢失');
+    if (!summary.text.startsWith(label)) throw new MemoryValidationError('认知性质丢失', { reason: 'source_permission' });
     return { groupId: group.groupId, text: summary.text.slice(label.length) };
   });
   const expected = parseNpcSummary(JSON.stringify({ summaries: texts, unresolved: [], contradictions: [] }), batch, 'validate');
-  requireData(expected.every((entry, index) => fingerprint({ ...entry, id: summaries[index].id }) === fingerprint(NpcSummarySchema.parse(summaries[index]))),
-    'MEMORY_OUTPUT', '来源或权限元数据不符');
+  if (!expected.every((entry, index) => fingerprint({ ...entry, id: summaries[index].id }) === fingerprint(NpcSummarySchema.parse(summaries[index]))))
+    throw new MemoryValidationError('来源或权限元数据不符', { reason: 'source_permission' });
   return GameStateSchema.parse({ ...state, memories: { ...state.memories, npcSummaries: { ...state.memories.npcSummaries, [npc.id]: [...(state.memories.npcSummaries[npc.id] ?? []), ...summaries] } } });
 }
 
