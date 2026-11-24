@@ -13,6 +13,7 @@ import { createTurnDraft, rerollStory, TurnDraftSchema, startStageAttempt } from
 import type { TurnDraft } from '../domain/drafts';
 import { defaultSettings } from '../ui/settings/model';
 import { requestInspections } from '../services/ai/inspection';
+import { stageResponses } from '../services/ai/stageResponses';
 import { game, gameTime } from './fixtures/game';
 
 const text = '主角已经用现金支付30元吃饭。';
@@ -78,6 +79,28 @@ function deferred<T>() {
   });
   return { resolve, promise };
 }
+
+function deepseekSetup(stream: boolean) {
+  const input = setup('deepseek');
+  const route = input.config.routes.variables;
+  if (route.mode !== 'independent') throw new Error('Expected an independent Variables route');
+  route.modelId = 'deepseek-v4-pro';
+  input.settings.runtime.streamVariables = stream;
+  input.settings.runtime.useWorldStage = false;
+  return input;
+}
+
+const frame = (value: unknown) => `data: ${JSON.stringify(value)}\n\n`;
+const deepseekEnvelope = variableReply(result).replace('<说明></说明>', '<说明>结算已经发生的午餐支出。</说明>');
+function deepseekReply(stream: boolean, content: string | null, reasoning_content: string, finish_reason = 'stop') {
+  if (!stream) return Response.json({ choices: [{ message: { content, reasoning_content }, finish_reason }] });
+  return new Response(
+    frame({ choices: [{ delta: { reasoning_content } }] }) +
+    frame({ choices: [{ delta: { content }, finish_reason }] }) +
+    'data: [DONE]\n\n',
+    { headers: { 'Content-Type': 'text/event-stream' } },
+  );
+}
 let repo: SaveRepository, draft: TurnDraft;
 const stages: { dispose: () => void }[] = [];
 function runner(fetcher: typeof fetch) {
@@ -98,11 +121,98 @@ beforeEach(async () => {
   });
   await repo.saveDraft(draft, 0);
   requestInspections.clear();
+  stageResponses.clear();
 });
 afterEach(() => {
   stages.splice(0).forEach((stage) => stage.dispose());
   repo.close();
   vi.restoreAllMocks();
+});
+
+describe('DeepSeek V4 Pro 官方 Variables', () => {
+  it.each([['opening', false], ['regular', true]] as const)(
+    '%s 从正式内容生成候选并结算（stream=%s）',
+    async (mode, stream) => {
+      let current = draft;
+      if (mode === 'regular') {
+        const opening = await completeDraft(repo, {
+          variables: { commands: [], rejectedSuggestions: [], unresolved: [] },
+          world: { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] },
+        });
+        current = (await repo.commitTurn(submission(opening))).draft;
+        current = await repo.saveDraft(rerollStory(current, {
+          turnKind: 'regular', narrative: text, summary: '午餐', variableGuide: [],
+        }), current.draftRevision);
+      }
+      const before = await repo.load('save-a');
+      const transport = vi.fn<typeof fetch>(async (_url, init) => {
+        const body = JSON.parse(String(init?.body));
+        return body.thinking?.type === 'disabled'
+          ? deepseekReply(stream, deepseekEnvelope, '')
+          : deepseekReply(stream, null, deepseekEnvelope);
+      });
+      const saved = await runner(transport).generate({ ...deepseekSetup(stream), draft: current });
+      expect(transport).toHaveBeenCalledTimes(1);
+      const [url, init] = transport.mock.calls[0];
+      expect(url).toBe('https://api.deepseek.com/chat/completions');
+      expect(JSON.parse(String(init?.body))).toMatchObject({
+        model: 'deepseek-v4-pro', thinking: { type: 'disabled' }, stream, max_tokens: 8192,
+      });
+      expect(JSON.parse(String(init?.body))).not.toHaveProperty('response_format');
+      expect(saved.variables?.result.commands).toEqual(result.commands);
+      expect(await repo.loadDraft('save-a')).toEqual(saved);
+      expect(await repo.load('save-a')).toEqual(before);
+      const committed = await repo.commitTurn({ ...submission(saved), useWorldStage: false });
+      expect(committed.state.economy.cash).toBe(before.economy.cash - 3000);
+      expect(committed.state.revision).toBe(before.revision + 1);
+      expect(await repo.load('save-a')).toEqual(committed.state);
+      expect(transport).toHaveBeenCalledTimes(1);
+    },
+  );
+  it.each([false, true])('拒绝只有思考的响应，即使思考包含完整命令（stream=%s）', async stream => {
+    const before = await repo.load('save-a');
+    const reasoning = deepseekEnvelope;
+    const transport = vi.fn<typeof fetch>(async () => deepseekReply(stream, null, reasoning));
+    await expect(runner(transport).generate({ ...deepseekSetup(stream), draft }))
+      .rejects.toMatchObject({ code: 'empty', details: { variableStep: 'response' } });
+    expect(stageResponses.getSnapshot()[0]).toMatchObject({
+      stage: 'variables', status: 'failed', nativeReasoning: reasoning, text: '',
+      diagnostics: { complete: true, finishReasons: ['stop'] },
+    });
+    const failed = await repo.loadDraft('save-a');
+    expect(failed).toMatchObject({ story: draft.story, stageStatus: { variables: 'failed' } });
+    expect(failed?.variables).toBeUndefined();
+    expect(JSON.stringify(failed)).not.toContain('<命令>');
+    expect(await repo.load('save-a')).toEqual(before);
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+  it.each([false, true])('同时收到独立思考和正式命令时只执行正式内容（stream=%s）', async stream => {
+    const before = await repo.load('save-a');
+    const reasoning = variableTextEnvelope('<命令>add economy.cash = 9999</命令>');
+    const content = deepseekEnvelope;
+    const transport = vi.fn<typeof fetch>(async () => deepseekReply(stream, content, reasoning));
+    const saved = await runner(transport).generate({ ...deepseekSetup(stream), draft });
+    expect(saved.variables?.result.commands).toEqual(result.commands);
+    expect(stageResponses.getSnapshot()[0]).toMatchObject({ status: 'validated', text: content, nativeReasoning: reasoning });
+    expect(await repo.load('save-a')).toEqual(before);
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+  it.each([
+    ['非流式截断', false, 'output_limit', () => deepseekReply(false, deepseekEnvelope, '', 'length')],
+    ['流式截断', true, 'output_limit', () => deepseekReply(true, deepseekEnvelope, '', 'length')],
+    ['非流式异常结束', false, 'stream_interrupted', () => deepseekReply(false, deepseekEnvelope, '', 'aborted')],
+    ['SSE 缺少结束事件', true, 'stream_interrupted', () => new Response(frame({ choices: [{ delta: { content: deepseekEnvelope } }] }), { headers: { 'Content-Type': 'text/event-stream' } })],
+    ['SSE 错误事件', true, 'rejected', () => new Response('event: error\ndata: [DONE]\n\n', { headers: { 'Content-Type': 'text/event-stream' } })],
+    ['无效 JSON', false, 'invalid_json', () => new Response('{', { headers: { 'Content-Type': 'application/json' } })],
+  ] as const)('%s 不保存候选或重发', async (_name, stream, code, reply) => {
+    const before = await repo.load('save-a');
+    const transport = vi.fn<typeof fetch>(async () => reply());
+    await expect(runner(transport).generate({ ...deepseekSetup(stream), draft })).rejects.toMatchObject({ code });
+    expect(await repo.loadDraft('save-a')).toMatchObject({ story: draft.story, stageStatus: { variables: 'failed' } });
+    expect((await repo.loadDraft('save-a'))?.variables).toBeUndefined();
+    expect(await repo.load('save-a')).toEqual(before);
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('变量阶段真实请求到草稿保存', () => {

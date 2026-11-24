@@ -47,6 +47,24 @@ it('直连成功只发一次', async () => {
   expect((await new AiClient(send).generate(snapshot(), messages)).text).toBe('OK');
   expect(send.mock.calls.map((c) => c[0])).toEqual([base + '/chat/completions']);
 });
+it('官方 DeepSeek V4 Pro Variables 中转沿用同一请求，思考字段仍不算正式内容', async () => {
+  const channel = { ...newChannel('deepseek'), defaultModel: 'deepseek-v4-pro' };
+  vault.set(channel.id, 'synthetic-key');
+  const route = channelSnapshot(channel, vault, channel.defaultModel, 'variables');
+  const reasoning = '<命令>add economy.cash = 500</命令>';
+  const send = vi.fn<typeof fetch>().mockRejectedValueOnce(failed()).mockResolvedValueOnce(forwarded(Response.json({
+    choices: [{ message: { content: null, reasoning_content: reasoning }, finish_reason: 'stop' }],
+  })));
+  const onNativeReasoningDelta = vi.fn(), onRawTextDelta = vi.fn();
+  await expect(new AiClient(send).generate(route, messages, { onNativeReasoningDelta, onRawTextDelta }))
+    .rejects.toMatchObject({ code: 'empty' });
+  expect(onNativeReasoningDelta).toHaveBeenCalledExactlyOnceWith(reasoning);
+  expect(onRawTextDelta).not.toHaveBeenCalled();
+  const url = 'https://api.deepseek.com/chat/completions';
+  expect(send.mock.calls.map(call => call[0])).toEqual([url, origin + '/api/ai-relay?target=' + encodeURIComponent(url)]);
+  expect(send.mock.calls[1][1]).toEqual(send.mock.calls[0][1]);
+  expect(JSON.parse(String(send.mock.calls[0][1]?.body))).toMatchObject({ thinking: { type: 'disabled' } });
+});
 it.each(['story', 'variables', 'world', 'memory'] as const)(
   '%s 无状态网络错误在同域按原请求回退一次',
   async (stage) => {

@@ -38,20 +38,47 @@ function transport(life: OpeningLife, options: { failWorld?: boolean; omitInitia
   const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
     const body = JSON.parse(String(init?.body)), prompt: string = body.messages.map((m: { content: string }) => m.content).join('\n');
     const context = JSON.parse(prompt.match(/<GAME_CONTEXT>\n([\s\S]*?)\n<\/GAME_CONTEXT>/)![1]);
-    const stage: string = body.model; calls.push({ stage, context, prompt });
+    const stage: string = body.model === 'deepseek-v4-pro' ? 'variables' : body.model;
+    calls.push({ stage, context, prompt });
     const opening = Boolean(context.OPENING_TIME);
     let text: string;
     if (stage === 'story') text = `<thinking>保持人物设定，建立日常生活。</thinking><正文>${opening ? life.narrative : '【旁白】林舟买好早餐，收到约定的小额报酬。'}</正文><短期记忆>回顾家庭与工作生活，了解新的机会。</短期记忆><变量规划>${JSON.stringify(opening ? [{ group: 'time', subjectHint: 'time:opening', observedFact: JSON.stringify({ startAt: openingStart, endAt: openingEnd }) }] : [])}</变量规划>`;
     else if (stage === 'variables') text = variableTextEnvelope(`<命令>\n${opening ? `set worldClock = "${openingStart}"\nset worldClock = "${openingEnd}"\n` : ''}${opening ? options.omitInitialization ? '' : `set opening.initialState = ${JSON.stringify(openingValues(life))}\nset protagonist.healthText = "身体健康"\nset protagonist.emotionText = "平静"\nset locations[home] = ${JSON.stringify({name: '住处', parentId: life.key === 'comfortable' ? 'shanghai' : 'chongqing'})}\nset protagonist.locationId = "home"\nset items[coat] = {"name":"常穿的外套","category":"top","quantity":1,"ownerRef":{"kind":"protagonist","id":"protagonist"},"conditionText":"干净完好"}` : 'set worldClock = "2015-07-08T08:15:00+08:00"\nadd economy.cash = -1200\nset economy.incomes[paid] = {"source":"已到账报酬","amount":2000,"status":"received","account":"cash","receivedAt":"2015-07-08T08:15:00+08:00"}'}\n</命令>`);
     else text = options.failWorld ? '{"worldCommands":"bad"}' : JSON.stringify(worldResult());
     if (stage === 'story') return new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`, { headers: { 'content-type': 'text/event-stream' } });
-    return Response.json({ choices: [{ message: { content: text }, finish_reason: 'stop' }] });
+    const message = body.model === 'deepseek-v4-pro' && body.thinking?.type !== 'disabled'
+      ? { content: null, reasoning_content: text } : { content: text };
+    return Response.json({ choices: [{ message, finish_reason: 'stop' }] });
   });
   return { calls, fetcher };
 }
 function runner(repo: SaveRepository, fetcher: typeof fetch) { const r = new TurnCoordinator(repo, new AiClient(fetcher)); runners.push(r); return r; }
 
 describe('开局人生 → 正式文本Variables → World投影 → 原子提交', () => {
+  it('官方 DeepSeek V4 Pro 只在 Variables 停用原生思考，创角后真实初始化并原子结算', async () => {
+    const life = openingLives[0], a = await setup(life), t = transport(life);
+    const variables = newChannel('deepseek');
+    variables.defaultModel = 'deepseek-v4-pro';
+    a.config.channels.push(variables);
+    a.config.routes.variables = { mode: 'independent', channelId: variables.id, modelId: '' };
+    a.vault.set(variables.id, 'mock-deepseek-opening-key');
+    const done = await runner(a.repo, t.fetcher).generate(a);
+    expect(done.draft.variables?.result.commands.map(command => command.type)).toContain('InitializeOpeningState');
+    expect(await a.repo.loadDraft('save-a')).toEqual(done.draft);
+    expect(await a.repo.load('save-a')).toEqual(a.state);
+    const committed = await a.repo.commitTurn(submission(done.draft, ''));
+    expect(committed.state).toMatchObject({
+      turnNumber: 1, worldClock: openingEnd, economy: { cash: life.cash, onlineBalance: life.onlineBalance },
+    });
+    expect(committed.state.openingTimePending).toBeUndefined();
+    expect(committed.state.openingInitializationPending).toBeUndefined();
+    expect(await a.repo.load('save-a')).toEqual(committed.state);
+    expect(t.calls.map(call => call.stage)).toEqual(['story', 'variables', 'world']);
+    const [story, variable, world] = t.fetcher.mock.calls;
+    expect(variable[0]).toBe('https://api.deepseek.com/chat/completions');
+    expect(JSON.parse(String(variable[1]?.body))).toMatchObject({ thinking: { type: 'disabled' }, max_tokens: 8192 });
+    for (const request of [story, world]) expect(JSON.parse(String(request[1]?.body))).not.toHaveProperty('thinking');
+  });
   it.each(openingLives)('$key: 不同人生经济起点、原有资金与预期收入不混同，后续正常交易', async life => {
     const a = await setup(life), t = transport(life), r = runner(a.repo, t.fetcher);
     const done = await r.generate(a);
