@@ -1,6 +1,7 @@
 import { summaryNames } from '../domain/memories/configuration';
 import { memoryFailureReasons, memoryRecordCodes } from '../domain/memories/diagnostics';
 import { aiErrorCodes } from '../services/ai/errors';
+import { publicDiagnosticLabels } from '../services/ai/failureDiagnostic';
 import { feedbackAdminPath, feedbackCategories, feedbackErrorStages } from '../services/feedback/contract';
 import type { FeedbackDatabase } from './database';
 
@@ -29,7 +30,7 @@ export interface FeedbackDigestEnv {
   FEEDBACK_DIGEST_TO?: string;
 }
 
-type Dimension = 'total' | 'category' | 'stage' | 'code' | 'model' | 'build' | 'memory_task' | 'memory_reason';
+type Dimension = 'total' | 'category' | 'stage' | 'code' | 'model' | 'build' | 'memory_task' | 'memory_reason' | 'upstream_class';
 interface CountRow {
   dimension: Dimension;
   label: string;
@@ -65,14 +66,19 @@ async function collect(db: FeedbackDatabase, start: number, end: number) {
         CASE WHEN data ->> '$.code' IN (SELECT value FROM json_each(?)) THEN data ->> '$.code' ELSE ? END AS code,
         CASE WHEN data ->> '$.model' IN (SELECT value FROM json_each(?)) THEN data ->> '$.model' ELSE ? END AS model,
         CASE WHEN data ->> '$.stage' = 'memory' AND data ->> '$.memory.task' IN (SELECT value FROM json_each(?)) THEN data ->> '$.memory.task' END AS memory_task,
-        CASE WHEN data ->> '$.stage' = 'memory' AND data ->> '$.memory.reason' IN (SELECT value FROM json_each(?)) THEN data ->> '$.memory.reason' END AS memory_reason
+        CASE WHEN data ->> '$.stage' = 'memory' AND data ->> '$.memory.reason' IN (SELECT value FROM json_each(?)) THEN data ->> '$.memory.reason' END AS memory_reason,
+        CASE WHEN json_extract(data, '$.diagnostic.upstreamClass') IN (
+          'overload','rate_limit','quota','authorization','model_missing','invalid_parameter',
+          'tool_incompatible','content_filter','internal','unrecognized','unknown')
+          THEN json_extract(data, '$.diagnostic.upstreamClass') END AS upstream_class
       FROM entries
     ), totals AS (
       SELECT 'all' AS label, count(*) AS reports, 0 AS logs FROM receipts
       UNION ALL SELECT 'error', count(*), (SELECT count(*) FROM labels) FROM receipts WHERE kind = 'error'
-    ), log_dimensions(dimension) AS (VALUES ('stage'), ('code'), ('model'), ('memory_task'), ('memory_reason')),
+    ), log_dimensions(dimension) AS (VALUES ('stage'), ('code'), ('model'), ('memory_task'), ('memory_reason'), ('upstream_class')),
     log_groups AS (
-      SELECT dimension, CASE dimension WHEN 'stage' THEN stage WHEN 'code' THEN code WHEN 'memory_task' THEN memory_task WHEN 'memory_reason' THEN memory_reason ELSE model END AS label,
+      SELECT dimension, CASE dimension WHEN 'stage' THEN stage WHEN 'code' THEN code WHEN 'memory_task' THEN memory_task
+        WHEN 'memory_reason' THEN memory_reason WHEN 'upstream_class' THEN upstream_class ELSE model END AS label,
         count(DISTINCT id) AS reports, count(*) AS logs
       FROM labels CROSS JOIN log_dimensions WHERE label IS NOT NULL GROUP BY dimension, label
     )
@@ -106,6 +112,10 @@ function textSummary(rows: CountRow[], start: number, end: number) {
     '', '错误代码', distribution('code'),
     '', '记忆总结任务', distribution('memory_task', label => summaryNames[label as keyof typeof summaryNames]),
     '', '记忆总结原因', distribution('memory_reason', label => memoryFailureReasons[label as keyof typeof memoryFailureReasons]),
+    '', '上游错误类型', distribution('upstream_class', label => {
+      const names: Record<string, string> = publicDiagnosticLabels().classNames;
+      return names[label] ?? unknown;
+    }),
     '', '模型', distribution('model'),
     '', '构建版本（提交缩写）', distribution('build'),
     '', `管理后台 https://heijinwangchao.de5.net${feedbackAdminPath}`,

@@ -1,6 +1,7 @@
 import { checkFinish, splitLeadingThink } from '../../services/ai/compat';
 import { isOpenAiCompatible, type Protocol } from '../../services/ai/configuration';
 import { AiError, safeAiError } from '../../services/ai/errors';
+import { attachFailureDiagnostic, classifyUpstreamPayload } from '../../services/ai/failureDiagnostic';
 import { array, nativeReasoning, record, usageFrom, type Usage } from '../../services/ai/protocols';
 import { responseContent, responseDiagnostics } from '../../services/ai/responseContent';
 import { readSse } from '../../services/ai/sse';
@@ -35,7 +36,11 @@ export interface UpstreamTrace {
   wrapper: 'pending' | 'returned' | 'failed';
 }
 export const newTrace = (clock = new StoryClock()): UpstreamTrace => ({ clock, calls: 0, bytes: 0, complete: false, normalized: 'pending', wrapper: 'pending' });
-function invalid(): never { throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.upstream.tool' }); }
+function invalid(): never {
+  const failure = new AiError('invalid_output', undefined, { fieldPath: 'tavern.upstream.tool' });
+  attachFailureDiagnostic(failure, { phase: 'tool_parse' });
+  throw failure;
+}
 function parse(text: string): unknown {
   try { return JSON.parse(text); } catch { throw new AiError('invalid_json', undefined, { fieldPath: 'tavern.upstream.json' }); }
 }
@@ -70,7 +75,11 @@ class Frames {
     const d = record(value), p = this.protocol;
     const usage = usageFrom(d, p);
     if (usage) this.trace.usage = { ...this.trace.usage, ...usage };
-    if (d.error || d.type === 'error') throw new AiError('rejected', undefined, { fieldPath: 'tavern.upstream.error' });
+    if (d.error || d.type === 'error') {
+      const failure = new AiError('rejected', undefined, { fieldPath: 'tavern.upstream.error' });
+      attachFailureDiagnostic(failure, classifyUpstreamPayload(d, { transport: streaming ? 'sse' : 'json', httpStatus: this.trace.status, errorEvent: d.type === 'error' }));
+      throw failure;
+    }
     const info = responseDiagnostics(d, p, streaming);
     const choices = array(isOpenAiCompatible(p) ? d.choices : d.candidates);
     const choice = record(choices[0]);
@@ -82,7 +91,9 @@ class Frames {
     }
     if (info.filtered || info.refusal) {
       this.trace.finish = info.finishReasons?.[0];
-      throw new AiError('content_filter', undefined, { fieldPath: 'tavern.upstream.filter' });
+      const failure = new AiError('content_filter', undefined, { fieldPath: 'tavern.upstream.filter' });
+      attachFailureDiagnostic(failure, { phase: 'upstream_error', upstreamClass: 'content_filter' });
+      throw failure;
     }
     if (streaming && isOpenAiCompatible(p) && choice.message !== undefined)
       throw new AiError('unsupported', undefined, { fieldPath: 'tavern.upstream.sse_message' });
@@ -245,7 +256,13 @@ export async function normalizeUpstream(response: Response, protocol: Protocol, 
           trace.boundary ??= 'eof';
         } else {
           trace.clock.frame();
-          if (next.value.event === 'error') throw new AiError('rejected', undefined, { fieldPath: 'tavern.upstream.error' });
+          if (next.value.event === 'error') {
+            let payload: unknown;
+            try { payload = JSON.parse(next.value.data); } catch { payload = undefined; }
+            const failure = new AiError('rejected', undefined, { fieldPath: 'tavern.upstream.error' });
+            attachFailureDiagnostic(failure, classifyUpstreamPayload(payload, { transport: 'sse', httpStatus: trace.status, errorEvent: true }));
+            throw failure;
+          }
           if (isOpenAiCompatible(protocol) && next.value.data === '[DONE]') {
             frames.boundary = true;
             trace.boundary = 'done';

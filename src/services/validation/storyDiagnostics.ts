@@ -3,6 +3,7 @@ import { DataError } from '../../domain/common';
 import { StoryValidationError, storyFieldPath, storyTags } from '../../domain/storyDiagnostics';
 import type { StoryDiagnostic, StoryTag, StoryRule } from '../../domain/storyDiagnostics';
 import { AiError } from '../ai/errors';
+import { carryFailureDiagnostic } from '../ai/failureDiagnostic';
 
 /** Diagnose only missing REQUIRED tags; an absent project <thinking> is valid. */
 export function storyEnvelopeDiagnostic(text: string, actions: boolean): StoryDiagnostic {
@@ -64,8 +65,11 @@ const timeFailureRules: Record<string, StoryRule> = {
 /** Presentation adapter only; callers may retain the original DataError for existing control flow. */
 export function storyFailure(error: unknown, knownStoryResponse = false): unknown {
   if (error instanceof AiError) {
-    if (knownStoryResponse && error.code === 'invalid_output' && !error.details?.storyRule)
-      return new AiError(error.code, error.status, { storyRule: 'structure_unrecognized' });
+    if (knownStoryResponse && error.code === 'invalid_output' && !error.details?.storyRule) {
+      const failure = new AiError(error.code, error.status, { storyRule: 'structure_unrecognized' });
+      carryFailureDiagnostic(error, failure);
+      return failure;
+    }
     return error;
   }
   if (error instanceof StoryValidationError) return new AiError(error.code === 'EVENT_ENTRY' ? 'event_entry' : 'time_data', undefined, error.diagnostic);

@@ -21,7 +21,8 @@ import { StoryStage, storyPartialAfterFailure } from './storyStage';
 import { canContinueStory } from '../domain/storyContinuation';
 import { VariableStage } from './variableStage';
 import { WorldStage } from './worldStage';
-import { planRetry, recordedRetryable, retryStopError, waitForRetry } from './stageRetry';
+import { planRetry, recordedRetryable, retryStopError, waitForRetry, extendedStageRetryable, transientStageError } from './stageRetry';
+import { carryFailureDiagnostic, noteRetryDecision } from '../services/ai/failureDiagnostic';
 import type { RetryNotice } from './stageRetry';
 
 export { transientStageError } from './stageRetry';
@@ -216,7 +217,17 @@ export class TurnCoordinator {
             } catch (error) {
               check();
               attempt.stage = undefined;
-              if (!(error instanceof AiError && error.code === 'cancelled')) input.onAttemptFailure?.(stage, error);
+              const continuationStops = stage === 'story' && continueStory && error instanceof AiError && error.code !== 'cancelled'
+                && !canContinueStory({
+                  ...draft,
+                  stageStatus: { ...draft.stageStatus, story: 'failed' },
+                  storyPartial: storyPartialAfterFailure(draft, error, true, secrets),
+                }, settings.prompts.minNarrativeChars);
+              if (!(error instanceof AiError && error.code === 'cancelled')) {
+                const plan = continuationStops ? { action: 'stop' as const, reason: 'not_retryable' as const } : planRetry(error, settings, number);
+                noteRetryDecision(error, settings, number, plan, settings.runtime.failureAutoRetry ? extendedStageRetryable(error) : transientStageError(error));
+                input.onAttemptFailure?.(stage, error);
+              }
               if (stage === 'story' && error instanceof AiError && error.code !== 'cancelled') {
                 // 原 StoryStage 只保存成功正文；协调器额外记录安全失败码，刷新后仍可恢复。
                 await reread();
@@ -254,7 +265,9 @@ export class TurnCoordinator {
               if (stage === 'story' && continueStory && !canContinueStory(draft, settings.prompts.minNarrativeChars)) throw error;
               const plan = planRetry(error, settings, number);
               if (plan.action === 'stop') {
-                throw plan.reason === 'retry_after' && error instanceof AiError ? retryStopError(error) : error;
+                const stopped = plan.reason === 'retry_after' && error instanceof AiError ? retryStopError(error) : error;
+                if (stopped !== error) carryFailureDiagnostic(error, stopped);
+                throw stopped;
               }
               // 失败记录由原执行器 CAS 保存；如果其他标签已写入，不能接受它的新版本重试。
               await reread();

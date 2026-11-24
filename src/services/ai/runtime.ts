@@ -25,6 +25,7 @@ import { AiClient } from './client';
 import type { RequestOptions } from './client';
 import { variableFailure } from '../validation/variableDiagnostics';
 import { storyFailure } from '../validation/storyDiagnostics';
+import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, failurePhase, reasoningTagPresence, scanStoryTags } from './failureDiagnostic';
 import { stageResponses, safeStreamResponseText, responseLimitsFor } from './stageResponses';
 import { safeAiError } from './errors';
 import { mergeResponseDiagnostics } from './responseContent';
@@ -131,6 +132,9 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   let step: 'request' | 'response' = 'request';
   // 本次请求模型返回的原始文字（续写时不含已写部分）；诊断展示用的 received 在续写成功接收后会换成拼接全文。
   let addition: string | undefined;
+  let modelText: string | undefined;
+  let formalText: string | undefined;
+  let responseReasoning: string | undefined;
   try {
   let playerWorldbook: PlayerWorldbook | undefined;
   const storyNotes: string[] = [];
@@ -211,6 +215,9 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     timeoutSeconds: options.timeoutSeconds ?? captured.settings.runtime.timeoutSeconds,
     stream: options.stream ?? captured.stage === 'story',
   });
+  modelText = response.text;
+  responseReasoning = response.nativeReasoning;
+  if (captured.stage === 'story') formalText = merged(response.text);
   sealed = true;
   clearTimeout(observationTimer);
   step = 'response';
@@ -226,8 +233,11 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     catch (error) {
       // Genuine missing tail/body retains the established partial/continuation path.
       // Complete but invalid content keeps its precise strict validation error.
-      if (response.outputLimited && error instanceof AiError && ['tag_missing', 'tag_unclosed'].includes(String(error.details?.storyRule)))
-        throw new AiError('output_limit');
+      if (response.outputLimited && error instanceof AiError && ['tag_missing', 'tag_unclosed'].includes(String(error.details?.storyRule))) {
+        const limited = new AiError('output_limit');
+        carryFailureDiagnostic(error, limited);
+        throw limited;
+      }
       throw error;
     }
   })();
@@ -305,6 +315,26 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     else if (deadline) storyLayer = 'request';
     else if (diagnostics.tavern?.upstreamError || path?.startsWith('tavern.upstream.')) storyLayer = 'upstream';
     else if (diagnostics.tavern && diagnostics.tavern.wrapper !== 'pending') storyLayer = 'wrapper';
+    const preset = captured.stage !== 'story' || !presetSelection ? 'off' as const
+      : presetSelection === nativeDeliveryId ? 'native' as const : 'script' as const;
+    const field = failure instanceof AiError ? failure.details?.fieldPath : path;
+    const raw = modelText ?? (truncated ? undefined : addition ?? received);
+    const reasoningText = responseReasoning ?? (truncated ? undefined : publicReasoning);
+    attachObservedRequest(failure, {
+      preset,
+      phase: failurePhase(field, deadline) ?? (step === 'response' && captured.stage === 'story' && !String(field ?? '').startsWith('tavern.') ? 'story_validation' : undefined),
+      ...(typeof diagnostics.errorPresent === 'boolean' ? { errorInBody: diagnostics.errorPresent } : {}),
+      ...(raw !== undefined ? { contentChars: raw.length } : {}),
+      ...(reasoningText !== undefined ? { reasoningChars: reasoningText.length } : {}),
+    });
+    if (captured.stage === 'story' && raw !== undefined) {
+      const actions = captured.settings.prompts.actionOptions;
+      attachFailureDiagnostic(failure, {
+        storyTags: scanStoryTags(raw, actions),
+        ...(formalText !== undefined && formalText !== raw ? { parseTags: scanStoryTags(formalText, actions) } : {}),
+      });
+    }
+    if (captured.stage === 'story' && reasoningText) attachFailureDiagnostic(failure, { reasoningTags: reasoningTagPresence(reasoningText) });
     stageResponses.update(responseId, { status: 'failed',
       ...(captured.stage === 'story' ? { failureLayer: storyLayer } : {}),
       ...(storyLayer === 'story_validation' && options.storyClock ? { validationEndMs: options.storyClock.elapsed() } : {}),

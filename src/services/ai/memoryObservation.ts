@@ -2,6 +2,8 @@ import { memoryDiagnosticSchema, memoryRecordCodes, MemoryValidationError } from
 import type { MemoryDiagnostic } from '../../domain/memories/diagnostics';
 import type { SummaryKind } from '../../domain/memories/configuration';
 import { aiErrorCodes, safeAiError } from './errors';
+import { attachObservedRequest, safeFailureDiagnostic } from './failureDiagnostic';
+import type { FailureDiagnostic } from './failureDiagnostic';
 import type { RequestOptions } from './client';
 import type { RequestSnapshot } from './snapshot';
 import { mergeResponseDiagnostics } from './responseContent';
@@ -38,7 +40,7 @@ export function observedMemoryFailure(error: unknown) {
   return typeof error === 'object' && error !== null ? failureDetails.get(error) : undefined;
 }
 
-export type MemoryFailureObservation = { diagnostic: MemoryDiagnostic; responseId?: string };
+export type MemoryFailureObservation = { diagnostic: MemoryDiagnostic; responseId?: string; request?: FailureDiagnostic };
 
 export class MemoryObservation {
   private generation = stageResponses.generation();
@@ -109,8 +111,19 @@ export class MemoryObservation {
       outputTruncated: detail.reason === 'output_truncated' ? true : undefined,
     };
     if (typeof error === 'object' && error !== null) failureDetails.set(error, diagnostic);
+    const phase = this.step === 'preparation' ? 'request_build' as const : this.step === 'save' ? 'candidate_save' as const : undefined;
+    attachObservedRequest(error, {
+      ...(this.model ? { model: this.model } : {}),
+      ...(this.protocol ? { protocol: this.protocol } : {}),
+      ...(this.diagnostics.httpStatus !== undefined || this.outputLength ? { contentChars: this.outputLength } : {}),
+      ...(!this.previewTruncated ? { reasoningChars: this.nativeReasoning.length } : {}),
+      ...(typeof this.diagnostics.errorPresent === 'boolean' ? { errorInBody: this.diagnostics.errorPresent } : {}),
+      ...(this.diagnostics.httpStatus !== undefined ? { httpStatus: this.diagnostics.httpStatus } : {}),
+      ...(phase ? { phase } : {}),
+    });
     this.publish('failed', diagnostic);
-    return { diagnostic, responseId: this.id };
+    const request = safeFailureDiagnostic(error);
+    return { diagnostic, responseId: this.id, ...(request ? { request } : {}) };
   }
 
   private publish(status: 'received' | 'validated' | 'failed', memoryDiagnostic?: MemoryDiagnostic) {

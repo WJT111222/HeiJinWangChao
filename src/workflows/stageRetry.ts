@@ -1,4 +1,5 @@
 import { AiError, manualRetryOnly } from '../services/ai/errors';
+import { carryFailureDiagnostic, noteRetryDecision } from '../services/ai/failureDiagnostic';
 import { AiConfigSchema } from '../services/ai/configuration';
 import type { AiConfig } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
@@ -172,6 +173,8 @@ export async function executeWithAutoRetry<T>(options: {
       const plan = planRetry(error, settings, attempt);
       const reported = plan.action === 'stop' && plan.reason === 'retry_after' && error instanceof AiError
         ? retryStopError(error) : error;
+      if (reported !== error) carryFailureDiagnostic(error, reported);
+      noteRetryDecision(reported, settings, attempt, plan, settings.runtime.failureAutoRetry ? extendedStageRetryable(error) : transientStageError(error));
       options.onFailure(reported);
       if (plan.action === 'stop') throw reported;
       await waitForRetry(plan.ms, options.signal, (remainingMs) => {

@@ -1,6 +1,8 @@
 import { storySceneAuthority, validateNarrationClock } from '../../domain/events/narration';
 import { nestedStoryTag, storyEnvelopeDiagnostic, storySchemaError } from './storyDiagnostics';
 import { recoverStoryEnvelope, repairUnclosedTags } from './storyEnvelopeRecovery';
+import { attachFailureDiagnostic, scanStoryTags } from '../ai/failureDiagnostic';
+import type { FailureDiagnostic } from '../ai/failureDiagnostic';
 import { parseStoryGuide } from './storyGuide';
 import { validateVariableWork } from './variableWork';
 import { validateSceneEventUpdate } from '../../domain/events/scenePermission';
@@ -94,21 +96,44 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
     ? /^\s*(?:<thinking>([\s\S]*?)<\/thinking>\s*)?<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*(?:<变量规划>([\s\S]*?)<\/变量规划>)?\s*<行动选项>([\s\S]*?)<\/行动选项>\s*$/
     : /^\s*(?:<thinking>([\s\S]*?)<\/thinking>\s*)?<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*(?:<变量规划>([\s\S]*?)<\/变量规划>)?\s*$/;
   // 顺序：严格解析（含 #149 的双正文标签缺失恢复）→ 漏写闭合标签的确定性补全；诊断仍基于原始输出。
-  const envelope = (recoverStoryEnvelope(text, actions) ?? text).match(pattern)
-    ?? repairUnclosedTags(text, actions)?.match(pattern);
-  if (!envelope) throw new AiError('invalid_output', undefined, storyEnvelopeDiagnostic(text, actions));
+  const recovered = recoverStoryEnvelope(text, actions);
+  const primary = (recovered ?? text).match(pattern);
+  const repaired = primary ? undefined : repairUnclosedTags(text, actions);
+  const repairedMatch = repaired?.match(pattern);
+  const envelope = primary ?? repairedMatch;
+  const strict = text.match(pattern);
+  const strictMatched = strict !== null;
+  const recoverMatched = recovered !== undefined && primary !== null;
+  const repairMatched = repairedMatch != null;
+  let rule: NonNullable<FailureDiagnostic['recovery']>['rule'];
+  let reason: NonNullable<FailureDiagnostic['recovery']>['reason'];
+  if (strictMatched) reason = 'not_needed';
+  else if (recoverMatched) rule = 'missing_body_delimiters';
+  else if (repairMatched) rule = 'unclosed_tags';
+  else if (recovered !== undefined || repaired !== undefined) {
+    reason = 'rule_mismatch';
+    rule = recovered !== undefined ? 'missing_body_delimiters' : 'unclosed_tags';
+  } else reason = 'not_applicable';
+  const recovery = {
+    attempted: !strictMatched, ...(rule ? { rule } : {}), succeeded: !strictMatched && Boolean(envelope), ...(reason ? { reason } : {}),
+  };
+  function fail(error: AiError): never {
+    attachFailureDiagnostic(error, { phase: 'story_validation', storyTags: scanStoryTags(text, actions), parseInputChars: text.length, recovery });
+    throw error;
+  }
+  if (!envelope) fail(new AiError('invalid_output', undefined, storyEnvelopeDiagnostic(text, actions)));
   if (envelope[1] !== undefined && !envelope[1].trim())
-    throw new AiError('invalid_output', undefined, { storyRule: 'planning_empty', storyTag: 'thinking' });
+    fail(new AiError('invalid_output', undefined, { storyRule: 'planning_empty', storyTag: 'thinking' }));
   const nested = envelope.slice(1).filter((part): part is string => part !== undefined).map(nestedStoryTag).find(Boolean);
-  if (nested) throw new AiError('invalid_output', undefined, { storyRule: 'tag_nested', storyTag: nested });
+  if (nested) fail(new AiError('invalid_output', undefined, { storyRule: 'tag_nested', storyTag: nested }));
   const planning = envelope[1]?.trim() ?? '';
   const narrative = envelope[2].trim();
   const summary = envelope[3].trim();
   // 100～200 汉字为质量目标，偏离仅提示；空摘要不能充当有效的本回合事实记录。
-  if (assessSummary(summary).status === 'empty') throw new AiError('invalid_output', undefined, { storyRule: 'summary_empty', storyTag: '短期记忆' });
+  if (assessSummary(summary).status === 'empty') fail(new AiError('invalid_output', undefined, { storyRule: 'summary_empty', storyTag: '短期记忆' }));
   const narrativeChars = Array.from(narrative.replace(/\s/gu, '')).length;
   if (narrativeChars < settings.prompts.minNarrativeChars)
-    throw new AiError('invalid_output', undefined, { storyRule: 'narrative_short', actualCount: narrativeChars, minimumCount: settings.prompts.minNarrativeChars });
+    fail(new AiError('invalid_output', undefined, { storyRule: 'narrative_short', actualCount: narrativeChars, minimumCount: settings.prompts.minNarrativeChars }));
   const actionOptions = actions
     ? envelope[5]
         .split('\n')
@@ -116,7 +141,7 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
         .filter(Boolean)
     : undefined;
   if (actions && (!actionOptions || actionOptions.length < 3 || actionOptions.length > 5))
-    throw new AiError('invalid_output', undefined, { storyRule: 'actions_count', actualCount: actionOptions?.length ?? 0, minimumCount: 3, maximumCount: 5 });
+    fail(new AiError('invalid_output', undefined, { storyRule: 'actions_count', actualCount: actionOptions?.length ?? 0, minimumCount: 3, maximumCount: 5 }));
   const { notes, ...guide } = parseStoryGuide(envelope[4] ?? '');
   const parsed = StorySchema.safeParse({
     turnKind: mode,
@@ -125,7 +150,7 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
     ...guide,
     ...(actions ? { actionOptions } : {}),
   });
-  if (!parsed.success) throw storySchemaError(parsed.error);
+  if (!parsed.success) fail(storySchemaError(parsed.error));
   return { story: parsed.data, planning, notes };
 }
 export function parseStory(text: string, mode: 'opening' | 'regular', settings: Settings) {
