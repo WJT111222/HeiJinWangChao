@@ -134,6 +134,7 @@ export function canTryModelCandidate(error: unknown) {
     || error.code === 'invalid_json' || error.code === 'model_list_format' || error.code === 'network'));
 }
 export function modelListFailureMessage(error: unknown) {
+  if (error instanceof AiError && error.details?.fieldPath?.startsWith('channel.relay')) return undefined;
   if (error instanceof AiError && error.code === 'not_found') return '模型列表接口不存在或路径不受支持（404）；未更改模型配置。';
   if (error instanceof AiError && error.status === 405) return '模型列表请求方法或路径不受支持（405）；未更改模型配置。';
   return undefined;
