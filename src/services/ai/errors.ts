@@ -86,6 +86,7 @@ const messages: Record<AiErrorCode, string> = {
   content_filter: '模型服务的内容审核拦截了这次请求或输出，结果未保存。可以调整行动描述后重试，或换用审核更宽松的模型或服务。',
   parameter_adjusted: '服务明确拒绝了已发送的参数。下次主动生成时，将对符合本次条件的请求使用兼容写法。本次未自动重发、未生成内容，也未改动正式存档。',
 };
+export const aiErrorCodes = Object.keys(messages);
 const fieldMessages = new Map<string, string>([
   ['tavern.refresh_required', '正文模式已在其他页面变更，请刷新后再生成。'],
   ['tavern.context_boundary', '正文资料与交付标记冲突，本次未发送。'],

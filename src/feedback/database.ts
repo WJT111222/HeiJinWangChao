@@ -18,18 +18,19 @@ async function digest(text: string) {
   return [...new Uint8Array(data)].map(value => value.toString(16).padStart(2, '0')).join('');
 }
 
-export async function insertFeedback(db: FeedbackDatabase, submissionId: string, feedback: FeedbackPayload, now = Date.now()) {
+export async function insertFeedback(db: FeedbackDatabase, submissionId: string, feedback: FeedbackPayload) {
   const payload = JSON.stringify(feedback);
   const hash = await digest(payload);
   const id = crypto.randomUUID();
-  // D1 evaluates the capacity gate, ID reservation and insert in one write statement.
+  // D1 timestamps the receipt in the write statement, so preparation time does not backdate an insert past a digest cutoff.
   const result = await db.prepare(`
+    WITH receipt(now_ms) AS (SELECT CAST(unixepoch('subsec') * 1000 AS INTEGER))
     INSERT INTO feedback (id, submission_id, digest, created_at, kind, category, payload)
-    SELECT ?, ?, ?, ?, ?, ?, ?
+    SELECT ?, ?, ?, now_ms, ?, ?, ? FROM receipt
     WHERE NOT EXISTS (SELECT 1 FROM feedback WHERE submission_id = ?)
-      AND (SELECT count(*) FROM feedback WHERE created_at >= ?) < ?
-  `).bind(id, submissionId, hash, now, feedback.kind, feedback.kind === 'suggestion' ? feedback.category : null,
-    payload, submissionId, now - minute, feedbackPerMinute).run();
+      AND (SELECT count(*) FROM feedback WHERE created_at >= now_ms - ?) < ?
+  `).bind(id, submissionId, hash, feedback.kind, feedback.kind === 'suggestion' ? feedback.category : null,
+    payload, submissionId, minute, feedbackPerMinute).run();
   if (result.meta.changes === 1) return { kind: 'created' as const, id };
   const prior = await db.prepare('SELECT id, digest FROM feedback WHERE submission_id = ?')
     .bind(submissionId).first<Receipt>();
