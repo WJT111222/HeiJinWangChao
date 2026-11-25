@@ -43,8 +43,8 @@ export function useStoryGeneration(
     },
     [],
   );
-  async function generate(selection?: LegacyNotificationSelection) {
-    if (!draft || running.current || (!selection && !mayStartStory(draft))) return;
+  async function generate(selection?: LegacyNotificationSelection, replaceOpeningTime = false) {
+    if (!draft || running.current || (!selection && !mayStartStory(draft) && !(replaceOpeningTime && draft.turnKind === 'opening'))) return;
     running.current = true;
     errorTurn.current = turnKey(draft);
     const id = ++token.current;

@@ -482,6 +482,8 @@ describe('正式组装入口', () => {
     const input = talentPromptInput('story', 'opening');
     input.state.openingTimePending = true;
     input.state.worldClock = pendingOpeningClock;
+    input.settings.runtime.useVariableStage = false;
+    input.settings.runtime.useWorldStage = false;
     const output = '<正文>' + recoveryNarrative + '</正文><短期记忆>' + recoverySummary
       + '</短期记忆><变量规划>[' + wrappedOpeningGuide() + ']</变量规划>';
     const fetcher = vi.fn<typeof fetch>(async () =>
@@ -490,7 +492,9 @@ describe('正式组装入口', () => {
     expect(result.result).toMatchObject({ variableGuide: [openingGuideEntry(JSON.stringify(openingGuideTimes))] });
     expect(fetcher).toHaveBeenCalledTimes(1);
     const body = JSON.parse(String(fetcher.mock.calls[0][1]?.body));
-    expect(body.messages.at(-1).content).toContain('observedFact 直接填含 startAt、endAt 的 JSON 对象');
+    expect(body.messages.at(-1).content).toContain('<变量规划>必填');
+    expect(body.messages.at(-1).content).toContain('observedFact 直接填 JSON 对象');
+    expect(body.messages.at(-1).content).not.toContain('可留空或省略');
   });
 });
 

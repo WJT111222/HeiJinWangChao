@@ -11,9 +11,11 @@ import {SavedFailureSummary} from './SavedFailureSummary';
 
 const tabs=['概要','运行日志','请求用量','模型原文'] as const;
 export function MobileDiagnostics({saveId,turnId,draft,entries,feedbackLogs,onClear,open,onOpen,onClose,recovery,retrying=false}:{saveId:string;turnId?:string;draft?:TurnDraft;entries:readonly RuntimeLogEntry[];feedbackLogs?:readonly RuntimeLogEntry[];onClear:()=>void;open:boolean;onOpen:()=>void;onClose:()=>void;recovery?:string;retrying?:boolean}){
- const id=useId(),[tab,setTab]=useState<typeof tabs[number]>('概要'),latest=entries.filter(e=>e.stage!=='memory'&&e.kind==='failed').at(-1)?.id,seen=useRef<number|undefined>(undefined),openLatest=useRef(onOpen);openLatest.current=onOpen;
+ const latestError = entries.filter(entry => entry.stage !== 'memory' && entry.kind === 'failed').at(-1);
+ const latest = latestError?.id, inlineOpeningRecovery = Boolean(latestError?.diagnostic?.openingTime);
+ const id=useId(),[tab,setTab]=useState<typeof tabs[number]>('概要'),seen=useRef<number|undefined>(undefined),openLatest=useRef(onOpen);openLatest.current=onOpen;
  const records=useSyncExternalStore(requestInspections.subscribe,requestInspections.getSnapshot),requests=records.filter(r=>r.scope?.saveId===saveId&&r.stage!=='memory').slice(0,6);
- useEffect(()=>{if(latest!==undefined&&latest!==seen.current){seen.current=latest;setTab('运行日志');if(!retrying)openLatest.current();}},[latest,retrying]);
+ useEffect(()=>{if(latest!==undefined&&latest!==seen.current){seen.current=latest;setTab('运行日志');if(!retrying&&!inlineOpeningRecovery)openLatest.current();}},[latest,retrying,inlineOpeningRecovery]);
  const errors=entries.filter(e=>e.kind==='failed'),summary=draft?.story?assessSummary(draft.story.summary):undefined;
  if(!open)return null;
  return <Dialog title="重试与变更详情" seal="诊" eyebrow="WORKFLOW · 诊断" mobileVariant="sheet" sheetFull className="mobile-diagnostics-sheet" onClose={onClose}>

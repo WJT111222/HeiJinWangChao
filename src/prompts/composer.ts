@@ -146,7 +146,9 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
     actionOptions: input.settings.prompts.actionOptions,
     minNarrativeChars: input.settings.prompts.minNarrativeChars,
     maxNarrativeChars: narrativeRange(input.settings.prompts).max,
-    openingTimePending: input.mode === 'opening' && input.state.openingTimePending === true,
+    openingTime: input.mode === 'opening' && input.state.openingTimePending
+      ? (input.settings.runtime.useVariableStage || input.settings.runtime.useWorldStage ? 'reference' : 'required')
+      : undefined,
   });
   if (confirmation) {
     const closing = tail ? `${tail}

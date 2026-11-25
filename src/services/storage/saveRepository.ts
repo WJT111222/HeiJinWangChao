@@ -20,6 +20,7 @@ import { migrateSave } from './migrations';
 import { TurnSubmissionSchema, settleTurn, awaitingPlayerAction, rebindableAfterStoryStop } from '../../domain/turnCommit';
 import type { TurnSubmission } from '../../domain/turnCommit';
 import { validateTurnCandidates } from '../validation/turnCommit';
+import { attachFailureDiagnostic } from '../ai/failureDiagnostic';
 import { reserveStageSession, withBrowserLock } from '../../workflows/stageGuard';
 import { applyCompression, CompressionBatchSchema } from '../../domain/memories/compression';
 import type { CompressionBatch } from '../../domain/memories/compression';
@@ -692,8 +693,14 @@ export class SaveRepository {
               'REVISION_CONFLICT',
               '正式版本已改变',
             );
-            validateTurnCandidates(state, current);
-            const next = settleTurn(state, current, new Date().toISOString());
+            let next: GameState;
+            try {
+              validateTurnCandidates(state, current);
+              next = settleTurn(state, current, new Date().toISOString());
+            } catch (error) {
+              attachFailureDiagnostic(error, { phase: 'commit_validation' });
+              throw error;
+            }
             requireData(!next.journal.some((entry) => entry.turnId === nextTurnId), 'DUPLICATE_TURN', '下一回合 ID 重复');
             const draft = createTurnDraft(
               state.saveId,

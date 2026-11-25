@@ -2,7 +2,11 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { configureTurnStages, createTurnDraft, rerollStory } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
-import { completeTurnDraft } from '../domain/turnCommit';
+import { completeTurnDraft, settlementDraft } from '../domain/turnCommit';
+import { openingSettlementIssue } from '../services/validation/turnCommit';
+import { runtimeLogEvent } from '../ui/game/runtimeLog';
+import { prepareErrorPayload } from '../services/feedback/report';
+import { feedbackSchema } from '../services/feedback/contract';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { AiClient } from '../services/ai/client';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
@@ -71,10 +75,67 @@ it('真实创角开局只请求Story，初始化唯一开局时钟并保存Journ
   expect(transport).toHaveBeenCalledTimes(1);
 });
 
-it.each([{ guides: [] }, { guides: [{ group: 'time', subjectHint: 'time:opening', observedFact: '{}' }] }])('真实待定开局缺失或非法时间拒绝，不能用关闭阶段绕过初始化', async ({ guides }) => {
+const noGuide = `<正文>${body}</正文><短期记忆>观察行人。</短期记忆>`;
+const rawGuide = (guide: string) => `${noGuide}<变量规划>${guide}</变量规划>`;
+const startAt = '2015-06-01T08:00:00+08:00', endAt = '2015-06-01T08:03:00+08:00';
+
+it.each([
+  [noGuide, 'opening_missing', 'none'],
+  [story(), 'opening_missing', 'none'],
+  [rawGuide('[{"group":"time",'), 'opening_json', 'story'],
+  [story([{ ...openingGuide[0], observedFact: '{' }]), 'opening_json', 'story'],
+  [story([{ ...openingGuide[0], observedFact: { startAt: '2015-02-30T08:00:00+08:00', endAt } }]), 'opening_format', 'story'],
+  [story([{ ...openingGuide[0], observedFact: JSON.stringify({ startAt: endAt, endAt: startAt }) }]), 'opening_reversed', 'story'],
+  [story([...openingGuide, ...openingGuide]), 'opening_duplicate', 'story'],
+])('纯小说开局保留正文，拦截时间问题 %s / %s；重载不重发、正式事务仍校验', async (reply, reason, clockSource) => {
   const { state, draft } = await seed(true), commit = vi.spyOn(repo, 'commitTurn');
-  await expect(run(runner(async () => json(story(guides))), draft)).rejects.toThrow();
-  expect(commit).toHaveBeenCalledTimes(1); expect(await repo.loadDraft(state.saveId)).toMatchObject({ story: { narrative: body }, stageStatus: { story: 'ready' } }); expect(await repo.load(state.saveId)).toEqual(state);
+  const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(json(reply));
+  const failure = await run(runner(transport), draft).catch((error: unknown) => error);
+  expect(failure).toMatchObject({ code: 'OPENING_TIME' });
+  expect(commit).not.toHaveBeenCalled();
+  expect(transport).toHaveBeenCalledTimes(1);
+  const expected = { phase: 'commit_validation', openingTime: { pending: true, useVariableStage: false, useWorldStage: false, reason, clockSource } };
+  const log = runtimeLogEvent(1, 'commit', 'failed', failure);
+  expect(log).toMatchObject({ stage: 'commit', code: 'time_data', domainRule: 'opening_time_unavailable', variableStep: 'commit', diagnostic: expected });
+  const payload = prepareErrorPayload([log], [], { content: true, reasoning: true })('');
+  expect(feedbackSchema.safeParse(payload).success).toBe(true);
+  expect(payload).not.toHaveProperty('attachments');
+  expect(JSON.stringify(payload)).not.toContain(state.saveId);
+  expect(JSON.stringify(payload)).not.toContain(body);
+  expect(JSON.stringify(payload)).not.toContain(endAt);
+  const before = await repo.exportRaw(state.saveId);
+  expect(before.records).toMatchObject({ turnReceipts: [], turnUndo: [] });
+  expect(await repo.load(state.saveId)).toEqual(state);
+  repo.close(); repo = await SaveRepository.open('disabled-stages', factory);
+  const saved = (await repo.loadDraft(state.saveId))!;
+  expect(saved).toMatchObject({ story: { narrative: body }, stageStatus: { story: 'ready' } });
+  const noTransport = vi.fn<typeof fetch>();
+  await expect(run(runner(noTransport), saved)).rejects.toMatchObject({ code: 'OPENING_TIME' });
+  expect(noTransport).not.toHaveBeenCalled();
+  const transactionFailure = await repo.commitTurn(request(saved)).catch((error: unknown) => error);
+  expect(runtimeLogEvent(2, 'commit', 'failed', transactionFailure).diagnostic).toMatchObject(expected);
+  expect(await repo.exportRaw(state.saveId)).toEqual(before);
+});
+
+it('切换为纯小说独立重验时间；重新启用 Variables 时零请求复用未被删除的候选', async () => {
+  const { state, draft } = await seed(true);
+  const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(json(noGuide)).mockResolvedValueOnce(json(variableReply({
+    commands: [startAt, endAt].map(worldClock => ({ type: 'SetWorldClock', worldClock })),
+  })));
+  const generated = await runner(transport).generate({ ...setup(true), draft });
+  expect(generated.status).toBe('complete');
+  const noTransport = vi.fn<typeof fetch>(), resumed = runner(noTransport);
+  await expect(run(resumed, generated.draft)).rejects.toMatchObject({ code: 'OPENING_TIME' });
+  const switched = (await repo.loadDraft(state.saveId))!;
+  expect(switched).toMatchObject({ useVariableStage: false, useWorldStage: false, variables: generated.draft.variables });
+  expect(openingSettlementIssue(state, settlementDraft(switched))?.diagnostic).toMatchObject({ reason: 'opening_missing', clockSource: 'none' });
+  expect(await repo.load(state.saveId)).toEqual(state);
+  const recovery = (await run(resumed, switched, setup(true))).committed!;
+  expect(recovery.state).toMatchObject({ turnNumber: 1, revision: 1, worldClock: endAt });
+  expect(recovery.state.journal[0].scene?.worldClock).toBe(startAt);
+  expect(recovery.state.openingTimePending).toBeUndefined();
+  expect(noTransport).not.toHaveBeenCalled();
+  expect(transport).toHaveBeenCalledTimes(2);
 });
 
 it.each([true, false])('普通回合结构化 time:pause=%s 也不更新纯小说世界；重新开启后恢复三阶段', async pause => {
@@ -238,4 +299,30 @@ it('Variables-only跳过越权命令，正文及安全结果仍可提交', async
   expect(commit).toHaveBeenCalledTimes(1);
   expect(saved.state.protagonist).toEqual(state.protagonist);
   expect(saved.state.journal.at(-1)?.settlement?.variables?.skipped).toHaveLength(1);
+});
+
+it('已定钟后普通回合继承时钟；历史回溯恢复节点时钟并保留普通草稿身份', async () => {
+  const { state, draft } = await seed(true);
+  await expect(repo.history.create(state.saveId, '开局前')).rejects.toMatchObject({ code: 'HISTORY_OPENING' });
+  const later = '2015-06-01T08:04:00+08:00';
+  const transport = vi.fn<typeof fetch>()
+    .mockResolvedValueOnce(json(story(openingGuide)))
+    .mockResolvedValueOnce(json(noGuide))
+    .mockResolvedValueOnce(json(variableReply({ commands: [{ type: 'SetWorldClock', worldClock: later }] })))
+    .mockResolvedValueOnce(json(noGuide));
+  const r = runner(transport);
+  const first = (await run(r, draft)).committed!;
+  expect(first.state.worldClock).toBe(endAt);
+  const node = await repo.history.create(state.saveId, '开局结算后');
+  const bound = await repo.bindTurnAction(first.draft, '继续观察', true, false);
+  expect((await run(r, bound, setup(true))).committed?.state.worldClock).toBe(later);
+  const view = await repo.history.preview(state.saveId, { kind: 'manual', id: node.id });
+  const restored = await repo.history.restore(view.confirmation, '换个方向', false, false);
+  expect(transport).toHaveBeenCalledTimes(3);
+  expect(restored.state).toMatchObject({ revision: 3, turnNumber: 1, worldClock: endAt });
+  expect(restored.state.openingTimePending).toBeUndefined();
+  expect(restored.draft.turnKind).toBe('regular');
+  const next = (await run(r, restored.draft)).committed!;
+  expect(next.state).toMatchObject({ revision: 4, turnNumber: 2, worldClock: endAt });
+  expect(transport).toHaveBeenCalledTimes(4);
 });
