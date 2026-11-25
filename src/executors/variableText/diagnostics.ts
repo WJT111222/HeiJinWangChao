@@ -18,7 +18,7 @@ export interface ExecutionDiagnostic {
 }
 
 const allowedPaths = new Set([
-  'opening.initialState', 'weatherText', 'environmentText',
+  'harem.changes', 'opening.initialState', 'weatherText', 'environmentText',
   'protagonist', 'worldClock', 'protagonist.healthText', 'protagonist.emotionText',
   'protagonist.locationId', 'protagonist.profession', 'protagonist.professionDescription', 'protagonist.professionLongTermImpact', 'protagonist.publicStatus',
   'protagonist.legalStatus', 'protagonist.skills', 'protagonist.currentWear',

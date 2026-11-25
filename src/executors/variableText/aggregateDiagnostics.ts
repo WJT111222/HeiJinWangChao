@@ -4,6 +4,7 @@ import type { ExecutionDiagnostic } from './diagnostics';
 
 // 固定代码词典不带出异常原文；仅下方场景错误允许带出经 IdSchema 校验的 NPC ID。
 export const domainRuleNames = {
+  harem_integrity: '后宫身份、地位、家庭引用或时间不符合事务条件',
   scene_event_permission: '现场事件更新缺少合法参与权限，或试图修改规划及来源字段',
   opening_initialization: '此存档已不允许开局初始化',
   initial_value_conflict: '初始化不能覆盖已有明确数据',
@@ -52,6 +53,8 @@ export function isDomainRule(value: unknown): value is DomainRule {
 }
 
 const dataErrors: Record<string, DomainRule> = {
+  HAREM_MEMBER:'harem_integrity', HAREM_CHILD:'harem_integrity', HAREM_STATE:'harem_integrity',
+  HAREM_BATCH:'harem_integrity', HAREM_PAIR:'harem_integrity', HAREM_STANDING:'harem_integrity',
   SCENE_PERMISSION: 'scene_event_permission',
   OPENING_INITIALIZATION: 'opening_initialization',
   INITIAL_VALUE_CONFLICT: 'initial_value_conflict',

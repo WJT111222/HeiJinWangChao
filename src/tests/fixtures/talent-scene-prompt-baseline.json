@@ -18,16 +18,16 @@
     {
       "stage": "variables",
       "mode": "opening",
-      "messages": "05c438b4c499e4f90a6085e71ee8c8c8169146fee4876a2a15f2ff1c54619475",
-      "context": "278f41159717dcd15e46360534ed515f83ba258a6e81dd0866d4938e8ea9c714",
-      "modules": "df7c46f3d52def0532122947d000b8685a0f0622fc618c24fde7e23442308aea"
+      "messages": "d2cda816f988d1af870c91d867b96be209125cdfc73049004726e1554407301c",
+      "context": "016b4f511ffe7bfcb5b793dbaf0ff72673b227fc8efcd20bb9d0c948b592f4a8",
+      "modules": "35aed78bfd7b53248988856f34f00d61b6f340f293169542a76f780f1380dc8e"
     },
     {
       "stage": "variables",
       "mode": "regular",
-      "messages": "cc63bcf7c6f74c051cd8618ae8e0ef4cd7273161dd7c80765cf513155a972bdd",
-      "context": "13d708bf48a28fe9029d5436f56c2079d9d5e52f7cecddd2a332b2f86caade70",
-      "modules": "4b160e6757d9e914114d41b6ec06f1e498e4d1b719dc8b6ba191911c3414198e"
+      "messages": "271fa73854333ba26600d952f6d8b5655b1cbc7e5301c57ae6592c42f2ca3962",
+      "context": "119bf8159aec0442cb298177d568d8fab4e8b6d7e16fae29ae8b7d7439ffd9f0",
+      "modules": "57a75011374bfea10d3538df222dd98efc1044576bac03c3420aa3f3c3ab8f06"
     },
     {
       "stage": "world",
@@ -44,6 +44,6 @@
       "modules": "f2514a807b36273b4c9dd422940a34373b58083ab212cd213083adcbc92d0d26"
     }
   ],
-  "withTalentVariablesAndWorld": "d471544b7a0ecd0057488e073be9e130de91f059b64e978d252704b17f050886",
-  "note": "开局城市扩展：公共世界书解除四城限制并说明 OPENING_CITY；三阶段请求与上下文重新核对。 release/1.0 集成：合入主势力（PROTAGONIST_FACTION 与势力命令），Variables / World 两阶段重新生成。"
+  "withTalentVariablesAndWorld": "8aecb435ab4ff28f92f0db627f327a04a47d54551c65b986d5bb2b3865c8c287",
+  "note": "开局城市扩展：公共世界书解除四城限制并说明 OPENING_CITY；三阶段请求与上下文重新核对。 release/1.0 集成：合入主势力（PROTAGONIST_FACTION 与势力命令）与后宫家庭事务，三阶段重新生成。"
 }

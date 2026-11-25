@@ -208,3 +208,5 @@ UpdateNpc新增phoneContact/usualLocations、特殊人物detailedBackground/habi
 
 ## V10 测试期清理（正式发布前存档重置）
 存档 schemaVersion 升至 10，只读取 V10；V6–V9 迁移代码移除，旧档提示重新开局且不覆盖原始数据。随存档重置删除：RetireNpc 命令、retiredNpcs 退场表、contactReviewNpcIds 旧档复核名单、长期记忆的 retiredNpcSource 标记。好感写入统一为 set npc[id].affinityChange={to,reason,relationshipText}：模型写终值、本回合具体原因与当前关系描述，前值由程序读取（未确认初始同伴为 null），不再接受模型填写 from，也不再提供纯数值 set/add npc[id].affinity。提示词侧同步移除旧 JSON 双轨（legacy/variables_json）与上述机制的兼容说明；04/05 统一为三阶段共用版本，组织 init 的 World 建档变体改为 variableGroups/*/init_world.md。
+
+**后宫家庭事务**：Variables 的正式文本路径是 `set harem.changes = [...]`，编译为 `ApplyHaremChanges`。子女建档与家庭关系共用结算，现役正宫在整组变更后验证。World 没有此项写入权限。

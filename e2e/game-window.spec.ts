@@ -90,7 +90,7 @@ test('顶部状态不挤压正文；完整人物资料独立滚动并恢复焦�
   await fit(page); expect(await stored(page)).toEqual(before);
 });
 
-test('滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回', async ({ page }, info) => {
+test('滚轮在资料弹窗内滚动，不带动正文；世界资料入口可返回', async ({ page }, info) => {
   await seed(page);
   await page.setViewportSize({ width: info.project.name === 'desktop' ? 1100 : 392, height: 480 });
   const reader = page.getByTestId('story-reader');
@@ -103,7 +103,7 @@ test('滚轮在资料弹窗内滚动，不带动正文；七项世界入口可�
   expect(await reader.evaluate(el => el.scrollTop)).toBe(260);
   await page.keyboard.press('Escape');
   await openWorldArchive(page);
-  await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(7);
+  await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(8);
   if (info.project.name === 'mobile') {
     await page.keyboard.press('Escape');
     await expect(page.getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '世界资料', exact: true })).toBeFocused();

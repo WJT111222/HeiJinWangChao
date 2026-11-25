@@ -23,7 +23,7 @@ function input(mode:'opening'|'regular'='regular') {
 }
 const textModules=promptManifest.modules.filter(m=>m.applicableStages.join()==='variables');
 describe('文本协议真实资源与离线组装',()=>{
-  it('普通回合目录85条路径类型齐备，含一条开局专用初始化，现场任务事件复用旧命令',()=>{
+  it('普通回合目录86条路径类型齐备，含一条开局专用初始化，现场任务事件复用旧命令',()=>{
     const catalog=textVariableCatalog();
     expect(catalog.entries).toHaveLength(86);
     for (const path of ['weatherText', 'environmentText']) {

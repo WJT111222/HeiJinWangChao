@@ -8,7 +8,7 @@ import {panelNames} from '../ui/panels/Panels';
 test('八入口按真实 target.panel 逐行计数，与世界分组、对象数量及未读状态无关',()=>{
  const {before,after}=turnChangesPair(),original=structuredClone({before,after}),groups=diffTurn(before,after),badges=turnChangeBadges(groups);
  for(const panel of panelNames)expect(badges[panel]??0).toBe(groups.flatMap(g=>g.rows).filter(r=>r.target.panel===panel).length);
- expect(Object.keys(badges).sort()).toEqual([...panelNames].sort());expect(badges['NPC']).toBeGreaterThan(1);expect(badges['势力组织']).not.toBe(groups.find(g=>g.key==='world')!.rows.length);expect(badges).not.toHaveProperty('人物档案');expect(badges).not.toHaveProperty('经济与资产');expect({before,after}).toEqual(original);
+ expect(Object.keys(badges).sort()).toEqual(panelNames.filter(name=>name!=='后宫').sort());expect(badges['NPC']).toBeGreaterThan(1);expect(badges['势力组织']).not.toBe(groups.find(g=>g.key==='world')!.rows.length);expect(badges).not.toHaveProperty('人物档案');expect(badges).not.toHaveProperty('经济与资产');expect({before,after}).toEqual(original);
 });
 test('无可靠结果或零条变化不显示角标，不保留旧计数',()=>{
  expect(turnChangeBadges([])).toEqual({});const {before,after}=turnChangesPair(0,true);expect(turnChangeBadges(diffTurn(before,after))).toEqual({});

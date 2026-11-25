@@ -372,3 +372,24 @@ test('普通回合天气与环境结算后重载，下一次 Story 使用已保�
   expect((await stored(page)).state).toMatchObject(scene);
   expect(server.calls).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world', 'story', 'variables', 'world']);
 });
+
+test('后宫 Variables 开局登记、下一轮非法双正宫拒绝；刷新保留且没有第四次调用',async({page})=>{
+  await seed(page);const server=await mock(page);
+  const person=(id:string)=>'set npc['+id+'] = '+JSON.stringify({kind:'ordinary',identityKey:'identity-'+id,name:'家庭成员'+id,
+    age:26,gender:'female',aliases:[],skills:[],onScene:true,locationId:'chongqing',affinity:20,relationshipText:'共同生活',memories:[],knownInformation:[]});
+  const join=(id:string,to:number)=>({op:'join',npcId:id,identityKey:'identity-'+id,to,reason:'双方确认了家庭安排'});
+  const changes=(list:unknown[])=>'set harem.changes = '+JSON.stringify(list);
+  server.control.variables='<命令>\n'+[person('family-a'),person('family-b'),changes([join('family-a',100),join('family-b',70)])].join('\n')+'\n</命令>';
+  await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
+  await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(1);
+  const before=(await stored(page)).state.harem;
+  expect(before?.members['family-a'].changes[0].to).toBe(100);
+  expect(server.calls).toEqual(['story','variables','world']);
+  await closeWorkflowSheet(page);
+  server.control.variables='<命令>\n'+changes([{op:'score',npcId:'family-b',from:70,to:100,reason:'合成无效候选'}])+'\n</命令>';
+  await page.getByLabel('你的行动',{exact:true}).fill('继续商议安排');
+  await page.getByRole('button',{name:'发送',exact:true}).click();
+  await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(2);
+  await page.reload();expect((await stored(page)).state.harem).toEqual(before);
+  expect(server.calls).toEqual(['story','variables','world','story','variables','world']);
+});
