@@ -84,7 +84,7 @@ function moduleState(item: PromptModule, prompts: PromptSettings): { kind: 'swit
   return { kind: 'always', label: '常驻' };
 }
 function usage(item: PromptModule) {
-  const used = item.applicableStages.map((value) => stageNames[value]).join('、');
+  const used = item.applicableStages.map((value) => value === 'theater' ? '小剧场' : stageNames[value]).join('、');
   if (item.toggle && (switchFields as readonly string[]).includes(item.toggle.split(':')[0]))
     return `打开时，每次${used}请求都会带上；关闭后不发送。和「提示词」页的同名开关是同一个设置。`;
   if (item.toggle?.startsWith('perspective') || item.toggle?.startsWith('style'))
@@ -128,13 +128,25 @@ export function PromptInspector({
   repository,
   activeSaveId,
   onPromptChange,
+  onTheaterPromptChange,
 }: {
   settings: Settings;
   repository?: SaveRepository;
   activeSaveId?: string;
+  onTheaterPromptChange?: (value?: string) => void;
   onPromptChange?: <K extends keyof PromptSettings>(key: K, value: PromptSettings[K]) => void;
 }) {
   const [initial] = useState(initialOrder);
+  const [theaterDefault, setTheaterDefault] = useState<string>();
+  const [theaterResourceError, setTheaterResourceError] = useState(false);
+  const editTheater = Boolean(onTheaterPromptChange);
+  useEffect(() => {
+    if (!editTheater) return;
+    let active = true;
+    void readPromptResource('theater.novel').then(text => { if (active) setTheaterDefault(text); },
+      () => { if (active) setTheaterResourceError(true); });
+    return () => { active = false; };
+  }, [editTheater]);
   const [orders, setOrders] = useState(initial.orders);
   const [dirty, setDirty] = useState(false);
   const [notice, setNotice] = useState(initial.error);
@@ -358,7 +370,7 @@ export function PromptInspector({
     [
       groupOf(item).label,
       `${item.characters.toLocaleString()} 字`,
-      item.applicableStages.map((value) => stageNames[value]).join(' / '),
+      item.applicableStages.map((value) => value === 'theater' ? '小剧场' : stageNames[value]).join(' / '),
     ]
       .filter(Boolean)
       .join(' · ');
@@ -379,6 +391,15 @@ export function PromptInspector({
             <span aria-hidden="true">⚙</span>高级
           </button>
         </div>
+        {onTheaterPromptChange && <details className="card">
+          <summary>小剧场提示词</summary>
+          <label>小剧场创作提示词
+            <textarea rows={7} maxLength={8000} value={settings.theaterPrompt ?? theaterDefault ?? ''}
+              disabled={!theaterDefault} onChange={event => onTheaterPromptChange(event.target.value)} />
+          </label>
+          {theaterResourceError && <p role="alert">无法读取默认小剧场提示词。</p>}
+          <button type="button" onClick={() => onTheaterPromptChange()}>恢复小剧场默认提示词</button>
+        </details>}
         {initial.error && notice === initial.error && (
           <p className="notice" role="alert">
             {notice}
@@ -482,7 +503,7 @@ export function PromptInspector({
             <p className="pm-chips">
               <span>{groupOf(module).label}</span>
               <span>{module.characters.toLocaleString()} 字</span>
-              <span>{module.applicableStages.map((value) => stageNames[value]).join(' / ') || (module.activation === 'creation-action' ? '创角' : '不注入')}</span>
+              <span>{module.applicableStages.map((value) => value === 'theater' ? '小剧场' : stageNames[value]).join(' / ') || (module.activation === 'creation-action' ? '创角' : '不注入')}</span>
               <span>{currentState?.kind === 'switch' ? '可开关' : currentState?.label}</span>
             </p>
             {variable && (
@@ -834,7 +855,7 @@ export function PromptInspector({
                     {availableRecords.map((record) => (
                       <option key={record.id} value={record.id}>
                         {record.scope
-                          ? record.scope.kind === 'memory' ? `记忆维护 ${record.scope.memoryTask}` : `${record.scope.mode} ${stages[record.stage]}`
+                          ? record.scope.kind === 'memory' ? `记忆维护 ${record.scope.memoryTask}` : `${record.scope.mode} ${record.stage === 'theater' ? '小剧场' : stages[record.stage]}`
                           : '连接测试（非游戏阶段）'}{' '}
                         · {record.createdAt} · {record.status}
                       </option>
@@ -858,7 +879,7 @@ export function PromptInspector({
                     </p>
                     <p>
                       {actual.scope
-                        ? actual.scope.kind === 'memory' ? `记忆维护 / ${actual.scope.memoryTask} / 存档版本 ${actual.scope.revision}` : `${actual.scope.mode} / ${stages[actual.stage]} / 存档版本 ${actual.scope.revision}`
+                        ? actual.scope.kind === 'memory' ? `记忆维护 / ${actual.scope.memoryTask} / 存档版本 ${actual.scope.revision}` : `${actual.scope.mode} / ${actual.stage === 'theater' ? '小剧场' : stages[actual.stage]} / 存档版本 ${actual.scope.revision}`
                         : '连接测试；没有游戏阶段或模块组装'}
                     </p>
                     <p>

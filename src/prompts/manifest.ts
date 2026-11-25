@@ -2,7 +2,7 @@ import { STORY_STYLE_IDS } from '../ui/settings/storyStyles';
 import { z } from 'zod';
 import source from '../../prompts/manifest.json';
 
-const StageSchema = z.enum(['story', 'variables', 'world', 'memory']);
+const StageSchema = z.enum(['story', 'variables', 'world', 'memory', 'theater']);
 const ModeSchema = z.enum(['opening', 'regular']);
 const ModuleSchema = z.strictObject({
   id: z.string().min(1),

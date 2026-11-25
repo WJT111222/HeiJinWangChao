@@ -29,6 +29,7 @@ import { readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
 import { checkFinish, LeadingThink, rememberPresetSamplingRejection, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
 import { isOpenAiCompatible } from './configuration';
+import type { Protocol } from './configuration';
 import { rawResponseObservation, responseContent, responseDiagnostics, mergeResponseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, classifyUpstreamPayload, diagnosticSecrets, failurePhase } from './failureDiagnostic';
@@ -188,6 +189,15 @@ function residualTool(data: unknown, delta: boolean) {
     return array(message.tool_calls).length > 0 || message.function_call != null || choice.finish_reason === 'tool_calls';
   });
 }
+function theaterResidualTool(data: unknown, protocol: Protocol, delta: boolean) {
+  if (isOpenAiCompatible(protocol)) return residualTool(data, delta);
+  const root = record(data);
+  if (protocol === 'gemini') return array(root.candidates).some(candidate =>
+    array(record(record(candidate).content).parts).some(part => record(part).functionCall != null));
+  if (delta) return record(root.content_block).type === 'tool_use' || record(root.delta).type === 'input_json_delta'
+    || record(root.delta).stop_reason === 'tool_use';
+  return root.stop_reason === 'tool_use' || array(root.content).some(block => record(block).type === 'tool_use');
+}
 export class AiClient {
   constructor(private transport: typeof fetch = nativeFetch) {}
   private async response(
@@ -287,7 +297,10 @@ export class AiClient {
     messages: readonly AiMessage[],
     options: RequestOptions = {},
   ): Promise<AiResponse> {
-    const relay = relayAttempt(snapshot.channel.protocol);
+    const theater = snapshot.stage === 'theater';
+    // Theater keeps a single paid transport. A failed direct POST is not replayed through a relay.
+    const relay = theater ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
+    const allowOutputLimit = options.validateStoryOutputLimit === true || theater;
     const relayEnabled = relayMode() === 'auto';
     const started = performance.now();
     const compat = snapshot.stage === 'story' && options.tavernType !== undefined;
@@ -296,13 +309,13 @@ export class AiClient {
     let diagnostics: string[] = [];
     let inspectionId: string | undefined;
     let observedUsage: Usage | undefined;
-    let outputLimited = false, unhandledTool = false;
+    let outputLimited = false, unhandledTool = false, missingTheaterFinish = false;
     let lastHttp: number | undefined;
     let seen: ResponseDiagnostics = {};
     const finish = (reason: unknown) => {
-      if (options.validateStoryOutputLimit && typeof reason === 'string' && ['length', 'max_tokens'].includes(reason.toLowerCase())) outputLimited = true;
+      if (allowOutputLimit && typeof reason === 'string' && ['length', 'max_tokens'].includes(reason.toLowerCase())) outputLimited = true;
       if (trace && reason === 'tool_calls') return true;
-      return checkFinish(reason, options.validateStoryOutputLimit === true);
+      return checkFinish(reason, allowOutputLimit);
     };
     const observe = (value: ResponseDiagnostics) => {
       seen = mergeResponseDiagnostics(seen, value);
@@ -349,6 +362,8 @@ export class AiClient {
             throw failure;
           }
           if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol), httpStatus: response.status, complete: true });
+          if (theater && responseDiagnostics(data, protocol).errorPresent) throw rejectedUpstream(record(data), 'json', response.status);
+          if (theater && theaterResidualTool(data, protocol, false)) throw new AiError('invalid_output');
           if (trace && residualTool(data, false)) throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.unhandled_tool' });
           usage = usageFrom(data, protocol); observedUsage = usage;
           if (!signal.aborted) {
@@ -357,16 +372,17 @@ export class AiClient {
             if (raw) options.onRawTextDelta?.(raw);
             if (native) options.onNativeReasoningDelta?.(native);
           }
-          if (options.validateStoryOutputLimit) {
+          if (allowOutputLimit) {
             const d = record(data);
-            finish(isOpenAiCompatible(protocol) ? record(array(d.choices)[0]).finish_reason : protocol === 'gemini' ? record(array(d.candidates)[0]).finishReason : d.stop_reason);
+            const terminal = finish(isOpenAiCompatible(protocol) ? record(array(d.choices)[0]).finish_reason : protocol === 'gemini' ? record(array(d.candidates)[0]).finishReason : d.stop_reason);
+            missingTheaterFinish = theater && !terminal;
           }
-          if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol).refusal) {
+          if (allowOutputLimit && responseDiagnostics(data, protocol).refusal) {
             const failure = new AiError('content_filter');
             attachFailureDiagnostic(failure, { phase: 'upstream_error', upstreamClass: 'content_filter' });
             throw failure;
           }
-          text = responseText(data, protocol, options.validateStoryOutputLimit === true);
+          text = responseText(data, protocol, allowOutputLimit);
           reasoning = nativeReasoning(data, protocol);
           if (isOpenAiCompatible(protocol)) {
             const split = splitLeadingThink(text);
@@ -374,7 +390,7 @@ export class AiClient {
             if (split.reasoning && !signal.aborted) options.onCompatibilityReasoningDelta?.(split.reasoning);
             if (!reasoning) reasoning = split.reasoning;
           }
-          if (wholeJson && !signal.aborted) {
+          if ((wholeJson || theater) && !signal.aborted) {
             if (reasoning) { options.onActivity?.('reasoning'); options.onReasoningDelta?.(reasoning); }
             if (text) { options.onActivity?.('content'); options.onDelta?.(text); }
           }
@@ -383,7 +399,7 @@ export class AiClient {
           if (!response.body) throw new AiError('stream_interrupted');
           let terminal = false, nativeSeen = false;
           const think = isOpenAiCompatible(protocol) ? new LeadingThink() : undefined;
-          for await (const event of readSse(response.body, signal, trace ? { detachCleanup: true } : undefined)) {
+          for await (const event of readSse(response.body, signal, (trace || theater) ? { detachCleanup: true } : undefined)) {
             if (event.event === 'error') throw rejectedUpstream(ssePayload(event.data), 'sse', response.status, true);
             if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
               terminal = true;
@@ -398,6 +414,7 @@ export class AiClient {
             if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol, true), httpStatus: response.status, complete: false });
             if (data.error || data.type === 'error')
               throw rejectedUpstream(data, 'sse', response.status);
+            if (theater && theaterResidualTool(data, protocol, true)) throw new AiError('invalid_output');
             if (trace && residualTool(data, true)) unhandledTool = true;
             const rawDelta = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);
             if (!signal.aborted) {
@@ -405,7 +422,7 @@ export class AiClient {
               if (rawDelta) options.onRawTextDelta?.(rawDelta);
               if (native) options.onNativeReasoningDelta?.(native);
             }
-            if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol, true).refusal) {
+            if (allowOutputLimit && responseDiagnostics(data, protocol, true).refusal) {
               const failure = new AiError('content_filter');
               attachFailureDiagnostic(failure, { phase: 'upstream_error', upstreamClass: 'content_filter' });
               throw failure;
@@ -438,7 +455,10 @@ export class AiClient {
               if (data.type === 'content_block_delta' && record(data.delta).type === 'text_delta')
                 delta = string(record(data.delta).text);
               finish(record(data.delta).stop_reason);
-              if (data.type === 'message_stop') terminal = true;
+              if (data.type === 'message_stop') {
+                terminal = true;
+                if (theater) break;
+              }
             }
             if (native) nativeSeen = true;
             // 服务已单独给出思考时，不再把正文里的 <think> 重复算进去。
@@ -476,6 +496,7 @@ export class AiClient {
               outputLimited ? undefined : { fieldPath: 'tavern.native_delivery.response' });
         }
         if (!text.trim()) throw new AiError('empty');
+        if (missingTheaterFinish) throw new AiError('stream_interrupted');
         if (trace) {
           trace.restored = true;
           trace.clock.first('restoredMs');

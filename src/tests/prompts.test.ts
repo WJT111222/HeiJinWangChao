@@ -305,7 +305,8 @@ describe('正式文本来源与旧架构保留', () => {
     );
   });
   it('六主模板来源仍保留：开局按人生初始化任务更新，普通正文保留V2读取并新增事件叙事裁定', () => {
-    expect(promptManifest.modules.filter((m) => m.category === 'stage')).toHaveLength(6);
+    expect(promptManifest.modules.filter(m => m.category === 'stage' && m.applicableStages.some(stage => stage !== 'theater'))).toHaveLength(6);
+    expect(promptManifest.modules.find(m => m.id === 'theater.novel')?.applicableStages).toEqual(['theater']);
     for (const mode of ['opening', 'regular'] as const) {
       const path = `stages/${mode}/story.md` as const;
       expect(sha(text(path))).toBe(mode === 'opening' ? sources.resources['stages/opening/story.md'].openingLifeInitialization.sha256 : sources.resources['stages/regular/story.md'].storyTagCompatibilityV1.sha256);

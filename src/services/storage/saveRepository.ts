@@ -29,16 +29,22 @@ import type { NpcMemoryBatch } from '../../domain/memories/npcMemory';
 import { NpcSummarySchema, MemoryEntrySchema } from '../../domain/memories/schema';
 import { unreadableSaveSummary } from './saveManagement';
 import type { RawSaveExport, RawSaveRecord, SaveSummary } from './saveManagement';
+import { advanceTheaterVersion, clearTheaters, createTheaterStores, createTheaterVersionStore, exportTheaters,
+  notifyTheaterChange, putTheater, TheaterRepository, theaterStores, theaterVersionStore } from './theaters';
+import { parseTheaters } from '../../domain/theater/record';
+import type { TheaterRecord } from '../../domain/theater/record';
 import { backupSummary, compatibleDraft } from './backup';
 import type { BackupEntry } from './backup';
 
 /** Storage connection boundary, independent of GameState/backup format versions.
+ * V7 tracks theater collection changes independently of the main revision.
+ * V6 adds independent theater metadata and body stores.
  * V5 adds separate history metadata/payload stores, preserving all V4 records.
  * Versionchange closes older clients before history writes become available.
  * V4 closes deployed V3 clients via their existing versionchange handler before
  * imports become available. Old V3 code cannot reopen and bypass instance CAS.
  * That V4 upgrade required no store, index or saved payload changes. */
-export const saveDatabaseVersion = 5;
+export const saveDatabaseVersion = 7;
 
 declare const confirmationBrand: unique symbol;
 /**
@@ -51,8 +57,8 @@ export interface BackupImportConfirmation { readonly [confirmationBrand]: true }
  * 导入前与本机的比较结果（UI 合约）。
  * - new：本机没有该 saveId 的存档记录。
  * - same：正式存档完全相同（整份数据逐项比较，含记忆、NPC 管理等不推进回合版本的内容），
- *   且未结算草稿也相同。导入只会清掉本机撤回与提交回执，UI 应显示「已是最新」。
- * - overwrite：本机存档可读取，但正式存档或草稿至少一项不同；differences 指明哪一项。
+ *   且未结算草稿及备份中明确提供的小剧场也相同。导入只会清掉本机撤回与提交回执，UI 应显示「已是最新」。
+ * - overwrite：本机存档可读取，正式存档、草稿或小剧场有差异。
  * - overwrite-unreadable：本机同 ID 记录存在但无法读取。
  * - overwrite-orphaned：本机没有正式存档，但留有同 ID 的草稿、回执、撤回或控制记录；导入会清除它们，
  *   因此同样需要明确覆盖，不能当作新建。
@@ -62,7 +68,7 @@ export interface BackupImportConfirmation { readonly [confirmationBrand]: true }
 export type BackupComparison =
   | { kind: 'new'; confirmation: BackupImportConfirmation }
   | { kind: 'same'; local: BackupEntry['summary']; confirmation: BackupImportConfirmation }
-  | { kind: 'overwrite'; local: BackupEntry['summary']; differences: { state: boolean; draft: boolean }; confirmation: BackupImportConfirmation }
+  | { kind: 'overwrite'; local: BackupEntry['summary']; differences: { state: boolean; draft: boolean; theaters?: boolean }; confirmation: BackupImportConfirmation }
   | { kind: 'overwrite-unreadable'; confirmation: BackupImportConfirmation }
   | { kind: 'overwrite-orphaned'; records: { drafts: number; turnReceipts: number; turnUndo: number; saveControls: number }; confirmation: BackupImportConfirmation };
 
@@ -73,12 +79,15 @@ interface LocalSnapshot {
   turnReceipts: RawSaveRecord[];
   turnUndo: RawSaveRecord[];
   saveControls: RawSaveRecord[];
+  theaters: RawSaveRecord[];
 }
-const snapshotStores = ['saves', 'drafts', 'turnReceipts', 'turnUndo', 'saveControls'] as const;
+const snapshotStores = ['saves', 'drafts', 'turnReceipts', 'turnUndo', 'saveControls', 'theaters'] as const;
 const confirmations = new WeakMap<BackupImportConfirmation, { repository: SaveRepository; saveId: string; incoming: string; snapshot: LocalSnapshot }>();
 const emptySnapshot = (snapshot: LocalSnapshot) => snapshotStores.every((name) => snapshot[name].length === 0);
 /** 备份条目的确定性内容指纹：规范化后的正式存档与兼容草稿（同步计算，可在事务外比较）。 */
-const incomingFingerprint = (state: GameState, draft: TurnDraft | undefined) => fingerprint({ state, draft: draft ?? null });
+const incomingFingerprint = (state: GameState, draft: TurnDraft | undefined, theaters?: TheaterRecord[]) =>
+  fingerprint({ state, draft: draft ?? null, theaters: theaters ?? null });
+type BackupSource = Pick<BackupEntry, 'state' | 'draft' | 'theaters'>;
 const replacedMessage = '这份存档已被替换（例如在其他标签导入了备份），本次没有修改。请刷新后重新操作。';
 
 const ReceiptSchema = z.strictObject({
@@ -140,6 +149,7 @@ async function readSnapshot(tx: IDBTransaction, key: IDBValidKey): Promise<Local
     turnReceipts: await rawRecords(tx.objectStore('turnReceipts').index('saveId'), key),
     turnUndo: await rawRecords(tx.objectStore('turnUndo').index('saveId'), key),
     saveControls: await rawRecords(tx.objectStore('saveControls'), key),
+    theaters: await rawRecords(tx.objectStore('theaterIndex').index('saveId'), key),
   };
 }
 
@@ -207,7 +217,11 @@ async function variableSnapshot(tx: IDBTransaction, saveId: string): Promise<Var
 
 export class SaveRepository {
   readonly history: HistoryRepository;
-  private constructor(private readonly database: IDBDatabase) { this.history = new HistoryRepository(database); }
+  readonly theaters: TheaterRepository;
+  private constructor(private readonly database: IDBDatabase) {
+    this.history = new HistoryRepository(database);
+    this.theaters = new TheaterRepository(database, readState);
+  }
 
   static open(name = 'heijinwangchao', factory: IDBFactory = globalThis.indexedDB): Promise<SaveRepository> {
     if (!factory) return Promise.reject(new DataError('STORAGE_UNAVAILABLE', '当前环境不支持 IndexedDB'));
@@ -216,6 +230,8 @@ export class SaveRepository {
       const operation = factory.open(name, saveDatabaseVersion);
       operation.onupgradeneeded = () => {
         const db = operation.result;
+        if (!db.objectStoreNames.contains('theaterIndex')) createTheaterStores(db);
+        if (!db.objectStoreNames.contains(theaterVersionStore)) createTheaterVersionStore(operation.transaction!);
         for (const name of historyStores) if (!db.objectStoreNames.contains(name))
           db.createObjectStore(name, { keyPath: ['saveId', 'id'] }).createIndex('saveId', 'saveId');
         if (!db.objectStoreNames.contains('saves')) db.createObjectStore('saves', { keyPath: 'saveId' });
@@ -484,9 +500,10 @@ export class SaveRepository {
   }
 
   async list(): Promise<SaveSummary[]> {
-    return transaction(this.database, ['saves', 'saveControls'], 'readonly', async (tx) => {
+    return transaction(this.database, ['saves', 'saveControls', theaterVersionStore], 'readonly', async (tx) => {
       const records = await rawRecords(tx.objectStore('saves'));
       const controls = await rawRecords(tx.objectStore('saveControls'));
+      const theaterVersions = new Map((await rawRecords(tx.objectStore(theaterVersionStore))).map(({ key, value }) => [key, value]));
       const instances = new Map<IDBValidKey, string>();
       // 只取实例身份；控制记录损坏不应让整个列表不可用（此时删除会因身份不符被拒绝，不会误删）。
       for (const { key, value } of controls) {
@@ -495,7 +512,9 @@ export class SaveRepository {
       }
       return records.map(({ key, value }) => {
         const summary = listRecord(key, value), instance = typeof key === 'string' ? instances.get(key) : undefined;
-        return summary.status === 'readable' && instance ? { ...summary, instance } : summary;
+        const theaterVersion = theaterVersions.get(key);
+        return summary.status === 'readable' ? { ...summary, ...(instance ? { instance } : {}),
+          ...(typeof theaterVersion === 'string' ? { theaterVersion } : {}) } : summary;
       });
     });
   }
@@ -519,12 +538,14 @@ export class SaveRepository {
   async exportBackup(saveIds: readonly string[]): Promise<BackupEntry[]> {
     requireData(saveIds.length > 0, 'INVALID_KEY', '未选择存档');
     for (const saveId of saveIds) IdSchema.parse(saveId);
-    return transaction(this.database, ['saves', 'drafts'], 'readonly', async (tx) => {
+    return transaction(this.database, ['saves', 'drafts', ...theaterStores, theaterVersionStore], 'readonly', async (tx) => {
       const entries: BackupEntry[] = [];
       for (const saveId of saveIds) {
         const state = readState(await request(tx.objectStore('saves').get(saveId)), saveId);
         const { draft } = compatibleDraft(state, await request(tx.objectStore('drafts').get(saveId)), true);
-        entries.push({ summary: backupSummary(state), state, ...(draft ? { draft } : {}) });
+        const theaterVersion = await request<string | undefined>(tx.objectStore(theaterVersionStore).get(saveId));
+        entries.push({ summary: backupSummary(state), state, ...(draft ? { draft } : {}),
+          theaters: await exportTheaters(tx, saveId), ...(theaterVersion ? { theaterVersion } : {}) });
       }
       return entries;
     });
@@ -534,12 +555,18 @@ export class SaveRepository {
    * 导入前比较。在一个只读事务中按真实主键取得本机该存档在五个时间线仓库中的全部原始记录，
    * 生成仅供本次确认的一次性凭据；不写入、不迁移任何记录。
    */
-  async compareBackup(entry: { state: GameState; draft?: TurnDraft }): Promise<BackupComparison> {
+  async compareBackup(entry: BackupSource): Promise<BackupComparison> {
     const backup = normalizeOpeningCity(GameStateSchema.parse(entry.state));
     const backupDraft = compatibleDraft(backup, entry.draft).draft;
-    const snapshot = await transaction(this.database, timelineStores, 'readonly', (tx) => readSnapshot(tx, backup.saveId));
+    const theaters = entry.theaters === undefined ? undefined : parseTheaters(entry.theaters, backup.saveId);
+    const { snapshot, theaterDifference } = await transaction(this.database, [...timelineStores, ...theaterStores], 'readonly', async tx => {
+      const snapshot = await readSnapshot(tx, backup.saveId);
+      const theaterDifference = theaters !== undefined && fingerprint(await exportTheaters(tx, backup.saveId)) !== fingerprint(
+        [...theaters].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+      return { snapshot, theaterDifference };
+    });
     const confirmation = Object.freeze({}) as BackupImportConfirmation;
-    confirmations.set(confirmation, { repository: this, saveId: backup.saveId, incoming: incomingFingerprint(backup, backupDraft), snapshot });
+    confirmations.set(confirmation, { repository: this, saveId: backup.saveId, incoming: incomingFingerprint(backup, backupDraft, theaters), snapshot });
     if (!snapshot.saves.length) return emptySnapshot(snapshot) ? { kind: 'new', confirmation } : {
       kind: 'overwrite-orphaned', confirmation, records: { drafts: snapshot.drafts.length, turnReceipts: snapshot.turnReceipts.length,
         turnUndo: snapshot.turnUndo.length, saveControls: snapshot.saveControls.length } };
@@ -549,12 +576,13 @@ export class SaveRepository {
     const rawDraft = snapshot.drafts[0]?.value === undefined ? undefined : structuredClone(snapshot.drafts[0].value);
     const localDraft = rawDraft === undefined ? undefined : TurnDraftSchema.safeParse(rawDraft);
     const differences = {
+      ...(theaterDifference ? { theaters: true } : {}),
       state: fingerprint(local) !== fingerprint(backup),
       draft: localDraft === undefined ? backupDraft !== undefined
         : !localDraft.success || backupDraft === undefined || fingerprint(localDraft.data) !== fingerprint(backupDraft),
     };
     const summary = backupSummary(local);
-    return differences.state || differences.draft
+    return differences.state || differences.draft || differences.theaters
       ? { kind: 'overwrite', local: summary, differences, confirmation }
       : { kind: 'same', local: summary, confirmation };
   }
@@ -567,24 +595,38 @@ export class SaveRepository {
    * 导入的草稿递增 draftRevision（与 NPC 管理相同），使此前发出的阶段响应不能再写入。
    * 写入新的实例身份，旧页面凭旧身份发起的删除与人物管理随之失效。
    */
-  async importBackup(entry: { state: GameState; draft?: TurnDraft }, confirmation: BackupImportConfirmation,
+  async importBackup(entry: BackupSource, confirmation: BackupImportConfirmation,
     options: { overwrite?: boolean } = {}): Promise<GameState> {
+    return (await this.importBackupWithVersion(entry, confirmation, options)).state;
+  }
+
+  async importBackupWithVersion(entry: BackupSource, confirmation: BackupImportConfirmation,
+    options: { overwrite?: boolean } = {}): Promise<{ state: GameState; theaterVersion?: string }> {
     const state = normalizeOpeningCity(GameStateSchema.parse(entry.state));
     const { draft } = compatibleDraft(state, entry.draft);
+    const theaters = entry.theaters === undefined ? undefined : parseTheaters(entry.theaters, state.saveId);
     const confirmed = confirmations.get(confirmation);
     confirmations.delete(confirmation);
     requireData(confirmed?.repository === this && confirmed.saveId === state.saveId
-      && confirmed.incoming === incomingFingerprint(state, draft),
+      && confirmed.incoming === incomingFingerprint(state, draft, theaters),
       'IMPORT_CONFIRMATION_INVALID', '导入确认已失效或与所选备份不符，请重新选择文件导入。');
     requireData(emptySnapshot(confirmed.snapshot) || options.overwrite === true, 'SAVE_EXISTS', confirmed.snapshot.saves.length
       ? '本机已有这份存档，需要确认覆盖后才能导入。' : '本机留有这份存档的残留记录，需要确认覆盖后才能导入。');
     const session = reserveStageSession(state.saveId);
     try {
-      return await withBrowserLock(state.saveId, () => transaction(this.database, timelineStores, 'readwrite', async (tx) => {
+      const result = await withBrowserLock(state.saveId, () => transaction(this.database, [...timelineStores, ...theaterStores, theaterVersionStore], 'readwrite', async (tx) => {
         session.check();
         const current = await readSnapshot(tx, state.saveId);
         requireData(sameSnapshot(current, confirmed.snapshot), 'IMPORT_CONFLICT',
           '本机存档在确认后发生了变化，本次没有导入，本机数据保持原样。请重新选择文件导入。');
+        if (theaters !== undefined) {
+          await clearTheaters(tx, state.saveId);
+          for (const entry of theaters) await putTheater(tx, entry);
+        } else if (current.theaters.length) {
+          const local = current.saves[0]?.value as { createdAt?: unknown } | undefined;
+          requireData(local?.createdAt === state.createdAt, 'THEATER_BACKUP',
+            '旧备份无法核对已有小剧场的存档身份。请先导出本机存档，再使用含小剧场的备份覆盖。');
+        }
         const localRevision = (current.drafts[0]?.value as { draftRevision?: unknown } | undefined)?.draftRevision;
         const floor = Number.isSafeInteger(localRevision) && (localRevision as number) >= 0 ? localRevision as number : -1;
         await deleteRecords(tx, state.saveId);
@@ -593,8 +635,11 @@ export class SaveRepository {
         await writeControl(tx, { ...newSaveControl(state.saveId), instanceId: `instance-${crypto.randomUUID()}` });
         if (draft) await request(tx.objectStore('drafts').put(TurnDraftSchema.parse({
           ...draft, draftRevision: Math.max(draft.draftRevision, floor) + 1 })));
-        return state;
+        // Legacy files leave the local theaters untouched and cannot certify their backup.
+        return { state, theaterVersion: theaters === undefined ? undefined : await advanceTheaterVersion(tx, state.saveId) };
       }));
+      notifyTheaterChange();
+      return result;
     } finally { session.release(); }
   }
 
@@ -602,7 +647,7 @@ export class SaveRepository {
   // Recheck within the write transaction: never delete a record that has become readable.
   async deleteUnreadable(storageKey: IDBValidKey): Promise<void> {
     requireData(storageKey !== undefined && storageKey !== null, 'INVALID_KEY', '未选择存档记录');
-    return transaction(this.database, [...timelineStores, ...historyStores], 'readwrite', async tx => {
+    await transaction(this.database, [...timelineStores, ...historyStores, ...theaterStores, theaterVersionStore], 'readwrite', async tx => {
       const records = await rawRecords(tx.objectStore('saves'), storageKey);
       requireData(records.length === 1, 'NOT_FOUND', '此存档已不存在，请刷新列表。');
       requireData(listRecord(storageKey, records[0].value).status === 'unreadable', 'SAVE_READABLE', '此存档现在可以读取，请刷新列表后重新选择。');
@@ -614,8 +659,12 @@ export class SaveRepository {
         await request(tx.objectStore(name).index('saveId').count(storageKey)) === 0,
         'HISTORY_RECOVERY_REQUIRED',
         '已阻止删除：此存档仍有关联的手动历史收藏或残留载荷，原始数据导出不包含这些收藏。本次未删除任何数据，请保留本机数据并联系维护者恢复。');
+      for (const name of theaterStores) requireData(await request(tx.objectStore(name).index('saveId').count(storageKey)) === 0,
+        'THEATER_RECOVERY_REQUIRED', '已阻止删除：原始数据导出不包含这份存档的小剧场，请先恢复存档。');
+      await request(tx.objectStore(theaterVersionStore).delete(storageKey));
       await deleteRecords(tx, storageKey);
     });
+    notifyTheaterChange();
   }
 
   // M1 独立领域命令兼容入口；完整回合必须走 commitTurn，不拼接 save/saveDraft。
@@ -741,14 +790,17 @@ export class SaveRepository {
   async delete(saveId: string, expectedRevision: number, expectedInstance: string | null = null, expectedManagementRevision = 0): Promise<void> {
     IdSchema.parse(saveId); CountSchema.parse(expectedRevision);
     if (expectedInstance !== null) IdSchema.parse(expectedInstance);
-    return transaction(this.database, [...timelineStores, ...historyStores], 'readwrite', async (tx) => {
+    await transaction(this.database, [...timelineStores, ...historyStores, ...theaterStores, theaterVersionStore], 'readwrite', async (tx) => {
       const current = await readStoredState(tx, saveId);
       requireData(await storedInstance(tx, saveId) === expectedInstance, 'REVISION_CONFLICT', replacedMessage);
       requireData(current.revision === expectedRevision && (current.npcManagementRevision ?? 0) === expectedManagementRevision,
         'REVISION_CONFLICT', '删除时存档版本已变化');
       await clearManualHistory(tx, saveId);
+      await clearTheaters(tx, saveId);
+      await request(tx.objectStore(theaterVersionStore).delete(saveId));
       await deleteRecords(tx, saveId);
     });
+    notifyTheaterChange();
   }
 
   // 唯一允许绑定行动的入口：空待输入草稿，或正文失败/取消且尚无任何候选的已绑定草稿（重新绑定为全新草稿）。

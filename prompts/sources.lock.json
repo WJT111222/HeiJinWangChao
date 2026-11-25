@@ -1723,6 +1723,12 @@
         "notes": "剧情难度「硬核」场外反制：项目原创规则；仅在硬核难度的普通回合动态世界阶段注入，反制须有已确立的人物、传播路径与因果，不凭空制造敌人；不改输出协议与命令目录。",
         "sha256": "4c0cf778b3fa95b6af0068199e32a29bddc15344b45dbfe6613d211656225f2b"
       }
+    },
+    "theater/novel.md": {
+      "origin": "project",
+      "sourcePath": "prompts/theater/novel.md",
+      "sourceSha256": "a98cb1c3fd2601bd7cf60c69fe2f9dadfb9ff07631c3b8385c04748e598eaaee",
+      "treatment": "project-authored"
     }
   },
   "m5P6": {

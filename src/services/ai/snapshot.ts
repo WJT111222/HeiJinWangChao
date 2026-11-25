@@ -9,7 +9,7 @@ const secrets = new WeakMap<object, string>();
 export interface RequestSnapshot {
   readonly channel: Readonly<Channel>;
   readonly model: string;
-  readonly stage: AiTask;
+  readonly stage: AiTask | 'theater';
   readonly useCot: boolean;
   readonly thinkingCapability: ThinkingCapability;
   readonly diagnostics: readonly string[];
@@ -25,7 +25,7 @@ export function channelSnapshot(
   channel: Channel,
   vault: CredentialVault,
   model = channel.defaultModel,
-  stage: AiTask = 'story',
+  stage: RequestSnapshot['stage'] = 'story',
 ): RequestSnapshot {
   const parsed = ChannelSchema.safeParse(channel);
   if (!parsed.success) throw new AiError('configuration');
@@ -58,7 +58,7 @@ export function resolveModelRoute(config: AiConfig, stage: AiTask) {
   return { channel, model };
 }
 // 完整历史确认不依赖模型名单；旧名单仅为配置读取兼容保留。
-export function cotSupported(channel: Channel, _model: string, stage: AiTask) {
+export function cotSupported(channel: Channel, _model: string, stage: RequestSnapshot['stage']) {
   return stage === 'story' && channel.compatibility.cotMode !== 'off';
 }
 export function requestSnapshot(

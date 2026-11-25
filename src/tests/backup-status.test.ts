@@ -28,6 +28,18 @@ describe('存档备份状态：只记在本机，不写进存档', () => {
     expect(backupStatus(edited, new Date(), access).tone).toBe('ok');
   });
 
+  it('旧标记保留主线备份信息，只有匹配的小剧场集合版本才能显示已备份', () => {
+    const { access } = memoryStorage();
+    const at = new Date(2026, 10, 13, 20);
+    const legacy = save('a', 8, 8), first = { ...legacy, theaterVersion: 'collection-a' };
+    recordBackup([legacy], at, access);
+    expect(backupStatus(legacy, at, access).tone).toBe('ok');
+    expect(backupStatus(first, at, access)).toEqual({ tone: 'warn', text: '备份后小剧场有变动' });
+    recordBackup([first], at, access);
+    expect(backupStatus(first, at, access).tone).toBe('ok');
+    expect(backupStatus({ ...first, theaterVersion: 'collection-after-deletion' }, at, access).tone).toBe('warn');
+  });
+
   it('昨天与更早的日期按本地日历显示', () => {
     const { access } = memoryStorage();
     recordBackup([save('a', 3, 3)], new Date(2026, 10, 12, 23, 59), access);

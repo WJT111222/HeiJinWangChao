@@ -3,23 +3,28 @@ import { DataError } from '../../domain/common';
 import { TurnDraftSchema } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
 import type { GameState } from '../../domain/state';
+import { parseTheaters } from '../../domain/theater/record';
+import type { TheaterRecord } from '../../domain/theater/record';
 import { migrateSave } from './migrations';
 
 /**
  * 玩家存档备份文件（.heijin.json）。
- * 只含游戏进度与未结算草稿；不含 AI 密钥、渠道、设置、提示词排序、撤回快照与提交回执。
+ * 含游戏进度、未结算草稿和独立小剧场；不含 AI 密钥、渠道配置、全局设置、提示词排序、撤回快照与提交回执。
  */
 export const backupFormat = 'heijin-backup';
-export const backupVersion = 1;
+export const backupVersion = 2;
 
 export interface BackupEntry {
   summary: { title: string; turnNumber: number; revision: number; schemaVersion: number; updatedAt: string };
   state: GameState;
   draft?: TurnDraft;
+  theaters?: TheaterRecord[];
+  /** Local export snapshot metadata. The portable backup omits it. */
+  theaterVersion?: string;
 }
 export interface BackupFile {
   format: typeof backupFormat;
-  version: typeof backupVersion;
+  version: 1 | typeof backupVersion;
   app: string;
   exportedAt: string;
   saves: BackupEntry[];
@@ -35,7 +40,7 @@ export type BackupChecksumStatus = 'valid' | 'mismatch' | 'unverified';
 
 /** 已读入并逐份校验后的备份条目；单份存档损坏不影响同文件的其他存档。 */
 export type ParsedBackupEntry =
-  | { ok: true; title: string; state: GameState; draft?: TurnDraft; draftDropped?: string }
+  | { ok: true; title: string; state: GameState; draft?: TurnDraft; draftDropped?: string; theaters?: TheaterRecord[] }
   | { ok: false; title: string; error: string; code: string };
 export interface ParsedBackup {
   app: string;
@@ -55,6 +60,7 @@ const EnvelopeSchema = z.object({
     summary: z.object({ title: z.string() }).passthrough().optional(),
     state: z.unknown(),
     draft: z.unknown().optional(),
+    theaters: z.unknown().optional(),
   })).min(1).max(maxBackupEntries),
   checksum: z.string().max(100).optional(),
 });
@@ -100,13 +106,19 @@ export function compatibleDraft(state: GameState, raw: unknown, exportLocalRecov
 export async function serializeBackup(entries: readonly BackupEntry[], app: string, now = new Date()): Promise<string> {
   if (!entries.length || entries.length > maxBackupEntries)
     throw new DataError('BACKUP_TOO_LARGE', `单个备份文件最多容纳 ${maxBackupEntries} 份存档。请分别导出，原存档保持完整。`);
-  const saves = entries.map((entry) => ({ summary: entry.summary, state: entry.state, ...(entry.draft ? { draft: entry.draft } : {}) }));
+  // Historical node exports omit the collection. Keep their draft-free V1 format so
+  // importing a timeline snapshot cannot interpret the omission as an empty collection.
+  const withTheaters = entries.some(entry => entry.theaters !== undefined);
+  const saves = entries.map(entry => ({ summary: entry.summary, state: entry.state,
+    ...(entry.draft ? { draft: entry.draft } : {}),
+    ...(withTheaters ? { theaters: parseTheaters(entry.theaters ?? [], entry.state.saveId) } : {}),
+  }));
   const serializedSaves = JSON.stringify(saves);
   const exportTooLarge = () => new DataError('BACKUP_TOO_LARGE', '备份文件超过可导入的容量上限。请分别导出，原存档保持完整。');
   if (utf8ByteLength(serializedSaves, maxBackupBytes) > maxBackupBytes) throw exportTooLarge();
   const checksum = await sha256(serializedSaves);
   const file: BackupFile = {
-    format: backupFormat, version: backupVersion, app, exportedAt: now.toISOString(),
+    format: backupFormat, version: withTheaters ? backupVersion : 1, app, exportedAt: now.toISOString(),
     saves, ...(checksum ? { checksum } : {}),
   };
   const text = JSON.stringify(file);
@@ -141,7 +153,7 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
   if (format.success && format.data.format === backupFormat && format.data.version > backupVersion)
     throw new DataError('BACKUP_FUTURE', '这份备份来自更新的游戏版本，请先更新游戏再导入；本机存档没有任何改动。');
   const envelope = EnvelopeSchema.safeParse(raw);
-  if (!envelope.success || envelope.data.version !== backupVersion)
+  if (!envelope.success || ![1, backupVersion].includes(envelope.data.version))
     throw new DataError('BACKUP_INVALID', '这不是黑金王朝的备份文件。请选择导出时得到的 .heijin.json 文件。');
   const { saves, checksum } = envelope.data;
   let checksumStatus: BackupChecksumStatus = 'unverified';
@@ -155,7 +167,13 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
     try {
       const state = migrateSave(save.state);
       const { draft, dropped } = compatibleDraft(state, save.draft);
-      return { ok: true, title: state.title, state, ...(draft ? { draft } : {}), ...(dropped ? { draftDropped: dropped } : {}) };
+      let theaters: TheaterRecord[] | undefined;
+      if (envelope.data.version === backupVersion || save.theaters !== undefined) {
+        try { theaters = parseTheaters(save.theaters, state.saveId); }
+        catch { return { ok: false, title, error: '小剧场数据无法校验，本份存档未导入。', code: 'THEATER_BACKUP' }; }
+      }
+      return { ok: true, title: state.title, state, ...(draft ? { draft } : {}), ...(dropped ? { draftDropped: dropped } : {}),
+        ...(theaters ? { theaters } : {}) };
     } catch (error) {
       const code = error instanceof DataError ? error.code : 'CORRUPT_SAVE';
       const message = code === 'FUTURE_VERSION'
