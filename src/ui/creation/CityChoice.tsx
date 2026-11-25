@@ -7,7 +7,7 @@ import type { CnCity } from '../../domain/cities/catalog';
 import { customCityVisual, officialCityVisual, citySkyline } from '../home/cityVisual';
 import type { CityVisual } from '../home/cityVisual';
 import { guilloche } from '../home/ticketView';
-import { cities } from './model';
+import { cities, creationCustomCity } from './model';
 import type { Creation, CreationCityId } from './model';
 
 /** 车票色带（比城市色深一档）。 */
@@ -16,7 +16,7 @@ export const ticketBand = { cq: '#2f6f63', sh: '#34468e', hrb: '#6f8fa8', gz: '#
 /** 创角中当前城市的视觉身份；自定义城市尚未选定时用「自」字占位。 */
 export function creationCityVisual(form: Pick<Creation, 'city' | 'customCity'>): CityVisual {
   if (form.city !== 'custom') return officialCityVisual(openingCities[form.city].key);
-  const chosen = form.customCity;
+  const chosen = creationCustomCity(form);
   return chosen ? customCityVisual(chosen.name, chosen.region, Number(chosen.id.slice(3)))
     : { ...customCityVisual('自定义', '中国大陆', 7), seal: '自', line: 'CUSTOM · 中国大陆', meta: '中国大陆' };
 }
@@ -39,9 +39,9 @@ function CityCardArt({ city, selected, placeholder }: { city: CityVisual; select
 }
 
 export function CityCards({ form, mobile, onPick }: { form: Creation; mobile: boolean; onPick: (city: CreationCityId) => void }) {
-  const custom = creationCityVisual({ city: 'custom', customCity: form.customCity });
+  const custom = creationCityVisual({ city: 'custom', customCity: form.customCity }), customChoice = creationCustomCity(form);
   const card = (id: CreationCityId, city: CityVisual, label: string, name: string, description?: string, isNew?: boolean) => {
-    const selected = form.city === id, placeholder = id === 'custom' && !form.customCity;
+    const selected = form.city === id, placeholder = id === 'custom' && !customChoice;
     return <label className={`choice-card city-card ${selected ? 'selected' : ''} ${id === 'custom' ? 'custom' : ''}`} key={id}
       style={{ '--c': city.tint, '--tint': city.tint } as CSSProperties}>
       <input type="radio" name="city" value={id} checked={selected} onChange={() => onPick(id)} aria-label={id === 'custom' ? '自定义城市' : name} />
@@ -56,7 +56,7 @@ export function CityCards({ form, mobile, onPick }: { form: Creation; mobile: bo
     <legend className="sr-only">初始城市</legend>
     {cities.map(city => card(city.id, officialCityVisual(openingCities[city.id].key), city.label, city.name, city.description,
       !['chongqing', 'shanghai', 'harbin', 'guangzhou'].includes(city.id)))}
-    {card('custom', custom, form.customCity ? `${form.customCity.region} · 自定义` : '中国大陆任一城市', form.customCity?.name ?? '自定义城市')}
+    {card('custom', custom, customChoice ? `${customChoice.region} · 自定义` : '中国大陆任一城市', customChoice?.name ?? '自定义城市')}
   </fieldset>;
 }
 
@@ -76,7 +76,7 @@ export function CityDetail({ form, mobile, onCustomCity, introField }: {
       <p className="creation-city-note">官方城市介绍随版本提供，不需要 AI 补全。选择起点，不限制未来的目的地。</p>
     </section>;
   }
-  const chosen = form.customCity;
+  const chosen = creationCustomCity(form);
   return <section className="creation-city-detail custom" style={{ '--c': city.tint } as CSSProperties} aria-label="自定义城市">
     <header><strong>{chosen?.name ?? '自定义城市'}</strong><small>{chosen ? chosen.region : '中国大陆真实城市 · 直辖市 / 地级市 / 县级市'}</small><em>CUSTOM START</em></header>
     {chosen && !picking ? <>
@@ -128,7 +128,7 @@ function CityPicker({ mobile, selectedId, intro, onPick, onCancel }: {
         : <p className="creation-city-empty">没有找到。本期支持中国大陆的直辖市、地级市和县级市，自治州、地区、盟和县暂不支持。</p>}
     </div>
     {pending && <div className="creation-city-confirm" role="alertdialog" aria-label="更换城市">
-      <p>更换为「{pending.name}」会清空已写的城市介绍。</p>
+      <p>{officialCityForCode(pending.code) ? `「${pending.name}」是官方城市，切换后会清空已选的自定义城市和已写的城市介绍。` : `更换为「${pending.name}」会清空已写的城市介绍。`}</p>
       <button type="button" onClick={() => setPending(undefined)}>保留原城市</button>
       <button type="button" className="primary" onClick={() => { const next = pending; setPending(undefined); onPick(next); }}>确认更换</button>
     </div>}

@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { cnCitiesIn, cnCityRegion, cnProvinces, findCnCity, searchCnCities } from '../domain/cities/catalog';
 import { cnCitySource } from '../domain/cities/cnCitySource';
-import { officialCityForCode, officialCityIds, openingCities, openingCityContext, openingCityIdentity } from '../domain/openingCity';
+import { OpeningCityProfileSchema, cityIntroLength, officialCityForCode, officialCityIds, openingCities, openingCityContext, openingCityIdentity } from '../domain/openingCity';
 import { GameStateSchema } from '../domain/state';
-import { buildCreationState, creationCityName, newCreation, validateStep } from '../ui/creation/model';
+import { CreationSchema, buildCreationState, creationCityChoice, creationCityName, newCreation, validateStep } from '../ui/creation/model';
 import type { Creation } from '../ui/creation/model';
 import { applyOpeningPack, openingSettings } from '../ui/creation/openingPacks';
 import { defaultSettings } from '../ui/settings/model';
@@ -90,6 +90,57 @@ describe('创角写入城市身份', () => {
     const applied = applyOpeningPack({ version: 1, id: crypto.randomUUID(), name: '苏州开局', settings });
     expect(applied).toMatchObject({ city: 'custom', customCity: suzhou, cityIntro: '园林与工业园区。' });
     expect(buildCreationState(applied, defaultSettings()).openingCityProfile?.intro).toBe('园林与工业园区。');
+  });
+});
+
+describe('城市介绍字数口径一致', () => {
+  const emoji = '🏙️'.replace('\uFE0F', ''); // 单个码点、两个 UTF-16 单元
+  it('统一按去掉首尾空白后的 Unicode 字符计数', () => {
+    expect(cityIntroLength(`  ${emoji.repeat(3)}江南  `)).toBe(5);
+    expect(emoji.repeat(400).length).toBe(800);
+  });
+  it('第 3 步、建档与存档字段同一口径：400 个 Emoji 能建档，401 个三处都拒绝', () => {
+    const ok = form({ city: 'custom', customCity: suzhou, cityIntro: emoji.repeat(400) });
+    expect(() => validateStep(ok, 3)).not.toThrow();
+    expect(buildCreationState(ok, defaultSettings()).openingCityProfile?.intro).toBe(emoji.repeat(400));
+    expect(OpeningCityProfileSchema.safeParse({ name: '苏州', region: '江苏', intro: emoji.repeat(400) }).success).toBe(true);
+    const long = form({ city: 'custom', customCity: suzhou, cityIntro: emoji.repeat(401) });
+    expect(() => validateStep(long, 3)).toThrow('400');
+    expect(() => buildCreationState(long, defaultSettings())).toThrow('400');
+    expect(OpeningCityProfileSchema.safeParse({ name: '苏州', region: '江苏', intro: emoji.repeat(401) }).success).toBe(false);
+  });
+  it('超长粘贴不影响草稿保存与恢复，只在第 3 步提示', () => {
+    const pasted = form({ city: 'custom', customCity: suzhou, cityIntro: '长'.repeat(20000) });
+    const restored = CreationSchema.parse(JSON.parse(JSON.stringify(pasted)));
+    expect(restored.cityIntro).toHaveLength(20000);
+    expect(() => validateStep(restored, 3)).toThrow('400');
+    expect(() => validateStep({ ...restored, cityIntro: `  ${'字'.repeat(400)}\n ` }, 3)).not.toThrow();
+  });
+});
+
+describe('建档以本地城市目录为准', () => {
+  it('草稿或开局包里的名称、地区被改过时，按区划代码从目录取', () => {
+    const tampered = form({ city: 'custom', customCity: { id: 'cn-320500', name: '伪造城', region: '火星' }, cityIntro: '介绍' });
+    expect(creationCityChoice(tampered)).toMatchObject({ id: 'cn-320500', name: '苏州', profile: { name: '苏州', region: '江苏', intro: '介绍' } });
+    const state = buildCreationState(tampered, defaultSettings());
+    expect(state.title).toBe('林舟 · 苏州');
+    expect(state.locations['cn-320500'].name).toBe('苏州');
+    expect(creationCityName(tampered)).toBe('苏州');
+    const kunshan = buildCreationState(form({ city: 'custom', customCity: { id: searchCnCities('昆山')[0].id, name: '昆山', region: '错的' } }), defaultSettings());
+    expect(kunshan.openingCityProfile).toEqual({ name: '昆山', region: '江苏 · 苏州' });
+  });
+  it('目录里的官方八城映射回官方身份，不写自定义快照', () => {
+    for (const id of officialCityIds) {
+      const state = buildCreationState(form({ city: 'custom', customCity: { id: `cn-${openingCities[id].code}`, name: '随便', region: '随便' }, cityIntro: '不会写入' }), defaultSettings());
+      expect(state.openingCityId, id).toBe(id);
+      expect(state.openingCityProfile).toBeUndefined();
+      expect(state.locations[id].name).toBe(openingCities[id].name);
+    }
+  });
+  it('开局包带着被改过的名称套用，建档仍以目录为准', () => {
+    const settings = openingSettings(form({ step: 5, city: 'custom', customCity: suzhou }));
+    const pack = { version: 1 as const, id: crypto.randomUUID(), name: '改过的包', settings: { ...settings, customCity: { id: 'cn-320500', name: '别名', region: '别处' } } };
+    expect(buildCreationState(applyOpeningPack(pack), defaultSettings()).openingCityProfile).toEqual({ name: '苏州', region: '江苏' });
   });
 });
 

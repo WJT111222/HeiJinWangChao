@@ -4,8 +4,8 @@ import type { CreationCompletionInput } from '../../services/ai/creationCompleti
 import { readAiConfig } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
 import { AiError } from '../../services/ai/errors';
-import { professionName } from './model';
-import { openingCityIntroLimit } from '../../domain/openingCity';
+import { creationCustomCity, professionName } from './model';
+import { cityIntroTooLong, openingCityIntroLimit } from '../../domain/openingCity';
 import type { Creation } from './model';
 
 type Field = CreationCompletionInput['kind'];
@@ -23,8 +23,8 @@ function inputFor(field: Field, form: Creation): CreationCompletionInput | undef
     case 'background': return { kind: field, person, background: form.background, profession: professionName(form), personality };
     case 'city':
       // 绑定城市身份：换城市后旧请求的结果不会写进新城市。
-      if (form.city === 'custom' && form.customCity) return { kind: field, person, cityName: form.customCity.name, cityRegion: form.customCity.region, cityIntro: form.cityIntro ?? '' };
-      return;
+      { const city = form.city === 'custom' ? creationCustomCity(form) : undefined;
+        return city && { kind: field, person, cityName: city.name, cityRegion: city.region, cityIntro: form.cityIntro ?? '' }; }
     case 'profession':
       if (form.profession === 'custom' && form.customProfession.trim()) return {
         kind: field,
@@ -120,7 +120,7 @@ export function useCreationCompletion(
       });
       else if (result.kind === 'background') changeForm({ ...current, background: result.text });
       else if (result.kind === 'city') {
-        if (Array.from(result.text).length > openingCityIntroLimit) { status = { error: `生成的介绍超过 ${openingCityIntroLimit} 字，请重试或手动精简。` }; return; }
+        if (cityIntroTooLong(result.text)) { status = { error: `生成的介绍超过 ${openingCityIntroLimit} 字，请重试或手动精简。` }; return; }
         changeForm({ ...current, cityIntro: result.text });
       }
       else changeForm({ ...current, person: { ...current.person, [result.kind]: result.text } });

@@ -10,9 +10,9 @@ import { SaveRepository } from '../../services/storage/saveRepository';
 import type { Settings } from '../settings/model';
 import professions from './professions.json';
 import { loadCompanionProfile } from '../../services/local/companionProfile';
-import { officialCityIds, openingCities, openingCityIntroLimit } from '../../domain/openingCity';
+import { cityIntroTooLong, officialCityForCode, officialCityIds, openingCities, openingCityIntroLimit } from '../../domain/openingCity';
 import type { OfficialCityId } from '../../domain/openingCity';
-import { customCityIdPattern, findCnCity } from '../../domain/cities/catalog';
+import { cnCityRegion, customCityIdPattern, findCnCity } from '../../domain/cities/catalog';
 
 export { professions };
 export const professionCategories = [...new Set(professions.map((job) => job.category))];
@@ -53,8 +53,8 @@ export const CreationSchema = z.strictObject({
   }).optional(),
   city: z.enum(['chongqing', 'shanghai', 'harbin', 'guangzhou', 'beijing', 'hangzhou', 'changsha', 'sanya', 'custom']),
   customCity: CustomCityChoiceSchema.optional(),
-  /** 自定义城市的可选介绍（玩家手填或 AI 补全）；官方城市不使用。 */
-  cityIntro: z.string().max(4000).optional(),
+  /** 自定义城市的可选介绍（玩家手填或 AI 补全）；官方城市不使用。草稿不设上限，超长只在第 3 步提示，避免草稿存不下。 */
+  cityIntro: z.string().optional(),
   background: z.string(),
   hasCompanion: z.boolean(),
   companion: z.strictObject({
@@ -167,8 +167,8 @@ export function validateStep(form: Creation, step = form.step) {
       '请选择职业或填写自定义职业',
     );
   if (step === 3 && form.city === 'custom') {
-    requireData(form.customCity && findCnCity(form.customCity.id), 'CITY', '请选择一座自定义城市');
-    requireData(Array.from(form.cityIntro?.trim() ?? '').length <= openingCityIntroLimit, 'CITY', `城市介绍请控制在 ${openingCityIntroLimit} 字以内`);
+    requireData(creationCustomCity(form), 'CITY', '请选择一座自定义城市');
+    requireData(!cityIntroTooLong(form.cityIntro ?? ''), 'CITY', `城市介绍请控制在 ${openingCityIntroLimit} 字以内`);
   }
   if (step === 4 && form.hasCompanion) {
     requireData(
@@ -179,17 +179,25 @@ export function validateStep(form: Creation, step = form.step) {
     if (form.companion.age.trim()) age(form.companion.age);
   }
 }
-/** 创角选定城市的存档身份与名称。自定义城市只接受本地目录中的有效代码；目录里的官方城市映射回官方身份。 */
+/** 草稿里的自定义城市以本地目录为准：只认区划代码，名称与地区从目录取，不信任草稿或开局包里存的文字。 */
+export function creationCustomCity(form: Pick<Creation, 'customCity'>) {
+  const known = form.customCity && findCnCity(form.customCity.id);
+  return known && { id: known.id, code: known.code, name: known.name, region: cnCityRegion(known) };
+}
+/** 创角选定城市的存档身份与名称。自定义城市只接受本地目录中的有效代码；目录里的官方八城映射回官方身份，不写自定义快照。 */
 export function creationCityChoice(form: Pick<Creation, 'city' | 'customCity' | 'cityIntro'>) {
   if (form.city !== 'custom') return { id: form.city as string, name: openingCities[form.city].name, profile: undefined };
-  const known = form.customCity && findCnCity(form.customCity.id);
-  requireData(form.customCity && known, 'CITY', '请选择一座自定义城市');
+  const known = creationCustomCity(form);
+  requireData(known, 'CITY', '请选择一座自定义城市');
+  const official = officialCityForCode(known.code);
+  if (official) return { id: official as string, name: openingCities[official].name, profile: undefined };
   const intro = form.cityIntro?.trim();
-  return { id: known.id, name: form.customCity.name, profile: { name: form.customCity.name, region: form.customCity.region, ...(intro ? { intro } : {}) } };
+  requireData(!intro || !cityIntroTooLong(intro), 'CITY', `城市介绍请控制在 ${openingCityIntroLimit} 字以内`);
+  return { id: known.id, name: known.name, profile: { name: known.name, region: known.region, ...(intro ? { intro } : {}) } };
 }
-/** 创角各处显示用的城市名；自定义城市未选定时为空。 */
+/** 创角各处显示用的城市名；自定义城市按目录取名，未选定时为空。 */
 export const creationCityName = (form: Pick<Creation, 'city' | 'customCity'>) =>
-  form.city === 'custom' ? form.customCity?.name ?? '' : openingCities[form.city].name;
+  form.city === 'custom' ? creationCustomCity(form)?.name ?? '' : openingCities[form.city].name;
 export function buildCreationState(form: Creation, settings: Settings) {
   for (let i = 1; i <= 4; i++) validateStep(form, i);
   const city = creationCityChoice(form);

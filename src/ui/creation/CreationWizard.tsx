@@ -367,7 +367,13 @@ export function CreationWizard({
                 <CityDetail form={form} mobile={mobile}
                   onCustomCity={picked => {
                     const official = officialCityForCode(picked.code);
-                    if (official) { change({ city: official }); return; }
+                    if (official) {
+                      // 从自定义选择切到官方城市：与确认文案一致，清掉旧的自定义城市和介绍。
+                      const next = { ...form, city: official, cityIntro: '' };
+                      delete next.customCity;
+                      onChange(next);
+                      return;
+                    }
                     const same = form.customCity?.id === picked.id;
                     change({ city: 'custom', customCity: { id: picked.id, name: picked.name, region: cnCityRegion(picked) }, cityIntro: same ? form.cityIntro : '' });
                   }}

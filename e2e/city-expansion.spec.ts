@@ -106,6 +106,44 @@ test('搜到官方城市时直接选官方卡；换城会先确认清空已写�
   await detail.getByRole('button', { name: '确认更换', exact: true }).click();
   await expect(detail.locator('.creation-city-chosen')).toContainText('宁波');
   await expect(page.getByLabel('城市介绍（可选）')).toHaveValue('');
+
+  // 从自定义选择切到官方城市：确认后旧的自定义城市和介绍一并清空，与文案一致。
+  await page.getByLabel('城市介绍（可选）').fill('宁波的介绍。');
+  await detail.getByRole('button', { name: '更换城市', exact: true }).click();
+  await detail.getByPlaceholder(/搜索城市或省份/).fill('杭州');
+  await detail.getByRole('button', { name: /^杭州/ }).click();
+  await expect(detail.getByRole('alertdialog', { name: '更换城市' })).toContainText('官方城市');
+  await detail.getByRole('button', { name: '确认更换', exact: true }).click();
+  await expect(page.getByRole('radio', { name: '杭州', exact: true })).toBeChecked();
+  const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.creation.v1') ?? '{}'));
+  expect(JSON.stringify(draft)).not.toContain('cn-330200');
+  expect(JSON.stringify(draft)).not.toContain('宁波的介绍');
+  await page.getByRole('radio', { name: '自定义城市', exact: true }).check();
+  await expect(page.getByRole('region', { name: '自定义城市' }).getByPlaceholder(/搜索城市或省份/)).toBeVisible();
+  await expect(page.getByLabel('城市介绍（可选）')).toHaveCount(0);
+
+  await page.getByRole('radio', { name: '北京', exact: true }).check();
+  await page.getByRole('button', { name: /下一步/ }).click();
+  await expect(page.getByRole('heading', { name: '初始同伴', exact: true })).toBeVisible();
+});
+
+test('超长粘贴的城市介绍照常存进草稿、刷新恢复，只在第 3 步按统一字数提示', async ({ page }) => {
+  await start(page);
+  await page.getByRole('radio', { name: '自定义城市', exact: true }).check();
+  const detail = page.getByRole('region', { name: '自定义城市' });
+  await detail.getByPlaceholder(/搜索城市或省份/).fill('苏州');
+  await detail.getByRole('button', { name: /^苏州/ }).click();
+  const pasted = '🏙'.repeat(401);
+  await page.getByLabel('城市介绍（可选）').fill('长'.repeat(5000));
+  await expect(page.getByText('填写内容暂未保存', { exact: false })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByLabel('城市介绍（可选）')).toHaveValue('长'.repeat(5000));
+  await page.getByRole('button', { name: /下一步/ }).click();
+  await expect(page.getByRole('alert')).toContainText('400');
+  await page.getByLabel('城市介绍（可选）').fill(pasted);
+  await page.getByRole('button', { name: /下一步/ }).click();
+  await expect(page.getByRole('alert')).toContainText('400');
+  await page.getByLabel('城市介绍（可选）').fill('🏙'.repeat(400));
   await page.getByRole('button', { name: /下一步/ }).click();
   await expect(page.getByRole('heading', { name: '初始同伴', exact: true })).toBeVisible();
 });

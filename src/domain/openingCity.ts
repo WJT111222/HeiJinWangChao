@@ -31,10 +31,13 @@ export type OfficialCityKey = (typeof openingCities)[OfficialCityId]['key'];
 
 /** 自定义开局城市的存档快照。身份在 openingCityId（cn-六位代码），这里只存显示与可选介绍。 */
 export const openingCityIntroLimit = 400;
+/** 城市介绍的统一字数：去掉首尾空白后按 Unicode 字符计，一个 Emoji 记 1。存档、创角校验与 AI 补全都只用这一个口径。 */
+export const cityIntroLength = (text: string) => Array.from(text.trim()).length;
+export const cityIntroTooLong = (text: string) => cityIntroLength(text) > openingCityIntroLimit;
 export const OpeningCityProfileSchema = z.strictObject({
   name: z.string().trim().min(1).max(20),
   region: z.string().trim().min(1).max(40),
-  intro: z.string().trim().min(1).max(openingCityIntroLimit).optional(),
+  intro: z.string().trim().min(1).refine(text => !cityIntroTooLong(text), `城市介绍不超过 ${openingCityIntroLimit} 字`).optional(),
 });
 export type OpeningCityProfile = z.infer<typeof OpeningCityProfileSchema>;
 export const isCustomCityId = (id: string | null | undefined): id is string => !!id && customCityIdPattern.test(id);
