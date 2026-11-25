@@ -79,7 +79,8 @@ describe('固定城市身份：创建、兼容、原子补齐、并发和撤回'
     await put(state); await expect(repo.load('save-a')).rejects.toThrow(); expect(await raw()).toEqual(state);
   });
   it('已有未知身份、无美术 id 和 null 都原样保留', () => {
-    for (const id of ['hangzhou', 'unknown-city', null]) {
+    // 自定义城市身份缺少快照时同样按未知城市处理。
+    for (const id of ['suzhou', 'unknown-city', 'cn-320500', null]) {
       const state = { ...game(), title: '人物 · 重庆', openingCityId: id };
       expect(normalizeOpeningCity(state)).toBe(state);
       expect(deriveAtmosphere(state).city).toBe('other');

@@ -135,4 +135,3 @@ function CityPicker({ mobile, selectedId, intro, onPick, onCancel }: {
     {onCancel && <button type="button" className="text-button creation-city-cancel" onClick={onCancel}>取消更换</button>}
   </div>;
 }
-
