@@ -1,3 +1,4 @@
+import { requireStoryData } from './storyDiagnostics';
 import { z } from 'zod';
 import { openingTimeSelection, variablesChooseOpening } from './openingTime';
 import { GameTimeSchema, requireData } from './common';
@@ -187,13 +188,13 @@ export function timeOutcome(state: GameState, draft: Pick<TurnDraft, 'userInput'
 export function validateTimeCommands(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]) {
   if (state.openingTimePending && variablesChooseOpening(draft)) {
     requireData(!historicalPerspective(state, draft), 'TIME_PREFLIGHT', '纯历史回顾不能初始化当前世界时钟');
-    requireData(openingTimeSelection(state, draft, commands), 'OPENING_TIME', '请在变量命令中给出本幕实际开局时钟');
+    requireStoryData(openingTimeSelection(state, draft, commands), 'OPENING_TIME', '请在变量命令中给出本幕实际开局时钟', { storyRule: 'opening_missing' });
     return;
   }
   const opening = openingTimeSelection(state, draft);
   if (opening) {
-    requireData(commands.filter((c) => c.type === 'SetWorldClock').every((c) => Date.parse(c.worldClock) === Date.parse(opening.endAt)),
-      'OPENING_TIME', '变量时钟与Story开局候选冲突');
+    requireStoryData(commands.filter((c) => c.type === 'SetWorldClock').every((c) => Date.parse(c.worldClock) === Date.parse(opening.endAt)),
+      'OPENING_TIME', '变量时钟与Story开局候选冲突', { storyRule: 'opening_clock_conflict' });
     return;
   }
   if (historicalPerspective(state, draft)) {

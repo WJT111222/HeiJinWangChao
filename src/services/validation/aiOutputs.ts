@@ -142,7 +142,7 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
     : undefined;
   if (actions && (!actionOptions || actionOptions.length < 3 || actionOptions.length > 5))
     fail(new AiError('invalid_output', undefined, { storyRule: 'actions_count', actualCount: actionOptions?.length ?? 0, minimumCount: 3, maximumCount: 5 }));
-  const { notes, ...guide } = parseStoryGuide(envelope[4] ?? '');
+  const { notes, guide } = parseStoryGuide(envelope[4] ?? '');
   const parsed = StorySchema.safeParse({
     turnKind: mode,
     narrative,

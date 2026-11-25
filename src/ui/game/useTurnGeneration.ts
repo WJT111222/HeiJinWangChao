@@ -12,6 +12,7 @@ import type { RuntimeLogReporter } from './runtimeLog';
 import { generateAndSettleTurn } from '../../workflows/automaticTurn';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
 import { AiError } from '../../services/ai/errors';
+import { readFailureDiagnostic } from '../../services/ai/failureDiagnostic';
 
 export function useTurnGeneration(
   repository: SaveRepository,
@@ -110,9 +111,10 @@ export function useTurnGeneration(
     } catch (failure) {
       if (token.current === id) {
         errorTurn.current = turnKey(observed);
-        const stage = saving.current ? 'commit' : lastProgress()?.stage;
+        const diagnostic = readFailureDiagnostic(failure);
+        const stage = saving.current || diagnostic?.phase === 'commit_validation' ? 'commit' : lastProgress()?.stage;
         if (failure !== reported) onRuntimeEvent?.(stage ?? 'workflow', 'failed', failure, expected.turnId);
-        setError(
+        if (!diagnostic?.openingTime) setError(
           `${stage ? { story: '正文生成', variables: '变量管理', world: '动态世界', commit: '正式结算' }[stage] + '：' : ''}${storyError(failure)}`,
         );
       }

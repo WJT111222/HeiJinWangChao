@@ -9,6 +9,7 @@ import { channelSnapshot } from '../services/ai/snapshot';
 import { prepareErrorPayload, FeedbackCorrelation, suggestionPayload } from '../services/feedback/report';
 import { feedbackSchema } from '../services/feedback/contract';
 import { cleanFeedbackText } from '../services/feedback/textSafety';
+import { variableFailure } from '../services/validation/variableDiagnostics';
 
 const scope = { saveRef: 'private-save-ref', turnRef: 'private-turn-ref' };
 const ids = { saveId: 'synthetic-private-save', turnId: 'synthetic-private-turn', stage: 'variables' as const };
@@ -137,4 +138,15 @@ it('勾选模型原文时不会上传兼容正文开头的公开思考块', () =
   const reasoning = prepareErrorPayload([log], records, { content: false, reasoning: true })('');
   expect(reasoning.attachments?.[0]).toMatchObject({ errorRef: 1, reasoning: '兼容公开思考' });
   expect(JSON.stringify(reasoning)).not.toContain('合成正文');
+});
+
+
+it('候选写入失败继续使用旧诊断阶段，反馈接受没有开局字段的报告', () => {
+  const failure = variableFailure(new DOMException('private record', 'QuotaExceededError'), 'candidate_save');
+  const entry = runtimeLogEvent(1, 'variables', 'failed', failure, scope);
+  expect(entry).toMatchObject({ code: 'storage', diagnostic: { phase: 'candidate_save' } });
+  const payload = prepareErrorPayload([entry], [], { content: false, reasoning: false })('');
+  expect(feedbackSchema.safeParse(payload).success).toBe(true);
+  expect(payload.errors[0]?.diagnostic).not.toHaveProperty('openingTime');
+  expect(JSON.stringify(payload)).not.toContain('private record');
 });

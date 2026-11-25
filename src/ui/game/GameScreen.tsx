@@ -34,6 +34,9 @@ import { TalentProfile } from '../components/TalentProfile';
 import { StoryReading } from './StoryReadingView';
 import { StoryStreamReading } from './StoryStreamReading';
 import { openingTimeSelection } from '../../domain/openingTime';
+import { storyRuleNames } from '../../domain/storyDiagnostics';
+import { openingSettlementIssue } from '../../services/validation/turnCommit';
+import { configureTurnStages } from '../../domain/drafts';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import type { GameState } from '../../domain/state';
@@ -49,7 +52,7 @@ import { useStoryGeneration } from './useStoryGeneration';
 import { useVariableGeneration } from './useVariableGeneration';
 import { useWorldGeneration } from './useWorldGeneration';
 import { useTurnGeneration } from './useTurnGeneration';
-import { completeTurnDraft, awaitingPlayerAction, rebindableAfterStoryStop } from '../../domain/turnCommit';
+import { completeTurnDraft, awaitingPlayerAction, rebindableAfterStoryStop, settlementDraft } from '../../domain/turnCommit';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
 import { DataError } from '../../domain/common';
 import { storyError } from '../../workflows/storyStage';
@@ -131,9 +134,6 @@ export function GameScreen({
   instance?: string;
   renderSettings?: (maintenance: ReactNode) => ReactNode;
 }) {
-  const openingTime = useMemo(() => {
-    try { return draft && openingTimeSelection(state, draft); } catch { return undefined; }
-  }, [state, draft]);
   const [archiveTarget, setArchiveTarget] = useState<{panel: 'NPC' | '势力组织' | '世界事件' | '地图' | '物品栏'; id: string}>();
   const archiveReading=useRef<{events?:WorldEventsUiState;history?:HistoryUiState;memory?:MemoryUiState;map?:MapUiState}>({});
   const changeOpener=useRef<HTMLElement|null>(null);
@@ -329,7 +329,25 @@ export function GameScreen({
     !state.journal.some((entry) => entry.turnId === draft.turnId) &&
     (draft.turnKind !== 'opening' || state.turnNumber === 0);
   const stageSettingsChanged = Boolean(draft && (draft.useVariableStage !== settings.runtime.useVariableStage || draft.useWorldStage !== settings.runtime.useWorldStage));
-  const canCommit = Boolean(validDraft && draft && !stageSettingsChanged && completeTurnDraft(draft));
+  const { useVariableStage, useWorldStage } = settings.runtime;
+  const effectiveOpening = useMemo(() => {
+    if (!state.openingTimePending || !validDraft || !draft?.story || draft.legacyNotificationRecovery) return undefined;
+    return settlementDraft(configureTurnStages(draft, { useVariableStage, useWorldStage }));
+  }, [state.openingTimePending, validDraft, draft, useVariableStage, useWorldStage]);
+  const openingIssue = useMemo(() => {
+    if (!effectiveOpening || (useVariableStage && effectiveOpening.variables?.validation !== 'validated')) return undefined;
+    return openingSettlementIssue(state, effectiveOpening)?.diagnostic;
+  }, [state, effectiveOpening, useVariableStage]);
+  const openingTime = useMemo(() => {
+    if (!effectiveOpening || openingIssue) return undefined;
+    try { return openingTimeSelection(state, effectiveOpening); } catch { return undefined; }
+  }, [state, effectiveOpening, openingIssue]);
+  const canCommit = Boolean(validDraft && draft && !stageSettingsChanged && !openingIssue && completeTurnDraft(draft));
+  const retainedOpeningVariables = draft?.variables?.validation === 'validated';
+  const openingGuidance = openingIssue && `${storyRuleNames[openingIssue.reason]}，正文已保留。可重新 Roll 开局正文，或${useVariableStage
+    ? '在变量阶段重新生成候选。'
+    : retainedOpeningVariables ? '重新启用变量管理，继续时重新校验并尝试复用已有候选。' : '启用变量管理后主动补算时间。'}`;
+  const openingReuse = Boolean(openingTime && useVariableStage && retainedOpeningVariables);
   const awaitingAction = awaitingPlayerAction(state, draft);
   // 正文失败或被取消、尚无候选时：原行动放回输入框，玩家可原样或修改后直接重新发送。
   const rebindAction = !busy && rebindableAfterStoryStop(state, draft);
@@ -488,7 +506,7 @@ export function GameScreen({
     && (draft.stageStatus.world === 'failed' || draft.failures.some(failure =>
       failure.stage === 'world' && failure.storyRevision === draft.storyRevision)));
   const worldRetryHint = '本次仅重试动态世界，保留已通过的正文和变量。重新请求可能产生模型费用。';
-  const canGenerate = Boolean(validDraft && !awaitingAction && (storyNeeded || variablesNeeded || worldNeeded || stageSettingsChanged));
+  const canGenerate = Boolean(validDraft && !awaitingAction && !openingIssue && (storyNeeded || variablesNeeded || worldNeeded || stageSettingsChanged));
   const recoveryStagesOff = Boolean(draft?.legacyNotificationRecovery
     && (!settings.runtime.useVariableStage || !settings.runtime.useWorldStage));
   const disabledGuidance = recoveryStagesOff
@@ -501,16 +519,16 @@ export function GameScreen({
         ? '动态世界已关闭：正文与变量候选通过校验后正式结算，不执行场外世界更新。'
         : '';
   const workflowGuidance = validDraft && !awaitingAction && !busy && !canCommit
-    ? disabledGuidance || (!canGenerate
+    ? openingGuidance || disabledGuidance || (!canGenerate
       ? draft?.world?.validation === 'preview'
         ? '当前世界结果仅为预览。请在高级操作中补算世界候选，完成后才能正式结算。'
         : '当前候选尚不满足正式结算条件。请展开高级设置检查并补算必要候选。'
       : '')
     : '';
-  function openRuntimeSettings() {
+  function openRuntimeSettings(target = !useVariableStage ? 'variables' as const : 'world' as const) {
     if (!compactSidebars) {
-      // PC：选中提示所指的阶段，并聚焦该阶段自己的开关（而非列表中第一个未勾选项）。
-      const target = !settings.runtime.useVariableStage ? "variables" : "world";
+      // PC：选中提示所指的阶段，并聚焦该阶段自己的开关。
+
       openWorkflowView(target);
       requestAnimationFrame(() => {
         const toggle = runtimeSwitches.current?.querySelector<HTMLInputElement>(`input[data-stage="${target}"]`);
@@ -525,7 +543,7 @@ export function GameScreen({
       runtimeSwitches.current?.scrollIntoView({ block: "nearest" });
       (
         runtimeSwitches.current?.querySelector<HTMLInputElement>(
-          "input:not(:checked)",
+          `input[data-stage="${target}"]`,
         ) ?? runtimeSwitches.current?.querySelector<HTMLInputElement>("input")
       )?.focus({ preventScroll: true });
     });
@@ -554,6 +572,7 @@ export function GameScreen({
     : automatic.settling ? '正在正式结算'
     : activeStage ? `${stageLabels[activeStage]}${activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? `自动重试 ${retryNotice?.count ?? ''}/${retryNotice?.max ?? ''}` : '生成中'} · ${{ story: 1, variables: 2, world: 3 }[activeStage]}/3`
     : automatic.running ? '正在准备生成'
+    : openingIssue ? '开局时间待补齐'
     : hasWorkflowError && submitError ? `${awaitingAction || rebindAction ? '行动发送' : '结算'}失败 · 查看详情`
     : hasWorkflowError && (currentFailure?.kind === 'cancelled' || currentFailure?.code === 'cancelled') ? '已取消 · 可恢复'
     : hasWorkflowError ? `${errorLabel}${errorStage === 'commit' ? '' : '生成'}失败 · 查看详情`
@@ -673,6 +692,8 @@ export function GameScreen({
     : nextStage === 'story' ? { kind: 'continue', label: storyLabel, short: '续', disabled: !validDraft || busy || !mayStartStory(draft),
         title: !validDraft ? staleDraftMessage : '生成本回合正文（使用已绑定的行动）', onClick: continueStory }
     : !validDraft ? { kind: 'idle', label: '继续', short: '续', disabled: true, title: staleDraftMessage }
+    : openingIssue ? { kind: 'continue', label: '重新 Roll 开局正文', short: '重', disabled: busy,
+        title: '重新生成开局正文。当前正文保留到新正文保存成功。', onClick: () => void generate(undefined, true) }
     : canCommit && !nextStage ? { kind: 'continue', label: '完成本回合结算', short: '结', disabled: busy, title: '候选已完成，保存本回合结果', onClick: continueWorkflow }
     : stageSettingsChanged && !nextStage ? { kind: 'continue', label: '应用阶段设置并继续', short: '续', disabled: busy, title: '在执行锁内保存本次阶段选择，再校验并结算', onClick: continueWorkflow }
     : nextStage && canGenerate ? { kind: 'continue', label: nextStage === 'variables' ? '继续生成变量' : '继续生成世界', short: '续', disabled: busy,
@@ -683,6 +704,8 @@ export function GameScreen({
     : busy ? `${activeStage ? stageLabels[activeStage] : '当前操作'}正在处理，请等待完成或使用原有取消按钮。`
     : !validDraft ? staleDraftMessage
     : !navigator.locks ? '当前浏览器缺少 Web Locks，不能安全启动请求。输入仍保留，请使用支持的浏览器重新读档。'
+    : openingIssue ? undefined
+    : openingReuse ? '继续时会重新校验已有变量候选，通过后直接复用。'
     : workflowGuidance || (awaitingAction ? undefined
       : canCommit ? '候选已完成，可点击左侧按钮完成本回合结算；发送新行动将先结算，再绑定下一回合。'
       : nextStage === 'variables' || nextStage === 'world'
@@ -705,6 +728,7 @@ export function GameScreen({
   const diagnosticRecovery = busy ? '当前仍在处理，请等待结束或使用原有取消操作。'
     : !validDraft ? '当前草稿版本不可继续，请重新读取存档后检查。'
     : !navigator.locks ? '当前浏览器缺少 Web Locks，不能安全启动请求；请更换支持的浏览器并重新读档。'
+    : openingGuidance ? openingGuidance
     : retryWorldOnly ? `点击「继续未完成阶段」恢复本回合。${worldRetryHint}`
     : workflowAction.kind === 'continue' && !workflowAction.disabled ? `当前可主动${workflowAction.label}；生成可能产生费用，查看诊断不会发起请求。`
     : '当前暂不可继续，请检查阶段开关与现有操作按钮。';
@@ -741,7 +765,7 @@ export function GameScreen({
         <div className="wf-banner" data-level="warn" role="note" aria-label="阶段设置提示">
           <span className="wf-banner-tag" aria-hidden="true">注</span>
           <div className="wf-banner-msg"><p>{workflowGuidance}</p></div>
-          <button onClick={openRuntimeSettings} aria-controls="workflow-runtime-switches">前往阶段开关</button>
+          <button onClick={() => openRuntimeSettings()} aria-controls="workflow-runtime-switches">前往阶段开关</button>
         </div>
       )}
       {!validDraft && (
@@ -1022,7 +1046,7 @@ export function GameScreen({
               </button>
             </ComposerTools>
             <label className="sr-only" htmlFor="player-input">你的行动</label>
-            <textarea id="player-input" ref={inputElement} aria-describedby={[concurrencyBlocked && 'action-concurrency-error', actionGuidance && 'action-recovery-guidance'].filter(Boolean).join(' ') || undefined} disabled={submitting} value={input}
+            <textarea id="player-input" ref={inputElement} aria-describedby={[concurrencyBlocked && 'action-concurrency-error', (actionGuidance || openingIssue) && 'action-recovery-guidance'].filter(Boolean).join(' ') || undefined} disabled={submitting} value={input}
               onChange={(e) => setInput(e.target.value)} rows={compactSidebars?1:2}
               placeholder={compactSidebars ? '填写你的行动' : !settings.runtime.useVariableStage || !settings.runtime.useWorldStage
                 ? '填写你的行动；发送后完成已启用阶段并自动结算' : '填写你的行动；发送后生成三阶段并自动结算'} />
@@ -1032,6 +1056,10 @@ export function GameScreen({
               {!compactSidebars && <span className="kbd">Ctrl + Enter</span>}
             </div>
           </div>
+          {!busy && openingGuidance && <div id="action-recovery-guidance" className="wf-banner" data-level="warn" role="note" aria-label="开局时间恢复">
+            <div className="wf-banner-msg"><p>{openingGuidance}</p></div>
+            <button type="button" onClick={() => useVariableStage ? openWorkflowView('variables') : openRuntimeSettings('variables')}>{useVariableStage ? '查看变量阶段' : '前往变量开关'}</button>
+          </div>}
           {actionGuidance && <p id="action-recovery-guidance" className="field-hint" role="status">{actionGuidance}</p>}
         </div>
       </section>

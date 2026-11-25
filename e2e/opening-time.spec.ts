@@ -63,9 +63,12 @@ async function mock(page: Page, startAt: string, endAt: string) {
       const minimalCommands = !opening || plan.variableCase === 'empty' ? [] : plan.variableCase === 'npc'
         ? [{ type: 'CreateNpc', commandId: 'scene-person', evidence: '本幕在场服务人员', npc: { id: 'new-npc', identityKey: 'identity-new-npc', kind: 'ordinary', name: '店员', aliases: [], skills: [], onScene: true, locationId: hero.locationId, affinity: 0, relationshipText: '初次见面', memories: [], knownInformation: [] } }]
         : [{ type: 'AcquireItem', commandId: 'gift', evidence: '临别得到一份证件', item: { id: 'gift', name: '证件', category: 'document', quantity: 1, conditionText: '完好', ownerRef: { kind: 'protagonist', id: hero.id } } }];
+      // Variables starts from a pending clock and emits the actual window independently of Story notes.
+      const clocks = (opening ? [plan.badDate ? '2023-02-29T08:00:00+08:00' : startAt, endAt]
+        : plan.minimal ? [] : [new Date(Date.parse(string(record(context.SAVE_STATE).worldClock)) + 15000).toISOString()])
+        .map(worldClock => ({ type: 'SetWorldClock', worldClock }));
       text = (stage === 'variables' ? variableReply : JSON.stringify)(stage === 'variables' ? {
-        commands: plan.minimal ? minimalCommands : [{ type: 'SetWorldClock', commandId: 'clock', evidence: '主角在街边喝了一口水。',
-          worldClock: opening ? string(record(context.OPENING_TIME).endAt) : new Date(Date.parse(string(record(context.SAVE_STATE).worldClock)) + 15000).toISOString() }], rejectedSuggestions: [], unresolved: [],
+        commands: [...clocks, ...minimalCommands], rejectedSuggestions: [], unresolved: [],
       } : { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
     }
     await route.fulfill(stage === 'story' ? { contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n` }
@@ -111,18 +114,24 @@ for (const scenario of [
   await page.reload(); await ready(page); expect(await stored(page)).toEqual(committed); expect(server.calls).toHaveLength(6);
 });
 
-test('非法AI日期拒绝保存、不调用下游；刷新无隐式重发，主动恢复仍待定到正式提交', async ({ page }) => {
+test('Variables 非法日期不能保存或启动 World；刷新零请求，主动恢复复用正文完成开局', async ({ page }) => {
   test.setTimeout(60000); await prepare(page); const server = await mock(page, '2015-07-08T14:00:00+08:00', '2015-07-08T14:02:00+08:00');
   server.plan.badDate = true; await creation(page, '故事发生在2015年夏天。');
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click();
-  await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toBeVisible();
-  const before = await stored(page); expect(before.draft.story).toBeUndefined(); expect(before.state.openingTimePending).toBe(true);
-  expect(server.calls.map((call) => call.stage)).toEqual(['story']);
-  await page.reload(); await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 正文生成失败 · 查看详情');
-  expect((await stored(page)).draft.failures).toEqual(before.draft.failures); expect(server.calls).toHaveLength(1);
+  await expect.poll(async () => (await stored(page)).draft.stageStatus.variables).toBe('failed');
+  const before = await stored(page);
+  expect(before.draft.stageStatus.story).toBe('ready');
+  expect(before.draft.variables).toBeUndefined(); expect(before.draft.world).toBeUndefined();
+  expect(before.state).toMatchObject({ turnNumber: 0, revision: 0, openingTimePending: true, worldClock: pendingOpeningClock, journal: [] });
+  expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables']);
+  await page.reload(); await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 变量生成失败 · 查看详情');
+  expect(await stored(page)).toEqual(before); expect(server.calls).toHaveLength(2);
   server.plan.badDate = false; await openWorkflow(page); await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await ready(page);
-  expect(server.calls.map((call) => call.stage)).toEqual(['story', 'story', 'variables', 'world']);
-  expect((await stored(page)).state.turnNumber).toBe(1); expect((await stored(page)).state.protagonist).toEqual(before.state.protagonist);
+  expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'variables', 'world']);
+  const settled = (await stored(page)).state;
+  expect(settled).toMatchObject({ turnNumber: 1, revision: 1, worldClock: '2015-07-08T14:02:00+08:00' });
+  expect(settled.journal[0].story).toEqual(before.draft.story);
+  expect(settled.protagonist).toEqual(before.state.protagonist);
 });
 
 test('相对年份和履历完整交给同一次Story，不以中文正则阻断创角', async ({ page }) => {
@@ -144,16 +153,19 @@ test('年代优先指令完整传入Story；程序不二次判定自然语言年
   await page.reload(); await ready(page); expect(server.calls).toHaveLength(3); expect(await stored(page)).toEqual(saved);
 });
 
-for (const kind of ['empty', 'npc', 'item']) test(`M8最小开局${kind}：无正文时间/重复时钟/逐字证据，发送后正式结算并自动下一回合`, async ({ page }) => {
+for (const kind of ['empty', 'npc', 'item']) test(`M8最小开局${kind}：正文无时间锚点，Variables 设置唯一时间窗，正式结算后继续下一回合`, async ({ page }) => {
   test.setTimeout(60000); await prepare(page);
   const startAt = '2015-07-08T14:00:00+08:00', endAt = '2015-07-08T14:02:00+08:00';
   const server = await mock(page, startAt, endAt); server.plan.minimal = true; server.plan.variableCase = kind;
   await creation(page, '故事发生在2015年夏天。');
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click(); await ready(page);
   const first = await stored(page);
-  expect(first.state.appliedCommands.filter(c => c.commandId === 'opening-clock:1').map(c => JSON.parse(c.fingerprint))).toEqual([{ type: 'SetWorldClock', commandId: 'opening-clock:1', worldClock: endAt, evidence: 'Story结构化开局时间' }]);
+  const committedClocks = (entries: typeof first.state.appliedCommands) => entries.map(c => JSON.parse(c.fingerprint))
+    .filter(c => c.type === 'SetWorldClock').map(c => c.worldClock);
+  expect(committedClocks(first.state.appliedCommands)).toEqual([startAt, endAt]);
   expect(first.state.openingTimePending).toBeUndefined(); expect(first.state.worldClock).toBe(endAt);
-  expect(server.calls[1].context.SAVE_STATE).toHaveProperty('worldClock', endAt);
+  expect(server.calls[1].context.SAVE_STATE).toHaveProperty('worldClock', null);
+  expect(server.calls[1].context.OPENING_TIME).toEqual({ status: 'pending' });
   expect(server.calls[2].context.TIME_WINDOW).toEqual({ from: startAt, to: endAt });
   const rounds = kind === 'empty' ? 9 : 1;
   for (let index = 1; index <= rounds; index++) {
@@ -163,7 +175,7 @@ for (const kind of ['empty', 'npc', 'item']) test(`M8最小开局${kind}：无�
     expect((await stored(page)).state.worldClock).toBe(endAt); // 普通回合合法空变更不固定加时。
   }
   const saved = await stored(page);
-  expect(saved.state.appliedCommands.filter((c) => c.commandId.startsWith('opening-clock:'))).toHaveLength(1);
+  expect(committedClocks(saved.state.appliedCommands)).toEqual([startAt, endAt]);
   expect(saved.state.journal).toHaveLength(rounds + 1); expect(server.calls).toHaveLength((rounds + 1) * 3);
   if (kind === 'npc') expect(saved.state.npc['new-npc']).toHaveProperty('onScene', true);
   if (kind === 'item') expect(saved.state.items.gift.ownerRef).toEqual({ kind: 'protagonist', id: saved.state.protagonist.id });

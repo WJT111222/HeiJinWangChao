@@ -5,6 +5,12 @@ import type { GameState } from './state';
 import type { TurnDraft } from './drafts';
 import type { DomainCommand } from './commands';
 
+export const openingTimeFailureReasons = [
+  'opening_missing', 'opening_duplicate', 'opening_json', 'opening_format', 'opening_timezone',
+  'opening_reversed', 'opening_year', 'opening_protocol', 'opening_context', 'opening_clock_conflict',
+] as const;
+export type OpeningTimeFailureReason = typeof openingTimeFailureReasons[number];
+
 type OpeningDraft = Pick<TurnDraft, 'turnKind' | 'story' | 'userInput'> & Partial<Pick<TurnDraft, 'variables' | 'useVariableStage'>>;
 export function variablesChooseOpening(draft: OpeningDraft) {
   return draft.story?.variableGuideRaw !== undefined && (draft.useVariableStage === true || draft.variables?.validation === 'validated');

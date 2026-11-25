@@ -6,6 +6,7 @@ import { parseVariableText } from '../parsers/variableText';
 import { parseVariableResponse } from '../parsers/variableText/response';
 import { defaultSettings } from '../ui/settings/model';
 import { stageContext } from './fixtures/eventStages';
+import { buildCreationState, newCreation } from '../ui/creation/model';
 
 // 最终格式提醒：紧贴生成点重复输出骨架，降低长上下文末端掉格式的概率。
 // 骨架会被模型照抄，所以下面同时用正式解析器验证"模板自身是合法形状"。
@@ -86,6 +87,24 @@ it('正文模板可被严格解析：骨架按字面解析成功，占位文字�
   const actionSkeleton = slice(actionTail, '<thinking>', '</行动选项>').replace('每行一条短行动', '查看周围\n继续交谈\n离开房间');
   settings.prompts.actionOptions = true;
   expect(parseStoryEnvelope(actionSkeleton, 'regular', settings).story.actionOptions).toEqual(['查看周围', '继续交谈', '离开房间']);
+});
+
+it('待定纯小说开局的最终格式以一个结构化时间为必填；有 Variables 时笔记可省略', async () => {
+  const settings = defaultSettings();
+  const pending = buildCreationState({ ...newCreation(), person: { name: '林舟', age: '30', gender: '女性', appearance: '', personality: '' }, profession: '教师' }, settings);
+  settings.runtime.useVariableStage = false;
+  settings.runtime.useWorldStage = false;
+  const compose = () => composePrompt({ stage: 'story', mode: 'opening', state: pending, userInput: '', settings });
+  const tail = (await compose()).messages.at(-1)?.content;
+  expect(tail).toContain('<变量规划>必填');
+  expect(tail).toContain('"subjectHint":"time:opening"');
+  expect(tail).not.toContain('<变量规划>[]');
+  expect(tail).not.toContain('可留空或省略');
+  settings.runtime.useVariableStage = true;
+  const withVariables = (await compose()).messages.at(-1)?.content;
+  expect(withVariables).toContain('<变量规划>[]');
+  expect(withVariables).toContain('可留空或省略');
+  expect(withVariables).not.toContain('<变量规划>必填');
 });
 
 it('变量模板可被严格解析：无变化骨架经正式解析返回 0 条命令', () => {

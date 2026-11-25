@@ -1,4 +1,4 @@
-import { completeTurnDraft } from '../domain/turnCommit';
+import { completeTurnDraft, settlementDraft } from '../domain/turnCommit';
 import { DataError } from '../domain/common';
 import { fingerprint } from '../domain/commands';
 import { TurnDraftSchema, configureTurnStages } from '../domain/drafts';
@@ -14,6 +14,7 @@ import { freeze, requestSnapshot } from '../services/ai/snapshot';
 import type { CompanionProfile } from '../services/local/companionProfile';
 import type { SaveRepository } from '../services/storage/saveRepository';
 import { parseVariables, revalidateWorld } from '../services/validation/aiOutputs';
+import { requireOpeningSettlement } from '../services/validation/turnCommit';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { reserveStageSession, withBrowserLock } from './stageGuard';
@@ -286,14 +287,16 @@ export class TurnCoordinator {
             }
           }
         }
-        await reread();
+        const finalState = await reread();
+        const complete = completeTurnDraft(draft);
+        if (complete && finalState.openingTimePending) requireOpeningSettlement(finalState, settlementDraft(draft));
         const skipped: AiStage[] = [];
         if (draft.stageStatus.variables === 'skipped') skipped.push('variables');
         if (draft.stageStatus.world === 'skipped') skipped.push('world');
         return {
           draft,
           skipped,
-          status: completeTurnDraft(draft) ? 'complete' : draft.world?.validation === 'preview' ? 'preview' : 'skipped',
+          status: complete ? 'complete' : draft.world?.validation === 'preview' ? 'preview' : 'skipped',
         };
       }, { required: true });
     } finally {

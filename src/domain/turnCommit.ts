@@ -35,6 +35,7 @@ export function rebindableAfterStoryStop(state: GameState, draft?: TurnDraft) {
     && draft.baseSaveRevision === state.revision && draft.executionRevision === 0
     && !draft.story && !draft.variables && !draft.world && draft.stageStatus.story !== 'ready');
 }
+// 这里只检查候选和阶段依赖是否齐备；正式就绪还需按存档状态校验开局时间。
 export function completeTurnDraft(draft: TurnDraft) {
   const parsed = TurnDraftSchema.safeParse(draft);
   if (!parsed.success) return false;
