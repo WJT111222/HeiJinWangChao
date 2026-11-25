@@ -14,14 +14,19 @@ class FakeGain extends FakeNode { gain = new FakeParam(); }
 class FakeFilter extends FakeNode { type = ''; frequency = new FakeParam(); }
 class FakeOscillator extends FakeNode {
   type = ''; frequency = new FakeParam(); onended: (() => void) | null = null;
-  start() { Fake.started.push(this.frequency.value); }
-  stop() { Fake.oscillators.push(this); }
+  stops = 0;
+  start() { Fake.started.push(this.frequency.value); Fake.oscillators.push(this); }
+  stop() { this.stops++; }
 }
 class Fake {
   static instances: Fake[] = []; static started: number[] = []; static oscillators: FakeOscillator[] = []; static nodes: FakeNode[] = [];
   static initialState: AudioContextState = 'running'; static resumeTo: AudioContextState = 'running';
   state: AudioContextState = Fake.initialState; currentTime = 0; destination = new FakeNode();
+  listeners: (() => void)[] = [];
   constructor() { Fake.instances.push(this); }
+  addEventListener(type: string, listener: () => void) { if (type === 'statechange') this.listeners.push(listener); }
+  /** 模拟浏览器改变音频状态并派发 statechange。 */
+  become(state: AudioContextState) { this.state = state; for (const listener of this.listeners) listener(); }
   resume() { this.state = Fake.resumeTo; return Promise.resolve(); }
   createGain() { const n = new FakeGain(); Fake.nodes.push(n); return n; }
   createBiquadFilter() { const n = new FakeFilter(); Fake.nodes.push(n); return n; }
@@ -120,6 +125,31 @@ describe('音频生命周期', () => {
     expect(Fake.nodes.length).toBeGreaterThan(0);
     expect(Fake.nodes.every(node => node.disconnected === 0)).toBe(true);
     endAll();
+    expect(Fake.nodes.every(node => node.disconnected === 1)).toBe(true);
+  });
+  it.each(['suspended', 'interrupted', 'closed'])('播放中音频变为 %s 时立即停止并断开已安排的音，恢复后不再响', (state) => {
+    primeChime('always');
+    playChime('done');
+    const ctx = Fake.instances[0];
+    expect(Fake.oscillators).toHaveLength(4);
+    ctx.become(state as AudioContextState);
+    expect(Fake.oscillators.every(osc => osc.stops === 2 && osc.onended === null)).toBe(true);
+    expect(Fake.nodes.every(node => node.disconnected === 1)).toBe(true);
+    ctx.become('running');
+    endAll();
+    expect(Fake.nodes.every(node => node.disconnected === 1)).toBe(true);
+    expect(Fake.started).toHaveLength(4);
+  });
+  it('已正常播完的提示不会被之后的挂起重复清理；同一音频只监听一次状态', () => {
+    primeChime('always');
+    playChime('done'); endAll();
+    playChime('attention');
+    const ctx = Fake.instances[0];
+    expect(ctx.listeners).toHaveLength(1);
+    ctx.become('suspended');
+    const [first, second] = [Fake.oscillators.slice(0, 4), Fake.oscillators.slice(4)];
+    expect(first.every(osc => osc.stops === 1)).toBe(true);
+    expect(second.every(osc => osc.stops === 2)).toBe(true);
     expect(Fake.nodes.every(node => node.disconnected === 1)).toBe(true);
   });
   it('试听会先等音频恢复运行再播放', async () => {

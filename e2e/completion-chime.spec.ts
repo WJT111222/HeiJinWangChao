@@ -1,7 +1,7 @@
 import { variableTextEnvelope } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools, openSettings } from './helpers/gameLayout';
+import { openGameTools, openSettings, openStageSwitches, openWorkflowStage } from './helpers/gameLayout';
 
 // 以下 seed/mock 与 automatic-settlement 相同：预置存档与三阶段模型替身。
 async function seed(page: Page, remoteLocation = false, organization = false) {
@@ -51,7 +51,7 @@ async function fakeAudio(page: Page) {
     class Node { connect<T>(t: T) { return t; } disconnect() {} }
     class Param { value = 0; setValueAtTime() { return this; } exponentialRampToValueAtTime() { return this; } }
     class Osc extends Node { type = ''; frequency = new Param(); onended: null | (() => void) = null; start() { w.__chimes.push(this.frequency.value); } stop() { setTimeout(() => this.onended?.(), 0); } }
-    class Ctx { state = 'suspended'; currentTime = 0; destination = new Node();
+    class Ctx { state = 'suspended'; currentTime = 0; destination = new Node(); addEventListener() {}
       resume() { this.state = 'running'; return Promise.resolve(); }
       createGain() { return Object.assign(new Node(), { gain: new Param() }); }
       createBiquadFilter() { return Object.assign(new Node(), { type: '', frequency: new Param() }); }
@@ -121,4 +121,74 @@ test('设置页可切换提示音并试听', async ({ page }) => {
   await expect.poll(() => chimes(page)).toEqual(DONE);
   await page.getByRole('button', { name: '试听失败提示', exact: true }).click();
   await expect.poll(() => chimes(page)).toEqual([...DONE, ...ATTENTION]);
+});
+
+// —— 与实际回合流程的联动 ——
+const workflowRegion = (page: Page) => page.getByRole('region', { name: '三阶段工作流' });
+/** 关闭 CORS 中转，只走直连，便于按阶段替换回包（与 turn-coordinator 的瞬时失败用例相同）。 */
+const directOnly = (page: Page) => page.evaluate(async () => { const path = '/src/services/ai/corsRelay.ts'; (await import(path)).setRelayMode('off'); });
+/** 在原替身之前拦截指定阶段：返回 fail 给出的状态码，否则交还原替身。 */
+async function failStage(page: Page, stage: string, fail: () => number | undefined) {
+  await page.route('https://auto-settlement.mock.invalid/**', async route => {
+    const status = String(route.request().postDataJSON().model) === stage ? fail() : undefined;
+    if (status) await route.fulfill({ status, body: 'mock-only' }); else await route.fallback();
+  });
+}
+
+test('正常回合：开局与下一条行动各结算一次，各响一次完成提示', async ({ page }) => {
+  await fakeAudio(page); await seed(page); await useChime(page, 'always'); await mock(page);
+  await startOpening(page);
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(1);
+  await expect.poll(() => chimes(page)).toEqual(DONE);
+  await page.getByLabel('你的行动', { exact: true }).fill('继续在街边用餐');
+  await page.getByRole('button', { name: '发送', exact: true }).click();
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
+  await expect.poll(() => chimes(page)).toEqual([...DONE, ...DONE]);
+  await page.waitForTimeout(300); expect(await chimes(page)).toEqual([...DONE, ...DONE]);
+});
+
+test('自动重试：中间的服务失败不提醒，最终成功只响一次完成提示', async ({ page }) => {
+  await fakeAudio(page); await seed(page); await directOnly(page); await useChime(page, 'always'); const server = await mock(page);
+  let failed = 0; await failStage(page, 'variables', () => failed++ === 0 ? 503 : undefined);
+  await startOpening(page);
+  await expect.poll(async () => (await stored(page)).state.turnNumber, { timeout: 20_000 }).toBe(1);
+  expect(failed).toBe(2);
+  expect(server.calls).toEqual(['story', 'variables', 'world']);
+  await expect.poll(() => chimes(page)).toEqual(DONE);
+  await page.waitForTimeout(300); expect(await chimes(page)).toEqual(DONE);
+});
+
+test('世界预览只响需要处理的提示；补开变量后继续，结算成功再响完成提示', async ({ page, isMobile }) => {
+  test.skip(isMobile, '阶段开关在电脑端工作台；手机端由前面的通用场景覆盖');
+  await fakeAudio(page); await seed(page); await useChime(page, 'always'); const server = await mock(page);
+  await openStageSwitches(page);
+  await page.getByLabel('变量管理', { exact: true }).uncheck();
+  await startOpening(page);
+  await expect(workflowRegion(page).getByRole('status')).toContainText('世界仅为预览');
+  expect((await stored(page)).draft.world.validation).toBe('preview');
+  expect(server.calls).toEqual(['story', 'world']);
+  await expect.poll(() => chimes(page)).toEqual(ATTENTION);
+  expect((await stored(page)).state.turnNumber).toBe(0);
+  await page.getByLabel('变量管理', { exact: true }).check();
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(1);
+  await expect.poll(() => chimes(page)).toEqual([...ATTENTION, ...DONE]);
+});
+
+test('手动阶段与自动结算衔接：失败提醒一次，手动补变量不响，继续后结算成功响完成提示', async ({ page, isMobile }) => {
+  test.skip(isMobile, '单阶段手动生成在电脑端工作台；手机端由前面的通用场景覆盖');
+  await fakeAudio(page); await seed(page); await directOnly(page); await useChime(page, 'always'); const server = await mock(page);
+  let broken = true; await failStage(page, 'variables', () => broken ? 401 : undefined);
+  await startOpening(page);
+  await expect.poll(() => chimes(page)).toEqual(ATTENTION);
+  expect((await stored(page)).state.turnNumber).toBe(0);
+  broken = false;
+  await openWorkflowStage(page, 'variables');
+  await page.getByRole('button', { name: /^(?:重新)?生成变量候选$/ }).click();
+  await expect.poll(async () => (await stored(page)).draft.stageStatus.variables).toBe('ready');
+  await page.waitForTimeout(300); expect(await chimes(page)).toEqual(ATTENTION);
+  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(1);
+  expect(server.calls.filter(stage => stage === 'world')).toHaveLength(1);
+  await expect.poll(() => chimes(page)).toEqual([...ATTENTION, ...DONE]);
 });

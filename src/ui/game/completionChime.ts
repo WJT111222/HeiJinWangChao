@@ -10,6 +10,20 @@ export type ChimeKind = 'done' | 'attention';
 
 type AudioContextClass = typeof AudioContext;
 let context: AudioContext | undefined;
+/** 正在播放的提示音各自的“立即中止”回调；音频一离开运行状态就全部中止。 */
+const playing = new Set<() => void>();
+let watched: AudioContext | undefined;
+
+/** 播放中音频被挂起、中断（iOS 来电等）或关闭时，立即停止并断开已安排的音，恢复后不会继续响。 */
+function watchState(ctx: AudioContext) {
+  if (watched === ctx) return;
+  watched = ctx;
+  try {
+    ctx.addEventListener('statechange', () => {
+      if (ctx.state !== 'running') for (const abort of [...playing]) abort();
+    });
+  } catch { /* 不支持状态事件时，仍有播放前检查与 onended 清理 */ }
+}
 
 function audioContextClass(): AudioContextClass | undefined {
   const scope = globalThis as { AudioContext?: AudioContextClass; webkitAudioContext?: AudioContextClass };
@@ -60,8 +74,18 @@ const NOTE_SECONDS = 1.6;
 export function playChime(kind: ChimeKind) {
   const ctx = context;
   if (!ctx || ctx.state !== 'running') return;
-  const nodes: AudioNode[] = [];
-  const cleanup = () => { for (const node of nodes) { try { node.disconnect(); } catch { /* 已断开 */ } } nodes.length = 0; };
+  watchState(ctx);
+  const nodes: AudioNode[] = [], oscillators: OscillatorNode[] = [];
+  const cleanup = () => {
+    playing.delete(abort);
+    for (const node of nodes) { try { node.disconnect(); } catch { /* 已断开 */ } }
+    nodes.length = 0; oscillators.length = 0;
+  };
+  const abort = () => {
+    for (const osc of oscillators) { osc.onended = null; try { osc.stop(); } catch { /* 未开始或已停止 */ } }
+    cleanup();
+  };
+  playing.add(abort);
   try {
     const start = ctx.currentTime + 0.02;
     const filter = ctx.createBiquadFilter();
@@ -83,6 +107,7 @@ export function playChime(kind: ChimeKind) {
       for (const [multiple, level] of [[1, 1], [2, 0.12]] as const) {
         const voice = ctx.createGain(), osc = ctx.createOscillator();
         nodes.push(voice, osc);
+        oscillators.push(osc);
         voice.gain.value = level;
         osc.type = 'sine';
         osc.frequency.value = frequency * multiple;
@@ -94,7 +119,7 @@ export function playChime(kind: ChimeKind) {
     }
     // 最后一个音结束后断开本次创建的全部节点，长时间游玩不累积。
     if (last) last.onended = cleanup; else cleanup();
-  } catch { cleanup(); }
+  } catch { abort(); }
 }
 
 export function chimeIfWanted(mode: ChimeMode, kind: ChimeKind | undefined) {
@@ -109,4 +134,4 @@ export async function previewChime(kind: ChimeKind) {
 }
 
 /** 仅供测试：丢弃缓存的音频上下文。 */
-export function resetChimeForTests() { context = undefined; }
+export function resetChimeForTests() { context = undefined; watched = undefined; playing.clear(); }
