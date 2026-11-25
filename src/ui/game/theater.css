@@ -43,6 +43,16 @@
 .theater-panel [role=alert] { color: var(--danger, var(--gold)); }
 .theater-confirm { border-top: 1px solid var(--line); }
 .theater-panel article { max-width: 46rem; margin-inline: auto; }
+@media (min-width: 901px) {
+  .app-shell-game .city-night dialog.archive.theater-archive {
+    margin: 0;
+    padding: 0;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+  }
+}
 @media (max-width: 900px) {
   .theater-panel button { min-height: 40px; }
   .theater-actions { gap: .35rem; }

@@ -9,6 +9,7 @@ import type { Protocol } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
 import { backupSummary, parseBackup, serializeBackup } from '../services/storage/backup';
 import { SaveRepository } from '../services/storage/saveRepository';
+import { createTheaterStores } from '../services/storage/theaters';
 import type { OpenTheater } from '../services/storage/theaters';
 import { defaultSettings } from '../ui/settings/model';
 import { appendTheaterText, prepareTheater, runTheater, theaterMessages } from '../workflows/theater';
@@ -218,9 +219,111 @@ describe('小剧场生成', () => {
     expect(backup).not.toContain(secret);
     expect(backup).not.toContain(fixture.channel.baseUrl);
   });
+
+  it('拒绝在已保存正文和续写接缝中拼出的完整凭证', async () => {
+    const fixture = await open();
+    const split = 'sk-theater-'.length;
+    const saved = await saveBody(fixture.opened, content + '\n' + secret.slice(0, split));
+    const transport = respond(Response.json(openAi(secret.slice(split) + '照常结束。')));
+    await expect(run(saved, 'continue', fixture, transport)).rejects.toMatchObject({ code: 'THEATER_PRIVATE' });
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(await repo.theaters.open('save-a', saved.record.id)).toEqual(saved);
+    expect(await serializeBackup(await repo.exportBackup(['save-a']), 'test')).not.toContain(secret);
+  });
+
+  it.each(['length', 'disconnect', 'stop'] as const)('截断 %s 产生的凭证前缀不会进入可另存的预览', async reason => {
+    const fixture = await open({ stream: reason !== 'length' });
+    const saved = await saveBody(fixture.opened);
+    const fragment = secret.slice(0, -5);
+    const partial = '另一版本的正文。' + fragment;
+    const stream = reason === 'length' ? undefined : pendingStream();
+    const transport = respond(stream?.response ?? Response.json(openAi(partial, 'length')));
+    const signal = new AbortController(), live = vi.fn();
+    const result = run(saved, 'reroll', fixture, transport, { signal: signal.signal, onText: live });
+    if (stream) {
+      await vi.waitFor(() => expect(transport).toHaveBeenCalledTimes(1));
+      stream.push(delta(partial));
+      await vi.waitFor(() => expect(live).toHaveBeenCalledWith('另一版本的正文。[凭证片段已隐藏]'));
+      if (reason === 'stop') signal.abort();
+      else stream.break();
+    }
+    expect(await result).toEqual({ kind: 'failed', message: expect.stringContaining('凭证') });
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(await repo.theaters.open('save-a', saved.record.id)).toEqual(saved);
+    expect(await serializeBackup(await repo.exportBackup(['save-a']), 'test')).not.toContain(fragment);
+  });
 });
 
 describe('小剧场存储和主线结算', () => {
+  it('创建、续写、Roll、改名和删除都推进独立集合版本，保留旧备份的实际版本', async () => {
+    const main = await repo.load('save-a');
+    const other = await repo.create(game('save-b'));
+    const version = async () => {
+      const [exported] = await repo.exportBackup(['save-a']);
+      const summary = (await repo.list()).find(item => item.status === 'readable' && item.saveId === 'save-a');
+      if (summary?.status !== 'readable') throw new Error('缺少存档摘要');
+      expect(summary.theaterVersion).toBe(exported.theaterVersion);
+      return exported.theaterVersion;
+    };
+    const versions = [await version()];
+    const fixture = await open();
+    versions.push(await version());
+    const saved = await saveBody(fixture.opened);
+    versions.push(await version());
+    const continuation = await run(saved, 'continue', fixture, respond(Response.json(openAi('管理员推开门。'))));
+    if (continuation.kind !== 'saved') throw new Error('续写未保存');
+    versions.push(await version());
+    const rerolled = await run(continuation.value, 'reroll', fixture, respond(Response.json(openAi('新故事正式开始。'))));
+    if (rerolled.kind !== 'saved') throw new Error('重新生成未保存');
+    versions.push(await version());
+    const [exported] = await repo.exportBackup(['save-a']);
+    const renamed = await repo.theaters.rename(rerolled.value, '换过的标题');
+    versions.push(await version());
+    await repo.theaters.delete(renamed);
+    versions.push(await version());
+    expect(new Set(versions).size).toBe(versions.length);
+    expect(versions[0]).toBeUndefined();
+    expect(await repo.load('save-a')).toEqual(main);
+    expect((await repo.list()).find(item => item.saveId === other.saveId)).not.toHaveProperty('theaterVersion');
+    expect(exported.theaterVersion).toBe(versions[4]);
+    const portable = await serializeBackup([exported], 'test');
+    expect(portable).not.toContain('theaterVersion');
+    const recovered = (await parseBackup(portable)).entries[0];
+    if (!recovered.ok) throw new Error('备份无法读取');
+    const imported = await repo.importBackupWithVersion(recovered, (await repo.compareBackup(recovered)).confirmation, { overwrite: true });
+    expect(imported.theaterVersion).toBe(await version());
+    expect(versions).not.toContain(imported.theaterVersion);
+    const legacy = { state: main };
+    const legacyImport = await repo.importBackupWithVersion(legacy, (await repo.compareBackup(legacy)).confirmation, { overwrite: true });
+    expect(legacyImport.theaterVersion).toBeUndefined();
+    expect(await version()).toBe(imported.theaterVersion);
+    expect((await repo.theaters.open('save-a', renamed.record.id)).record).toEqual(rerolled.value.record);
+  });
+
+  it('V6 已有小剧场在升级时获得集合版本，正文和旧时间线保留原样', async () => {
+    const fixture = await open();
+    const saved = await saveBody(fixture.opened);
+    const main = await repo.load('save-a');
+    const legacy = await new Promise<IDBDatabase>((resolve, reject) => {
+      const operation = factory.open('legacy-theaters', 6);
+      operation.onupgradeneeded = () => {
+        const db = operation.result;
+        createTheaterStores(db);
+        db.createObjectStore('saves', { keyPath: 'saveId' }).put(main);
+        operation.transaction!.objectStore('theaterIndex').put({ saveId: main.saveId, id: saved.record.id, updatedAt: saved.record.updatedAt });
+        operation.transaction!.objectStore('theaterBodies').put(saved.record);
+      };
+      operation.onsuccess = () => resolve(operation.result);
+      operation.onerror = () => reject(operation.error);
+    });
+    legacy.close();
+    const upgraded = await SaveRepository.open('legacy-theaters', factory);
+    try {
+      expect((await upgraded.list())[0]).toMatchObject({ theaterVersion: expect.any(String), revision: main.revision });
+      expect((await upgraded.theaters.open(main.saveId, saved.record.id)).record).toEqual(saved.record);
+      expect(await upgraded.load(main.saveId)).toEqual(main);
+    } finally { upgraded.close(); }
+  });
   it('上下文只含正式事实和公开材料，正式结算与撤回不改变已有快照', async () => {
     const imported = game('save-other');
     imported.npc['npc-a'] = { ...npc(), name: '博物馆同事', knownInformation: [{ text: '未公开的私密认知', source: '来信', learnedAt: gameTime }] };

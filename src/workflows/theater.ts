@@ -178,17 +178,20 @@ export async function runTheater(repository: TheaterRepository, opened: OpenThea
     const localCapacity = new AbortController();
     const responseCapacity = maxTheaterBody - (action === 'continue' ? record.body.length : 0);
     requireData(responseCapacity > 0, 'THEATER_CAPACITY', '这篇正文已达到单篇存储上限。');
-    const checkedBody = (value: string) => {
+    const checkedBody = (value: string, truncated = false) => {
       assertPrivate(value, secrets);
       const clean = cleanText(value);
       if (!clean.trim()) return '';
       const body = action === 'continue' ? appendTheaterText(record.body, clean) : clean;
+      assertPrivate(body, secrets);
+      if (truncated && (safeStreamResponseText(value, secrets) !== value || safeStreamResponseText(body, secrets) !== body))
+        throw privateOutput();
       requireData(body.length <= maxTheaterBody, 'THEATER_CAPACITY', '新增正文超过单篇存储上限。');
       return body;
     };
     const incomplete = (value: string, status: 'partial' | 'stopped', message: string): TheaterRunResult => {
       try {
-        const body = checkedBody(value);
+        const body = checkedBody(value, true);
         if (body) return { kind: 'incomplete', body, status, message };
       } catch (error) { return { kind: 'failed', message: theaterError(error) }; }
       return { kind: 'failed', message };

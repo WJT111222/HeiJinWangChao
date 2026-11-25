@@ -5,7 +5,10 @@ import type { GameState } from '../../domain/state';
 import { request, transaction } from './idb';
 
 export const theaterStores = ['theaterIndex', 'theaterBodies'] as const;
+export const theaterVersionStore = 'theaterVersions';
+export const theaterChangeKey = 'heijin.theaters.changed.v1';
 const ownerStores = ['saves', 'saveControls', ...theaterStores];
+const writeStores = [...ownerStores, theaterVersionStore];
 export type TheaterOwner = { saveId: string; instance: string | null; createdAt: string };
 export type OpenTheater = { record: TheaterRecord; owner: TheaterOwner };
 export type TheaterCursor = [string, string, string];
@@ -16,6 +19,32 @@ export function createTheaterStores(db: IDBDatabase) {
   index.createIndex('saveId', 'saveId');
   const bodies = db.createObjectStore('theaterBodies', { keyPath: ['saveId', 'id'] });
   bodies.createIndex('saveId', 'saveId');
+}
+
+export function createTheaterVersionStore(tx: IDBTransaction) {
+  const versions = tx.db.createObjectStore(theaterVersionStore);
+  // Upgrade V6 collections using only their keys. Existing legacy backup marks
+  // cannot certify a collection with a version, even if its main revision matches.
+  const cursor = tx.objectStore('theaterIndex').index('saveId').openKeyCursor(null, 'nextunique');
+  cursor.onsuccess = () => {
+    const row = cursor.result;
+    if (!row) return;
+    versions.add(crypto.randomUUID(), row.key);
+    row.continue();
+  };
+}
+
+export async function advanceTheaterVersion(tx: IDBTransaction, saveId: string) {
+  const version = crypto.randomUUID();
+  await request(tx.objectStore(theaterVersionStore).put(version, saveId));
+  return version;
+}
+
+/** Wake other tabs after commit. The next read gets the authoritative IDB version. */
+export function notifyTheaterChange() {
+  if (typeof window === 'undefined') return;
+  try { window.localStorage.setItem(theaterChangeKey, crypto.randomUUID()); }
+  catch { /* The library also rereads on entry and focus. */ }
 }
 function metadata(record: TheaterRecord) {
   const { id, saveId, title, status, createdAt, updatedAt, revision } = record;
@@ -66,6 +95,16 @@ async function existing(tx: IDBTransaction, saveId: string, id: string) {
 export class TheaterRepository {
   constructor(private readonly database: IDBDatabase, private readonly readState: (value: unknown, saveId: string) => GameState) {}
 
+  private async mutate<T>(saveId: string, work: (tx: IDBTransaction) => Promise<T>, signal?: AbortSignal) {
+    const result = await transaction(this.database, writeStores, 'readwrite', async tx => {
+      const value = await work(tx);
+      await advanceTheaterVersion(tx, saveId);
+      return value;
+    }, signal);
+    notifyTheaterChange();
+    return result;
+  }
+
   async list(saveId: string, after?: TheaterCursor, expected?: TheaterOwner) {
     IdSchema.parse(saveId);
     requireData(!after || after[0] === saveId, 'THEATER_OWNER', '小剧场列表已变化。');
@@ -98,7 +137,7 @@ export class TheaterRepository {
 
   /** Read only the committed state. The projection and insert share the same save identity. */
   create(saveId: string, project: (state: GameState) => TheaterRecord, expected: TheaterOwner, signal?: AbortSignal): Promise<OpenTheater> {
-    return transaction(this.database, ownerStores, 'readwrite', async tx => {
+    return this.mutate(saveId, async tx => {
       const current = await owner(tx, saveId, expected);
       const state = this.readState(await request(tx.objectStore('saves').get(saveId)), saveId);
       const record = TheaterRecordSchema.parse(project(state));
@@ -126,7 +165,7 @@ export class TheaterRepository {
   }
 
   private write(expected: OpenTheater, changes: Partial<Pick<TheaterRecord, 'body' | 'status' | 'title' | 'config'>>, signal?: AbortSignal): Promise<OpenTheater> {
-    return transaction(this.database, ownerStores, 'readwrite', async tx => {
+    return this.mutate(expected.owner.saveId, async tx => {
       const current = await this.current(tx, expected);
       const record = TheaterRecordSchema.parse({ ...current, ...changes, revision: CountSchema.parse(current.revision + 1),
         updatedAt: new Date().toISOString() });
@@ -148,7 +187,7 @@ export class TheaterRepository {
   }
 
   fork(expected: OpenTheater, id: string, body: string, status: 'partial' | 'stopped', signal?: AbortSignal) {
-    return transaction(this.database, ownerStores, 'readwrite', async tx => {
+    return this.mutate(expected.owner.saveId, async tx => {
       const current = await this.current(tx, expected);
       const now = new Date().toISOString();
       const record = TheaterRecordSchema.parse({ ...current, id, revision: 0, body, status,
@@ -161,7 +200,7 @@ export class TheaterRepository {
   }
 
   delete(expected: OpenTheater) {
-    return transaction(this.database, ownerStores, 'readwrite', async tx => {
+    return this.mutate(expected.owner.saveId, async tx => {
       const record = await this.current(tx, expected);
       for (const name of theaterStores) await request(tx.objectStore(name).delete([record.saveId, record.id]));
     });

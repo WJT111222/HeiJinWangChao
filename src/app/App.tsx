@@ -1,6 +1,7 @@
 import { authorizeHistoryStart } from '../ui/history/authorize';
 import {GlobalFeedback} from '../ui/GlobalFeedback';
 import { canAcceptNpcView } from '../ui/game/npcManagement';
+import type { TheaterLeaveGuard } from '../ui/game/TheaterPanel';
 import { lazy, Suspense, useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { DataError, IdSchema } from '../domain/common';
@@ -8,6 +9,7 @@ import type { GameState } from '../domain/state';
 import type { TurnDraft } from '../domain/drafts';
 import { maxBackupEntries } from '../services/storage/backup';
 import { SaveRepository } from '../services/storage/saveRepository';
+import { theaterChangeKey } from '../services/storage/theaters';
 import { readDocument, writeDocument } from '../services/local/documents';
 import { loadCompanionProfile, companionProfileKey } from '../services/local/companionProfile';
 import type { CompanionProfile } from '../services/local/companionProfile';
@@ -122,6 +124,7 @@ export function App() {
   const lock = useRef(false);
   const openingStart = useRef<OpeningStart | undefined>(undefined);
   const navigationRevision = useRef(0);
+  const theaterLeave = useRef<TheaterLeaveGuard | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [localSettingsDirty, setLocalSettingsDirty] = useState(false);
@@ -167,12 +170,12 @@ export function App() {
   const onRouteChange = useEffectEvent(() => {
     const nextRoute = window.location.hash;
     if (nextRoute === route) return;
-    if (settingsOpen && settingsDirty) {
+    if (theaterLeave.current || (settingsOpen && settingsDirty)) {
       // Browser history and direct hash navigation bypass the application's navigation buttons.
       const previous = new URL(window.location.href);
       previous.hash = route;
       window.history.replaceState(window.history.state, '', previous);
-      requestSettingsClose(() => changeRoute(nextRoute.slice(1)));
+      navigate(nextRoute.slice(1));
       return;
     }
     if (settingsOpen) requestSettingsClose();
@@ -237,13 +240,38 @@ export function App() {
       disposed = true;
     };
   }, [repository, route]);
+  useEffect(() => {
+    if (!repository || gameRoute || route === '#create') return;
+    let latest = 0;
+    const reload = () => {
+      const request = ++latest;
+      void repository.list().then(items => { if (request === latest) acceptList(items); },
+        () => { if (request === latest) setListError(listFailure); });
+    };
+    const storage = (event: StorageEvent) => { if (event.key === theaterChangeKey) reload(); };
+    window.addEventListener('storage', storage);
+    window.addEventListener('focus', reload);
+    return () => {
+      latest++;
+      window.removeEventListener('storage', storage);
+      window.removeEventListener('focus', reload);
+    };
+  }, [repository, route, gameRoute]);
   function acceptList(items: SaveSummary[]) {
     setSaves(orderedSaves(items)); setListError('');
     setError(current => [listFailure, openFailure, loadFailure].includes(current) ? '' : current);
   }
   function navigate(hash = '') {
-    if (settingsOpen) requestSettingsClose(() => changeRoute(hash));
-    else changeRoute(hash);
+    const leave = () => {
+      if (settingsOpen) requestSettingsClose(() => changeRoute(hash));
+      else changeRoute(hash);
+    };
+    if (theaterLeave.current) theaterLeave.current(leave);
+    else leave();
+  }
+  function openSettings() {
+    if (theaterLeave.current) theaterLeave.current(() => setSettingsOpen(true));
+    else setSettingsOpen(true);
   }
   function changeRoute(hash: string) {
     navigationRevision.current++;
@@ -442,7 +470,7 @@ export function App() {
         </a>
         <nav className="header-navigation" aria-label="主导航">
           <button onClick={() => navigate()}>游戏首页</button>
-          <button onClick={() => setSettingsOpen(true)}>设置</button>
+          <button onClick={openSettings}>设置</button>
           {gameRoute && <button onClick={() => navigate()}>切换存档</button>}
           <span className="version">{PRODUCT_VERSION}</span>
         </nav>
@@ -457,7 +485,7 @@ export function App() {
         <nav className="game-menu" aria-label="游戏菜单">
           <button onClick={() => { setMenuOpen(false); navigate(); }}>{!desktopUi&&<span className="mobile-seal" aria-hidden="true">首</span>}游戏首页</button>
           <button onClick={() => { setMenuOpen(false); navigate(); }}>{!desktopUi&&<span className="mobile-seal" aria-hidden="true">票</span>}切换存档</button>
-          <button onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}>{!desktopUi&&<span className="mobile-seal" aria-hidden="true">设</span>}设置</button>
+          <button onClick={() => { setMenuOpen(false); openSettings(); }}>{!desktopUi&&<span className="mobile-seal" aria-hidden="true">设</span>}设置</button>
           <span className="version">{!desktopUi&&'黑金王朝 · '}{PRODUCT_VERSION}</span>
         </nav>
         </div>
@@ -491,7 +519,8 @@ export function App() {
             <GameScreen
               key={`${loaded.state.saveId}:${loaded.undoGeneration ?? 0}`}
               openingStart={openingStart.current}
-              onOpenSettings={() => settingsOpen?requestSettingsClose():setSettingsOpen(true)}
+              onOpenSettings={() => settingsOpen?requestSettingsClose():openSettings()}
+              theaterLeave={theaterLeave}
               onCloseSettings={requestSettingsClose}
               state={loaded.state}
               draft={loaded.draft}

@@ -1,4 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { RefObject } from 'react';
+import { Dialog } from '../Dialog';
 import { DataError } from '../../domain/common';
 import { maxTheaterBody, theaterLengths, theaterStates } from '../../domain/theater/record';
 import type { TheaterPerspective } from '../../domain/theater/record';
@@ -13,6 +15,7 @@ import './theater.css';
 
 const disclaimer = '小剧场为非正史内容，不影响当前游戏进度、人物关系与世界状态。';
 type Preview = Extract<TheaterRunResult, { kind: 'incomplete' }>;
+export type TheaterLeaveGuard = (leave: () => void) => void;
 const lengths = [...theaterLengths.map(tier => ({ id: tier.id, label: `${tier.name} · 约 ${tier.target.toLocaleString('zh-CN')} 字` })),
   { id: 'custom', label: '自定义' }];
 
@@ -73,7 +76,9 @@ function NovelReader({ text, protagonist }: { text: string; protagonist: string 
   </>;
 }
 
-export function TheaterPanel({ repository, owner, settings }: { repository: TheaterRepository; owner: TheaterOwner; settings: Settings }) {
+export function TheaterPanel({ repository, owner, settings, leaveGuard }: {
+  repository: TheaterRepository; owner: TheaterOwner; settings: Settings; leaveGuard: RefObject<TheaterLeaveGuard | null>;
+}) {
   const [view, setView] = useState<'list' | 'new' | 'read'>('list');
   const [items, setItems] = useState<TheaterListItem[]>();
   const [cursor, setCursor] = useState<TheaterCursor>();
@@ -91,12 +96,26 @@ export function TheaterPanel({ repository, owner, settings }: { repository: Thea
   const [live, setLive] = useState(''), [thoughts, setThoughts] = useState('');
   const [notice, setNotice] = useState(''), [error, setError] = useState('');
   const [preview, setPreview] = useState<{ result: Preview; action: TheaterAction }>();
+  const [leaveRequest, setLeaveRequest] = useState<(() => void)>();
   const lifetime = useRef<AbortController | undefined>(undefined);
   const active = useRef<AbortController | undefined>(undefined);
   const pageLoad = useRef(false);
   const follow = useRef(true);
   const reading = useRef<HTMLDivElement>(null);
   const navRevision = useRef(0);
+  const needsLeaveConfirmation = Boolean(running || saving || preview);
+
+  useLayoutEffect(() => {
+    if (!needsLeaveConfirmation) return;
+    const guard: TheaterLeaveGuard = leave => setLeaveRequest(current => current ?? leave);
+    leaveGuard.current = guard;
+    const unload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', unload);
+    return () => {
+      if (leaveGuard.current === guard) leaveGuard.current = null;
+      window.removeEventListener('beforeunload', unload);
+    };
+  }, [leaveGuard, needsLeaveConfirmation]);
 
   useLayoutEffect(() => {
     const session = new AbortController();
@@ -206,7 +225,7 @@ export function TheaterPanel({ repository, owner, settings }: { repository: Thea
     finally { active.current = undefined; if (!session.signal.aborted) setSaving(false); }
   }
 
-  async function keepPreview() {
+  async function keepPreview(afterSave?: () => void) {
     if (!opened || !preview) return;
     const session = lifetime.current;
     const { result, action } = preview;
@@ -214,8 +233,19 @@ export function TheaterPanel({ repository, owner, settings }: { repository: Thea
       const next = action === 'reroll' && opened.record.body
         ? await repository.fork(opened, crypto.randomUUID(), result.body, result.status, session?.signal)
         : await repository.saveText(opened, result.body, result.status, session?.signal);
-      if (!session?.signal.aborted) { setOpened(next); setPreview(undefined); setNotice('已保留这段正文，可手动续写。'); }
+      if (!session?.signal.aborted) {
+        setOpened(next); setPreview(undefined); setNotice('已保留这段正文，可手动续写。');
+        afterSave?.();
+      }
     });
+  }
+
+  function finishLeaving() {
+    // The confirmed navigation can also enter the shared app guard (e.g. href changes).
+    leaveGuard.current = null;
+    setLeaveRequest(undefined);
+    setPreview(undefined);
+    leaveRequest?.();
   }
 
   function newTheater() {
@@ -229,12 +259,13 @@ export function TheaterPanel({ repository, owner, settings }: { repository: Thea
   };
   const busy = Boolean(running || saving);
   const record = opened?.record;
+  const forkPreview = preview?.action === 'reroll' && Boolean(record?.body);
   const shown = running ? live : preview?.result.body ?? record?.body ?? '';
   const liveCount = useMemo(() => count(shown), [shown]);
 
   return <section className="theater-panel" aria-label="小剧场工作台">
     <header className="theater-bar">
-      {view !== 'list' && <button disabled={busy} onClick={list}>返回列表</button>}
+      {view !== 'list' && <button onClick={() => leaveGuard.current ? leaveGuard.current(list) : list()}>返回列表</button>}
       {view === 'list' ? <button className="primary" onClick={newTheater}>新建小剧场</button>
         : view === 'read' && record && <span>{record.config.route.model}</span>}
     </header>
@@ -283,10 +314,10 @@ export function TheaterPanel({ repository, owner, settings }: { repository: Thea
         <p className="field-hint">主线第 {record.background.turn} 回合的背景 · {theaterPerspectives[record.config.perspective]} · 目标 {record.config.target.toLocaleString('zh-CN')} 字</p>
         <p className="theater-count" aria-live="off">{running ? saving ? '正在保存' : '正在生成' : preview ? theaterStates[preview.result.status] : theaterStates[record.status]} · {liveCount.toLocaleString('zh-CN')} 字</p>
         {preview && <>
-          <p className="field-hint">{preview.action === 'reroll' && record.body ? '原正文仍已保存。可将这次结果另存为未完篇。' : '可保留已写部分，稍后主动续写。'}</p>
+          <p className="field-hint">{forkPreview ? '原正文仍已保存。可将这次结果另存为未完篇。' : '可保留已写部分，稍后主动续写。'}</p>
           <div className="theater-actions">
             <button className="primary" disabled={busy} onClick={() => void keepPreview()}>
-              {preview.action === 'reroll' && record.body ? '另存为未完篇' : '保留已写部分'}
+              {forkPreview ? '另存为未完篇' : '保留已写部分'}
             </button>
             <button disabled={busy} onClick={() => { setPreview(undefined); clearMessages(); }}>放弃这次结果</button>
           </div>
@@ -345,5 +376,19 @@ export function TheaterPanel({ repository, owner, settings }: { repository: Thea
           : <button className="danger" disabled={busy} onClick={() => void edit(async () => { if (opened) { await repository.delete(opened); list(); } })}>确认删除小剧场</button>}
       </div>
     </footer>}
+    {leaveRequest && <Dialog title="离开小剧场？" onClose={() => setLeaveRequest(undefined)} small mobileVariant="confirm">
+      {saving ? <p>正在保存，请等待本次操作完成。</p> : running ? <p>仍在生成正文。可以停止请求，查看已写部分后再决定是否保留。</p>
+        : preview ? <p>{forkPreview ? '原正文已保留。可以将这次尚未保存的正文另存为未完篇。' : '还有尚未保存的正文。'}</p>
+          : <p>本次操作已结束，可以离开小剧场。</p>}
+      {!running && error && <p role="alert">{error}</p>}
+      <div className="theater-actions">
+        <button onClick={() => setLeaveRequest(undefined)}>{running && !saving ? '继续生成' : '留在小剧场'}</button>
+        {!saving && (running ? <button className="primary" onClick={() => { active.current?.abort(); setLeaveRequest(undefined); }}>停止并查看正文</button>
+          : preview ? <>
+            <button className="primary" onClick={() => void keepPreview(finishLeaving)}>{forkPreview ? '另存为未完篇并离开' : '保留并离开'}</button>
+            <button onClick={finishLeaving}>放弃并离开</button>
+          </> : <button className="primary" onClick={finishLeaving}>离开小剧场</button>)}
+      </div>
+    </Dialog>}
   </section>;
 }

@@ -19,6 +19,8 @@ export interface BackupEntry {
   state: GameState;
   draft?: TurnDraft;
   theaters?: TheaterRecord[];
+  /** Local export snapshot metadata. The portable backup omits it. */
+  theaterVersion?: string;
 }
 export interface BackupFile {
   format: typeof backupFormat;

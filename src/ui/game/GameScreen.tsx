@@ -33,6 +33,7 @@ import { ProfessionProfile } from '../components/ProfessionProfile';
 import { TalentProfile } from '../components/TalentProfile';
 import { StoryReading } from './StoryReadingView';
 import { TheaterPanel } from './TheaterPanel';
+import type { TheaterLeaveGuard } from './TheaterPanel';
 import { StoryStreamReading } from './StoryStreamReading';
 import { openingTimeSelection } from '../../domain/openingTime';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
@@ -97,6 +98,7 @@ function subscribeSidebarSize(changed: () => void) {
 export function GameScreen({
   openingStart,
   onOpenSettings,
+  theaterLeave,
   onCloseSettings,
   state,
   draft,
@@ -115,6 +117,7 @@ export function GameScreen({
 }: {
   openingStart?: OpeningStart;
   onOpenSettings: () => void;
+  theaterLeave: RefObject<TheaterLeaveGuard | null>;
   onCloseSettings?: (afterClose?:()=>void)=>void;
   state: GameState;
   draft?: TurnDraft;
@@ -148,8 +151,16 @@ export function GameScreen({
   const compactSidebars = useSyncExternalStore(subscribeSidebarSize, () => window.matchMedia(sidebarMedia).matches, () => false);
   const desktopSettings=!compactSidebars&&Boolean(renderSettings);
   useEffect(()=>{if(desktopSettings)setPanel(undefined);},[desktopSettings]);
-  function outsideSettings(action:()=>void){if(desktopSettings&&onCloseSettings)onCloseSettings(action);else action();}
-  const desktopArchive = !compactSidebars && !desktopSettings && (panel === 'NPC' || panel === '势力组织' || panel === '人物档案' || panel === '物品栏' || panel === '经济与资产' || panel === '世界事件' || panel === '历史时间轴' || panel === '记忆' || panel === '地图' || panel === '小剧场') ? panel : undefined;
+  function outsideTheater(action: () => void) {
+    if (theaterLeave.current) theaterLeave.current(action);
+    else action();
+  }
+  function outsideSettings(action: () => void) {
+    if (desktopSettings && onCloseSettings) onCloseSettings(action);
+    else outsideTheater(action);
+  }
+  const theaterActive = panel === '小剧场' && !desktopSettings;
+  const desktopArchive = !compactSidebars && !desktopSettings && (panel === 'NPC' || panel === '势力组织' || panel === '人物档案' || panel === '物品栏' || panel === '经济与资产' || panel === '世界事件' || panel === '历史时间轴' || panel === '记忆' || panel === '地图') ? panel : undefined;
   function openChange(target:ChangeTarget){
     changeOpener.current=compactSidebars?document.querySelector<HTMLButtonElement>('.chg-btn'):document.activeElement as HTMLElement|null;
     if(target.panel==='NPC'||target.panel==='势力组织'||target.panel==='世界事件'){
@@ -581,8 +592,6 @@ export function GameScreen({
     return { stage, name: ['正文', '变量', '动态世界'][i], text,
       visual: awaitingAction ? 'done' : auto || activeStage === stage ? 'run' : text === '失败 · 可重试' ? 'fail' : status === 'ready' ? 'done' : 'idle' };
   });
-  const theaterPanel = panel === '小剧场' ? <TheaterPanel key={state.saveId + ':' + (instance ?? '')}
-    repository={repository.theaters} owner={{ saveId: state.saveId, createdAt: state.createdAt, instance: instance ?? null }} settings={settings} /> : null;
   const worldNavigation = <aside className="world-sidebar" aria-label="世界资料">
     <h2>世界资料</h2>
     <nav aria-label="世界资料分类">
@@ -808,7 +817,7 @@ export function GameScreen({
   return (
     <main className="game-layout city-night" data-city={atmosphere.city} data-time={atmosphere.time} data-wx={atmosphere.weather}
       onKeyDown={event => {
-        if (compactSidebars || desktopArchive || desktopSettings || event.nativeEvent.isComposing || event.repeat || (event.target as HTMLElement).closest('dialog, .archive')) return;
+        if (compactSidebars || desktopArchive || desktopSettings || theaterActive || event.nativeEvent.isComposing || event.repeat || (event.target as HTMLElement).closest('dialog, .archive')) return;
         if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.altKey) {
           event.preventDefault(); void send(); return;
         }
@@ -822,7 +831,7 @@ export function GameScreen({
       <CityAtmosphere state={state} />
       {compactSidebars?<MobileCityBar state={state} mini={mobileMini} onStatus={()=>setMobileStatusOpen(true)}/>:<CityBar state={state} />}
       {!compactSidebars&&<PlayerStatus state={state} equipment={equipment} activePanel={compactSidebars || desktopSettings ? undefined : panel} onProfile={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined); setPanel(desktopArchive === '人物档案' ? undefined : '人物档案'); })} onEconomy={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);setPanel(desktopArchive === '经济与资产' ? undefined : '经济与资产'); })} />}
-      <section inert={Boolean(desktopArchive||desktopSettings)} className="story-column" aria-label="剧情与行动">
+      <section inert={Boolean(desktopArchive || desktopSettings || theaterActive)} className="story-column" aria-label="剧情与行动">
         <div
           className={`reader ${!view.journal.length && !draft?.story && !streamingPreview && !storyRetryWait ? 'reader-empty' : ''}`}
           ref={reader}
@@ -1067,11 +1076,11 @@ export function GameScreen({
         {worldNavigation}
         <p className="muted mobile-world-hint">从身边的人，到更远的城市。</p>
       </Dialog>}
-      {desktopArchive && <ArchivePanel key={desktopArchive} title={desktopArchive === '小剧场' ? '王朝小剧场' : desktopArchive} className={desktopArchive === '小剧场' ? 'theater-archive' : desktopArchive === '世界事件' ? 'world-events-dialog' : desktopArchive === '历史时间轴' ? 'history-dialog' : undefined} seal={desktopArchive === '小剧场' ? '剧' : desktopArchive === 'NPC' ? '人' : desktopArchive === '势力组织' ? '势' : desktopArchive === '物品栏' ? '物' : desktopArchive === '经济与资产' ? '财' : desktopArchive === '世界事件' ? '事' : desktopArchive === '历史时间轴' ? '史' : desktopArchive === '记忆' ? '忆' : desktopArchive === '地图' ? '图' : '档'} total={8} index={desktopArchive === '小剧场' ? 8 : desktopArchive === '势力组织' ? 2 : desktopArchive === '物品栏' ? 4 : desktopArchive === '世界事件' ? 5 : desktopArchive === '历史时间轴' ? 6 : desktopArchive === '记忆' ? 7 : desktopArchive === '地图' ? 3 : 1}
+      {desktopArchive && <ArchivePanel key={desktopArchive} title={desktopArchive} className={desktopArchive === '世界事件' ? 'world-events-dialog' : desktopArchive === '历史时间轴' ? 'history-dialog' : undefined} seal={desktopArchive === 'NPC' ? '人' : desktopArchive === '势力组织' ? '势' : desktopArchive === '物品栏' ? '物' : desktopArchive === '经济与资产' ? '财' : desktopArchive === '世界事件' ? '事' : desktopArchive === '历史时间轴' ? '史' : desktopArchive === '记忆' ? '忆' : desktopArchive === '地图' ? '图' : '档'} total={8} index={desktopArchive === '势力组织' ? 2 : desktopArchive === '物品栏' ? 4 : desktopArchive === '世界事件' ? 5 : desktopArchive === '历史时间轴' ? 6 : desktopArchive === '记忆' ? 7 : desktopArchive === '地图' ? 3 : 1}
         eyebrow={desktopArchive === '人物档案' || desktopArchive === '经济与资产' ? 'PROTAGONIST · 主角档案' : undefined}
-        subtitle={desktopArchive === '小剧场' ? '非正史创作' : desktopArchive === '人物档案' ? `主角 · ${hero.name}` : desktopArchive === 'NPC' ? '人物名录' : desktopArchive === '物品栏' ? '随身与仓储' : desktopArchive === '经济与资产' ? '现金、收入与资产' : desktopArchive === '世界事件' ? '进行中的事' : desktopArchive === '历史时间轴' ? '已发生的事' : desktopArchive === '记忆' ? '主角的记忆' : desktopArchive === '地图' ? '地点层级' : '势力与机构'}
+        subtitle={desktopArchive === '人物档案' ? `主角 · ${hero.name}` : desktopArchive === 'NPC' ? '人物名录' : desktopArchive === '物品栏' ? '随身与仓储' : desktopArchive === '经济与资产' ? '现金、收入与资产' : desktopArchive === '世界事件' ? '进行中的事' : desktopArchive === '历史时间轴' ? '已发生的事' : desktopArchive === '记忆' ? '主角的记忆' : desktopArchive === '地图' ? '地点层级' : '势力与机构'}
         onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }} returnFocus={() => changeOpener.current?.isConnected?changeOpener.current:document.querySelector<HTMLButtonElement>(`[data-archive-panel="${desktopArchive}"]`)}>
-        {desktopArchive === '小剧场' ? theaterPanel : desktopArchive === '人物档案' ? <ProfilePanel state={state} equipment={equipment} candidateTime={openingTime?.endAt} onEconomy={() => setPanel('经济与资产')} onNpc={() => { setArchiveTarget(undefined); setPanel('NPC'); }} onSaves={onSaves} />
+        {desktopArchive === '人物档案' ? <ProfilePanel state={state} equipment={equipment} candidateTime={openingTime?.endAt} onEconomy={() => setPanel('经济与资产')} onNpc={() => { setArchiveTarget(undefined); setPanel('NPC'); }} onSaves={onSaves} />
           : desktopArchive === 'NPC' ? <NpcPanel view={view} management={npcManagement} initialId={archiveTarget?.panel === 'NPC' ? archiveTarget.id : archiveSelection.current.NPC} onOpenOrganization={id => openArchive('势力组织', id)} onSelect={id => { archiveSelection.current.NPC = id; }} desktop />
           : desktopArchive === '物品栏' ? <InventoryPanel view={view} desktop initialId={archiveSelection.current['物品栏']} onSelect={id=>{archiveSelection.current['物品栏']=id;}} onOpenProfile={id=>{if(id===hero.id){setArchiveTarget(undefined);setPanel('人物档案');}}} />
           : desktopArchive === '经济与资产' ? <EconomyPanel view={view} />
@@ -1081,9 +1090,18 @@ export function GameScreen({
           : desktopArchive === '记忆' ? <MemoryPanel view={view} desktop uiState={archiveReading.current.memory} onUiStateChange={value=>{archiveReading.current.memory=value;}} />
           : <OrganizationPanel view={view} initialId={archiveTarget?.panel === '势力组织' ? archiveTarget.id : archiveSelection.current['势力组织']} links={{npc:id=>openArchive('NPC',id), organization:id=>openArchive('势力组织',id), event:id=>openArchive('世界事件',id)}} onSelect={id => { archiveSelection.current['势力组织'] = id; }} desktop />}
       </ArchivePanel>}
-      {panel && !desktopArchive && !desktopSettings && (
-        <Dialog title={panel === '小剧场' ? '王朝小剧场' : panel} mobileVariant="sheet" sheetFull fitVisualViewport={panel === '小剧场'} seal={{小剧场:'剧',NPC:'人',势力组织:'势',地图:'图',物品栏:'物',世界事件:'事',历史时间轴:'史',记忆:'忆',人物档案:'人',经济与资产:'财'}[panel]} eyebrow="WORLD · ARCHIVE" returnFocus={()=>changeOpener.current?.isConnected?changeOpener.current:mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={`mobile-archive ${panel === '小剧场' ? 'theater-archive' : panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''}`} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
-          {panel === '小剧场' ? theaterPanel : panel === '人物档案' ? (
+      {theaterActive && <Dialog title="王朝小剧场" mobileVariant="sheet" sheetFull fitVisualViewport
+        nonmodal={!compactSidebars} className={compactSidebars ? 'mobile-archive theater-archive' : 'theater-archive'}
+        seal="剧" eyebrow="WORLD · ARCHIVE"
+        archiveHeading={compactSidebars ? undefined : { title: '王朝小剧场', seal: '剧', subtitle: '非正史创作', index: 8, total: 8 }}
+        returnFocus={() => compactSidebars ? mobileReturnFocus('world') : document.querySelector<HTMLButtonElement>('[data-archive-panel="小剧场"]')}
+        onClose={() => outsideTheater(() => { setPanel(undefined); setArchiveTarget(undefined); })}>
+        <TheaterPanel key={state.saveId + ':' + (instance ?? '')} leaveGuard={theaterLeave}
+          repository={repository.theaters} owner={{ saveId: state.saveId, createdAt: state.createdAt, instance: instance ?? null }} settings={settings} />
+      </Dialog>}
+      {panel && panel !== '小剧场' && !desktopArchive && !desktopSettings && (
+        <Dialog title={panel} mobileVariant="sheet" sheetFull seal={{NPC:'人',势力组织:'势',地图:'图',物品栏:'物',世界事件:'事',历史时间轴:'史',记忆:'忆',人物档案:'人',经济与资产:'财'}[panel]} eyebrow="WORLD · ARCHIVE" returnFocus={()=>changeOpener.current?.isConnected?changeOpener.current:mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={`mobile-archive ${panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''}`} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
+          {panel === '人物档案' ? (
             <>
             <dl className="profile-details">
               {Object.entries({

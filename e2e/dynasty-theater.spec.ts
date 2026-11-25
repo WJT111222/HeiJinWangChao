@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { BrowserContext, Page } from '@playwright/test';
 import { expect, test } from './helpers/test';
-import { openStoredSave } from './helpers/home';
+import { openLibrary, openStoredSave } from './helpers/home';
 import { openSettings } from './helpers/gameLayout';
 
 const secret = 'sk-theater-browser-fixture';
@@ -297,5 +297,135 @@ test('设置可编辑与恢复独立提示词，非流式请求沿用冻结值',
     await expect(saved.getByText('正文已保存。')).toBeVisible();
     expect(api.wires).toHaveLength(2);
     expect(api.wires[1].body.messages[0].content).toBe(api.wires[0].body.messages[0].content);
+  } finally { await api.close(); }
+});
+
+test('备份标记跟随小剧场，另一标签的存档馆即时刷新，V2 导入恢复', async ({ page, context, isMobile }) => {
+  const api = await mock();
+  try {
+    await localOnly(context, api.endpoint);
+    await seed(page, api.endpoint, 'day');
+    const mainBefore = (await stored(page)).main.state;
+    const library = await context.newPage();
+    await library.goto('/');
+    await openLibrary(library);
+    const badge = library.locator(isMobile ? '.mh-backup' : '.save-card .backup-line').first();
+    const download = async () => {
+      const event = library.waitForEvent('download');
+      await library.getByRole('button', { name: '导出备份', exact: true }).first().click();
+      const file = await (await event).path();
+      if (!file) throw new Error('备份未下载');
+      await expect(badge).toHaveText('已备份 · 今天');
+      return file;
+    };
+    await expect(badge).toHaveText('从未备份');
+    await download();
+
+    const panel = await openTheater(page);
+    api.set('独立档案的已保存正文。');
+    await panel.getByRole('button', { name: '新建小剧场' }).click();
+    await panel.getByLabel('主题', { exact: true }).fill('独立档案');
+    await panel.getByRole('button', { name: '新建并生成' }).click();
+    await expect(panel.getByText('正文已保存。')).toBeVisible();
+    await expect(badge).toHaveText('备份后小剧场有变动');
+    const file = await download();
+
+    await panel.getByRole('button', { name: '重命名' }).click();
+    await panel.getByLabel('新标题').fill('另一份档案名');
+    await panel.getByRole('button', { name: '保存标题' }).click();
+    await expect(panel.getByRole('heading', { name: '另一份档案名' })).toBeVisible();
+    await expect(badge).toHaveText('备份后小剧场有变动');
+    await download();
+    await panel.getByRole('button', { name: '删除小剧场', exact: true }).click();
+    await panel.getByRole('button', { name: '确认删除小剧场' }).click();
+    await expect(panel.getByText('档案尚空')).toBeVisible();
+    await expect(badge).toHaveText('备份后小剧场有变动');
+
+    const importButton = library.getByRole('button', { name: '导入备份', exact: true });
+    if (isMobile) {
+      const chooser = library.waitForEvent('filechooser');
+      await importButton.click();
+      await (await chooser).setFiles(file);
+    } else {
+      await importButton.click();
+      await library.locator('.backup-import-dialog input[type=file]').setInputFiles(file);
+    }
+    await library.getByRole('button', { name: '覆盖并导入' }).click();
+    await expect(badge).toHaveText('已备份 · 今天');
+    const recovered = await stored(library);
+    expect(recovered.main.state).toEqual(mainBefore);
+    expect(recovered.backup[0].theaters).toEqual([expect.objectContaining({ title: '独立档案', body: '独立档案的已保存正文。' })]);
+    expect(api.wires).toHaveLength(1);
+  } finally { await api.close(); }
+});
+
+test('离开守护覆盖关闭、Escape、视口切换及页面切换，原文和未完篇均保留', async ({ page, context, isMobile }) => {
+  const api = await mock();
+  try {
+    await localOnly(context, api.endpoint);
+    await seed(page, api.endpoint, 'night');
+    const panel = await openTheater(page);
+    const leave = page.getByRole('dialog', { name: '离开小剧场？', exact: true });
+    api.set('旧电车载着最后一个归客。', 'hold');
+    await panel.getByRole('button', { name: '新建小剧场' }).click();
+    await panel.getByLabel('主题', { exact: true }).fill('最后一班电车');
+    await panel.getByRole('button', { name: '新建并生成' }).click();
+    await expect(panel.getByRole('article')).toContainText('旧电车载着最后一个归客');
+    await panel.getByRole('button', { name: '关闭资料界面' }).click();
+    await expect(leave.getByRole('button', { name: '继续生成' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(leave).toBeHidden();
+    await expect(panel.getByRole('button', { name: '停止生成' })).toBeVisible();
+    await expect.poll(api.active).toBe(1);
+    await page.keyboard.press('Escape');
+    await leave.getByRole('button', { name: '停止并查看正文' }).click();
+    await expect.poll(api.active).toBe(0);
+    await panel.getByRole('button', { name: '保留已写部分' }).click();
+    await expect(panel.getByText('已保留这段正文，可手动续写。')).toBeVisible();
+
+    api.set('新版本仍在雨夜。', 'limit');
+    await panel.getByRole('button', { name: '重新 Roll', exact: true }).click();
+    await panel.getByRole('button', { name: '确认重新 Roll' }).click();
+    await expect(panel.getByRole('button', { name: '另存为未完篇', exact: true })).toBeVisible();
+    const originalViewport = page.viewportSize();
+    if (!originalViewport) throw new Error('缺少浏览器视口');
+    await page.setViewportSize(isMobile ? { width: 1000, height: 720 } : { width: 390, height: 700 });
+    await expect(panel.getByRole('article')).toContainText('新版本仍在雨夜');
+    await page.setViewportSize(originalViewport);
+    await expect(panel.getByRole('article')).toContainText('新版本仍在雨夜');
+
+    const leaveFromAnotherEntry = () => isMobile
+      ? page.evaluate(() => { history.back(); })
+      : page.getByRole('button', { name: 'NPC', exact: true }).click();
+    await leaveFromAnotherEntry();
+    await expect(leave.getByRole('button', { name: '另存为未完篇并离开' })).toBeVisible();
+    await leave.getByRole('button', { name: '留在小剧场' }).click();
+    await expect(panel.getByRole('article')).toContainText('新版本仍在雨夜');
+    // The canceled browser back restored the current hash in its history slot.
+    if (isMobile) await page.evaluate(() => { location.hash = ''; });
+    else await leaveFromAnotherEntry();
+    await leave.getByRole('button', { name: '另存为未完篇并离开' }).click();
+    await expect(panel).toBeHidden();
+    if (isMobile) await expect(page.locator('.mobile-home')).toBeVisible();
+    else await expect(page.getByRole('dialog', { name: 'NPC', exact: true })).toBeVisible();
+    const after = await stored(page);
+    expect(after.backup[0].theaters).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: '最后一班电车', body: '旧电车载着最后一个归客。', status: 'stopped' }),
+      expect.objectContaining({ title: '最后一班电车（未完篇）', body: '新版本仍在雨夜。', status: 'partial' }),
+    ]));
+    expect(after.backup[0].theaters).toHaveLength(2);
+    expect(api.wires).toHaveLength(2);
+
+    if (isMobile) await openStoredSave(page, '剧场验收存档');
+    const reopened = await openTheater(page);
+    await reopened.getByRole('button', { name: '最后一班电车', exact: true }).click();
+    api.set('这段未完稿会被放弃。', 'limit');
+    await reopened.getByRole('button', { name: '继续写作', exact: true }).click();
+    await reopened.getByRole('button', { name: '保留已写部分' }).waitFor();
+    await reopened.getByRole('button', { name: '返回列表' }).click();
+    await leave.getByRole('button', { name: '放弃并离开' }).click();
+    await expect(reopened.getByRole('button', { name: '最后一班电车', exact: true })).toBeVisible();
+    expect((await stored(page)).backup).toEqual(after.backup);
+    expect(api.wires).toHaveLength(3);
   } finally { await api.close(); }
 });
