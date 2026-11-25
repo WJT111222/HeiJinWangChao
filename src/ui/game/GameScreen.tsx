@@ -1097,7 +1097,8 @@ export function GameScreen({
         returnFocus={() => compactSidebars ? mobileReturnFocus('world') : document.querySelector<HTMLButtonElement>('[data-archive-panel="小剧场"]')}
         onClose={() => outsideTheater(() => { setPanel(undefined); setArchiveTarget(undefined); })}>
         <TheaterPanel key={state.saveId + ':' + (instance ?? '')} leaveGuard={theaterLeave}
-          repository={repository.theaters} owner={{ saveId: state.saveId, createdAt: state.createdAt, instance: instance ?? null }} settings={settings} />
+          repository={repository.theaters} owner={{ saveId: state.saveId, createdAt: state.createdAt, instance: instance ?? null }} settings={settings}
+          latest={{ turn: state.turnNumber, time: state.openingTimePending ? null : state.worldClock }} />
       </Dialog>}
       {panel && panel !== '小剧场' && !desktopArchive && !desktopSettings && (
         <Dialog title={panel} mobileVariant="sheet" sheetFull seal={{NPC:'人',势力组织:'势',地图:'图',物品栏:'物',世界事件:'事',历史时间轴:'史',记忆:'忆',人物档案:'人',经济与资产:'财'}[panel]} eyebrow="WORLD · ARCHIVE" returnFocus={()=>changeOpener.current?.isConnected?changeOpener.current:mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={`mobile-archive ${panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''}`} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>

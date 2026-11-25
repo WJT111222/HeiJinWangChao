@@ -131,9 +131,9 @@ test('日间 · 自定义万字剧场、长文滚动、复制、续写、Roll、
     await panel.getByRole('button', { name: '新建小剧场' }).click();
     await panel.getByLabel('标题（选填）').fill('未开门的展厅');
     await panel.getByLabel('主题', { exact: true }).fill('博物馆管理员的非正史日常');
-    await panel.getByLabel('正文篇幅').selectOption('custom');
+    await panel.getByRole('radio', { name: /^自定义/ }).check();
     await panel.getByLabel('目标字数').fill('18000');
-    await panel.getByLabel('生成模型').selectOption('independent');
+    await panel.getByRole('radio', { name: '单独指定' }).check();
     await panel.getByLabel('选择渠道').selectOption({ label: '本地模拟 · openai' });
     await panel.getByLabel('模型 ID').fill('theater-mock');
     await panel.getByRole('button', { name: '新建并生成' }).click();
@@ -185,6 +185,7 @@ test('日间 · 自定义万字剧场、长文滚动、复制、续写、Roll、
     expect(after.main).toEqual(before);
     expect(after.backup[0].theaters[0].body).toContain(privateText);
     expect(JSON.stringify(after.backup)).not.toMatch(new RegExp(secret + '|独立的公开思考'));
+    await panel.getByRole('button', { name: '更多' }).click();
     await panel.getByRole('button', { name: '重命名' }).click();
     await panel.getByLabel('新标题').fill('沿河散步');
     await panel.getByRole('button', { name: '保存标题' }).click();
@@ -253,6 +254,7 @@ test('夜间 · 跨标签锁、实际停止、保留与另存未完篇，操作�
     await expect(panel.getByRole('button', { name: '雨夜电车（未完篇）', exact: true })).toBeVisible();
     await originals.click();
     await expect(panel.getByRole('article')).toContainText('第一段已写出');
+    await panel.getByRole('button', { name: '更多' }).click();
     await panel.getByRole('button', { name: '删除小剧场', exact: true }).click();
     await panel.getByRole('button', { name: '确认删除小剧场' }).click();
     await expect(panel.getByRole('button', { name: '雨夜电车（未完篇）' })).toBeVisible();
@@ -330,12 +332,26 @@ test('备份标记跟随小剧场，另一标签的存档馆即时刷新，V2 �
     await expect(badge).toHaveText('备份后小剧场有变动');
     const file = await download();
 
+    await panel.getByRole('button', { name: '更多' }).click();
     await panel.getByRole('button', { name: '重命名' }).click();
     await panel.getByLabel('新标题').fill('另一份档案名');
     await panel.getByRole('button', { name: '保存标题' }).click();
     await expect(panel.getByRole('heading', { name: '另一份档案名' })).toBeVisible();
     await expect(badge).toHaveText('备份后小剧场有变动');
     await download();
+    // 以此主题新建：带上原主题与设置进入新建页，不发请求、不改动原篇。
+    await panel.getByRole('button', { name: '更多' }).click();
+    await panel.getByRole('button', { name: '以此主题新建' }).click();
+    await expect(panel.getByLabel('主题', { exact: true })).toHaveValue('独立档案');
+    await expect(panel.getByLabel('标题（选填）')).toHaveValue('另一份档案名');
+    await expect(panel.getByRole('radio', { name: '跟随主线' })).toBeChecked();
+    await expect(panel.getByRole('complementary', { name: '本场设定' })).toContainText('主线第');
+    await panel.getByRole('button', { name: '返回列表' }).click();
+    await expect(panel.locator('.theater-list > li')).toHaveCount(1);
+    await expect(badge).toHaveText('已备份 · 今天');
+    await panel.getByRole('button', { name: '另一份档案名', exact: true }).click();
+    await expect(panel.getByRole('heading', { name: '另一份档案名' })).toBeVisible();
+    await panel.getByRole('button', { name: '更多' }).click();
     await panel.getByRole('button', { name: '删除小剧场', exact: true }).click();
     await panel.getByRole('button', { name: '确认删除小剧场' }).click();
     await expect(panel.getByText('档案尚空')).toBeVisible();
