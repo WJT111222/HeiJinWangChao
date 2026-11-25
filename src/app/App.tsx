@@ -355,7 +355,7 @@ export function App() {
       try { acceptList(await repository.list()); }
       catch { setListError(listFailure); setError(listFailure); }
     } catch (error) {
-      setDeleteError(error instanceof DataError && error.code === 'HISTORY_RECOVERY_REQUIRED'
+      setDeleteError(error instanceof DataError && ['HISTORY_RECOVERY_REQUIRED', 'THEATER_RECOVERY_REQUIRED'].includes(error.code)
         ? error.message : '删除失败，存档可能已更新或存储不可用。请刷新列表后重试；本次未删除数据。');
     } finally {
       lock.current = false;
@@ -581,7 +581,7 @@ export function App() {
         closeDisabled={backupExport.exporting} onClose={() => { if (!backupExport.exporting) setExportAllOpen(false); }}>
         <p>把 {readableSaves.length} 份可读取的存档打包成一个备份文件。{saves.length > readableSaves.length && '无法读取的存档不会打包，请用它卡片上的「导出原始数据」。'}</p>
         <ul className="dialog-consequences">
-          <li>包含：游戏进度、未结算的草稿</li>
+          <li>包含：游戏进度、未结算的草稿、小剧场</li>
           <li>不包含：AI 密钥、渠道与设置、撤回记录、手动历史收藏（请单独导出节点）</li>
         </ul>
         {readableSaves.length > maxBackupEntries && <Feedback role="alert" level="err">单个备份最多容纳 {maxBackupEntries} 份存档，请分别导出。</Feedback>}
@@ -611,8 +611,8 @@ export function App() {
           }}
         >
           <p>{deleting.status === 'readable'
-            ? `将永久删除「${deleting.title}」及其关联草稿、回合提交回执、全部自动历史和手动收藏。此操作无法撤销，请先导出重要历史节点。`
-            : `仅在没有关联手动收藏时，才允许永久删除「${deleting.title}」及其草稿、回合提交回执和自动历史。此操作无法撤销。`}</p>
+            ? `将永久删除「${deleting.title}」及其小剧场、关联草稿、回合提交回执、全部自动历史和手动收藏。此操作无法撤销，请先导出重要历史节点。`
+            : `仅在没有关联手动收藏或小剧场时，才允许永久删除「${deleting.title}」及其草稿、回合提交回执和自动历史。此操作无法撤销。`}</p>
           <p className="save-record-key">存档记录 ID：{saveKeyText(deleting.storageKey)}</p>
           {deleting.status === 'unreadable' && <p>此存档无法读取，建议取消并先导出主存档原始数据。{rawSaveHistoryNotice}</p>}
           {deleteError && <Feedback role="alert" level="err" mobileAs="p">{deleteError}</Feedback>}

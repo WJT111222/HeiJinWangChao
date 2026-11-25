@@ -194,8 +194,9 @@ export async function runRollbackScenarios(factory: IDBFactory, prefix: string):
     {
       await fresh(); await turns(1);
       const state = await repo!.load('save-a');
-      const v1 = JSON.parse(await serializeBackup([{ summary: backupSummary(state), state }], 'new'));
-      check('备份：第 2 版文件', '旧版解析', await outcome(() => parseBackup(JSON.stringify({ ...v1, version: 2, worldbooks: [] }))), /^失败：BACKUP_FUTURE/);
+      const latest = JSON.parse(await serializeBackup([{ summary: backupSummary(state), state }], 'new'));
+      const v1 = { ...latest, version: 1 };
+      check('备份：未来版本文件', '当前版解析', await outcome(() => parseBackup(JSON.stringify({ ...v1, version: 3, worldbooks: [] }))), /^失败：BACKUP_FUTURE/);
       const withField = { ...v1, saves: [{ ...v1.saves[0], state: { ...state, worldbook: WORLDBOOK } }] };
       delete withField.checksum;
       const parsed = await parseBackup(JSON.stringify(withField));

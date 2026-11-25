@@ -2517,6 +2517,32 @@
       "category": "creation",
       "contentSha256": "e57f52fee1580eacf806b9cdc757cf521bf7a820c90e85bfbb3152f3b99940b5",
       "placeholders": []
+    },
+    {
+      "id": "theater.novel",
+      "path": "theater/novel.md",
+      "title": "王朝小剧场创作",
+      "kind": "prompt",
+      "applicableStages": [
+        "theater"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 269,
+      "version": "1.0",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 200,
+      "orderGroup": "stage",
+      "reorderable": false,
+      "category": "stage",
+      "contentSha256": "a98cb1c3fd2601bd7cf60c69fe2f9dadfb9ff07631c3b8385c04748e598eaaee",
+      "placeholders": []
     }
   ]
 }

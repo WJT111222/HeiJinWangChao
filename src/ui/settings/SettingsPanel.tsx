@@ -111,7 +111,7 @@ export function SettingsPanel({
     setAiDirty(dirty);
     onAiDirtyChange?.(dirty);
   }, [onAiDirtyChange]);
-  const localDirty=JSON.stringify(editing.prompts)!==JSON.stringify(editingBase.prompts)||JSON.stringify(editing.runtime)!==JSON.stringify(editingBase.runtime);
+  const localDirty=editing.theaterPrompt!==editingBase.theaterPrompt||JSON.stringify(editing.prompts)!==JSON.stringify(editingBase.prompts)||JSON.stringify(editing.runtime)!==JSON.stringify(editingBase.runtime);
   useLayoutEffect(() => { onLocalDirtyChange?.(localDirty); }, [localDirty, onLocalDirtyChange]);
   useEffect(() => () => onLocalDirtyChange?.(false), [onLocalDirtyChange]);
   useEffect(() => {
@@ -231,6 +231,7 @@ export function SettingsPanel({
               repository={repository}
               activeSaveId={activeSaveId}
               onPromptChange={prompt}
+              onTheaterPromptChange={value => setEditing({ ...editing, theaterPrompt: value })}
             />
           </Suspense>
         )}

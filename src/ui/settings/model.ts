@@ -64,6 +64,7 @@ export const SettingsSchema = z.strictObject({
     maxAutoRetries: z.union([z.literal(1), z.literal(3)]).default(3),
   }),
   // 外观：夜间（原黑金）、日间（档案纸）、跟随系统。旧设置缺字段时为夜间，原样保持现有观感。
+  theaterPrompt: z.string().trim().min(1).max(8000).optional(),
   display: z.strictObject({ appearance: z.enum(['night', 'day', 'system']) }).default({ appearance: 'night' }),
 });
 export type Appearance = Settings['display']['appearance'];
@@ -98,6 +99,7 @@ export function mergeSettingsChanges(base: Settings, edited: Settings, latest: S
   }
   return {
     ...latest,
+    theaterPrompt: base.theaterPrompt === edited.theaterPrompt ? latest.theaterPrompt : edited.theaterPrompt,
     prompts: section(base.prompts, edited.prompts, latest.prompts),
     memory: section(base.memory, edited.memory, latest.memory),
     runtime: section(base.runtime, edited.runtime, latest.runtime),
