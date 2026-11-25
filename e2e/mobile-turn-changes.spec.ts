@@ -53,7 +53,7 @@ test('入口与角标共享只读比较，稀疏变化仅显示真实目标角�
 });
 
 test('真实撤回消费快照后隐藏旧角标，刷新不会恢复失效数量',async({page})=>{
- await seed(page);await expect(button(page)).toBeEnabled();let world=await directory(page);await expect(world.locator('[data-change-panel]')).toHaveCount(7);await page.keyboard.press('Escape');
+ await seed(page);await expect(button(page)).toBeEnabled();let world=await directory(page);await expect(world.locator('[data-change-panel]')).toHaveCount(8);await page.keyboard.press('Escape');
  const {openWorkflow}=await import('./helpers/gameLayout');await openWorkflow(page);await page.getByRole('button',{name:/^撤回（/}).click();await page.getByRole('dialog',{name:'撤回上一回合',exact:true}).getByRole('button',{name:'确认撤回',exact:true}).click();await expect(page.getByRole('dialog',{name:'撤回上一回合',exact:true})).toHaveCount(0);await page.keyboard.press('Escape');await expect(button(page)).toBeDisabled();world=await directory(page);await expect(world.locator('[data-change-panel]')).toHaveCount(0);await page.keyboard.press('Escape');const after=await raw(page),verify=await guard(page);expect(after.records.turnUndo).toHaveLength(0);await page.reload();await expect(button(page)).toBeDisabled();world=await directory(page);await expect(world.locator('[data-change-panel]')).toHaveCount(0);await page.keyboard.press('Escape');expect(await raw(page)).toEqual(after);verify();
 });
 
