@@ -65,6 +65,8 @@ export const SettingsSchema = z.strictObject({
   }),
   // 外观：夜间（原黑金）、日间（档案纸）、跟随系统。旧设置缺字段时为夜间，原样保持现有观感。
   display: z.strictObject({ appearance: z.enum(['night', 'day', 'system']) }).default({ appearance: 'night' }),
+  // 生成完成提示音：关闭／切到别处时（默认）／总是。旧设置缺字段时按默认，点选即保存。
+  notifications: z.strictObject({ completionChime: z.enum(['off', 'background', 'always']) }).default({ completionChime: 'background' }),
 });
 export type Appearance = Settings['display']['appearance'];
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -84,6 +86,7 @@ export function defaultSettings(): Settings {
     memory: { immediateWindowSize: 10, automaticMaintenance: true, summaries: defaultSummarySettings() },
     runtime: { useVariableStage: true, useWorldStage: true, streamStory: true, streamVariables: false, streamWorld: false, timeoutSeconds: 120, failureAutoRetry: false, maxAutoRetries: 3 },
     display: { appearance: 'night' },
+    notifications: { completionChime: 'background' },
   };
 }
 
@@ -102,5 +105,6 @@ export function mergeSettingsChanges(base: Settings, edited: Settings, latest: S
     memory: section(base.memory, edited.memory, latest.memory),
     runtime: section(base.runtime, edited.runtime, latest.runtime),
     display: section(base.display, edited.display, latest.display),
+    notifications: section(base.notifications, edited.notifications, latest.notifications),
   };
 }

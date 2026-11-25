@@ -12,6 +12,7 @@ import type { RuntimeLogReporter } from './runtimeLog';
 import { generateAndSettleTurn } from '../../workflows/automaticTurn';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
 import { AiError } from '../../services/ai/errors';
+import { chimeIfWanted, primeChime } from './completionChime';
 
 export function useTurnGeneration(
   repository: SaveRepository,
@@ -48,6 +49,9 @@ export function useTurnGeneration(
   async function generate(expected = draft) {
     if (!expected || active.current) return;
     active.current = true;
+    // 开始生成多由玩家点击触发：此时启用声音，之后异步完成才能出声。
+    primeChime();
+    const chime = settings.notifications.completionChime;
     errorTurn.current = turnKey(expected);
     const id = ++token.current;
     setRunning(true);
@@ -106,6 +110,7 @@ export function useTurnGeneration(
         setOutcome(result.outcome);
         if (result.committed) { onRuntimeEvent?.('commit', 'completed'); onSettled?.(result.committed); }
         onRuntimeEvent?.('workflow', 'completed');
+        chimeIfWanted(chime, 'done');
       }
     } catch (failure) {
       if (token.current === id) {
@@ -115,6 +120,8 @@ export function useTurnGeneration(
         setError(
           `${stage ? { story: '正文生成', variables: '变量管理', world: '动态世界', commit: '正式结算' }[stage] + '：' : ''}${storyError(failure)}`,
         );
+        // 手动取消不提醒；其余失败需要玩家回来处理。
+        if (!(failure instanceof AiError && failure.code === 'cancelled')) chimeIfWanted(chime, 'attention');
       }
     } finally {
       if (token.current === id) {
