@@ -68,7 +68,7 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
       const brand = (await page.locator('.bar-city').boundingBox())!;
       const row = (await page.locator('.composer-action-row').boundingBox())!;
       expect(brand.x + brand.width).toBeLessThan(row.x);
-      await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(7);
+      await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(8);
       const system = page.getByRole('navigation', { name: '系统操作' });
       await expect(system.locator('button > span:last-child')).toHaveText(['设置', '返回首页']);
       await system.getByRole('button', { name: '返回首页', exact: true }).scrollIntoViewIfNeeded();
@@ -107,7 +107,7 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
       const nav = page.getByRole('navigation', { name: '底部导航' });
       await expect(nav.getByRole('button')).toHaveText(['故事', '人物', '世界资料', '设置']);
       await nav.getByRole('button', { name: '世界资料', exact: true }).click();
-      await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(7);
+      await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(8);
       await expect(page.getByRole('navigation', { name: '系统操作' })).toHaveCount(0);
       await page.keyboard.press('Escape');
     }

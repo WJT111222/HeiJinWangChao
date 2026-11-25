@@ -144,7 +144,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         }
         case 'CreateOrganization': {
           const org = command.organization;
-          requireWorld(!org.relationHistory.length, 'permission', 'organization_initialization');
+          requireWorld(!org.relationHistory.length && !org.protagonistKnown?.length, 'permission', 'organization_initialization');
           requireWorld(!Object.values(base.organizations).some(known => known.kind === org.kind && known.name === org.name),
             'invalid_output','entity_id','organization.name');
           requireWorld((org.kind !== 'gang' || org.funds === undefined)
@@ -159,6 +159,8 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         }
         case 'RecordOrgRelation':
           requireWorld(causal.organizations[command.organizationId], 'permission','actor_permission','organizationId');
+          // 主势力绑定是主角身份，只能由Variables依剧情写入。
+          requireWorld(!command.faction, 'permission','actor_permission','faction');
           // A duplicate relationship may be ignored only after validating its target.
           break;
         case 'CreateLocation': break; // Domain validation enforces hierarchy and references.

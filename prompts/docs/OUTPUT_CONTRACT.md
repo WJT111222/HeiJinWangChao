@@ -61,7 +61,8 @@
 | SaveEvent | event |
 | SaveTask | task |
 | CreateOrganization | organization |
-| RecordOrgRelation | organizationId、relation、reason |
+| RecordOrgRelation | organizationId、relation、reason、faction?（主势力 bind/update/unbind，仅 Variables） |
+| RecordOrgKnowledge | organizationId、entry（主角已知的据点或内情；id 与 learnedAt 由程序填写，仅 Variables 逐条追加） |
 
 - [ ] 禁止把提示词旧名称当作已支持：NpcCreated/NpcPatched/NpcMemoryAppended、WorldClockSet、EquipmentSet、BalanceChanged、OrgCreated/OrgPatched、EventPatched/TaskPatched 等均不能直接通过当前 Schema。CreateNpc 不是 NPC 更新；CreateOrganization 不是组织补丁，不能盲目改名来模拟更新。当前没有通用主角补丁、位置/天气更新、NPC 关系/记忆更新、物品数量/状态补丁或房产/其他资产 upsert 命令；需先明确不支持时的 unresolved/拒绝路径，未来扩充命令须单独实现和验证。
 - [ ] 以 PurchaseItem/PurchaseVehicle 等领域操作表达交易，不把旧 BalanceChanged 与 ItemCreated 任意拼成等价购买。金额使用**整数人民币分**；price/amount 等要求正值，账户只允许 cash/onlineBalance。提示词当前的 account/oldValue/newValue/reason 通用余额提案不是实际可执行命令。未知余额仍为 null，不猜零；借贷、还款、收入与内部转账须保留各自业务语义。
