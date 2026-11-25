@@ -6,6 +6,8 @@ import { customCityIdPattern } from './cities/catalog';
  * 官方开局城市。键是存档身份（openingCityId），key 是美术资源键；二者都不能改名。
  * code 是统计用区划代码，用于把自定义城市目录里的同一座城市映射回官方身份。
  * intro 是官方城市介绍，随版本提供，进入生成上下文；不写进存档。
+ * english 后半与 label 首项是城市别称，只用于界面展示，不进入生成上下文。
+ * 长沙「夜城」是黑金王朝采用的游戏化别称，不代表现实中的正式别称。
  */
 export const openingCities = {
   chongqing: { key: 'cq', name: '重庆', english: 'CHONGQING · 山城', code: '500000', region: '直辖市', label: '山城 · 江岸与街巷',
@@ -16,14 +18,14 @@ export const openingCities = {
     intro: '松花江畔的东北城市，拥有工业和高校基础，街区建筑保留多重历史痕迹。四季温差明显，冬季气候会实际影响出行与工作安排。' },
   guangzhou: { key: 'gz', name: '广州', english: 'GUANGZHOU · 羊城', code: '440100', region: '广东', label: '岭南 · 商贸与人情',
     intro: '珠江沿岸的商贸中心，制造业、专业市场与现代服务业联系紧密。老城街巷、城中村和新城并存，粤语文化与多元迁入人口共同塑造城市生活。' },
-  beijing: { key: 'bj', name: '北京', english: 'BEIJING · 京城', code: '110000', region: '直辖市', label: '京城 · 胡同与长街',
-    intro: '环路层层展开，胡同院落和高楼商务区相隔不远。机关、高校、科研与各类企业汇聚，通勤距离和住房条件深刻影响日常节奏。' },
-  hangzhou: { key: 'hz', name: '杭州', english: 'HANGZHOU · 钱塘', code: '330100', region: '浙江', label: '江南 · 湖山与新城',
-    intro: '西湖与钱塘江之间，老街巷、茶山和新兴产业园区相邻。电商、科技与旅游服务业活跃，烟雨时节的湖光山色是城市生活的底色。' },
-  changsha: { key: 'cs', name: '长沙', english: 'CHANGSHA · 星城', code: '430100', region: '湖南', label: '湘楚 · 江洲与夜市',
-    intro: '湘江穿城，岳麓山与橘子洲隔江相望。传媒娱乐、餐饮夜宵和制造业并行，大学周边与老街区的年轻人让城市入夜后依旧热闹。' },
-  sanya: { key: 'sy', name: '三亚', english: 'SANYA · 鹿城', code: '460200', region: '海南', label: '海岛 · 椰风与旺季',
-    intro: '海南岛最南端的滨海城市，海湾、酒店带与本地社区相隔不远。旅游旺季带来大量季节性工作和旅居人口，淡季时城市节奏慢下来。' },
+  beijing: { key: 'bj', name: '北京', english: 'BEIJING · 帝都', code: '110000', region: '直辖市', label: '帝都 · 权力 · 人脉 · 底蕴',
+    intro: '古老皇城与现代都市交相辉映，机关、高校、科研机构与企业总部汇聚于此。胡同深处是寻常百姓的生活，繁华长街之上则交织着资源、人脉与机遇。' },
+  hangzhou: { key: 'hz', name: '杭州', english: 'HANGZHOU · 钱塘', code: '330100', region: '浙江', label: '钱塘 · 江南 · 科技 · 新贵',
+    intro: '西湖烟雨与钱塘潮声之间，传统江南风韵与数字经济相互交融。电商、科技与创业资本在这里蓬勃发展，古老街巷与新兴产业园区见证着无数人的起落。' },
+  changsha: { key: 'cs', name: '长沙', english: 'CHANGSHA · 夜城', code: '430100', region: '湖南', label: '夜城 · 霓虹 · 娱乐 · 烟火',
+    intro: '湘江穿城而过，岳麓山与橘子洲遥相呼应。传媒娱乐、餐饮消费与年轻文化赋予城市旺盛的生命力。每当夜幕降临，霓虹亮起，街头巷尾的故事才刚刚开始。' },
+  sanya: { key: 'sy', name: '三亚', english: 'SANYA · 鹿城', code: '460200', region: '海南', label: '鹿城 · 海风 · 度假 · 奢华',
+    intro: '椰林、碧海与绵延的海岸线构成南国都市的底色。高端酒店、旅游产业与本地社区并存，季节性的旅居人口带来财富与机遇。繁华海湾之外，也有属于普通人的平凡人生。' },
 } as const;
 export type OfficialCityId = keyof typeof openingCities;
 export const officialCityIds = Object.keys(openingCities) as OfficialCityId[];

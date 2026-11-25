@@ -11,7 +11,7 @@ import { defaultSettings } from '../ui/settings/model';
 import { sharedContext } from '../prompts/sharedContext';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { cityVisual } from '../ui/home/cityVisual';
-import { CITY, ORDER, customSkyline, skyline } from '../ui/home/skyline';
+import { CITY, CITY_TICKET_META, ORDER, customSkyline, skyline } from '../ui/home/skyline';
 import { deriveAtmosphere, locationText } from '../ui/game/atmosphere';
 import { AiClient } from '../services/ai/client';
 import { completeCreation } from '../services/ai/creationCompletion';
@@ -223,6 +223,37 @@ describe('城市介绍 AI 补全', () => {
     await expect(completeCreation({ ...input, cityName: ' ' }, config, vault, { signal: new AbortController().signal }, new AiClient(transport))).rejects.toMatchObject({ code: 'configuration' });
     expect(transport).not.toHaveBeenCalled();
     await expect(completeCreation(input, config, vault, { signal: new AbortController().signal }, new AiClient(transport))).rejects.toMatchObject({ code: 'invalid_output' });
+  });
+});
+
+describe('新四城定稿文案', () => {
+  const final = {
+    beijing: ['BEIJING · 帝都', '权力 · 人脉 · 底蕴', '古老皇城与现代都市交相辉映'],
+    hangzhou: ['HANGZHOU · 钱塘', '江南 · 科技 · 新贵', '西湖烟雨与钱塘潮声之间'],
+    changsha: ['CHANGSHA · 夜城', '霓虹 · 娱乐 · 烟火', '湘江穿城而过'],
+    sanya: ['SANYA · 鹿城', '海风 · 度假 · 奢华', '椰林、碧海与绵延的海岸线'],
+  } as const;
+  it('英文标识、关键词与介绍在创角、首页和车票上一致；别称不再用京城、星城', () => {
+    for (const [id, [english, keywords, intro]] of Object.entries(final) as [keyof typeof final, readonly string[]][]) {
+      const city = openingCities[id], alias = english.split(' · ')[1];
+      expect(city.english).toBe(english);
+      expect(city.label).toBe(`${alias} · ${keywords}`);
+      expect(city.intro.startsWith(intro)).toBe(true);
+      expect(CITY[city.key][2]).toBe(keywords);
+      expect(cityVisual({ openingCityId: id })?.keywords).toBe(keywords);
+    }
+    expect(CITY_TICKET_META.cs.seal).toBe('夜');
+    expect(JSON.stringify(openingCities)).not.toMatch(/京城|星城/);
+  });
+  it('原四城文案不变', () => {
+    expect([openingCities.chongqing.english, openingCities.shanghai.english, openingCities.harbin.english, openingCities.guangzhou.english])
+      .toEqual(['CHONGQING · 山城', 'SHANGHAI · 魔都', 'HARBIN · 冰城', 'GUANGZHOU · 羊城']);
+    expect([CITY.cq[2], CITY.sh[2], CITY.hrb[2], CITY.gz[2]]).toEqual(['山城 · 江雾 · 轻轨', '外滩 · 霓虹 · 江风', '冰雪 · 圆顶 · 长街', '早茶 · 榕荫 · 珠江']);
+  });
+  it('官方介绍只经 OPENING_CITY 进入生成，别称和关键词不进上下文', () => {
+    const context = openingCityContext({ openingCityId: 'changsha' });
+    expect(context).toEqual({ name: '长沙', region: '湖南', source: '官方城市', intro: openingCities.changsha.intro });
+    expect(JSON.stringify(context)).not.toMatch(/夜城|霓虹 · 娱乐/);
   });
 });
 

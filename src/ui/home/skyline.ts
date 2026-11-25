@@ -99,8 +99,8 @@ export const skyline = (c: City, extra = '', ambientSnow = true) => {
 export const CITY = {
   cq:['重庆','CHONGQING · 29°33′N','山城 · 江雾 · 轻轨'], sh:['上海','SHANGHAI · 31°14′N','外滩 · 霓虹 · 江风'],
   hrb:['哈尔滨','HARBIN · 45°45′N','冰雪 · 圆顶 · 长街'], gz:['广州','GUANGZHOU · 23°07′N','早茶 · 榕荫 · 珠江'],
-  bj:['北京','BEIJING · 39°54′N','胡同 · 城楼 · 长安街'], hz:['杭州','HANGZHOU · 30°16′N','西湖 · 烟雨 · 钱塘'],
-  cs:['长沙','CHANGSHA · 28°12′N','湘江 · 橘洲 · 夜宵'], sy:['三亚','SANYA · 18°15′N','椰风 · 海湾 · 旺季'],
+  bj:['北京','BEIJING · 39°54′N','权力 · 人脉 · 底蕴'], hz:['杭州','HANGZHOU · 30°16′N','江南 · 科技 · 新贵'],
+  cs:['长沙','CHANGSHA · 28°12′N','霓虹 · 娱乐 · 烟火'], sy:['三亚','SANYA · 18°15′N','海风 · 度假 · 奢华'],
 };
 export const ORDER: readonly City[] = ['cq','sh','hrb','gz','bj','hz','cs','sy'];
 
@@ -116,7 +116,7 @@ export const CITY_TICKET_META = {
   gz: {longitude:'113°15′E', seal:'穗', tint:'#D08A6A'},
   bj: {longitude:'116°24′E', seal:'京', tint:'#C65F57'},
   hz: {longitude:'120°09′E', seal:'杭', tint:'#9EBB86'},
-  cs: {longitude:'112°56′E', seal:'星', tint:'#B58BC9'},
+  cs: {longitude:'112°56′E', seal:'夜', tint:'#B58BC9'},
   sy: {longitude:'109°31′E', seal:'鹿', tint:'#63C2D0'},
 };
 /** 自定义城市统一的暖铜色。 */

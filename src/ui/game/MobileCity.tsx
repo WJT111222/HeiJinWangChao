@@ -10,7 +10,7 @@ function scene(state:GameState){
  const place=locationText(state.locations,state.protagonist.locationId),calendar=state.openingTimePending?undefined:chinaCalendar(state.worldClock);
  return {place,clock:calendar?`${String(calendar.hour).padStart(2,'0')}:${String(calendar.minute).padStart(2,'0')}`:'--:--',date:calendar?`${calendar.year}/${calendar.month}/${calendar.day} ${calendar.weekday}`:'开局时间待确认',period:timeOfDayLabel(state)};
 }
-const seals={cq:'渝',sh:'沪',hrb:'冰',gz:'穗',bj:'京',hz:'杭',cs:'星',sy:'鹿',other:'城'} as const;
+const seals={cq:'渝',sh:'沪',hrb:'冰',gz:'穗',bj:'京',hz:'杭',cs:'夜',sy:'鹿',other:'城'} as const;
 export function mobileCitySeal(state:GameState){const city=openingCityIdentity(state);return city?.kind==='custom'?city.seal:seals[city?.key??'other'];}
 export function MobileCityBar({state,mini,onStatus}:{state:GameState;mini:boolean;onStatus:()=>void}){
  const id=useId(),{place,clock,date}=scene(state),weather=weatherSeals[deriveAtmosphere(state).weather];
