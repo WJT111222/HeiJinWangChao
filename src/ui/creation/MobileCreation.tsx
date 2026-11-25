@@ -1,31 +1,25 @@
 import { useEffect, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { CITY, CITY_TICKET_META } from '../home/skyline';
-import { guilloche } from '../home/ticketView';
-import { cities, professionProfile } from './model';
+import { creationCityName, professionProfile } from './model';
 import type { Creation } from './model';
 import { getTalentDefinition } from '../../domain/protagonist/talents';
+import { CreationGuilloche, creationCityVisual, ticketBand } from './CityChoice';
 
-export const creationCity={chongqing:'cq',shanghai:'sh',harbin:'hrb',guangzhou:'gz'} as const;
-export const ticketMeta={cq:{...CITY_TICKET_META.cq,band:'#2f6f63'},sh:{...CITY_TICKET_META.sh,band:'#34468e'},hrb:{...CITY_TICKET_META.hrb,band:'#6f8fa8'},gz:{...CITY_TICKET_META.gz,band:'#a8482c'}};
-export function CreationGuilloche({city}:{city:Creation['city']}) {
-  return <svg viewBox="0 0 320 74" preserveAspectRatio="none" aria-hidden="true">{guilloche(creationCity[city]).map((d,k)=><path key={k} className={k%4?'':'deep'} d={d}/>)}</svg>;
-}
 export function MiniCreationTicket({form,onPreview}:{form:Creation;onPreview:()=>void}) {
- const profile=professionProfile(form),city=cities.find(c=>c.id===form.city)!,meta=ticketMeta[creationCity[form.city]],talent=getTalentDefinition(form.talentId);
+ const profile=professionProfile(form),city=creationCityVisual(form),band=ticketBand[city.key],cityName=creationCityName(form)||'？',talent=getTalentDefinition(form.talentId);
  const completed=[form.person.name&&form.person.age&&form.person.gender,profile.name,form.step>3||form.background,form.step>4||form.hasCompanion,form.openingPreference].filter(Boolean).length;
- return <button type="button" className="creation-mini-ticket" onClick={onPreview} aria-label="展开完整车票预览" style={{'--band':form.step>=3?meta.band:'#c9a961'} as CSSProperties}>
-  <span className="creation-color-strip"/><span className="mini-ticket-body"><span className="mini-route"><span><small>FROM</small><b title={form.person.name}>{form.person.name||'？'}</b></span><i aria-hidden="true"/><span><small>TO</small><b>{form.step>=3?city.name:'？'}</b></span></span><span className="mini-info" title={`${form.person.age} · ${form.person.gender} · ${profile.name}${talent?` · 天赋 ${talent.name}`:''}`}>{form.person.age?`${form.person.age} 岁`:'年龄'} · {form.person.gender||'性别'} · {profile.name||'职业'}{talent?` · ${talent.name}`:''}{form.hasCompanion&&form.companion.name?` · 同伴 ${form.companion.name}`:''}</span></span>
+ return <button type="button" className="creation-mini-ticket" onClick={onPreview} aria-label="展开完整车票预览" style={{'--band':form.step>=3?band:'#c9a961'} as CSSProperties}>
+  <span className="creation-color-strip"/><span className="mini-ticket-body"><span className="mini-route"><span><small>FROM</small><b title={form.person.name}>{form.person.name||'？'}</b></span><i aria-hidden="true"/><span><small>TO</small><b>{form.step>=3?cityName:'？'}</b></span></span><span className="mini-info" title={`${form.person.age} · ${form.person.gender} · ${profile.name}${talent?` · 天赋 ${talent.name}`:''}`}>{form.person.age?`${form.person.age} 岁`:'年龄'} · {form.person.gender||'性别'} · {profile.name||'职业'}{talent?` · ${talent.name}`:''}{form.hasCompanion&&form.companion.name?` · 同伴 ${form.companion.name}`:''}</span></span>
   <span className="mini-station"><small>STATION</small><b>0{form.step}</b><span><i style={{width:`${completed*20}%`}}/></span></span><span className="mini-expand" aria-hidden="true">展开 ›</span>
  </button>;
 }
 export function FullCreationTicket({form,stub}:{form:Creation;stub:ReactNode}) {
- const key=creationCity[form.city],meta=ticketMeta[key],city=cities.find(c=>c.id===form.city)!,on=form.step>=3,profile=professionProfile(form),talent=getTalentDefinition(form.talentId);
- return <article className="creation-full-ticket" aria-label="人生车票" style={{'--band':on?meta.band:'#c9a961','--tint':on?meta.tint:'#c9a961'} as CSSProperties}>
-  <div className="creation-ticket-paper"><div className="creation-ticket-band"><b>{on?city.name:'空白车票'}</b><small>{on?CITY[key][1].split(' · ')[1]:'NEW LIFE'}</small><span>NEW LIFE</span></div>
-  <div className="creation-ticket-route"><span><small>FROM</small><b>{form.person.name||'？'}</b></span><i aria-hidden="true">单程</i><span><small>TO</small><b>{on?city.name:'？'}</b></span></div>
+ const city=creationCityVisual(form),band=ticketBand[city.key],cityName=creationCityName(form)||'？',on=form.step>=3,profile=professionProfile(form),talent=getTalentDefinition(form.talentId);
+ return <article className="creation-full-ticket" aria-label="人生车票" style={{'--band':on?band:'#c9a961','--tint':on?city.tint:'#c9a961'} as CSSProperties}>
+  <div className="creation-ticket-paper"><div className="creation-ticket-band"><b>{on?cityName:'空白车票'}</b><small>{on?city.line.split(' · ')[1]:'NEW LIFE'}</small><span>NEW LIFE</span></div>
+  <div className="creation-ticket-route"><span><small>FROM</small><b>{form.person.name||'？'}</b></span><i aria-hidden="true">单程</i><span><small>TO</small><b>{on?cityName:'？'}</b></span></div>
   <dl><div><dt>年龄</dt><dd>{form.person.age||'—'}</dd></div><div><dt>性别</dt><dd>{form.person.gender||'—'}</dd></div><div><dt>职业</dt><dd>{profile.name||'—'}</dd></div>{talent&&<div className="creation-ticket-talent"><dt>开局天赋</dt><dd>{talent.name} · {talent.mechanismName}</dd></div>}</dl>
-  <div className="creation-ticket-mid" aria-hidden="true"><CreationGuilloche city={form.city}/>{on&&<><span>{CITY[key][1].split(' · ')[1]} · {meta.longitude}</span><b>{CITY[key][2]}</b></>}<i>待开局<small>BOARDING</small></i></div></div>
+  <div className="creation-ticket-mid" aria-hidden="true"><CreationGuilloche city={city}/>{on&&<><span>{city.key==='custom'?city.meta:`${city.line.split(' · ')[1]} · ${city.meta}`}</span><b>{city.keywords}</b></>}<i>待开局<small>BOARDING</small></i></div></div>
   <div className="creation-ticket-perf" aria-hidden="true"/>{stub}
  </article>;
 }

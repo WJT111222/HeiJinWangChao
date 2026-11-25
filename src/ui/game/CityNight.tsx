@@ -1,15 +1,15 @@
 import { useMemo } from 'react';
 import type { GameState } from '../../domain/state';
-import { openingCity } from '../../domain/openingCity';
+import { openingCityIdentity } from '../../domain/openingCity';
 import { chinaCalendar } from '../../domain/openingTime';
-import { skyline } from '../home/skyline';
+import { customSkyline, skyline } from '../home/skyline';
 import { cn, dx, deriveAtmosphere, locationText, sceneTime, timeOfDayLabel, weatherSeals } from './atmosphere';
 import { SceneDetails } from './SceneDetails';
 
 export function CityAtmosphere({ state }: { state: GameState }) {
-  const { city, time, weather } = deriveAtmosphere(state);
+  const { city, time, weather } = deriveAtmosphere(state), seed = openingCityIdentity(state)?.kind === 'custom' ? Number(state.openingCityId?.slice(3)) : 0;
   // Geometry is deterministic and changes only when switching to another save identity.
-  const svg = useMemo(() => city === 'other' ? '' : skyline(city, 'aria-hidden="true"', false), [city]);
+  const svg = useMemo(() => city === 'other' ? '' : city === 'custom' ? customSkyline(seed, 'aria-hidden="true"') : skyline(city, 'aria-hidden="true"', false), [city, seed]);
   return <div className="atmo" data-city={city} data-time={time} data-wx={weather} aria-hidden="true">
     <div className="stars" /><div className="skyline" dangerouslySetInnerHTML={{ __html: svg }} />
     <div className="wx wx-rain"><i /></div><div className="wx wx-snow" /><div className="wx wx-fog" /><div className="wx wx-cloud" />
@@ -18,7 +18,7 @@ export function CityAtmosphere({ state }: { state: GameState }) {
 }
 
 export function CityBar({ state }: { state: GameState }) {
-  const city = openingCity(state.openingCityId), atmo = deriveAtmosphere(state);
+  const city = openingCityIdentity(state), atmo = deriveAtmosphere(state);
   const place = locationText(state.locations, state.protagonist.locationId);
   const calendar = state.openingTimePending ? undefined : chinaCalendar(state.worldClock);
   const clock = calendar ? `${String(calendar.hour).padStart(2, '0')}:${String(calendar.minute).padStart(2, '0')}` : '--:--';
@@ -33,6 +33,12 @@ export function CityBar({ state }: { state: GameState }) {
   </header>;
 }
 
+/** 门牌上的小印：杭州的「杭」、自定义城市的城市首字；三亚只用它画落日，其他城市不显示。 */
+function chapterMark(state: GameState) {
+  const city = openingCityIdentity(state);
+  return city?.kind === 'custom' ? city.seal : city?.key === 'hz' ? '杭' : '';
+}
+
 export function CityChapter({ number, state, scene, status = 'settled', desktop }: {
   number: number; state: GameState; scene?: GameState['journal'][number]['scene'];
   status?: 'settled' | 'draft' | 'preview'; desktop: boolean;
@@ -41,7 +47,7 @@ export function CityChapter({ number, state, scene, status = 'settled', desktop 
   const calendar = !desktop && scene ? chinaCalendar(scene.worldClock) : undefined;
   return <header className="chapter" data-state={status}>
     <span className="plate" aria-hidden="true">
-      <span className="p-frost" /><span className="p-num" data-dx={`第${dx(number)}回`}>{number}</span>
+      <span className="p-frost" /><span className="p-mark">{chapterMark(state)}</span><span className="p-num" data-dx={`第${dx(number)}回`}>{number}</span>
       <span><span className="p-cn">第{cn(number)}回</span><span className="p-sub">TURN {String(number).padStart(3, '0')}</span></span>
       <span className="p-rail"><i /><b /><i className="on" /><b /><i /></span>
     </span>

@@ -36,13 +36,23 @@
       "origin": "worldbooks-v2",
       "sourcePath": "prompts/worldbooks/heijin/01_worldview.md",
       "sourceSha256": "5c826154def8538373c875245ab2d1f78280a763e87b6aa9118b0496b39490b0",
-      "treatment": "verbatim"
+      "treatment": "city-expansion-v1",
+      "cityExpansionV1": {
+        "baseCommit": "55cdc6edf84dab533719dbcf6ef907b10058657a",
+        "notes": "开局城市扩展：解除四城限制，列出八座官方城市并允许中国大陆自选城市；四城逐段介绍改为每档由 OPENING_CITY 注入本城介绍，保留反刻板印象原则与跨城出行规则。",
+        "sha256": "e7df81630ac6a085ef46bae9daeb47bb316f0ccf0594e8b410969498b781b4b1"
+      }
     },
     "worldbooks/heijin/02_modern_underworld.md": {
       "origin": "worldbooks-v2",
       "sourcePath": "prompts/worldbooks/heijin/02_modern_underworld.md",
       "sourceSha256": "9f59b875c57705a2880697c7f071f9a363cf44f2dedace9011d1baf520658c22",
-      "treatment": "verbatim"
+      "treatment": "city-expansion-v1",
+      "cityExpansionV1": {
+        "baseCommit": "55cdc6edf84dab533719dbcf6ef907b10058657a",
+        "notes": "开局城市扩展：地盘示例不再点名原四城，原则不变。",
+        "sha256": "6654a1c2aba68aef34789e4b9934130e81703c63a46688e7f9ad8252619b011f"
+      }
     },
     "shared/02_knowledge.md": {
       "origin": "m3-review",
@@ -1722,6 +1732,17 @@
       "storyDifficultyV1": {
         "notes": "剧情难度「硬核」场外反制：项目原创规则；仅在硬核难度的普通回合动态世界阶段注入，反制须有已确立的人物、传播路径与因果，不凭空制造敌人；不改输出协议与命令目录。",
         "sha256": "4c0cf778b3fa95b6af0068199e32a29bddc15344b45dbfe6613d211656225f2b"
+      }
+    },
+    "creation/city.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/creation/city.md",
+      "sourceSha256": "02396732d00f7ff1ba2e7124d2116afab2e3a6a213bcb5b50ba8c20c21a2c7e1",
+      "cityExpansionV1": {
+        "baseCommit": "55cdc6edf84dab533719dbcf6ef907b10058657a",
+        "notes": "自定义开局城市的可选地域介绍补全：只写约 50–100 字介绍，不确认城市合法性，不预设人物、势力或剧情。",
+        "sha256": "02396732d00f7ff1ba2e7124d2116afab2e3a6a213bcb5b50ba8c20c21a2c7e1"
       }
     }
   },

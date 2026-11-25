@@ -3,6 +3,7 @@ import { npcContext } from './npcContext';
 import { recallJournal } from '../domain/memories/recall';
 import type { RecallCues } from '../domain/memories/recall';
 import { talentContext } from './talentContext';
+import { openingCityContext } from '../domain/openingCity';
 
 /** 普通笔记只供当轮 Variables。旧草稿保留原有结构化上下文。 */
 export function storyForSubsequentStages(story: GameState['journal'][number]['story']) {
@@ -18,16 +19,18 @@ export function storyForSubsequentStages(story: GameState['journal'][number]['st
 /** 三阶段共用的模型只读背景。调用方决定正式基线或合法 Variables 投影；
  * 阅读范围不参与任何命令授权。永久 journal 保持现有窗口/检索，幂等凭据不注入。 */
 export function sharedContext(state: GameState, windowSize: number, query: string, recall: boolean, cues: RecallCues = { stage: 'story', playerInput: query }) {
-  const { journal, appliedCommands, dormantNpcProfiles, npc, memories, ...snapshot } = state;
+  const { journal, appliedCommands, dormantNpcProfiles, npc, memories, openingCityProfile, ...snapshot } = state;
   void npc;
+  void openingCityProfile; // 由 OPENING_CITY 统一提供，不在 SAVE_STATE 重复。
   void appliedCommands;
   void dormantNpcProfiles; // Persistence-only: not author context, knowledge, retrieval or summary input.
   const memory = recallJournal(state, windowSize, cues, recall);
   const recent = journal.slice(-windowSize);
   const sources=new Set([...recent.map(t=>t.turnId),...memory.recalledTurns.map(t=>t.turnId)]);
   const people=npcContext(state,cues,sources);
-  const talent = talentContext(state.protagonist.talentId, cues.stage);
+  const talent = talentContext(state.protagonist.talentId, cues.stage), openingCity = openingCityContext(state);
   return {
+    ...(openingCity ? { OPENING_CITY: openingCity } : {}),
     ...(talent ? { PROTAGONIST_TALENT: talent } : {}),
     SAVE_STATE: { ...snapshot, npc:people.npc, memories:{...memories,npcSummaries:people.npcSummaries}, worldClock: state.openingTimePending ? null : state.worldClock },
     MEMORY_CONTEXT: {

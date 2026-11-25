@@ -5,14 +5,14 @@ import {mapProjection} from './mapView';
 import type {MapUiState,Place} from './mapView';
 import {WorldRecord,RecordList} from './WorldRecord';
 import {Empty} from '../Dialog';
-import {openingCity} from '../../domain/openingCity';
+import {isCustomCityId,openingCity} from '../../domain/openingCity';
 import {eventArchive,eventStatusLabels} from './eventArchive';
 import {ownedAssets} from './economyView';
 
 function MapRecords<T>({label,entries,text,render}:{label:string;entries:readonly T[];text:(entry:T)=>string;render:(entry:T)=>ReactNode}){
  return entries.length>20?<RecordList label={label} entries={entries} text={text} render={render}/>:<section aria-label={label}>{entries.length?entries.map((e,i)=><div key={i}>{render(e)}</div>):<Empty>暂无记录</Empty>}</section>;
 }
-const rivers={cq:<><path d="M-20 60 C160 40 260 150 420 120 S700 40 900 90"/><path className="thin" d="M380 260 C420 200 400 150 430 118"/><text x="610" y="58">长江</text><text x="360" y="250">嘉陵江</text></>,sh:<><path d="M120 -10 C200 80 140 170 260 240 S520 290 700 320"/><text x="300" y="232">黄浦江</text></>,hrb:<><path d="M-20 40 C200 70 420 20 900 60"/><text x="520" y="34">松花江</text></>,gz:<><path d="M-20 200 C200 170 380 230 560 200 S800 170 900 190"/><text x="420" y="196">珠江</text></>};
+const rivers={cq:<><path d="M-20 60 C160 40 260 150 420 120 S700 40 900 90"/><path className="thin" d="M380 260 C420 200 400 150 430 118"/><text x="610" y="58">长江</text><text x="360" y="250">嘉陵江</text></>,sh:<><path d="M120 -10 C200 80 140 170 260 240 S520 290 700 320"/><text x="300" y="232">黄浦江</text></>,hrb:<><path d="M-20 40 C200 70 420 20 900 60"/><text x="520" y="34">松花江</text></>,gz:<><path d="M-20 200 C200 170 380 230 560 200 S800 170 900 190"/><text x="420" y="196">珠江</text></>,bj:<><path d="M120 -10 C150 90 110 200 170 330"/><path className="thin" d="M420 150 C560 160 700 120 900 140"/><text x="60" y="120">永定河</text><text x="640" y="128">通惠河</text></>,hz:<><path d="M-20 250 C200 220 380 280 560 240 S800 190 900 210"/><ellipse className="thin" cx="300" cy="110" rx="70" ry="42"/><text x="620" y="226">钱塘江</text><text x="268" y="114">西湖</text></>,cs:<><path d="M430 -10 C400 90 470 200 430 330"/><path className="thin" d="M460 210 C600 190 760 240 900 220"/><text x="360" y="80">湘江</text><text x="700" y="214">浏阳河</text></>,sy:<><path d="M-20 270 C200 250 420 300 640 270 S860 250 900 260"/><path className="thin" d="M420 -10 C440 90 400 180 440 270"/><text x="560" y="258">南海</text><text x="350" y="120">三亚河</text></>};
 export function MapPanel({view,initialId,uiState,onUiStateChange,onNpc,onEvent,mobile=false}:{view:PlayerView;mobile?:boolean;initialId?:string;uiState?:MapUiState;onUiStateChange?:(state:MapUiState)=>void;onNpc:(id:string)=>void;onEvent:(id:string)=>void}){
  const map=useMemo(()=>mapProjection(view.locations,view.protagonist.locationId,view.npc),[view.locations,view.protagonist.locationId,view.npc]);
  // A phone cross-archive target is a navigation request, above saved reading state.
@@ -74,7 +74,7 @@ export function MapPanel({view,initialId,uiState,onUiStateChange,onNpc,onEvent,m
  return <div className="mp" data-mobile={mobile||undefined}>{mobile&&phoneMap}{!mobile&&<section className="mp-tree" ref={treePane} aria-label="地点层级"><p className="muted">全部已记录地点 · 地理层级随世界发展扩展。</p><label className="f-label">搜索地点<input className="f-input search" value={query} maxLength={4000} onChange={e=>{const value=e.target.value;setQuery(value);if(value.trim())setExpanded(prev=>new Set([...prev,...view.locations.filter(p=>p.name.toLocaleLowerCase().includes(value.trim().toLocaleLowerCase())).flatMap(p=>map.path(p.id).map(n=>n.id))]));}} placeholder="按地点名称查找"/></label>
   {tree(map.roots)}{!matches.length&&<Empty>暂无符合条件的地点。</Empty>}</section>}
   <section className="mp-main map-surface" ref={main} aria-label="地点详情">{place&&root?<>
-   {!mobile&&<section className="city-map" data-city={city?.key??'other'} aria-label="地点层级示意"><div className="cm-hd"><h4>{root.name}</h4><span className="en">地点层级示意 · 非地理地图</span><span className="legend"><span><span className="here" aria-hidden="true">你</span>主角所在</span><span>虚线框 = 下级区域</span><span>◆ = 末级地点</span></span></div>
+   {!mobile&&<section className="city-map" data-city={city?.key??(isCustomCityId(root.id)?'custom':'other')} aria-label="地点层级示意"><div className="cm-hd"><h4>{root.name}</h4><span className="en">地点层级示意 · 非地理地图</span><span className="legend"><span><span className="here" aria-hidden="true">你</span>主角所在</span><span>虚线框 = 下级区域</span><span>◆ = 末级地点</span></span></div>
     {city&&<svg className="river" viewBox="0 0 880 320" preserveAspectRatio="none" aria-hidden="true">{rivers[city.key]}</svg>}
     <div className="cm-body">{districts.length?districts.slice(0,limits['diagram']??20).map(d=><section key={d.id} className={`district ${chain.has(d.id)?'on':''} ${me.has(d.id)?'has-me':''}`}>
      <button className="dn" onClick={()=>choose(d.id)}>{d.name}{me.has(d.id)&&<span className="here" aria-label="主角在此区域内">你</span>}<small>{map.people.get(d.id)??0} 人</small></button>

@@ -1,0 +1,122 @@
+/* 新四城（北京、杭州、长沙、三亚）与自定义城市的装饰：首页、车票、回合门牌、地图色。原四城沿用各自样式。 */
+
+/* —— 剪影里的动效：长沙烟花、三亚浪 —— */
+.firework { opacity: 0; transform-box: view-box; animation: city-firework 5.5s ease-out infinite; }
+.waves { animation: city-waves 4s linear infinite; }
+@keyframes city-firework { 0%, 62% { opacity: 0; transform: scale(.2); } 70% { opacity: 1; } 100% { opacity: 0; transform: scale(1.15); } }
+@keyframes city-waves { to { transform: translateX(-60px); } }
+@media (prefers-reduced-motion: reduce) { .firework, .waves { animation: none; } .firework { opacity: .6; } }
+
+/* —— 首页封面与存档馆 —— */
+.app-shell-home .home-experience [data-city=bj], .home-experience[data-city=bj] { --tint: #C65F57; --glow: #2e1a18; }
+.app-shell-home .home-experience [data-city=hz], .home-experience[data-city=hz] { --tint: #9EBB86; --glow: #1c261c; }
+.app-shell-home .home-experience [data-city=cs], .home-experience[data-city=cs] { --tint: #B58BC9; --glow: #251c2c; }
+.app-shell-home .home-experience [data-city=sy], .home-experience[data-city=sy] { --tint: #63C2D0; --glow: #142629; }
+.app-shell-home .home-experience [data-city=custom] { --tint: #B59A73; --glow: #261f17; }
+
+/* —— 手机首页车票色带：北京琉璃瓦当、杭州水纹、长沙灯泡串、三亚浪花、自定义虚线框 —— */
+.mh-ticket[data-city=bj] { --band: linear-gradient(180deg, #9b3029, #7e231e); --ink: #f6e2b4; }
+.mh-ticket[data-city=bj] .mh-band::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 7px; background: radial-gradient(circle at 50% 0, #d9b35e 0 4px, transparent 4.5px) 0 0 / 12px 7px repeat-x; opacity: .9; }
+.mh-ticket[data-city=hz] { --band: #3d6a55; }
+.mh-ticket[data-city=hz] .mh-band::after { content: ''; position: absolute; left: 0; right: 0; bottom: 4px; height: 6px; background: radial-gradient(10px 5px at 50% 100%, transparent 4px, #ffffff66 4.5px 5.5px, transparent 6px) 0 0 / 16px 6px repeat-x; }
+.mh-ticket[data-city=cs] { --band: #4c2f6b; }
+.mh-ticket[data-city=cs] .mh-band::after { content: ''; position: absolute; inset: 4px 6px; background: radial-gradient(circle, #ffe2a8 0 1.4px, transparent 2px) 0 0 / 9px 9px;
+  -webkit-mask: linear-gradient(#000 0 2px, transparent 2px calc(100% - 2px), #000 0); mask: linear-gradient(#000 0 2px, transparent 2px calc(100% - 2px), #000 0); opacity: .9; }
+.mh-ticket[data-city=sy] { --band: linear-gradient(90deg, #1b7f8c, #2aa3a8); --ink: #f2fbfb; }
+.mh-ticket[data-city=sy] .mh-band::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 9px; background: radial-gradient(12px 8px at 50% 100%, #f2fbfb55 6px, transparent 6.5px) 0 0 / 18px 9px repeat-x; }
+.mh-ticket[data-city=custom] { --band: #3a332b; --ink: #efe4cf; }
+.mh-ticket[data-city=custom] .mh-band::after { content: ''; position: absolute; inset: 4px; border: 1px dashed #efe4cf55; border-radius: 3px; }
+
+/* —— 档案地图的城市色 —— */
+.app-shell-game .city-night .archive .city-map[data-city=bj] { --tint: #C65F57; }
+.app-shell-game .city-night .archive .city-map[data-city=hz] { --tint: #9EBB86; }
+.app-shell-game .city-night .archive .city-map[data-city=cs] { --tint: #B58BC9; }
+.app-shell-game .city-night .archive .city-map[data-city=sy] { --tint: #63C2D0; }
+.app-shell-game .city-night .archive .city-map[data-city=custom] { --tint: #B59A73; }
+
+/* —— 游戏内城市色 —— */
+.app-shell-game .city-night[data-city=bj] { --tint: #C65F57; }
+.app-shell-game .city-night[data-city=hz] { --tint: #9EBB86; }
+.app-shell-game .city-night[data-city=cs] { --tint: #B58BC9; }
+.app-shell-game .city-night[data-city=sy] { --tint: #63C2D0; }
+.app-shell-game .city-night[data-city=custom] { --tint: #B59A73; }
+:root[data-appearance=day] .app-shell-game .city-night[data-city=bj] { --tint: #9A3A33; }
+:root[data-appearance=day] .app-shell-game .city-night[data-city=hz] { --tint: #55743F; }
+:root[data-appearance=day] .app-shell-game .city-night[data-city=cs] { --tint: #7A4E91; }
+:root[data-appearance=day] .app-shell-game .city-night[data-city=sy] { --tint: #22808C; }
+:root[data-appearance=day] .app-shell-game .city-night[data-city=custom] { --tint: #7A6243; }
+
+/* —— 回合门牌。p-mark 是杭州的小红印、三亚的落日与自定义城市的首字印，其他城市不显示 —— */
+.app-shell-game .city-night .p-mark:not(:where(.modal, .modal *)) { display: none; }
+
+/* 北京 · 朱漆金字匾额 */
+.app-shell-game .city-night[data-city=bj] .plate:not(:where(.modal, .modal *)) { padding: .55rem 1.3rem; gap: .9rem; border-radius: 3px; background: linear-gradient(180deg, #8d2a24, #6b1d19);
+  box-shadow: inset 0 0 0 3px #6b1d19, inset 0 0 0 4.5px #d9b35e, inset 0 0 0 7px #6b1d19, inset 0 0 0 7.5px #d9b35e88, 0 8px 20px -10px #000; }
+.app-shell-game .city-night[data-city=bj] .plate:not(:where(.modal, .modal *))::before,
+.app-shell-game .city-night[data-city=bj] .plate:not(:where(.modal, .modal *))::after { content: ''; position: absolute; top: -6px; width: 18px; height: 6px; border-radius: 2px 2px 0 0; background: #3a1512; }
+.app-shell-game .city-night[data-city=bj] .plate:not(:where(.modal, .modal *))::before { left: 14%; }
+.app-shell-game .city-night[data-city=bj] .plate:not(:where(.modal, .modal *))::after { right: 14%; }
+.app-shell-game .city-night[data-city=bj] .p-num:not(:where(.modal, .modal *)) { font-size: 0; }
+.app-shell-game .city-night[data-city=bj] .p-num:not(:where(.modal, .modal *))::before { content: attr(data-dx); font: 700 1.3rem var(--font-title); letter-spacing: .3em; color: #f0cf7e; text-shadow: 0 1px 0 #3a1512, 0 0 10px #d9b35e55; }
+.app-shell-game .city-night[data-city=bj] .p-cn:not(:where(.modal, .modal *)) { display: none; }
+.app-shell-game .city-night[data-city=bj] .p-sub:not(:where(.modal, .modal *)) { padding-left: .8rem; border-left: 1px solid #d9b35e66; font: .56rem var(--font-mono); letter-spacing: .22em; color: #e0b98a; }
+
+/* 杭州 · 青瓷茶牌（穿绳孔 + 小红印） */
+.app-shell-game .city-night[data-city=hz] .plate:not(:where(.modal, .modal *)) { padding: .55rem 1.3rem .55rem 1.7rem; gap: .8rem; border-radius: 8px 20px 20px 8px;
+  background: linear-gradient(160deg, #d3e3d1, #abc6ae 70%, #97b69d); box-shadow: inset 0 1px 0 #ffffffaa, inset 0 -2px 6px #5f8a6b55, 0 8px 20px -12px #000; }
+.app-shell-game .city-night[data-city=hz] .plate:not(:where(.modal, .modal *))::before { content: ''; position: absolute; left: .6rem; top: 50%; width: .45rem; height: .45rem; margin-top: -.225rem; border-radius: 50%; background: #0b0d0c; box-shadow: 0 0 0 1.5px #6f957a; }
+.app-shell-game .city-night[data-city=hz] .p-mark:not(:where(.modal, .modal *)) { display: grid; place-items: center; width: 1.25rem; height: 1.25rem; border-radius: 2px; background: #b3443a; color: #f6e7df; font: 600 .62rem var(--font-title); transform: rotate(-4deg); }
+.app-shell-game .city-night[data-city=hz] .p-num:not(:where(.modal, .modal *)) { min-width: 1.6rem; text-align: center; font: 600 1.55rem/1 var(--font-title); color: #2f4a3a; }
+.app-shell-game .city-night[data-city=hz] .p-cn:not(:where(.modal, .modal *)) { font: 600 1rem var(--font-title); letter-spacing: .34em; color: #24382c; }
+.app-shell-game .city-night[data-city=hz] .p-sub:not(:where(.modal, .modal *)) { font: .55rem var(--font-mono); letter-spacing: .2em; color: #4f6f5b; }
+
+/* 长沙 · 夜市灯泡招牌 */
+.app-shell-game .city-night[data-city=cs] .plate:not(:where(.modal, .modal *)) { padding: .7rem 1.4rem; gap: .9rem; border-radius: 6px; background: #1b1124; box-shadow: inset 0 0 0 2px #2a1a38, 0 0 26px -8px #b58bc9aa; }
+.app-shell-game .city-night[data-city=cs] .plate:not(:where(.modal, .modal *))::before { content: ''; position: absolute; inset: 4px; border-radius: 4px; background: radial-gradient(circle, #ffe2a8 0 1.6px, transparent 2.2px) 0 0 / 10px 10px;
+  -webkit-mask: linear-gradient(#000 0 0) top / 100% 3px no-repeat, linear-gradient(#000 0 0) bottom / 100% 3px no-repeat, linear-gradient(#000 0 0) left / 3px 100% no-repeat, linear-gradient(#000 0 0) right / 3px 100% no-repeat;
+  mask: linear-gradient(#000 0 0) top / 100% 3px no-repeat, linear-gradient(#000 0 0) bottom / 100% 3px no-repeat, linear-gradient(#000 0 0) left / 3px 100% no-repeat, linear-gradient(#000 0 0) right / 3px 100% no-repeat;
+  filter: drop-shadow(0 0 3px #ffcf7a); }
+.app-shell-game .city-night[data-city=cs] .latest .plate:not(:where(.modal, .modal *))::before { animation: city-bulbs 2.4s steps(2) infinite; }
+@keyframes city-bulbs { 50% { opacity: .55; } }
+.app-shell-game .city-night[data-city=cs] .p-num:not(:where(.modal, .modal *)) { font: 700 1.7rem/1 var(--font-mono); color: #f3d9ff; text-shadow: 0 0 8px #b58bc9, 0 0 18px #8d5bb0; }
+.app-shell-game .city-night[data-city=cs] .p-cn:not(:where(.modal, .modal *)) { font: 600 1.02rem var(--font-title); letter-spacing: .32em; color: #fff1d6; }
+.app-shell-game .city-night[data-city=cs] .p-sub:not(:where(.modal, .modal *)) { font: .56rem var(--font-mono); letter-spacing: .22em; color: #c9a6dc; }
+
+/* 三亚 · 潮汐牌（落日 + 浪边） */
+.app-shell-game .city-night[data-city=sy] .plate:not(:where(.modal, .modal *)) { padding: .55rem 1.3rem .8rem; gap: .9rem; overflow: hidden; border-radius: 10px; background: linear-gradient(180deg, #1d6f7b, #155660); box-shadow: inset 0 1px 0 #8fe3e366, 0 8px 20px -10px #000; }
+.app-shell-game .city-night[data-city=sy] .plate:not(:where(.modal, .modal *))::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 9px; background: radial-gradient(12px 9px at 50% 100%, #e9fbf8cc 6px, transparent 6.5px) 0 0 / 18px 9px repeat-x; }
+.app-shell-game .city-night[data-city=sy] .p-mark:not(:where(.modal, .modal *)) { display: block; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: radial-gradient(circle at 50% 60%, #ffd08a, #f29a5c); box-shadow: 0 0 12px #f2b06a88; font-size: 0; }
+.app-shell-game .city-night[data-city=sy] .p-num:not(:where(.modal, .modal *)) { font: 600 1.6rem/1 var(--font-title); color: #f2fbfb; }
+.app-shell-game .city-night[data-city=sy] .p-cn:not(:where(.modal, .modal *)) { font: 600 1rem var(--font-title); letter-spacing: .32em; color: #e9fbf8; }
+.app-shell-game .city-night[data-city=sy] .p-sub:not(:where(.modal, .modal *)) { font: .56rem var(--font-mono); letter-spacing: .22em; color: #9fe0dd; }
+
+/* 自定义城市 · 铜质门牌 + 城市首字印 */
+.app-shell-game .city-night[data-city=custom] .plate:not(:where(.modal, .modal *)) { padding: .5rem 1.2rem .5rem .55rem; gap: .85rem; border: 1px solid #5b4b35; border-radius: 5px; background: linear-gradient(180deg, #2a241c, #1c1813); box-shadow: inset 0 1px 0 #ffffff14, 0 8px 18px -10px #000; }
+.app-shell-game .city-night[data-city=custom] .p-mark:not(:where(.modal, .modal *)) { display: grid; place-items: center; width: 2.3rem; height: 2.3rem; border: 1.5px solid #B59A73; background: #0006; color: #B59A73; font: 600 1.1rem var(--font-title); }
+.app-shell-game .city-night[data-city=custom] .p-num:not(:where(.modal, .modal *)) { display: none; }
+.app-shell-game .city-night[data-city=custom] .p-cn:not(:where(.modal, .modal *)) { font: 600 1.05rem var(--font-title); letter-spacing: .32em; color: #efe4cf; }
+.app-shell-game .city-night[data-city=custom] .p-sub:not(:where(.modal, .modal *)) { font: .56rem var(--font-mono); letter-spacing: .2em; color: #b59a73; }
+
+/* —— 回合标题两侧分隔线 —— */
+.app-shell-game .city-night:is([data-city=bj], [data-city=hz], [data-city=cs], [data-city=sy], [data-city=custom]) .chapter:not(:where(.modal, .modal *))::before { -webkit-mask: linear-gradient(90deg, transparent, #000 70%); mask: linear-gradient(90deg, transparent, #000 70%); }
+.app-shell-game .city-night:is([data-city=bj], [data-city=hz], [data-city=cs], [data-city=sy], [data-city=custom]) .chapter:not(:where(.modal, .modal *))::after { -webkit-mask: linear-gradient(90deg, #000 30%, transparent); mask: linear-gradient(90deg, #000 30%, transparent); }
+.app-shell-game .city-night[data-city=bj] .chapter:not(:where(.modal, .modal *))::before,
+.app-shell-game .city-night[data-city=bj] .chapter:not(:where(.modal, .modal *))::after { height: 8px;
+  background: repeating-linear-gradient(90deg, #c65f57aa 0 6px, transparent 6px 8px, #c65f57aa 8px 10px, transparent 10px 16px) 0 0 / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, #c65f57aa 0 2px, transparent 2px 6px, #c65f57aa 6px 8px, transparent 8px 16px) 0 100% / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, #c65f57aa 0 1px, transparent 1px 8px) 0 0 / 100% 100% no-repeat; }
+.app-shell-game .city-night[data-city=hz] .chapter:not(:where(.modal, .modal *))::before,
+.app-shell-game .city-night[data-city=hz] .chapter:not(:where(.modal, .modal *))::after { height: 8px; background: radial-gradient(9px 5px at 50% 100%, transparent 3.5px, #9ebb86 4px 5px, transparent 5.5px) 0 0 / 14px 8px repeat-x; }
+.app-shell-game .city-night[data-city=cs] .chapter:not(:where(.modal, .modal *))::before,
+.app-shell-game .city-night[data-city=cs] .chapter:not(:where(.modal, .modal *))::after { height: 6px; background: radial-gradient(circle, #ffe2a8 0 1.6px, transparent 2.2px) 0 50% / 11px 6px repeat-x; filter: drop-shadow(0 0 3px #ffcf7a); }
+.app-shell-game .city-night[data-city=sy] .chapter:not(:where(.modal, .modal *))::before,
+.app-shell-game .city-night[data-city=sy] .chapter:not(:where(.modal, .modal *))::after { height: 8px; background: radial-gradient(10px 6px at 50% 0, transparent 4px, #63c2d0aa 4.5px 5.5px, transparent 6px) 0 0 / 16px 8px repeat-x; }
+.app-shell-game .city-night[data-city=custom] .chapter:not(:where(.modal, .modal *))::before,
+.app-shell-game .city-night[data-city=custom] .chapter:not(:where(.modal, .modal *))::after { height: 4px; background: linear-gradient(#b59a7388, #b59a7388) 0 0 / 100% 1px no-repeat, linear-gradient(#b59a7355, #b59a7355) 0 100% / 100% 1px no-repeat; }
+
+/* 日间：门牌本身是实底，只把自定义铜牌加深一点 */
+:root[data-appearance=day] .app-shell-game .city-night[data-city=custom] .plate:not(:where(.modal, .modal *)) { background: linear-gradient(180deg, #3a3127, #2a241c); }
+:root[data-appearance=day] .app-shell-game .city-night[data-city=hz] .plate:not(:where(.modal, .modal *))::before { background: #efe8da; }
+
+/* 地图示意里的湖面（杭州西湖） */
+.river ellipse { fill: color-mix(in srgb, var(--tint) 45%, #9fb6c4); stroke: none; opacity: .22; }

@@ -24,7 +24,7 @@ const put = (state: unknown) => transaction(db, ['saves'], 'readwrite', async tx
 const raw = () => transaction(db, ['saves'], 'readonly', tx => request(tx.objectStore('saves').get('save-a')));
 
 describe('固定城市身份：创建、兼容、原子补齐、并发和撤回', () => {
-  it.each(['chongqing', 'shanghai', 'harbin', 'guangzhou'] as const)('创角正式写入 %s，而非依赖生成后的地点', async city => {
+  it.each(['chongqing', 'shanghai', 'harbin', 'guangzhou', 'beijing', 'hangzhou', 'changsha', 'sanya'] as const)('创角正式写入 %s，而非依赖生成后的地点', async city => {
     const form = newCreation(); form.city = city; form.person = { name: '林舟', age: '30', gender: '男性', appearance: '', personality: '' }; form.customProfession = '记者';
     const state = buildCreationState(form, defaultSettings());
     expect(state.openingCityId).toBe(city);
@@ -113,7 +113,7 @@ describe('固定城市身份：创建、兼容、原子补齐、并发和撤回'
 });
 
 describe('氛围与中文场景：只读正式身份和游戏时间', () => {
-  it.each([['chongqing','cq'],['shanghai','sh'],['harbin','hrb'],['guangzhou','gz']])('%s 对应 %s', (id, key) => {
+  it.each([['chongqing','cq'],['shanghai','sh'],['harbin','hrb'],['guangzhou','gz'],['beijing','bj'],['hangzhou','hz'],['changsha','cs'],['sanya','sy']])('%s 对应 %s', (id, key) => {
     const state = game(); state.openingCityId = id; state.protagonist.locationId = 'shanghai';
     expect(deriveAtmosphere(state).city).toBe(key);
   });

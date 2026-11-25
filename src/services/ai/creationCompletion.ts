@@ -11,6 +11,8 @@ export type CreationCompletionInput = { person: Readonly<{ name: string; age: st
   | { kind: 'personality'; personality: string }
   | { kind: 'background'; background: string; profession: string; personality: string }
   | { kind: 'profession'; profession: string; professionDescription: string; professionSkills: string; professionLongTermImpact: string }
+  /** 自定义开局城市的地域介绍；城市身份已由本地行政区划目录确认，模型只写介绍。 */
+  | { kind: 'city'; cityName: string; cityRegion: string; cityIntro: string }
 );
 
 const nonempty = z.string().trim().min(1);
@@ -20,9 +22,9 @@ const professionResult = z.strictObject({
   professionLongTermImpact: nonempty,
 });
 
-const defaultBudget = { appearance: 2048, personality: 2048, profession: 4096, background: 4096 };
+const defaultBudget = { appearance: 2048, personality: 2048, profession: 4096, background: 4096, city: 2048 };
 function outputBudget(kind: CreationCompletionInput['kind'], fields: Record<string, string>) {
-  const briefs = Object.entries(fields).filter(([key]) => kind !== 'background' || key === 'background');
+  const briefs = Object.entries(fields).filter(([key]) => (kind !== 'background' || key === 'background') && (kind !== 'city' || key === 'cityIntro'));
   let characters = 0, skills = 0;
   for (const [, text] of briefs) {
     for (const match of text.matchAll(/(\d{1,6})\s*(?:个\s*)?(?:汉字|字)(?![\p{N}])/gu))
@@ -54,6 +56,7 @@ export async function completeCreation(
 ) {
   const { kind, person, ...fields } = input;
   if (input.kind === 'profession' && !input.profession.trim()) throw new AiError('configuration');
+  if (input.kind === 'city' && !input.cityName.trim()) throw new AiError('configuration');
   const { channel, model } = resolveModelRoute(config, 'story');
   const budget = outputBudget(kind, fields);
   const snapshot = channelSnapshot({
@@ -72,7 +75,7 @@ export async function completeCreation(
   if (options.signal.aborted) throw new AiError('cancelled');
   const response = await client.generate(snapshot, [
     { role: 'system', content: prompt },
-    { role: 'user', content: JSON.stringify({ person, ...fields }) },
+    { role: 'user', content: JSON.stringify(kind === 'city' ? fields : { person, ...fields }) },
   ], { ...options, stream: false, recordInspection: false });
   const text = response.text.trim();
   if (!text || containsCredential(text)) throw new AiError('invalid_output');

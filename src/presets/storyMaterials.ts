@@ -1,5 +1,5 @@
 import type { AiMessage } from '../services/ai/protocols';
-import { openingCities, openingCity, normalizeOpeningCity } from '../domain/openingCity';
+import { isCustomCityId, normalizeOpeningCity, openingCities, openingCityIdentity } from '../domain/openingCity';
 import { contextMessage, worldWeekday, type ComposeInput } from '../prompts/context';
 import type { sharedContext } from '../prompts/sharedContext';
 import type { StoryMaterials } from './messages';
@@ -32,12 +32,12 @@ export function storyMaterials(
     history.push({ role: 'assistant', content: turn.narrative });
   }
   history.push({ role: 'user', content: input.userInput });
-  let city: string | undefined = openingCity(normalizeOpeningCity(state).openingCityId)?.name;
+  let city: string | undefined = openingCityIdentity(normalizeOpeningCity(state))?.name;
   const visited = new Set<string>();
   let location = state.locations[protagonist.locationId];
   while (location && !visited.has(location.id)) {
     visited.add(location.id);
-    const currentCity = Object.values(openingCities).find((item) => item.name === location.name);
+    const currentCity = Object.values(openingCities).find((item) => item.name === location.name) ?? (isCustomCityId(location.id) ? location : undefined);
     if (currentCity || location.parentId === 'china') {
       city = location.name;
       break;

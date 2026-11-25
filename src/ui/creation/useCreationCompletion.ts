@@ -5,12 +5,13 @@ import { readAiConfig } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
 import { AiError } from '../../services/ai/errors';
 import { professionName } from './model';
+import { openingCityIntroLimit } from '../../domain/openingCity';
 import type { Creation } from './model';
 
 type Field = CreationCompletionInput['kind'];
 type Attempt = { controller: AbortController; basis: string };
 type Status = { pending: true } | { error: string };
-const steps: Record<Field, number> = { appearance: 1, personality: 1, profession: 2, background: 3 };
+const steps: Record<Field, number> = { appearance: 1, personality: 1, profession: 2, background: 3, city: 3 };
 
 function inputFor(field: Field, form: Creation): CreationCompletionInput | undefined {
   if (steps[field] !== form.step) return;
@@ -20,6 +21,10 @@ function inputFor(field: Field, form: Creation): CreationCompletionInput | undef
     case 'appearance': return { kind: field, person, appearance };
     case 'personality': return { kind: field, person, personality };
     case 'background': return { kind: field, person, background: form.background, profession: professionName(form), personality };
+    case 'city':
+      // 绑定城市身份：换城市后旧请求的结果不会写进新城市。
+      if (form.city === 'custom' && form.customCity) return { kind: field, person, cityName: form.customCity.name, cityRegion: form.customCity.region, cityIntro: form.cityIntro ?? '' };
+      return;
     case 'profession':
       if (form.profession === 'custom' && form.customProfession.trim()) return {
         kind: field,
@@ -114,6 +119,10 @@ export function useCreationCompletion(
         professionLongTermImpact: result.fields.professionLongTermImpact,
       });
       else if (result.kind === 'background') changeForm({ ...current, background: result.text });
+      else if (result.kind === 'city') {
+        if (Array.from(result.text).length > openingCityIntroLimit) { status = { error: `生成的介绍超过 ${openingCityIntroLimit} 字，请重试或手动精简。` }; return; }
+        changeForm({ ...current, cityIntro: result.text });
+      }
       else changeForm({ ...current, person: { ...current.person, [result.kind]: result.text } });
     } catch (error) {
       if (isCurrent()) status = { error: failureMessage(error) };

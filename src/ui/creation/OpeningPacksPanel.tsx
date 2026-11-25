@@ -1,7 +1,7 @@
 import { useDesktopFeedback } from '../Feedback';
 import { useState } from 'react';
 import { Dialog } from '../Dialog';
-import { cities } from './model';
+import { creationCityName } from './model';
 import type { Creation } from './model';
 import { OpeningPackStore, applyOpeningPack, openingSettings } from './openingPacks';
 import type { OpeningPack } from './openingPacks';
@@ -61,7 +61,7 @@ export function OpeningPacks({ form, onApply, busy }: {
           {packs.map(item => <label key={item.id} className="opening-pack-choice">
             <input type="radio" name="opening-pack" checked={selected === item.id} onChange={() => setSelected(item.id)} />
             {mobile&&<span className="opening-pack-seal" aria-hidden="true">{[...item.settings.person.name][0]||'包'}</span>}
-            <span><strong>{item.name}</strong><span>{item.settings.person.name} · {item.settings.person.age} 岁 · {cities.find(city => city.id === item.settings.city)?.name}</span></span>{mobile&&<i className="opening-pack-ring" aria-hidden="true"/>}
+            <span><strong>{item.name}</strong><span>{item.settings.person.name} · {item.settings.person.age} 岁 · {creationCityName(item.settings) || '自定义城市'}</span></span>{mobile&&<i className="opening-pack-ring" aria-hidden="true"/>}
           </label>)}
         </fieldset>
         <div className="button-row">

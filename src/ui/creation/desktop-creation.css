@@ -275,3 +275,47 @@
 @media (min-width: 901px) and (prefers-reduced-motion: reduce) {
   .desktop-creation *, .desktop-creation { animation: none !important; transition: none !important; }
 }
+
+/* 城市与背景：八城 + 自定义城市排成 3×3 矮卡，介绍放进下方的城市详情。 */
+@media (min-width: 901px) {
+  .desktop-creation .city-list, .desktop-creation .city-stage .city-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .desktop-creation .city-card, .desktop-creation .city-stage .city-card { min-height: 0; border-radius: 10px; }
+  .desktop-creation .city-card .creation-city-art { height: 86px; }
+  .desktop-creation .city-card > small { order: 3; padding: 0 14px 10px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .desktop-creation .city-card > strong { display: flex; align-items: center; gap: 8px; margin: 8px 0 2px; font-size: 19px; }
+  .desktop-creation .creation-city-new { margin-left: auto; padding: 1px 6px; border-radius: 3px; background: var(--gold); color: #15120c; font: 600 9px var(--font-mono); letter-spacing: .15em; }
+  .desktop-creation .city-card.custom { border-style: dashed; }
+  .desktop-creation .creation-city-art.placeholder { background: repeating-linear-gradient(135deg, #ffffff05 0 8px, transparent 8px 16px), linear-gradient(180deg, #1a1712, #0b0d0c); }
+  .desktop-creation .creation-city-art.placeholder .creation-city-seal { border-style: dashed; }
+  .desktop-creation .creation-city-q { position: absolute; inset: 0; display: grid; place-items: center; font: 600 34px var(--font-title); color: color-mix(in srgb, var(--c) 35%, transparent); }
+
+  .desktop-creation .creation-city-detail { display: grid; gap: 10px; margin-top: 12px; padding: 14px 16px; border: 1px solid var(--cr-line); border-top: 2px solid var(--c); border-radius: 12px; background: #ffffff03; }
+  .desktop-creation .creation-city-detail > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+  .desktop-creation .creation-city-detail > header strong { font: 600 22px var(--font-title); letter-spacing: .25em; color: var(--text); }
+  .desktop-creation .creation-city-detail > header small { font-size: 12px; color: var(--c); }
+  .desktop-creation .creation-city-detail > header em { margin-left: auto; font: normal 10px var(--font-mono); letter-spacing: .18em; color: var(--cr-dim); }
+  .desktop-creation .creation-city-intro { margin: 0; font-size: 14px; line-height: 1.9; color: var(--muted); }
+  .desktop-creation .creation-city-detail .creation-city-note { margin: 0; font-size: 12px; color: var(--cr-dim); }
+}
+/* 自定义城市：选省市、已选城市、确认换城（电脑与手机共用） */
+.creation-city-chosen { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--c) 9%, transparent); }
+.creation-city-chosen-seal { width: 32px; height: 32px; display: grid; place-items: center; flex: none; border: 1px solid var(--c); color: var(--c); font: 600 16px var(--font-title); }
+.creation-city-chosen > span:nth-child(2) { display: grid; min-width: 0; }
+.creation-city-chosen b { font: 600 17px var(--font-title); letter-spacing: .2em; color: var(--text); }
+.creation-city-chosen small { font-size: 12px; color: var(--cr-dim, var(--dim)); }
+.creation-city-chosen button { margin-left: auto; border: 0; background: none; color: var(--gold); font-size: 13px; white-space: nowrap; }
+.creation-city-picker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 10px; }
+.creation-city-search { grid-column: 1 / -1; display: block; }
+.creation-city-search input { width: 100%; padding: 9px 12px; border: 1px solid var(--cr-line-2, #ffffff22); border-radius: 8px; background: #ffffff05; color: var(--text); font: inherit; }
+.creation-city-provinces, .creation-city-results ul { list-style: none; margin: 0; padding: 4px; max-height: 220px; overflow: auto; border: 1px solid var(--cr-line, #ffffff14); border-radius: 8px; scrollbar-width: thin; }
+.creation-city-provinces button, .creation-city-results button { display: flex; align-items: center; gap: 6px; width: 100%; padding: 6px 9px; border: 0; border-radius: 6px; background: none; color: var(--muted); font-size: 13px; text-align: left; }
+.creation-city-provinces button:hover, .creation-city-results button:hover { background: #ffffff08; color: var(--text); }
+.creation-city-provinces button[aria-pressed=true], .creation-city-results button[aria-pressed=true] { background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--text); }
+.creation-city-results button small { margin-left: auto; font-size: 11px; color: var(--cr-dim, var(--dim)); white-space: nowrap; }
+.creation-city-results { display: grid; gap: 4px; min-width: 0; }
+.creation-city-results-head { margin: 0; font: 11px var(--font-mono); letter-spacing: .12em; color: var(--cr-dim, var(--dim)); }
+.creation-city-empty { margin: 0; padding: 10px; font-size: 12px; line-height: 1.7; color: var(--cr-dim, var(--dim)); }
+.creation-city-province { display: grid; gap: 4px; font-size: 12px; color: var(--cr-dim, var(--dim)); }
+.creation-city-confirm { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid #d9a25c66; border-radius: 8px; background: #d9a25c12; }
+.creation-city-confirm p { flex: 1 1 14rem; margin: 0; font-size: 13px; color: var(--text); }
+.creation-city-cancel { grid-column: 1 / -1; justify-self: start; }

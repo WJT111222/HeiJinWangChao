@@ -4,6 +4,7 @@ import { PRODUCT_VERSION } from '../../app/product';
 import { CITY, ORDER, skyline } from './skyline';
 import type { City } from './skyline';
 import './home.css';
+import '../city-art.css';
 import './backup.css';
 
 export function HomeScreen({ count, loading, canCreate, active, hasDraft, notice, noticeAction, children, onCreate, onContinue, onSettings, onRefresh, notices, onImport, onExportAll, exportAllDisabled = true, backupReminder }: {
@@ -66,14 +67,14 @@ export function HomeScreen({ count, loading, canCreate, active, hasDraft, notice
         </div>
         {notices}{hasDraft && <p className="hint">有尚未完成的创角资料，开始新游戏可继续填写。</p>}
       </div>
-      <footer className="cover-foot"><div className="notes"><span>四座城市 · 自由职业 · 开放人生</span><span>三阶段生成 · 原子结算 · 连续回合</span></div><nav className="cities" aria-label="封面城市">{ORDER.map(c => <button key={c} aria-pressed={current === c} disabled={reduced && c !== 'cq'} onClick={() => { setCity(c); restart(); }}>{CITY[c][0]}</button>)}</nav></footer>
+      <footer className="cover-foot"><div className="notes"><span>八座城市 · 自定义起点 · 开放人生</span><span>三阶段生成 · 原子结算 · 连续回合</span></div><nav className="cities" aria-label="封面城市">{ORDER.map(c => <button key={c} aria-pressed={current === c} disabled={reduced && c !== 'cq'} onClick={() => { setCity(c); restart(); }}>{CITY[c][0]}</button>)}</nav></footer>
     </section>
     <section id="library" className={`screen library ${library ? 'on' : ''}`} hidden={!library} inert={!library} aria-label="已有存档">
       <div className="lib-skyline" aria-hidden="true" dangerouslySetInnerHTML={{ __html: skyline('cq', 'aria-hidden="true"') }} />
       <header className="lib-top"><button ref={back} className="back" onClick={() => showLibrary(false)}><span aria-hidden="true">←</span> 封面</button>{brand('YOUR STORIES')}<span className="spacer" style={{flex:1}} />{onImport && <button className="import" disabled={!canCreate || loading} onClick={onImport}><span aria-hidden="true">⤓ </span>导入备份</button>}{onExportAll && <button disabled={exportAllDisabled || loading} onClick={onExportAll}>导出全部</button>}<button disabled={!canCreate || loading} onClick={onRefresh}>刷新列表</button></header>
       <div className="lib-main"><div className="lib-head"><div><p className="eyebrow">YOUR STORIES</p><h2>已有存档 <span className="count">{String(count).padStart(2,'0')}</span></h2><p className="muted">每份存档都是一段独立的人生，保存在当前浏览器。</p></div>{backupReminder && <p className="backup-banner" role="note">{backupReminder}</p>}</div>
         {notice && <p className="status-msg" role="status">{notice}{noticeAction}</p>}
-        <div className="grid save-list"><article className="dossier new"><div className="tabline"><span className="tab">NEW</span></div><button className="body" disabled={!canCreate} onClick={onCreate}><div><div className="plus" aria-hidden="true">＋</div><h3>开启新的人生</h3><p>四座城市 · 自由职业 · 开放人生</p>{hasDraft && <p className="draft">有尚未完成的创角资料，开始新游戏可继续填写。</p>}</div></button></article>
+        <div className="grid save-list"><article className="dossier new"><div className="tabline"><span className="tab">NEW</span></div><button className="body" disabled={!canCreate} onClick={onCreate}><div><div className="plus" aria-hidden="true">＋</div><h3>开启新的人生</h3><p>八座城市 · 自定义起点 · 开放人生</p>{hasDraft && <p className="draft">有尚未完成的创角资料，开始新游戏可继续填写。</p>}</div></button></article>
           {children}{loading && Array.from({length:3},(_,i) => <article key={i} className="dossier skeleton" aria-hidden="true"><div className="body" /></article>)}
         </div>
       </div><footer className="lib-foot">本地保存 · 无需账号 · 备份文件不含 AI 密钥与设置 <button onClick={onSettings}>打开设置 ↗</button></footer>

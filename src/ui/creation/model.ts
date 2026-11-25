@@ -10,39 +10,20 @@ import { SaveRepository } from '../../services/storage/saveRepository';
 import type { Settings } from '../settings/model';
 import professions from './professions.json';
 import { loadCompanionProfile } from '../../services/local/companionProfile';
+import { officialCityIds, openingCities, openingCityIntroLimit } from '../../domain/openingCity';
+import type { OfficialCityId } from '../../domain/openingCity';
+import { customCityIdPattern, findCnCity } from '../../domain/cities/catalog';
 
 export { professions };
 export const professionCategories = [...new Set(professions.map((job) => job.category))];
-export const cities = [
-  {
-    id: 'chongqing',
-    name: '重庆',
-    label: '山城 · 江岸与街巷',
-    description:
-      '长江与嘉陵江交汇，山地街区、跨江交通与立体城市空间交织。制造业、商贸与社区生活相邻，出行距离不能只看地图上的直线。',
-  },
-  {
-    id: 'shanghai',
-    name: '上海',
-    label: '海派 · 街区与都市',
-    description:
-      '金融、航运与专业服务汇集，老街区和新商务区共存。轨道交通连接广阔城区，住房、通勤与职场节奏构成日常生活的重要背景。',
-  },
-  {
-    id: 'harbin',
-    name: '哈尔滨',
-    label: '北国 · 工业与生活',
-    description:
-      '松花江畔的东北城市，拥有工业和高校基础，街区建筑保留多重历史痕迹。四季温差明显，冬季气候会实际影响出行与工作安排。',
-  },
-  {
-    id: 'guangzhou',
-    name: '广州',
-    label: '岭南 · 商贸与人情',
-    description:
-      '珠江沿岸的商贸中心，制造业、专业市场与现代服务业联系紧密。老城街巷、城中村和新城并存，粤语文化与多元迁入人口共同塑造城市生活。',
-  },
-] as const;
+/** 创角城市卡：官方八城沿用存档身份（重庆、上海、哈尔滨、广州在前，新四城在后）。介绍来自领域配置。 */
+export const cities = officialCityIds.map(id => ({ id, name: openingCities[id].name, label: openingCities[id].label, description: openingCities[id].intro }));
+export type CreationCityId = OfficialCityId | 'custom';
+/** 自定义城市：身份来自本地行政区划目录（cn-六位代码），存显示名与地区，供离线显示与存档快照。 */
+const CustomCityChoiceSchema = z.strictObject({
+  id: z.string().regex(customCityIdPattern), name: z.string().trim().min(1).max(20), region: z.string().trim().min(1).max(40),
+});
+export type CustomCityChoice = z.infer<typeof CustomCityChoiceSchema>;
 const PersonFormSchema = z.strictObject({
   name: z.string(),
   age: z.string(),
@@ -70,7 +51,10 @@ export const CreationSchema = z.strictObject({
   customProfile: z.strictObject({
     name: z.string(), description: z.string(), skills: z.string(), longTermImpact: z.string(),
   }).optional(),
-  city: z.enum(['chongqing', 'shanghai', 'harbin', 'guangzhou']),
+  city: z.enum(['chongqing', 'shanghai', 'harbin', 'guangzhou', 'beijing', 'hangzhou', 'changsha', 'sanya', 'custom']),
+  customCity: CustomCityChoiceSchema.optional(),
+  /** 自定义城市的可选介绍（玩家手填或 AI 补全）；官方城市不使用。 */
+  cityIntro: z.string().max(4000).optional(),
   background: z.string(),
   hasCompanion: z.boolean(),
   companion: z.strictObject({
@@ -182,6 +166,10 @@ export function validateStep(form: Creation, step = form.step) {
       'PROFESSION',
       '请选择职业或填写自定义职业',
     );
+  if (step === 3 && form.city === 'custom') {
+    requireData(form.customCity && findCnCity(form.customCity.id), 'CITY', '请选择一座自定义城市');
+    requireData(Array.from(form.cityIntro?.trim() ?? '').length <= openingCityIntroLimit, 'CITY', `城市介绍请控制在 ${openingCityIntroLimit} 字以内`);
+  }
   if (step === 4 && form.hasCompanion) {
     requireData(
       form.companion.name.trim() && form.companion.relationship.trim(),
@@ -191,9 +179,20 @@ export function validateStep(form: Creation, step = form.step) {
     if (form.companion.age.trim()) age(form.companion.age);
   }
 }
+/** 创角选定城市的存档身份与名称。自定义城市只接受本地目录中的有效代码；目录里的官方城市映射回官方身份。 */
+export function creationCityChoice(form: Pick<Creation, 'city' | 'customCity' | 'cityIntro'>) {
+  if (form.city !== 'custom') return { id: form.city as string, name: openingCities[form.city].name, profile: undefined };
+  const known = form.customCity && findCnCity(form.customCity.id);
+  requireData(form.customCity && known, 'CITY', '请选择一座自定义城市');
+  const intro = form.cityIntro?.trim();
+  return { id: known.id, name: form.customCity.name, profile: { name: form.customCity.name, region: form.customCity.region, ...(intro ? { intro } : {}) } };
+}
+/** 创角各处显示用的城市名；自定义城市未选定时为空。 */
+export const creationCityName = (form: Pick<Creation, 'city' | 'customCity'>) =>
+  form.city === 'custom' ? form.customCity?.name ?? '' : openingCities[form.city].name;
 export function buildCreationState(form: Creation, settings: Settings) {
   for (let i = 1; i <= 4; i++) validateStep(form, i);
-  const city = cities.find((c) => c.id === form.city)!;
+  const city = creationCityChoice(form);
   const companion = form.hasCompanion
     ? SpecialNpcSchema.parse({
         id: 'companion',
@@ -223,6 +222,7 @@ export function buildCreationState(form: Creation, settings: Settings) {
     saveId: form.saveId,
     title: `${form.person.name.trim()} · ${city.name}`,
     openingCityId: city.id,
+    ...(city.profile ? { openingCityProfile: city.profile } : {}),
     worldClock: form.worldClock,
     protagonist: {
       id: 'protagonist',

@@ -2,6 +2,7 @@ import { JournalSettlementSchema } from './updateSettlement';
 import { z } from 'zod';
 import { validateChronicles } from './history/validation';
 import { pendingOpeningClock } from './openingTime';
+import { OpeningCityProfileSchema, isCustomCityId } from './openingCity';
 import { ActorRefSchema, IdsSchema, CountSchema, GameTimeSchema, IdSchema, TextSchema, entityTable } from './common';
 import { ProtagonistSchema } from './protagonist/schema';
 import { NpcSchema, SpecialNpcSchema, DormantNpcProfileSchema, SpecialProfileSchema } from './npc/schema';
@@ -35,6 +36,8 @@ export const StorySchema = z.strictObject({
 export const SaveShape = {
   schemaVersion: z.literal(10), saveId: IdSchema, title: TextSchema,
   openingCityId: IdSchema.nullable().optional(),
+  /** 自定义开局城市的名称、地区与可选介绍快照；官方城市不写。 */
+  openingCityProfile: OpeningCityProfileSchema.optional(),
   createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
   worldClock: GameTimeSchema, openingTimePending: z.literal(true).optional(), weatherText: z.string(), environmentText: z.string(),
   openingInitializationPending: z.literal(true).optional(),
@@ -271,6 +274,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   for (const memory of [...s.memories.short, ...s.memories.medium, ...s.memories.long, ...Object.values(s.memories.npcSummaries).flat()]) memory.affectedEntityRefs.forEach((ref) => actor(ref));
   check(new Set(s.journal.map((entry) => entry.turnId)).size === s.journal.length, '回合原文重复');
   check(s.turnNumber === s.journal.length, '已提交回合数与永久原文数量不一致');
+  check(!s.openingCityProfile || isCustomCityId(s.openingCityId), '自定义开局城市资料缺少城市身份', ['openingCityProfile']);
   for (const entry of s.journal) { check(entry.revision <= s.revision, '回合版本超前'); entry.relatedActorRefs.forEach((ref) => actor(ref)); }
   check(new Set(s.appliedCommands.map((c) => JSON.stringify([c.turnId, c.commandId]))).size === s.appliedCommands.length, '幂等凭据重复');
 });
@@ -278,6 +282,7 @@ export type GameState = z.infer<typeof GameStateSchema>;
 
 export function createGameState(input: {
   saveId: string; title: string; worldClock: string; openingCityId?: string | null;
+  openingCityProfile?: z.infer<typeof OpeningCityProfileSchema>;
   protagonist: z.infer<typeof ProtagonistSchema>;
   locations: Record<string, z.infer<typeof LocationSchema>>;
   cash?: number | null; onlineBalance?: number | null;
@@ -286,6 +291,7 @@ export function createGameState(input: {
   return GameStateSchema.parse({
     schemaVersion: 10, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
     openingCityId: input.openingCityId ?? null,
+    ...(input.openingCityProfile ? { openingCityProfile: input.openingCityProfile } : {}),
     createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,
     weatherText: '', environmentText: '', protagonist: input.protagonist,
     initialCompanionId: input.companion?.id,

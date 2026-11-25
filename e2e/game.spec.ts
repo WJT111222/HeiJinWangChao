@@ -77,7 +77,7 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   await expect(page.getByLabel('个人技能与专长')).toHaveValue(teacherSkills);
   await page.getByLabel('个人技能与专长').fill('我填写的技能\n沟通');
   await page.getByRole('button', { name: /下一步/ }).click();
-  await expect(page.getByRole('radio')).toHaveCount(4);
+  await expect(page.getByRole('radio')).toHaveCount(9);
   await page.getByLabel('人物背景（可选）').fill('已婚，有明确家庭经历，不应被覆盖。');
   for (const city of ['上海', '哈尔滨', '广州', '重庆']) {
     await page.getByRole('radio', { name: new RegExp(city) }).check();
