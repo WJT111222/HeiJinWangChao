@@ -1,7 +1,7 @@
 import {useId} from 'react';
 import type {GameState} from '../../domain/state';
 import {chinaCalendar} from '../../domain/openingTime';
-import {openingCity} from '../../domain/openingCity';
+import {openingCityIdentity} from '../../domain/openingCity';
 import {deriveAtmosphere,locationText,timeOfDayLabel,weatherSeals} from './atmosphere';
 import {money} from '../panels/playerView';
 import {fundStyle} from './PlayerStatus';
@@ -10,12 +10,13 @@ function scene(state:GameState){
  const place=locationText(state.locations,state.protagonist.locationId),calendar=state.openingTimePending?undefined:chinaCalendar(state.worldClock);
  return {place,clock:calendar?`${String(calendar.hour).padStart(2,'0')}:${String(calendar.minute).padStart(2,'0')}`:'--:--',date:calendar?`${calendar.year}/${calendar.month}/${calendar.day} ${calendar.weekday}`:'开局时间待确认',period:timeOfDayLabel(state)};
 }
-export function mobileCitySeal(state:GameState){return ({cq:'渝',sh:'沪',hrb:'冰',gz:'穗',other:'城'})[deriveAtmosphere(state).city];}
+const seals={cq:'渝',sh:'沪',hrb:'冰',gz:'穗',bj:'京',hz:'杭',cs:'夜',sy:'鹿',other:'城'} as const;
+export function mobileCitySeal(state:GameState){const city=openingCityIdentity(state);return city?.kind==='custom'?city.seal:seals[city?.key??'other'];}
 export function MobileCityBar({state,mini,onStatus}:{state:GameState;mini:boolean;onStatus:()=>void}){
  const id=useId(),{place,clock,date}=scene(state),weather=weatherSeals[deriveAtmosphere(state).weather];
  return <header className={`mobile-city-top${mini?' mini':''}`} aria-label="城市与当前场景">
   <button className="mobile-city-pill" data-mobile-status aria-label="此时此地与主角状态" aria-haspopup="dialog" aria-describedby={id} onClick={onStatus} title={[place.path,place.name,date,clock].filter(Boolean).join(' · ')}>
-   <span className="mobile-seal" aria-hidden="true">{mobileCitySeal(state)}</span><span className="where"><small>{place.path||openingCity(state.openingCityId)?.name||'当前地点'}</small><b>{place.name}</b></span>
+   <span className="mobile-seal" aria-hidden="true">{mobileCitySeal(state)}</span><span className="where"><small>{place.path||openingCityIdentity(state)?.name||'当前地点'}</small><b>{place.name}</b></span>
    <time dateTime={state.openingTimePending?undefined:state.worldClock}>{clock}</time><span className="mobile-weather" aria-label={`天气：${state.weatherText||'天气待确认'}`}>{state.weatherText.trim()?weather:"—"}</span>
   </button><span id={id} className="sr-only">{place.path} {place.name}，{date} {clock}，天气：{state.weatherText||'天气待确认'}</span>
  </header>;

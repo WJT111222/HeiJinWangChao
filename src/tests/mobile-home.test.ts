@@ -20,7 +20,7 @@ describe('phone ticket projection, without storage writes',()=>{
   expect(ticketTime('2026-11-10T23:59:00Z').date).toBe('2026/11/11');
   expect(ticketTime(undefined).time).toBe('--:--');expect(ticketTime('invalid').full).toBe('保存时间无法读取');
  });
- it.each([['重庆','重庆'],['上海','上海'],['哈尔滨','哈尔滨'],['广州','广州'],['北京','未知']])('departure uses existing suffix rule: %s', (suffix,dest)=>{
+ it.each([['重庆','重庆'],['上海','上海'],['哈尔滨','哈尔滨'],['广州','广州'],['北京','北京'],['三亚','三亚'],['苏州','未知']])('departure uses existing suffix rule: %s', (suffix,dest)=>{
   expect(departure({...a,title:`甲 · ${suffix}`},'a',false,'')).toMatchObject({dest,status:'已选择'});
  });
  it('departure status precedence includes no invented save time',()=>{
@@ -30,8 +30,12 @@ describe('phone ticket projection, without storage writes',()=>{
   expect(departure(bad,'a',false,'')).toMatchObject({dest:'未知',time:'--:--',status:'无法读取'});
   expect(departure(b,'a',false,'').status).toBe('本地存档');
  });
+ it('departure reads opening city identity first: custom cities show their own name',()=>{
+  expect(departure({...a,title:'甲 · 苏州',openingCityId:'cn-320500',openingCityProfile:{name:'苏州',region:'江苏'}},'a',false,'')).toMatchObject({dest:'苏州'});
+  expect(departure({...a,title:'甲 · 改名',openingCityId:'beijing'},'a',false,'')).toMatchObject({dest:'北京'});
+ });
  it('guilloche is stable, seeded, fifteen paths, with neutral support',()=>{
-  expect(guilloche('cq')).toEqual(guilloche('cq'));expect(guilloche('cq')).not.toEqual(guilloche('sh'));
-  for(const city of ['cq','sh','hrb','gz',undefined] as const){const paths=guilloche(city);expect(paths).toHaveLength(15);for(const path of paths){expect(path.match(/L/g)).toHaveLength(80);expect(path).not.toMatch(/NaN|Infinity/);}}
+  expect(guilloche(7)).toEqual(guilloche(7));expect(guilloche(7)).not.toEqual(guilloche(31));expect(guilloche()).toEqual(guilloche(7));
+  for(const city of [7,31,53,97,113,131,151,173,320500,undefined] as const){const paths=guilloche(city);expect(paths).toHaveLength(15);for(const path of paths){expect(path.match(/L/g)).toHaveLength(80);expect(path).not.toMatch(/NaN|Infinity/);}}
  });
 });

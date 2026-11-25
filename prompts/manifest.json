@@ -1992,7 +1992,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 2685,
+      "characters": 2670,
       "version": "2.0.0",
       "messageRole": "system",
       "activation": "always",
@@ -2002,7 +2002,7 @@
       "orderGroup": "worldbooks",
       "reorderable": false,
       "category": "worldbook",
-      "contentSha256": "5c826154def8538373c875245ab2d1f78280a763e87b6aa9118b0496b39490b0",
+      "contentSha256": "e7df81630ac6a085ef46bae9daeb47bb316f0ccf0594e8b410969498b781b4b1",
       "placeholders": []
     },
     {
@@ -2021,7 +2021,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 4376,
+      "characters": 4368,
       "version": "2.0.0",
       "messageRole": "system",
       "activation": "always",
@@ -2031,7 +2031,7 @@
       "orderGroup": "worldbooks",
       "reorderable": false,
       "category": "worldbook",
-      "contentSha256": "9f59b875c57705a2880697c7f071f9a363cf44f2dedace9011d1baf520658c22",
+      "contentSha256": "6654a1c2aba68aef34789e4b9934130e81703c63a46688e7f9ad8252619b011f",
       "placeholders": []
     },
     {
@@ -2516,6 +2516,28 @@
       "reorderable": false,
       "category": "creation",
       "contentSha256": "e57f52fee1580eacf806b9cdc757cf521bf7a820c90e85bfbb3152f3b99940b5",
+      "placeholders": []
+    },
+    {
+      "id": "creation.city",
+      "path": "creation/city.md",
+      "title": "创角开局城市介绍补全",
+      "kind": "prompt",
+      "applicableStages": [],
+      "modes": [],
+      "toggle": null,
+      "domain": null,
+      "characters": 449,
+      "version": "1",
+      "messageRole": "system",
+      "activation": "creation-action",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 901,
+      "orderGroup": "creation",
+      "reorderable": false,
+      "category": "creation",
+      "contentSha256": "02396732d00f7ff1ba2e7124d2116afab2e3a6a213bcb5b50ba8c20c21a2c7e1",
       "placeholders": []
     },
     {

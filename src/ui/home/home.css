@@ -96,7 +96,7 @@
 .app-shell-home .home-experience .hint::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold)}
 .app-shell-home .home-experience .cover-foot{position:absolute;left:0;right:0;bottom:1.2rem;display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;padding:0 clamp(1.2rem,5vw,4.5rem);z-index:2;font-size:.76rem;color:var(--muted)}
 .app-shell-home .home-experience .cover-foot .notes{display:grid;gap:.15rem;letter-spacing:.12em}
-.app-shell-home .home-experience .cities{display:flex;gap:.3rem}
+.app-shell-home .home-experience .cities{display:grid;grid-template-columns:repeat(4,auto);gap:.1rem .3rem;justify-content:end}
 .app-shell-home .home-experience .cities button{border:0;padding:.3rem .55rem;font-size:.78rem;color:var(--dim);letter-spacing:.2em;border-radius:3px}
 .app-shell-home .home-experience .cities button[aria-pressed=true]{color:var(--text);background:#ffffff08}
 .app-shell-home .home-experience .cities button[aria-pressed=true]::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--tint);margin-right:.45rem;vertical-align:.15em;box-shadow:0 0 8px var(--tint)}

@@ -1,8 +1,7 @@
 import type { SaveSummary } from '../../services/storage/saveManagement';
 import { saveKeyText } from '../../services/storage/saveManagement';
 import { dateTime } from '../panels/playerView';
-import { CITY, saveCity } from './skyline';
-import type { City } from './skyline';
+import { cityVisual } from './cityVisual';
 
 export const ticketKey = (save: SaveSummary) => `${typeof save.storageKey}:${saveKeyText(save.storageKey)}`;
 export function ticketOrder(saves: readonly SaveSummary[], active?: string): SaveSummary[] {
@@ -23,13 +22,14 @@ export function departure(save: SaveSummary | undefined, active: string | undefi
   if (error) return {dest:'———', time:'--:--', status:'暂停检票', tone:'bad'};
   if (!save) return {dest:'新人生', time:'--:--', status:'可购票', tone:'new'};
   if (save.status === 'unreadable') return {dest:'未知', time:'--:--', status:'无法读取', tone:'bad'};
-  const city = saveCity(save.title), selected = save.saveId === active;
-  return {dest: city ? CITY[city][0] : '未知', time:ticketTime(save.updatedAt).time, status:selected?'已选择':'本地存档', tone:selected?'ok':'idle'};
+  const city = cityVisual(save), selected = save.saveId === active;
+  return {dest: city?.name ?? '未知', time:ticketTime(save.updatedAt).time, status:selected?'已选择':'本地存档', tone:selected?'ok':'idle'};
 }
 
 // The supplied design's seeded, decorative guilloche. No save data enters paths.
-export function guilloche(city?: City): string[] {
-  let seed = ({cq:7, sh:31, hrb:53, gz:97}[city ?? 'cq']) * 7;
+/** seed 来自城市视觉身份（官方城市固定种子，自定义城市为区划代码）；缺省按重庆。 */
+export function guilloche(citySeed = 7): string[] {
+  let seed = (citySeed % 99991 || 7) * 7;
   const random = () => (seed = seed * 16807 % 2147483647) / 2147483647;
   const a = 4 + random()*4, f1 = 14 + random()*8, f2 = 5 + random()*3;
   return Array.from({length:15}, (_, k) => Array.from({length:81}, (_, i) => {

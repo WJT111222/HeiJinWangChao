@@ -1,20 +1,49 @@
 {
-  "baseCommit": "0d3fc3525bcfccb08d497faf7dcbbb9085839ca5",
+  "baseCommit": "55cdc6edf84dab533719dbcf6ef907b10058657a",
   "results": [
+    {
+      "stage": "story",
+      "mode": "opening",
+      "messages": "315618f9abf8c6acd6c29aac885a9134f54dc12ee05b4d2fc9a2b979bd62f064",
+      "context": "5e827533387bc1dd8bfda326cf81f449f29141428c6cebfc90e7aaf5deee2014",
+      "modules": "56dd4f80dbbb27b19dd6b2447b7fd9d60bce2d5e5ee03f736063c318f3e42628"
+    },
+    {
+      "stage": "story",
+      "mode": "regular",
+      "messages": "75a50a4df536a69aa1962b19eb62966003bfebb01cbb8c4f5fedaadb264352a9",
+      "context": "ffa2cd7c9221c9a64d1d6d1bbcf670184217d4760ec01475fd08a6c4a626b19d",
+      "modules": "8fe44712b79d473d92a3c02c0f65fa4f5f7da80f2b175d5813b69172b8775ebf"
+    },
     {
       "stage": "variables",
       "mode": "opening",
-      "messages": "e89d04301c1a1b22c790a9ee8ba967a0bdbe83d8dffb9ad16584c2f1b78e0374",
-      "context": "ee20271a57324c41e0e60003c1e5edf0649e5fe5345fa6bcdf23dc8fdbcdf929",
-      "modules": "2fcfdff8cf2b35bf0245ed8b98c9d22ca1fbdce14ba8d1050c957cac112c657f"
+      "messages": "1c6f2ac67013aa948e8c91705aa267e44485d31e971382d5bb82f98271c6d21f",
+      "context": "99feed4bff28d7cc71e37595c1d940db5b7ac41092ef7a31d92b5b1ca5a2a1bb",
+      "modules": "df7c46f3d52def0532122947d000b8685a0f0622fc618c24fde7e23442308aea"
     },
     {
       "stage": "variables",
       "mode": "regular",
-      "messages": "28465f10f522737e85eab421c8af202aa38c24b8d0ef1a1361a9edff76344385",
-      "context": "9db72142acdf360c140cff3e9a99ed76afe522d8eddb2e10c47b30825e038584",
-      "modules": "2fe225851151d05530dcc1c1c84f2d2f99de390e102fae5271d2bfd76e51aea5"
+      "messages": "de55e3f38f339656630a76ac0d73c098e67d838bfad4c4aab5340d4563b9fad6",
+      "context": "af20395fec3e2b7e66da43329209a495e2f2e39da2eefafa954edd8daf5da172",
+      "modules": "812d72a0b0f824045f63a5782541e648cbb155c0d3a6057a976599a62eb97a47"
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "messages": "52abe8c723328490d207c355edf04121d49cac281f63194a1abb3144cf10ceba",
+      "context": "0e4e7f2f67b21b812f1a36896868acceaca6b749c99418ec83fd087905c85d3a",
+      "modules": "b4327f57c1a8e6cc5f98ad60900c967052f26eb5498b4859e3ab2e2e504f8848"
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "messages": "f9f7a388f16b170fc9c03d35e383f1ca34ac24fbac1a4c9626e718e912b33df7",
+      "context": "9fa8611a30e9bf3be09abf05049f7553ab6cc35970055d29fb511478525fea93",
+      "modules": "8dc7497cef142afed606fd3269ad7b247a6e56f56021c8d45027bb58dd759dbd"
     }
   ],
-  "withTalentVariablesAndWorld": "f5a73b9cc74df979bd7fa72dc4f2f22c95b53f41019364734949cf7b4f37e4ec"
+  "withTalentVariablesAndWorld": "0910c1c358d088dd79b1202efff5c01b4188c33f48cc388a757ed675ac6b643a",
+  "note": "开局城市扩展：公共世界书解除四城限制并说明 OPENING_CITY；三阶段请求与上下文重新核对。"
 }

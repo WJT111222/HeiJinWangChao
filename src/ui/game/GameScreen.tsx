@@ -80,6 +80,7 @@ import './city-night.css';
 import './workflow-feedback.css';
 import './mobile-game.css';
 import './day-appearance.css';
+import '../city-art.css';
 import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';
 import {MobileActions} from './MobileActions';
 import {ComposerTools} from './ComposerTools';

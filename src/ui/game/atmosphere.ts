@@ -1,13 +1,15 @@
-import { openingCity } from '../../domain/openingCity';
+import { isCustomCityId, openingCity, openingCityIdentity } from '../../domain/openingCity';
 import { chinaCalendar } from '../../domain/openingTime';
 import type { GameState } from '../../domain/state';
+import type { OfficialCityKey as OfficialKey } from '../../domain/openingCity';
 
-export function deriveAtmosphere(state: Pick<GameState, 'openingCityId' | 'openingTimePending' | 'worldClock' | 'weatherText'>) {
+export function deriveAtmosphere(state: Pick<GameState, 'openingCityId' | 'openingCityProfile' | 'openingTimePending' | 'worldClock' | 'weatherText'>) {
   const hour = state.openingTimePending ? 21 : chinaCalendar(state.worldClock).hour;
   const time = hour < 5 || hour >= 23 ? 'late' : hour < 7 ? 'dawn' : hour < 17 ? 'day' : hour < 19 ? 'dusk' : 'night';
   const text = state.weatherText;
   const weather = /雨/.test(text) ? 'rain' : /雪/.test(text) ? 'snow' : /雾|霾/.test(text) ? 'fog' : /阴|云/.test(text) ? 'cloud' : 'clear';
-  return { city: openingCity(state.openingCityId)?.key ?? 'other', time, weather } as const;
+  const city: OfficialKey | 'custom' | 'other' = openingCityIdentity(state)?.key ?? 'other';
+  return { city, time, weather } as const;
 }
 
 // Display wording is finer-grained than the five decorative sky presets.
@@ -29,7 +31,7 @@ export function locationText(locations: GameState['locations'], id: string) {
     if (!node.parentId) break;
     node = locations[node.parentId];
   }
-  const city = chain.find(n => openingCity(n.id)) ?? (chain.length > 1 ? chain[0] : undefined);
+  const city = chain.find(n => openingCity(n.id) || isCustomCityId(n.id)) ?? (chain.length > 1 ? chain[0] : undefined);
   return { name: locations[id]?.name ?? '地点未确认', path: chain.slice(0, -1).map(n => n.name).join(' › '), city: city?.name };
 }
 

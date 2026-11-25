@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ReadableSaveSummary } from '../../services/storage/saveManagement';
-import { CITY, saveCity } from '../home/skyline';
+import { cityVisual } from '../home/cityVisual';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import type { HistoryNode } from '../../services/storage/history/model';
 import type { HistoryPreview } from '../../services/storage/history/repository';
@@ -102,7 +102,7 @@ function HistoryStorage({ manualBytes, estimate }: { manualBytes: number; estima
 }
 
 export function HistorySaves({ repository, saveId, settings, summary, onClose, onRestored }: {
-  repository: SaveRepository; saveId: string; settings: Settings; summary?: Pick<ReadableSaveSummary, 'title' | 'turnNumber'>;
+  repository: SaveRepository; saveId: string; settings: Settings; summary?: Pick<ReadableSaveSummary, 'title' | 'turnNumber' | 'openingCityId' | 'openingCityProfile'>;
   onClose: () => void; onRestored: (result: Restored) => void;
 }) {
   const [list, setList] = useState<Awaited<ReturnType<SaveRepository['history']['list']>>>();
@@ -164,8 +164,8 @@ export function HistorySaves({ repository, saveId, settings, summary, onClose, o
   const pages = Math.max(1, Math.ceil(nodes.length / 20)), pageIndex = Math.min(page, pages - 1);
   const latestName = list?.nodes.reduce<HistoryNode | undefined>((latest, node) =>
     node.summary && !node.oldTimeline && (!latest || latest.turnNumber < node.turnNumber) ? node : latest, undefined)?.summary?.protagonistName;
-  const city = summary && saveCity(summary.title);
-  const subtitle = [latestName, city && CITY[city][0], summary && `当前第 ${summary.turnNumber} 回合`].filter(Boolean).join(' · ');
+  const city = summary && cityVisual(summary);
+  const subtitle = [latestName, city?.name, summary && `当前第 ${summary.turnNumber} 回合`].filter(Boolean).join(' · ');
 
   function saveName() {
     if (!editing || !editing.name.trim()) return;

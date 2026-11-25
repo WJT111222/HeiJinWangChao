@@ -2,12 +2,15 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useDesktopFeedback } from '../Feedback';
 import { Dialog } from '../Dialog';
-import { MiniCreationTicket, FullCreationTicket, TemplateChips, CreationReviewCard, CreationGuilloche, creationCity, ticketMeta } from './MobileCreation';
+import { MiniCreationTicket, FullCreationTicket, TemplateChips, CreationReviewCard } from './MobileCreation';
+import { CityCards, CityDetail, creationCityVisual } from './CityChoice';
+import { officialCityForCode } from '../../domain/openingCity';
+import { cnCityRegion } from '../../domain/cities/catalog';
 import { useCreationTear } from './useCreationTear';
 import { useCreationCompletion } from './useCreationCompletion';
 import './creation-completion.css';
 import './mobile-creation.css';
-import { cities, professions, professionCategories, professionProfile, validateStep, selectProfession } from './model';
+import { creationCityName, professions, professionCategories, professionProfile, validateStep, selectProfession } from './model';
 import type { Creation } from './model';
 import { Detail } from '../Dialog';
 import { dateTime } from '../panels/playerView';
@@ -18,8 +21,9 @@ import type { TalentId } from '../../domain/protagonist/talents';
 import { appearanceTemplates, personalityTemplates } from './personTemplates';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { OpeningPacks } from './OpeningPacksPanel';
-import { CityCardArt, CreationDossier, TemplateCards, creationStepHints, creationTint } from './DesktopCreation';
+import { CreationDossier, TemplateCards, creationStepHints, creationTint } from './DesktopCreation';
 import './desktop-creation.css';
+import '../city-art.css';
 import './creation-difficulty.css';
 import { OPENING_STORY_DIFFICULTY, STORY_DIFFICULTIES } from '../settings/storyDifficulty';
 import type { StoryDifficulty } from '../settings/storyDifficulty';
@@ -359,29 +363,23 @@ export function CreationWizard({
             <div className="city-stage">
               <section>
                 {mobile&&<p className="muted">选择起点，不限制未来的目的地。</p>}
-                <fieldset className="city-list">
-                  <legend className="sr-only">初始城市</legend>
-                  {cities.map((city) => (
-                    <label
-                      className={`choice-card city-card ${form.city === city.id ? 'selected' : ''}`}
-                      key={city.id}
-                      style={mobile?undefined:{'--c':ticketMeta[creationCity[city.id]].tint} as CSSProperties}
-                    >
-                      <input
-                        type="radio"
-                        name="city"
-                        checked={form.city === city.id}
-                        onChange={() => change({ city: city.id })}
-                      />
-                      {mobile?<span className="creation-city-art" style={{'--tint':ticketMeta[creationCity[city.id]].tint} as CSSProperties}><CreationGuilloche city={city.id}/><span className="creation-city-seal" aria-hidden="true">{form.city===city.id?'起点':ticketMeta[creationCity[city.id]].seal}</span></span>
-                        :<CityCardArt city={city.id} selected={form.city === city.id} />}
-                      <small>{city.label}</small>
-                      <strong>{city.name}</strong>
-                      <p>{city.description}</p>
-                    </label>
-                  ))}
-                </fieldset>
-                {!mobile&&<p className="muted creation-city-note">选择起点，不限制未来的目的地。</p>}
+                <CityCards form={form} mobile={mobile} onPick={city => change({ city })} />
+                <CityDetail form={form} mobile={mobile}
+                  onCustomCity={picked => {
+                    const official = officialCityForCode(picked.code);
+                    if (official) {
+                      // 从自定义选择切到官方城市：与确认文案一致，清掉旧的自定义城市和介绍。
+                      const next = { ...form, city: official, cityIntro: '' };
+                      delete next.customCity;
+                      onChange(next);
+                      return;
+                    }
+                    const same = form.customCity?.id === picked.id;
+                    change({ city: 'custom', customCity: { id: picked.id, name: picked.name, region: cnCityRegion(picked) }, cityIntro: same ? form.cityIntro : '' });
+                  }}
+                  introField={completionField('city', '城市介绍（可选）', form.cityIntro ?? '', value => change({ cityIntro: value }), mobile ? 4 : 3, {
+                    showLabel: true, placeholder: '可以留空：只写城市名也能开局。也可以自己写几句，或点「AI补全」生成约 50～100 字的地域介绍。',
+                  })} />
               </section>
               <section className="background-box">
                 {completionField('background','人物背景（可选）',form.background,
@@ -470,7 +468,8 @@ export function CreationWizard({
                     </section>}
                   </details>
                   <dl>
-                    <Detail label="城市">{cities.find((c) => c.id === form.city)?.name}</Detail>
+                    <Detail label="城市">{creationCityName(form) || '未选择'}</Detail>
+                    {form.city === 'custom' && form.cityIntro?.trim() && <Detail label="城市介绍">{form.cityIntro.trim()}</Detail>}
                     <Detail label="人物背景">{form.background}</Detail>
                   </dl>
                   <button type="button" onClick={() => move(3)}>
@@ -559,7 +558,7 @@ export function CreationWizard({
   return (
     <main ref={main} data-profession-view={mobile?(showPreset?'preset':'custom'):undefined}
       className={`creation-page${mobile?' mobile-creation':' desktop-creation'}`}
-      style={{'--tint':mobile?(form.step>=3?ticketMeta[creationCity[form.city]].tint:'#c9a961'):tint} as CSSProperties}>
+      style={{'--tint':mobile?(form.step>=3?creationCityVisual(form).tint:'#c9a961'):tint} as CSSProperties}>
       {mobile ? <>
         <header className="creation-mobile-bar"><button type="button" disabled={busy} onClick={onExit}>‹ 首页</button><span><small>NEW LIFE</small>空白车票</span></header><MiniCreationTicket form={form} onPreview={()=>setPreview(true)}/>
         {heading}

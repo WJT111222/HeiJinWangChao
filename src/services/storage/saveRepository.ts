@@ -127,8 +127,10 @@ async function readStoredState(tx: IDBTransaction, saveId: string): Promise<Game
 function listRecord(key: IDBValidKey, raw: unknown): SaveSummary {
   try {
     requireData(typeof key === 'string', 'CORRUPT_SAVE', '存档主键不是有效 ID');
-    const { saveId, title, revision, turnNumber, schemaVersion, updatedAt, npcManagementRevision } = readState(raw, key as string);
-    return { status: 'readable', storageKey: key, saveId, title, revision, turnNumber, schemaVersion, updatedAt, ...(npcManagementRevision === undefined ? {} : { npcManagementRevision }) };
+    const { saveId, title, revision, turnNumber, schemaVersion, updatedAt, npcManagementRevision, openingCityId, openingCityProfile } = readState(raw, key as string);
+    return { status: 'readable', storageKey: key, saveId, title, revision, turnNumber, schemaVersion, updatedAt,
+      ...(npcManagementRevision === undefined ? {} : { npcManagementRevision }),
+      ...(openingCityId === undefined ? {} : { openingCityId }), ...(openingCityProfile ? { openingCityProfile } : {}) };
   } catch {
     // Only classify per-record parsing failures. IDB requests/transactions stay outside
     // this catch, so a storage failure can never masquerade as a broken save or empty list.
