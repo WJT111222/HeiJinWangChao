@@ -93,3 +93,20 @@ export const HaremCommandSchema = z.strictObject({
   expectedRevision: CountSchema,
   changes: HaremChangesSchema,
 });
+
+/** World 只推进场外的成员计划、成员间关系和家庭总体局势；地位、加入退出、妊娠与子女只属于 Variables。 */
+export const HaremBackgroundChangesSchema = z
+  .array(
+    z.discriminatedUnion('op', [
+      z.strictObject({ op: z.literal('plan'), ...subject, value: plan.nullable() }),
+      z.strictObject({ op: z.literal('overview'), reason: TextSchema, value: overview }),
+      z.strictObject({ op: z.literal('pair'), reason: TextSchema, value: pair }),
+    ]),
+  )
+  .min(1);
+export const HaremBackgroundCommandSchema = z.strictObject({
+  type: z.literal('ApplyHaremBackground'),
+  commandId: IdSchema,
+  evidence: TextSchema,
+  changes: HaremBackgroundChangesSchema,
+});

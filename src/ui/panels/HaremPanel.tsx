@@ -8,24 +8,26 @@ import './harem.css';
 
 const pregnancyLabels = {
   unknown: '尚未确认',
-  not_pregnant: '已确认未妊娠',
-  suspected: '疑似',
+  not_pregnant: '未妊娠',
+  suspected: '疑似妊娠',
   confirmed: '已确认妊娠',
   ended: '妊娠已结束',
 };
-const kinships = { biological: '亲生', adoptive: '收养', step: '继亲', other: '其他已确认亲子' };
-const planLabels = {
-  planned: '计划中',
-  active: '进行中',
-  blocked: '受阻',
-  done: '已完成',
-  cancelled: '已取消',
-};
+const kinships = { biological: '亲生', adoptive: '收养', step: '继亲', other: '其他' };
+const planLabels = { planned: '计划中', active: '进行中', blocked: '受阻', done: '已完成', cancelled: '已取消' };
 function visiblePlan(member: HaremMember) {
   const p = member.plan;
   return p && p.status !== 'done' && p.status !== 'cancelled' ? p : undefined;
 }
+const rank = (index: number) => String(index + 1).padStart(2, '0');
 
+function Meter({ value, label }: { value: number; label: string }) {
+  return <div className="hh-meter" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value}>
+    <span style={{ width: `${value}%` }}/>
+  </div>;
+}
+
+/** 后宫档案：只读展示正式家庭记录中玩家已知的部分；点名字打开人物档案。 */
 export function HaremPanel({ view, management }: { view: PlayerView; management?: NpcManagement }) {
   const [person, setPerson] = useState<string>();
   const opener = useRef<HTMLButtonElement | null>(null);
@@ -37,175 +39,115 @@ export function HaremPanel({ view, management }: { view: PlayerView; management?
   const exited = Object.values(h?.members ?? {}).filter((m) => !ids.has(m.id));
   const children = h?.children ?? [];
   const pairs = (h?.pairs ?? []).filter((p) => ids.has(p.leftNpcId) && ids.has(p.rightNpcId));
-  const changes = Object.values(h?.members ?? {})
-    .flatMap((m) => m.changes.map((change, index) => ({ ...change, id: m.id, index })))
-    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at) || b.index - a.index)
-    .slice(0, 5);
-  const family = [
-    ...Object.values(h?.members ?? {}).flatMap((m) =>
-      m.pregnancy ? [{ id: m.id, at: m.pregnancy.at, text: pregnancyLabels[m.pregnancy.status] }] : [],
-    ),
-    ...children.map((c) => ({ id: c.childNpcId, at: c.at, text: kinships[c.kinship] + '子女已登记' })),
-  ]
-    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
-    .slice(0, 5);
-  function link(id: string) {
-    return (
-      <button
-        className="household-person"
-        data-person-id={id}
-        onClick={(event) => {
-          opener.current = event.currentTarget;
-          setPerson(id);
-        }}
-      >
-        {people.get(id)?.name ?? id}
-      </button>
-    );
+  const name = (id: string) => people.get(id)?.name ?? id;
+  const timeline = [
+    ...Object.values(h?.members ?? {}).flatMap((m) => m.changes.map((change, index) => ({
+      key: `${m.id}:${index}`, id: m.id, at: change.at, index,
+      text: change.from === null ? `加入 · 地位 ${change.to}` : change.to === null ? '退出' : `地位 ${change.from} → ${change.to}`,
+      reason: change.reason,
+    }))),
+    ...Object.values(h?.members ?? {}).flatMap((m) => m.pregnancy && m.pregnancy.status !== 'unknown'
+      ? [{ key: `${m.id}:pregnancy`, id: m.id, at: m.pregnancy.at, index: 0, text: pregnancyLabels[m.pregnancy.status], reason: m.pregnancy.reason }] : []),
+    ...children.map((c) => ({ key: `${c.childNpcId}:child`, id: c.parentNpcId, at: c.at, index: 0,
+      text: `${kinships[c.kinship]}子女 ${name(c.childNpcId)} 登记`, reason: c.reason })),
+  ].sort((a, b) => Date.parse(b.at) - Date.parse(a.at) || b.index - a.index).slice(0, 8);
+
+  function link(id: string, className = '') {
+    return <button type="button" className={`household-person ${className}`.trim()} data-person-id={id}
+      onClick={(event) => { opener.current = event.currentTarget; setPerson(id); }}>{name(id)}</button>;
   }
+  const primary = members[0], primaryPerson = primary && people.get(primary.id);
+  const harmony = members.length ? h?.overview?.harmony ?? null : null;
   const stats = [
-    ['现役成员', members.length],
-    ['当前正宫', members[0] ? people.get(members[0].id)?.name + ' · 100' : '暂无正宫'],
-    ['和谐度', members.length ? (h?.overview?.harmony ?? '尚未确认') : '尚未确认'],
-    ['历史退出', exited.length],
-    ['已确认妊娠', members.filter((m) => m.pregnancy?.status === 'confirmed').length],
-    ['已知主角子嗣', children.length],
-    ['重要规划', members.filter(visiblePlan).length],
-    ['合作关系', pairs.filter((p) => p.cooperation).length],
-    ['矛盾关系', pairs.filter((p) => p.conflict).length],
+    { label: '现役成员', value: `${members.length}`, note: exited.length ? `历史退出 ${exited.length} 人` : '暂无退出' },
+    { label: '和谐度', value: harmony === null ? '尚未确认' : `${harmony}`, meter: harmony ?? undefined },
+    { label: '妊娠', value: `${members.filter((m) => m.pregnancy?.status === 'confirmed').length}`, note: '已确认' },
+    { label: '主角子嗣', value: `${children.length}`, note: '已知' },
   ];
+
   return (
-    <div className="household">
-      <section aria-label="后宫综合信息">
-        <h3>后宫综合信息</h3>
-        <dl className="household-stats">
-          {stats.map(([key, value]) => (
-            <div key={key}>
-              <dt>{key}</dt>
-              <dd>{value}</dd>
-            </div>
-          ))}
+    <div className="household" data-empty={members.length ? undefined : 'true'}>
+      <section className="hh-hero" aria-label="后宫综合信息">
+        <div className="hh-primary">
+          <span className="hh-crown" aria-hidden="true">宫</span>
+          {primary && primaryPerson ? <div className="hh-primary-body">
+            <span className="hh-eyebrow">当前正宫</span>
+            <h3>{link(primary.id, 'hh-primary-name')}</h3>
+            <p className="hh-sub">{[primaryPerson.age !== undefined ? `${primaryPerson.age} 岁` : '', primaryPerson.identity].filter(Boolean).join(' · ') || '尚未确认'}</p>
+            {primaryPerson.relationshipText && <p className="hh-quote">{primaryPerson.relationshipText}</p>}
+          </div> : <div className="hh-primary-body">
+            <span className="hh-eyebrow">当前正宫</span>
+            <h3>暂无正宫</h3>
+          </div>}
+        </div>
+        <dl className="hh-stats">
+          {stats.map((s) => <div key={s.label} className="hh-stat">
+            <dt>{s.label}</dt>
+            <dd><span className="hh-stat-value" data-unknown={s.value === '尚未确认' || undefined}>{s.value}</span>
+              {s.meter !== undefined ? <Meter value={s.meter} label={`和谐度 ${s.meter}`}/> : s.note && <small>{s.note}</small>}</dd>
+          </div>)}
         </dl>
-        <dl className="household-facts">
-          <dt>地位分布</dt>
-          <dd>
-            {members.length
-              ? members
-                  .slice(1)
-                  .map((m) => currentStanding(m))
-                  .join('、') || '仅有正宫'
-              : '暂无成员'}
-          </dd>
-          <dt>竞争态势</dt>
-          <dd>{(members.length && h?.overview?.competition) || '尚未确认'}</dd>
-          <dt>整体局势</dt>
-          <dd>{(members.length && h?.overview?.summary) || '尚未确认'}</dd>
-        </dl>
-        {pairs.length > 0 && (
-          <details>
-            <summary>成员关系（{pairs.length} 组）</summary>
-            <ul>
-              {pairs.map((p) => (
-                <li key={JSON.stringify([p.leftNpcId, p.rightNpcId])}>
-                  {people.get(p.leftNpcId)?.name}与{people.get(p.rightNpcId)?.name} · {p.relationship}
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
-        {changes.length > 0 && (
-          <details>
-            <summary>
-              最近 {changes.length} 笔地位变动 · {new Set(changes.map((c) => c.id)).size} 人
-            </summary>
-            <ul>
-              {changes.map((c) => (
-                <li key={c.id + ':' + c.index}>
-                  {people.get(c.id)?.name} · {c.from ?? '加入'} → {c.to ?? '退出'} · {c.reason}（
-                  {dateTime(c.at)}）
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
-        {family.length > 0 && (
-          <details>
-            <summary>近期家庭变化</summary>
-            <ul>
-              {family.map((f) => (
-                <li key={f.id + f.text}>
-                  {people.get(f.id)?.name} · {f.text}（{dateTime(f.at)}）
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
-        {exited.length > 0 && (
-          <details>
-            <summary>查看退出成员</summary>
-            <ul>
-              {exited.map((m) => (
-                <li key={m.id}>
-                  {link(m.id)} · {m.changes.at(-1)?.reason}
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
+        {members.length > 0 && <dl className="hh-situation">
+          <div><dt>竞争态势</dt><dd>{h?.overview?.competition || '尚未确认'}</dd></div>
+          <div><dt>整体局势</dt><dd>{h?.overview?.summary || '尚未确认'}</dd></div>
+        </dl>}
       </section>
-      <section aria-label="现役成员">
-        <h3>现役成员</h3>
-        {!members.length && <p>暂无正式后宫成员</p>}
+
+      <section className="hh-section" aria-label="现役成员">
+        <h3 className="hh-heading">现役成员<small>按地位排序</small></h3>
+        {!members.length && <p className="hh-empty">暂无正式后宫成员</p>}
         <div className="household-grid">
           {members.map((m, i) => {
-            const p = people.get(m.id)!,
-              standing = currentStanding(m),
-              plan = visiblePlan(m);
+            const p = people.get(m.id)!, standing = currentStanding(m)!, plan = visiblePlan(m);
             const offspring = children.filter((c) => c.parentNpcId === m.id);
+            const place = locations.get(p.locationId ?? '');
             return (
-              <article className="household-card" key={m.id} data-member-id={m.id}>
+              <article className="household-card" key={m.id} data-member-id={m.id} data-primary={standing === 100 || undefined}>
                 <header>
+                  <span className="hh-rank" aria-label={`地位第 ${i + 1} 位`}>{rank(i)}</span>
                   <h4>{link(m.id)}</h4>
-                  <strong>
-                    {standing === 100 ? '正宫' : '成员'} · {standing} 分
-                  </strong>
+                  <span className="hh-pill" data-tone={standing === 100 ? 'gold' : undefined}>{standing === 100 ? '正宫' : '成员'} · {standing} 分</span>
                 </header>
-                <dl className="household-facts">
-                  <dt>地位排名</dt>
-                  <dd>第 {i + 1} 位</dd>
-                  <dt>年龄</dt>
-                  <dd>{p.age} 岁</dd>
-                  <dt>职业／身份</dt>
-                  <dd>{p.identity || '尚未确认'}</dd>
-                  <dt>所在地</dt>
-                  <dd>{locations.get(p.locationId ?? '') ?? '尚未确认'}</dd>
-                  <dt>与主角关系</dt>
-                  <dd>{p.relationshipText}</dd>
-                  <dt>上次联络</dt>
-                  <dd>{p.lastInteractionAt ? dateTime(p.lastInteractionAt) : '暂无联络记录'}</dd>
-                  <dt>妊娠</dt>
-                  <dd>{pregnancyLabels[m.pregnancy?.status ?? 'unknown']}</dd>
-                  <dt>已知子嗣</dt>
-                  <dd>
-                    {offspring.length} 人{' '}
-                    {offspring.map((c) => (
-                      <span key={c.childNpcId}>
-                        {link(c.childNpcId)}（{kinships[c.kinship]}）
-                      </span>
-                    ))}
-                  </dd>
-                  <dt>重要行动</dt>
-                  <dd>
-                    {plan ? plan.action + '（' + planLabels[plan.status] + '）' : '正常生活，暂无重大规划'}
-                  </dd>
-                  <dt>当前目的</dt>
-                  <dd>{plan?.purpose ?? '暂无明确目标'}</dd>
-                </dl>
+                <Meter value={standing} label={`地位 ${standing}`}/>
+                <p className="hh-meta">{[p.age !== undefined ? `${p.age} 岁` : '', p.identity || '尚未确认', place].filter(Boolean).join(' · ')}</p>
+                {p.relationshipText && <p className="hh-relation">{p.relationshipText}</p>}
+                <div className="hh-tags">
+                  {m.pregnancy && m.pregnancy.status !== 'unknown' && <span className="hh-pill" data-tone={m.pregnancy.status === 'confirmed' ? 'gold' : undefined}>{pregnancyLabels[m.pregnancy.status]}</span>}
+                  {plan && <span className="hh-pill">{plan.action} · {planLabels[plan.status]}</span>}
+                  {offspring.map((c) => <span key={c.childNpcId} className="hh-child">子女 {link(c.childNpcId)}<small>{kinships[c.kinship]}</small></span>)}
+                </div>
+                {plan?.purpose && <p className="hh-purpose">目的：{plan.purpose}</p>}
+                <footer>上次联络 {p.lastInteractionAt ? dateTime(p.lastInteractionAt) : '暂无记录'}</footer>
               </article>
             );
           })}
         </div>
       </section>
+
+      {(pairs.length > 0 || timeline.length > 0) && <div className="hh-lower">
+        {pairs.length > 0 && <section className="hh-section hh-box" aria-label="成员关系">
+          <h3 className="hh-heading">成员关系<small>{pairs.length} 组</small></h3>
+          <ul className="hh-pairs">{pairs.map((p) => <li key={JSON.stringify([p.leftNpcId, p.rightNpcId])}>
+            <span className="hh-pair-names">{link(p.leftNpcId)}<span aria-hidden="true">⟷</span><span className="hh-visually-hidden">与</span>{link(p.rightNpcId)}</span>
+            <span className="hh-pair-text">{p.relationship}</span>
+            <span className="hh-pair-tags">{p.cooperation && <span className="hh-pill" data-tone="teal">合作</span>}{p.conflict && <span className="hh-pill" data-tone="warn">矛盾</span>}</span>
+          </li>)}</ul>
+        </section>}
+        {timeline.length > 0 && <section className="hh-section hh-box" aria-label="近期变动">
+          <h3 className="hh-heading">近期变动</h3>
+          <ol className="hh-timeline">{timeline.map((t) => <li key={t.key}>
+            <span className="hh-when">{dateTime(t.at)}</span>
+            <span><strong>{name(t.id)}</strong> {t.text}</span>
+            <span className="hh-reason">{t.reason}</span>
+          </li>)}</ol>
+        </section>}
+      </div>}
+
+      {exited.length > 0 && <details className="hh-exited">
+        <summary>已退出成员（{exited.length}）</summary>
+        <ul>{exited.map((m) => <li key={m.id}>{link(m.id)}<span>{m.changes.at(-1)?.reason}</span></li>)}</ul>
+      </details>}
+
       {person && (
         <Dialog
           title="NPC 人物档案"
@@ -217,12 +159,7 @@ export function HaremPanel({ view, management }: { view: PlayerView; management?
           onClose={() => setPerson(undefined)}
           returnFocus={() => opener.current}
         >
-          <NpcPanel
-            view={view}
-            initialId={person}
-            management={management}
-            onBack={() => setPerson(undefined)}
-          />
+          <NpcPanel view={view} initialId={person} management={management} onBack={() => setPerson(undefined)} />
         </Dialog>
       )}
     </div>

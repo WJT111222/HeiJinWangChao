@@ -30,7 +30,7 @@ export interface ModuleRecord {
  * 因此每回合都不变的上下文字段排在 GAME_CONTEXT 最前面，CURRENT_TIME 是第一个会变的字段。
  * Claude 格式据此在 CURRENT_TIME 之前打缓存标记（见 protocols.ts）。只调整字段顺序，不增删内容。
  */
-export const STABLE_CONTEXT_KEYS = ['COMMAND_CATALOG', 'TEXT_COMMAND_CATALOG', 'OPENING_CITY', 'PROTAGONIST_TALENT', 'PROTAGONIST_FACTION', 'NPC_KNOWLEDGE_POLICY', 'TURN_TIME_POLICY', 'PROMPT_SETTINGS'] as const;
+export const STABLE_CONTEXT_KEYS = ['COMMAND_CATALOG', 'TEXT_COMMAND_CATALOG', 'OPENING_CITY', 'PROTAGONIST_TALENT', 'PROTAGONIST_FACTION', 'HAREM_WORLD_POLICY', 'NPC_KNOWLEDGE_POLICY', 'TURN_TIME_POLICY', 'PROMPT_SETTINGS'] as const;
 export const FIRST_DYNAMIC_CONTEXT_KEY = 'CURRENT_TIME';
 function cacheFriendlyContext(context: Record<string, unknown>, extra: { PROMPT_SETTINGS: unknown; CURRENT_TIME: unknown }) {
   const all: Record<string, unknown> = { ...context, PROMPT_SETTINGS: extra.PROMPT_SETTINGS };

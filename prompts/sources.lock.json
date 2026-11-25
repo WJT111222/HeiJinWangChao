@@ -250,8 +250,8 @@
       },
       "haremV1": {
         "baseCommit": "4e14d924b75ffedcf95b876cda000ad90d0d8d78",
-        "notes": "H0 后宫 Variables 单批事务、成员资格及家庭事实；原来源记录保留。",
-        "sha256": "90d017846ea2be8acbfe305c1eb5f1e383ae21c6a04640388c2b596a1eefa41a"
+        "notes": "H0 后宫 Variables 单批事务、成员资格及家庭事实；原来源记录保留；场外计划、成员间关系与总体局势交由 World 推进。",
+        "sha256": "10329eac059c7f74e176f90dc844d32f2df50a4c690766cfb14dbc63f0395bf3"
       }
     },
     "variableGroups/npc_ordinary/update.md": {
@@ -304,8 +304,8 @@
       },
       "haremV1": {
         "baseCommit": "4e14d924b75ffedcf95b876cda000ad90d0d8d78",
-        "notes": "H0 后宫 Variables 单批事务、成员资格及家庭事实；原来源记录保留。",
-        "sha256": "fc5bed7765b95bfabeffb260912ddf1ca966b30dbdb86e21db36cdbe3a780e1b"
+        "notes": "H0 后宫 Variables 单批事务、成员资格及家庭事实；原来源记录保留；场外计划、成员间关系与总体局势交由 World 推进。",
+        "sha256": "81ef99821493f0b8f4c86aa7ac41e5d75f25b5abf03b1aa8f9f18752602155d6"
       }
     },
     "variableGroups/npc_ordinary/offscreen.md": {

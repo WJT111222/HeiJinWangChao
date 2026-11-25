@@ -257,6 +257,25 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
           break;
         }
         case 'RecordHistory': break; // 只记录，不广播知识；引用/日期/ID由同一领域投影验证。
+        case 'ApplyHaremBackground': {
+          // 场外推进：只碰离场成员；Variables 本回合已写的同一计划、成员对或总体局势不得覆盖。
+          const variableEdits = (draft.variables?.validation === 'validated' ? draft.variables.result.commands : [])
+            .flatMap(c => c.type === 'ApplyHaremChanges' ? c.changes : []);
+          const pairKey = (a: string, b: string) => JSON.stringify([a, b].sort());
+          for (const [index, edit] of command.changes.entries()) {
+            if (edit.op === 'plan') {
+              requireWorld(worldNpcAllowed(base, draft, edit.npcId), 'permission','actor_permission', `changes.${index}.npcId`);
+              requireWorld(!variableEdits.some(v => v.op === 'plan' && v.npcId === edit.npcId), 'permission','actor_permission', `changes.${index}.npcId`);
+            } else if (edit.op === 'pair') {
+              requireWorld(worldNpcAllowed(base, draft, edit.value.leftNpcId) && worldNpcAllowed(base, draft, edit.value.rightNpcId),
+                'permission','actor_permission', `changes.${index}.value`);
+              const key = pairKey(edit.value.leftNpcId, edit.value.rightNpcId);
+              requireWorld(!variableEdits.some(v => v.op === 'pair' && pairKey(v.value.leftNpcId, v.value.rightNpcId) === key),
+                'permission','actor_permission', `changes.${index}.value`);
+            } else requireWorld(!variableEdits.some(v => v.op === 'overview'), 'permission','actor_permission', `changes.${index}`);
+          }
+          break;
+        }
         case 'DeleteEvent': {
           const event = historicalEvent(causal,command.eventId);
           requireWorld(event && terminalEvent(event), 'invalid_output','event_transition','eventId');

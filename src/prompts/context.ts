@@ -169,9 +169,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
     if (original.openingTimePending && !selected)
       throw new AiError('time_data', undefined, { storyRule: 'opening_missing', fieldPath: 'worldClock' });
     const variablePending = !draft?.variables || draft.variables.validation !== 'validated';
-    const candidate = variablePending ? undefined : draft!.variables;
-    const worldVariables = candidate?.result.commands.some(c=>c.type==='ApplyHaremChanges')
-      ? {...candidate,result:{...candidate.result,commands:candidate.result.commands.filter(c=>c.type!=='ApplyHaremChanges')}} : candidate;
+    const worldVariables = variablePending ? undefined : draft!.variables;
     let temporary = original.openingTimePending ? projectTurn(original, draft!) : state;
     if (!variablePending) {
       try {

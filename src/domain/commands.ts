@@ -1,5 +1,5 @@
-import { HaremCommandSchema } from './harem/schema';
-import { applyHarem } from './harem/apply';
+import { HaremBackgroundCommandSchema, HaremCommandSchema } from './harem/schema';
+import { applyHarem, applyHaremBackground } from './harem/apply';
 import type { SceneIntervention } from './events/narration';
 import { validateStageWrite } from './events/stages';
 import { z } from 'zod';
@@ -47,6 +47,7 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   // Parse historical drafts/receipts, but never authorize a fresh deletion.
   ...variableCommandSchemas,
   HaremCommandSchema,
+  HaremBackgroundCommandSchema,
 ]);
 export type DomainCommand = z.infer<typeof DomainCommandSchema>;
 
@@ -79,6 +80,7 @@ function ownedByProtagonist(s: GameState, ref: z.infer<typeof ActorRefSchema> | 
 function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedReceipts: ReadonlySet<string>) {
   switch (c.type) {
     case 'ApplyHaremChanges': applyHarem(s,c,turnId); break;
+    case 'ApplyHaremBackground': applyHaremBackground(s,c,turnId); break;
     case 'InitializeOpeningState': initializeOpeningState(s, c.changes, (id) => newEntity(s, id)); break;
     case 'PurchaseItem':
       newEntity(s, c.item.id); ownedByProtagonist(s, c.item.ownerRef); assertImportantItem(s, c.item);
@@ -263,9 +265,10 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   // 事件清理在引用写入后执行。
   const cleanup = (c: DomainCommand) => c.type==='DeleteEvent';
   // Family references and timestamps use the final NPCs and clock of this batch.
-  const household = fresh.filter(c => c.type === 'ApplyHaremChanges');
-  requireData(household.length <= 1, 'HAREM_BATCH', '同一批次只能提交一组家庭变更');
-  const ordered = [...fresh.filter(c => !cleanup(c) && c.type !== 'ApplyHaremChanges'), ...household, ...fresh.filter(cleanup)];
+  // Variables 的家庭变更先落地，World 的场外推进在其结果上执行。
+  const household = fresh.filter(c => c.type === 'ApplyHaremChanges'), background = fresh.filter(c => c.type === 'ApplyHaremBackground');
+  requireData(household.length <= 1 && background.length <= 1, 'HAREM_BATCH', '同一批次每个阶段只能提交一组家庭变更');
+  const ordered = [...fresh.filter(c => !cleanup(c) && c.type !== 'ApplyHaremChanges' && c.type !== 'ApplyHaremBackground'), ...household, ...background, ...fresh.filter(cleanup)];
   for (const command of ordered) {
     try { apply(current, command, turnId, acknowledgedReceipts); }
     catch (error) {
