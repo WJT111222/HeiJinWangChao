@@ -25,6 +25,9 @@ export function variableCommandsForTurn(state: GameState, draft: TurnDraft, comm
 export function prepareVariableProjection(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]) {
   requireData(draft.turnKind === 'opening' || commands.every(c => c.type !== 'InitializeOpeningState'),
     'OPENING_INITIALIZATION', '普通回合不能初始化原有生活状态');
+  // 开局一律孤身一人：正式候选入口同样拒绝开局绑定主势力，不只依赖文本编译。
+  requireData(draft.turnKind === 'regular' || commands.every(c => c.type !== 'RecordOrgRelation' || !c.faction),
+    'FACTION_BINDING', '开局回合不能绑定主势力');
   validateTimeCommands(state,draft,commands);
   let variables = variableCommandsForTurn(state, draft, commands);
   if(draft.story?.variableGuideRaw === undefined && draft.turnKind==='regular' && draft.story?.variableGuide.some(g=>g.group==='time'&&g.subjectHint==='time:pause')) {

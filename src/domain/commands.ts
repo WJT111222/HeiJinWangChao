@@ -185,7 +185,21 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
       requireData(!financial || c.financialBasis, 'ORGANIZATION_FINANCE', '组织金额更新需要结构化时间与依据说明');
       if (c.financialBasis) requireData(Date.parse(c.financialBasis.at) <= Date.parse(s.worldClock), 'FUTURE_ORGANIZATION_FINANCE', '组织财务依据时间不能晚于当前游戏时间');
       // These are organization-owned figures, never player transactions or income.
-      s.organizations[old.id] = OrganizationSchema.parse({ ...old, ...c.changes });
+      const changes = { ...c.changes };
+      if (changes.departments) {
+        // 部门撤销或重组：指向已撤销部门的成员与主角部门归属同步清空，职位保留，不让正常重组卡住整回合。
+        // 只处理原有、本次被撤销的部门；从未存在的部门引用仍按坏数据拒绝。
+        const kept = new Set(changes.departments.map(row => row.id));
+        const removed = new Set((old.departments ?? []).map(row => row.id).filter(id => !kept.has(id)));
+        const members = changes.members ?? old.members;
+        if (members && removed.size) changes.members = members.map(({ departmentId, ...row }) => departmentId && removed.has(departmentId) ? row : { ...row, ...(departmentId ? { departmentId } : {}) });
+        const faction = s.protagonistFaction;
+        if (faction?.organizationId === old.id && faction.departmentId && removed.has(faction.departmentId)) {
+          const { departmentId: _removed, ...rest } = faction; void _removed;
+          s.protagonistFaction = rest;
+        }
+      }
+      s.organizations[old.id] = OrganizationSchema.parse({ ...old, ...changes });
       break;
     }
     case 'RecordOrgRelation': {
