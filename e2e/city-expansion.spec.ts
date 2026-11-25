@@ -37,6 +37,8 @@ test('八座官方城市与自定义城市：选省市、AI补全介绍一次、
   const requests: Record<string, unknown>[] = [];
   await page.route(url + '/**', async route => {
     const body = route.request().postDataJSON();
+    // 建档后会自动开始生成开局；这里只应答城市介绍补全，其他请求一律拒绝。
+    if (!String(body.messages[0].content).includes('开局城市介绍补全')) { await route.fulfill({ status: 401, body: 'mock-only' }); return; }
     requests.push(JSON.parse(body.messages[1].content));
     await route.fulfill({ json: { choices: [{ message: { content: intro }, finish_reason: 'stop' }] } });
   });
