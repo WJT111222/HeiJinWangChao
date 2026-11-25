@@ -1,5 +1,5 @@
 import { SuggestionFeedback } from '../feedback/FeedbackForms';
-import { playChime, primeChime } from '../game/completionChime';
+import { previewChime } from '../game/completionChime';
 import { captureStoryPreset } from '../../presets/library';
 import { TavernAssistant } from './TavernAssistant';
 import type { FeedbackLevel } from '../Feedback';
@@ -134,7 +134,7 @@ export function SettingsPanel({
     try {
       onSave(next);
       setEditing({ ...editing, notifications: next.notifications });
-      if (completionChime !== 'off') { primeChime(); playChime('done'); }
+      if (completionChime !== 'off') void previewChime('done');
       setNoticeLevel('ok');
       setNotice('提示音设置已保存。');
     } catch {
@@ -331,8 +331,8 @@ export function SettingsPanel({
             </div>
             <p className="muted">一回合生成完成时轻响两声；生成失败、需要你处理时换成低一点的提示。手动取消不会响。</p>
             <div className="chime-preview">
-              <button type="button" onClick={() => { primeChime(); playChime('done'); }}>试听完成提示</button>
-              <button type="button" onClick={() => { primeChime(); playChime('attention'); }}>试听失败提示</button>
+              <button type="button" onClick={() => void previewChime('done')}>试听完成提示</button>
+              <button type="button" onClick={() => void previewChime('attention')}>试听失败提示</button>
             </div>
           </>
         )}

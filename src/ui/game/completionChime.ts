@@ -1,27 +1,32 @@
 /**
  * 生成完成提示音：用 Web Audio 现场合成两声柔和的正弦“叮”，不加载音频文件。
  * 浏览器要求在用户操作中启用声音，因此在玩家点击开始生成时先 prime。
+ * 任何音频异常都只会让这次提示静音，不影响游戏流程。
  */
+import { AiError } from '../../services/ai/errors';
+
 export type ChimeMode = 'off' | 'background' | 'always';
 export type ChimeKind = 'done' | 'attention';
 
 type AudioContextClass = typeof AudioContext;
 let context: AudioContext | undefined;
 
-function audioContext(): AudioContext | undefined {
-  try {
-    const Ctor = (globalThis as { AudioContext?: AudioContextClass; webkitAudioContext?: AudioContextClass }).AudioContext
-      ?? (globalThis as { webkitAudioContext?: AudioContextClass }).webkitAudioContext;
-    if (!Ctor) return undefined;
-    context ??= new Ctor();
-    return context;
-  } catch { return undefined; }
+function audioContextClass(): AudioContextClass | undefined {
+  const scope = globalThis as { AudioContext?: AudioContextClass; webkitAudioContext?: AudioContextClass };
+  return scope.AudioContext ?? scope.webkitAudioContext;
 }
 
-/** 在用户手势里调用，让后续异步完成时可以出声；不支持或被拒绝时静默跳过。 */
-export function primeChime() {
-  const ctx = audioContext();
-  if (ctx?.state === 'suspended') void ctx.resume().catch(() => undefined);
+/** 在用户手势里调用；提示音关闭时不初始化音频。不支持、被拒绝或已关闭时静默跳过。 */
+export function primeChime(mode: ChimeMode) {
+  if (mode === 'off') return;
+  try {
+    if (!context || context.state === 'closed') {
+      const Ctor = audioContextClass();
+      if (!Ctor) return;
+      context = new Ctor();
+    }
+    if (context.state !== 'running') void context.resume().catch(() => undefined);
+  } catch { context = undefined; }
 }
 
 /** 默认只在玩家切到别的标签页或窗口时提醒，正在看着游戏时不打扰。 */
@@ -31,44 +36,77 @@ export function shouldChime(mode: ChimeMode, page: Pick<Document, 'hidden' | 'ha
   return page.hidden || !page.hasFocus();
 }
 
+/**
+ * 回合结果对应的提示：正式结算成功才是“完成”；幂等回执（其他标签或恢复已提交）不重复提醒；
+ * 预览、未完成候选需要玩家处理，用低一点的提示。
+ */
+export function chimeForTurn(result: { outcome: { status: 'complete' | 'skipped' | 'preview' }; committed?: { replayed: boolean } }): ChimeKind | undefined {
+  if (result.committed) return result.committed.replayed ? undefined : 'done';
+  return result.outcome.status === 'complete' ? undefined : 'attention';
+}
+/** 生成失败需要玩家回来处理；主动取消不响。自动重试的中间失败不经过这里。 */
+export function chimeForFailure(failure: unknown): ChimeKind | undefined {
+  return failure instanceof AiError && failure.code === 'cancelled' ? undefined : 'attention';
+}
+
 // 完成：C5→G5 上行纯五度；需要处理：G4→E4 轻轻下行。音量很低，带缓慢衰减与低通，避免刺耳。
 const tones: Record<ChimeKind, { notes: readonly [number, number][]; peak: number }> = {
   done: { notes: [[523.25, 0], [783.99, 0.16]], peak: 0.07 },
   attention: { notes: [[392, 0], [329.63, 0.2]], peak: 0.06 },
 };
+const NOTE_SECONDS = 1.6;
 
+/** 只在音频确实处于运行状态时播放；挂起、中断或已关闭时直接放弃，避免恢复后补播过期提示。 */
 export function playChime(kind: ChimeKind) {
-  const ctx = audioContext();
-  if (!ctx || ctx.state === 'closed') return;
+  const ctx = context;
+  if (!ctx || ctx.state !== 'running') return;
+  const nodes: AudioNode[] = [];
+  const cleanup = () => { for (const node of nodes) { try { node.disconnect(); } catch { /* 已断开 */ } } nodes.length = 0; };
   try {
     const start = ctx.currentTime + 0.02;
     const filter = ctx.createBiquadFilter();
+    nodes.push(filter);
     filter.type = 'lowpass';
     filter.frequency.value = 2400;
     filter.connect(ctx.destination);
     const { notes, peak } = tones[kind];
+    let last: OscillatorNode | undefined, lastEnd = -1;
     for (const [frequency, offset] of notes) {
-      const at = start + offset, end = at + 1.6;
+      const at = start + offset, end = at + NOTE_SECONDS;
       const gain = ctx.createGain();
+      nodes.push(gain);
       gain.gain.setValueAtTime(0.0001, at);
       gain.gain.exponentialRampToValueAtTime(peak, at + 0.025);
       gain.gain.exponentialRampToValueAtTime(0.0001, end);
       gain.connect(filter);
       // 基音加一个很轻的高八度泛音，听起来像小铃而不是电子蜂鸣。
       for (const [multiple, level] of [[1, 1], [2, 0.12]] as const) {
-        const voice = ctx.createGain();
+        const voice = ctx.createGain(), osc = ctx.createOscillator();
+        nodes.push(voice, osc);
         voice.gain.value = level;
-        const osc = ctx.createOscillator();
         osc.type = 'sine';
         osc.frequency.value = frequency * multiple;
         osc.connect(voice).connect(gain);
         osc.start(at);
         osc.stop(end + 0.05);
+        if (end >= lastEnd) { last = osc; lastEnd = end; }
       }
     }
-  } catch { /* 提示音失败不影响任何游戏流程 */ }
+    // 最后一个音结束后断开本次创建的全部节点，长时间游玩不累积。
+    if (last) last.onended = cleanup; else cleanup();
+  } catch { cleanup(); }
 }
 
-export function chimeIfWanted(mode: ChimeMode, kind: ChimeKind) {
-  if (shouldChime(mode)) playChime(kind);
+export function chimeIfWanted(mode: ChimeMode, kind: ChimeKind | undefined) {
+  if (kind && shouldChime(mode)) playChime(kind);
 }
+
+/** 设置页试听：点击即启用声音，等音频真正运行后再播放。 */
+export async function previewChime(kind: ChimeKind) {
+  primeChime('always');
+  try { if (context && context.state !== 'running') await context.resume(); } catch { return; }
+  playChime(kind);
+}
+
+/** 仅供测试：丢弃缓存的音频上下文。 */
+export function resetChimeForTests() { context = undefined; }
