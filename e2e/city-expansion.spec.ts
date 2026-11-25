@@ -1,6 +1,5 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
-import { openGameTools } from './helpers/gameLayout';
 
 const url = 'https://city-completion.mock.invalid/v1';
 const intro = '江苏南部的江南城市，古城水巷与园林保留传统格局，工业园区和制造业集群规模庞大，老城慢生活与园区快节奏同城共存。';
@@ -71,14 +70,13 @@ test('八座官方城市与自定义城市：选省市、AI补全介绍一次、
   await page.getByRole('button', { name: /下一步/ }).click();
   await expect(page.locator('.creation-review, .creation-card').first()).toContainText('苏州');
   await page.getByRole('button', { name: '确认并创建存档' }).click();
-  await openGameTools(page, true);
+  await expect(page.locator('.game-layout.city-night')).toHaveAttribute('data-city', 'custom');
   const { summary, state } = await stored(page);
   expect(state.openingCityId).toBe('cn-320500');
   expect(state.openingCityProfile).toEqual({ name: '苏州', region: '江苏', intro });
   expect(state.title).toBe('林舟 · 苏州');
   expect(state.locations['cn-320500']).toEqual({ id: 'cn-320500', name: '苏州', parentId: 'china' });
   expect(summary).toMatchObject({ openingCityId: 'cn-320500' });
-  await expect(page.locator('.city-night')).toHaveAttribute('data-city', 'custom');
   expect(requests).toHaveLength(1);
 });
 

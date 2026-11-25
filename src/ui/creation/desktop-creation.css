@@ -313,6 +313,7 @@
 .creation-city-provinces button[aria-pressed=true], .creation-city-results button[aria-pressed=true] { background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--text); }
 .creation-city-results button small { margin-left: auto; font-size: 11px; color: var(--cr-dim, var(--dim)); white-space: nowrap; }
 .creation-city-results { display: grid; gap: 4px; min-width: 0; }
+.creation-city-picker.searching .creation-city-results { grid-column: 1 / -1; }
 .creation-city-results-head { margin: 0; font: 11px var(--font-mono); letter-spacing: .12em; color: var(--cr-dim, var(--dim)); }
 .creation-city-empty { margin: 0; padding: 10px; font-size: 12px; line-height: 1.7; color: var(--cr-dim, var(--dim)); }
 .creation-city-province { display: grid; gap: 4px; font-size: 12px; color: var(--cr-dim, var(--dim)); }

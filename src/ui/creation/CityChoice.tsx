@@ -112,7 +112,7 @@ function CityPicker({ mobile, selectedId, intro, onPick, onCancel }: {
       <small>{official ? '官方城市' : query.trim() ? `${city.province} · ${cnCityLevelName[city.level]}` : city.level === 2 && city.parent ? `县级市 · ${city.parent}` : cnCityLevelName[city.level]}</small>
     </button></li>;
   };
-  return <div className="creation-city-picker">
+  return <div className={`creation-city-picker${query.trim() ? ' searching' : ''}`}>
     <label className="creation-city-search">
       <span className="sr-only">搜索城市</span>
       <input type="search" value={query} placeholder="搜索城市或省份，如：苏州、江苏" maxLength={20} onChange={event => setQuery(event.target.value)} />
