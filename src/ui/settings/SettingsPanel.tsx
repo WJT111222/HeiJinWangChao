@@ -1,4 +1,5 @@
 import { SuggestionFeedback } from '../feedback/FeedbackForms';
+import { previewChime } from '../game/completionChime';
 import { captureStoryPreset } from '../../presets/library';
 import { TavernAssistant } from './TavernAssistant';
 import type { FeedbackLevel } from '../Feedback';
@@ -28,8 +29,9 @@ const WorldbookLibraryPanel = lazy(() =>
   import('./WorldbookLibrary').then((module) => ({ default: module.WorldbookLibraryPanel })),
 );
 
-const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关、超时与失败重试','外观':'日间 / 夜间配色','世界书':'导入酒馆世界书与开关','提示词管理':'查看与编辑提示词','变量管理':'查看并修正当前存档','反馈建议':'向开发者匿名反馈'};
+const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关、超时与失败重试','外观':'日间 / 夜间配色与提示音','世界书':'导入酒馆世界书与开关','提示词管理':'查看与编辑提示词','变量管理':'查看并修正当前存档','反馈建议':'向开发者匿名反馈'};
 const tabs = ['AI 连接', '提示词', '记忆', '运行', '外观', '世界书', '提示词管理', '变量管理', '反馈建议'] as const;
+const chimes = [['background', '切到别处时', '默认。切到其他标签页或窗口时才提醒，看着游戏时不打扰'], ['always', '总是', '每次生成完成都提醒'], ['off', '关闭', '不播放提示音']] as const;
 const appearances = [['night', '夜间', '黑金配色，适合夜里或暗处'], ['day', '日间', '浅色纸页，适合白天或光线充足时'], ['system', '跟随系统', '随设备的深浅色自动切换']] as const;
 export function SettingsPanel({
   settings,
@@ -126,6 +128,20 @@ export function SettingsPanel({
     setEditing({ ...editing, prompts: { ...editing.prompts, [key]: value } });
   };
   // 外观点选即生效并立即保存，不受其他分类未保存修改的影响。
+  // 提示音同外观：点选即生效并立即保存；切换到会响的选项时顺便试听一次。
+  function chooseChime(completionChime: Settings['notifications']['completionChime']) {
+    const next = { ...settings, notifications: { completionChime } };
+    try {
+      onSave(next);
+      setEditing({ ...editing, notifications: next.notifications });
+      if (completionChime !== 'off') void previewChime('done');
+      setNoticeLevel('ok');
+      setNotice('提示音设置已保存。');
+    } catch {
+      setNoticeLevel('err');
+      setNotice('提示音设置保存失败，请检查浏览器存储权限后重试。');
+    }
+  }
   function chooseAppearance(appearance: Settings['display']['appearance']) {
     const next = { ...settings, display: { appearance } };
     try {
@@ -155,7 +171,7 @@ export function SettingsPanel({
       setNotice('正文建议上限不能低于最低字数。');
       return;
     }
-    const checked = SettingsSchema.safeParse({ ...editing, memory: settings.memory, display: settings.display });
+    const checked = SettingsSchema.safeParse({ ...editing, memory: settings.memory, display: settings.display, notifications: settings.notifications });
     if (!checked.success) {
       setNoticeLevel('err');
       setNotice(
@@ -164,7 +180,7 @@ export function SettingsPanel({
       return;
     }
     try {
-      const saved = onSave(checked.data, { ...editingBase, memory: settings.memory, display: settings.display }) ?? checked.data;
+      const saved = onSave(checked.data, { ...editingBase, memory: settings.memory, display: settings.display, notifications: settings.notifications }) ?? checked.data;
       setEditing(saved);
       setEditingBase(saved);
       setNoticeLevel('ok');
@@ -304,6 +320,20 @@ export function SettingsPanel({
               ))}
             </div>
             <p className="muted">切换后立即生效，并自动保存在本机。当前先覆盖游戏主界面，其余弹出面板会陆续适配。</p>
+            <h3 className="settings-subheading">生成完成提示音</h3>
+            <div className="appearance-options" role="radiogroup" aria-label="生成完成提示音">
+              {chimes.map(([value, label, hint]) => (
+                <label className="appearance-option" key={value} data-checked={settings.notifications.completionChime === value || undefined}>
+                  <input type="radio" name="completion-chime" value={value} checked={settings.notifications.completionChime === value} onChange={() => chooseChime(value)} />
+                  <span><strong>{label}</strong><small>{hint}</small></span>
+                </label>
+              ))}
+            </div>
+            <p className="muted">一回合生成完成时轻响两声；生成失败、需要你处理时换成低一点的提示。手动取消不会响。</p>
+            <div className="chime-preview">
+              <button type="button" onClick={() => void previewChime('done')}>试听完成提示</button>
+              <button type="button" onClick={() => void previewChime('attention')}>试听失败提示</button>
+            </div>
           </>
         )}
         {tab === '运行' && (

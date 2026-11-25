@@ -290,3 +290,8 @@
 .app-shell .settings-layout .style-item-desc{display:block}
 .app-shell .settings-layout .style-explain{display:none}
 }
+/* 生成完成提示音 */
+.app-shell .settings-layout .settings-subheading{margin:1.4rem 0 .5rem;font-size:1rem;font-weight:600;letter-spacing:.08em;color:#2B2723}
+.app-shell .settings-layout .chime-preview{display:flex;flex-wrap:wrap;gap:.6rem;margin:.2rem 0 .8rem}
+.app-shell .settings-layout .chime-preview>button{min-height:44px;padding:.5rem 1rem;border:1px solid #2a262233;border-radius:8px;background:#EFE8D9;color:#2B2723;font:inherit;cursor:pointer}
+.app-shell .settings-layout .chime-preview>button:hover{border-color:#8E6C25}

@@ -13,6 +13,7 @@ import { generateAndSettleTurn } from '../../workflows/automaticTurn';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
 import { AiError } from '../../services/ai/errors';
 import { readFailureDiagnostic } from '../../services/ai/failureDiagnostic';
+import { chimeForFailure, chimeForTurn, chimeIfWanted, primeChime } from './completionChime';
 
 export function useTurnGeneration(
   repository: SaveRepository,
@@ -38,6 +39,10 @@ export function useTurnGeneration(
   const pending = useRef<TurnProgress | undefined>(undefined);
   const lastLoggedStage = useRef<TurnProgress['stage'] | undefined>(undefined);
   const lastProgress = () => pending.current;
+  // 提示音按播放当时的最新设置判断（包括生成中修改、跨标签同步），不冻结开始时的快照。
+  const latestSettings = useRef(settings);
+  latestSettings.current = settings;
+  const chimeMode = () => latestSettings.current.notifications.completionChime;
   useEffect(
     () => () => {
       token.current++;
@@ -49,6 +54,8 @@ export function useTurnGeneration(
   async function generate(expected = draft) {
     if (!expected || active.current) return;
     active.current = true;
+    // 开始生成多由玩家点击触发：此时启用声音，之后异步完成才能出声；关闭提示音时不初始化音频。
+    primeChime(chimeMode());
     errorTurn.current = turnKey(expected);
     const id = ++token.current;
     setRunning(true);
@@ -107,6 +114,7 @@ export function useTurnGeneration(
         setOutcome(result.outcome);
         if (result.committed) { onRuntimeEvent?.('commit', 'completed'); onSettled?.(result.committed); }
         onRuntimeEvent?.('workflow', 'completed');
+        chimeIfWanted(chimeMode(), chimeForTurn(result));
       }
     } catch (failure) {
       if (token.current === id) {
@@ -117,6 +125,7 @@ export function useTurnGeneration(
         if (!diagnostic?.openingTime) setError(
           `${stage ? { story: '正文生成', variables: '变量管理', world: '动态世界', commit: '正式结算' }[stage] + '：' : ''}${storyError(failure)}`,
         );
+        chimeIfWanted(chimeMode(), chimeForFailure(failure));
       }
     } finally {
       if (token.current === id) {
