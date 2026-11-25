@@ -64,7 +64,7 @@ test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收',
     await page.getByLabel('你的行动', { exact: true }).blur();
     await expect.poll(async () => (await page.locator('.app-shell-game').boundingBox())!.height).toBe(844);
   } else {
-    await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(8);
+    await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(10);
     await openProfile(page);
     await page.screenshot({ path: `${screenshots}/after-long-profile.png` });
     const body = page.getByRole('dialog', { name: '人物档案', exact: true }).locator('.modal-body');
