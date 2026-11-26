@@ -1,4 +1,5 @@
-import { checkFinish, splitLeadingThink } from '../../services/ai/compat';
+import isEqual from 'lodash/isEqual';
+import { checkProviderFinish, providerToolFinish, splitLeadingThink } from '../../services/ai/compat';
 import { isOpenAiCompatible, type Protocol } from '../../services/ai/configuration';
 import { AiError, safeAiError } from '../../services/ai/errors';
 import { attachFailureDiagnostic, classifyUpstreamPayload } from '../../services/ai/failureDiagnostic';
@@ -52,14 +53,16 @@ function normalizedUsage(u?: Usage) {
 class Frames {
   private tools = new Map<number, { id: string; name: string; args: string }>();
   private blocks = new Map<number, number>();
-  private snapshots = new Map<string, { name: string; args: string }>();
+  private snapshots = new Map<string, { name: string; args: unknown }>();
   private anonymousGeminiCalls = new Set<string>();
   private hasText = false;
   private preToolPaddingLength = 0;
   boundary = false;
-  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string) {}
+  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null) {}
   private track(index: number, id: unknown, name: unknown, args: unknown) {
     if (!Number.isSafeInteger(index) || index < 0) invalid();
+    if ((id != null && (typeof id !== 'string' || !id.trim())) || (name != null && typeof name !== 'string')
+      || (args != null && typeof args !== 'string')) invalid();
     const tool = this.tools.get(index) ?? { id: '', name: '', args: '' };
     if (typeof id === 'string' && id) {
       if (tool.id && tool.id !== id) invalid();
@@ -84,7 +87,7 @@ class Frames {
     const choices = array(isOpenAiCompatible(p) ? d.choices : d.candidates);
     const choice = record(choices[0]);
     const reason = isOpenAiCompatible(p) ? choice.finish_reason : p === 'gemini' ? choice.finishReason
-      : streaming ? record(d.delta).stop_reason : d.stop_reason;
+      : streaming ? (d.type === 'message_delta' ? record(d.delta).stop_reason : undefined) : d.stop_reason;
     if (typeof reason === 'string' && reason) {
       this.trace.rawFinish = ['tool_calls', 'tool_use', 'cancelled', 'canceled', 'cancelled_no_content'].includes(reason.toLowerCase())
         ? reason : info.finishReasons?.[0] ?? 'unrecognized';
@@ -95,10 +98,15 @@ class Frames {
       attachFailureDiagnostic(failure, { phase: 'upstream_error', upstreamClass: 'content_filter' });
       throw failure;
     }
+    if (this.trace.finish && (record(choice.delta).content || array(record(choice.delta).tool_calls).length
+      || array(record(choice.content).parts).length || d.type === 'content_block_start' || d.type === 'content_block_delta')) invalid();
     if (streaming && isOpenAiCompatible(p) && choice.message !== undefined)
       throw new AiError('unsupported', undefined, { fieldPath: 'tavern.upstream.sse_message' });
     if (choices.length > 1 || (choice.index !== undefined && choice.index !== 0)) throw new AiError('unsupported');
     const msg = record(streaming ? choice.delta : choice.message);
+    const role = isOpenAiCompatible(p) ? msg.role : p === 'gemini' ? record(choice.content).role
+      : streaming ? record(d.message).role : d.role;
+    if (role !== undefined && role !== (p === 'gemini' ? 'model' : 'assistant')) invalid();
     const text = responseContent(d, p, streaming), reasoning = nativeReasoning(d, p, streaming);
     if (this.expectedContentTool && streaming && !this.tools.size && !this.hasText && text && !/[^ \t\r\n]/u.test(text))
       this.preToolPaddingLength += text.length;
@@ -110,14 +118,19 @@ class Frames {
     const calls = [];
     if (isOpenAiCompatible(p)) {
       if (msg.function_call != null || (msg.tool_calls != null && !Array.isArray(msg.tool_calls))) invalid();
+      const indexes = new Set<number>();
       for (const [i, item] of array(msg.tool_calls).entries()) {
         const tool = record(item), fn = record(tool.function);
         if (tool.type !== undefined && tool.type !== 'function') invalid();
         if (streaming && (typeof tool.index !== 'number' || !Number.isSafeInteger(tool.index))) invalid();
         if (typeof fn.arguments === 'string' && fn.arguments.length) this.trace.clock.progress('firstArgumentsMs');
-        calls.push(this.track(streaming ? Number(tool.index) : i, tool.id, fn.name, fn.arguments));
+        const index = streaming ? Number(tool.index) : i;
+        if (indexes.has(index)) invalid();
+        indexes.add(index);
+        calls.push(this.track(index, tool.id, fn.name, fn.arguments));
       }
     } else if (p === 'gemini') {
+      const frameIds = new Set<string>();
       const anonymousThisFrame: string[] = [];
       for (const part of array(record(choice.content).parts)) {
         const call = record(part).functionCall;
@@ -129,13 +142,16 @@ class Frames {
         const args = Object.hasOwn(functionCall, 'args') ? functionCall.args : {};
         if (typeof name !== 'string' || !objectArgs(args)) invalid();
         const encoded = JSON.stringify(args);
+        if (id !== undefined && (typeof id !== 'string' || !id.trim())) invalid();
         if (typeof id === 'string') {
+          if (frameIds.has(id)) invalid();
+          frameIds.add(id);
           const previous = this.snapshots.get(id);
           if (previous) {
-            if (previous.name !== name || previous.args !== encoded) invalid();
+            if (!streaming || previous.name !== name || !isEqual(previous.args, args)) invalid();
             continue;
           }
-          this.snapshots.set(id, { name, args: encoded });
+          this.snapshots.set(id, { name, args });
         } else {
           const identity = JSON.stringify([name, encoded]);
           if (this.anonymousGeminiCalls.has(identity)) invalid();
@@ -153,7 +169,10 @@ class Frames {
         const b = record(block);
         if (b.type !== 'tool_use') continue;
         const index = this.tools.size;
-        this.blocks.set(Number(d.index), index);
+        if (streaming) {
+          if (!Number.isSafeInteger(d.index) || Number(d.index) < 0 || this.blocks.has(Number(d.index))) invalid();
+          this.blocks.set(Number(d.index), index);
+        }
         const args = b.input;
         if (!objectArgs(args)) invalid();
         if (!streaming || Object.keys(record(args)).length) this.trace.clock.progress('firstArgumentsMs');
@@ -171,13 +190,11 @@ class Frames {
       }
     }
     if (reason != null && reason !== '') {
-      if (reason !== 'tool_calls' && reason !== 'tool_use') {
-        try { checkFinish(reason, true); }
-        catch (error) {
-          this.trace.finish = info.finishReasons?.[0] ?? 'unrecognized';
-          if (error instanceof AiError) throw new AiError(error.code, error.status, { fieldPath: 'tavern.upstream.finish_reason' });
-          throw error;
-        }
+      try { checkProviderFinish(p, reason); }
+      catch (error) {
+        this.trace.finish = info.finishReasons?.[0] ?? 'unrecognized';
+        if (error instanceof AiError) throw new AiError(error.code, error.status, { fieldPath: 'tavern.upstream.finish_reason' });
+        throw error;
       }
       if (this.trace.finish && this.trace.finish !== reason) invalid();
       this.trace.finish = String(reason);
@@ -191,28 +208,29 @@ class Frames {
   }
   finish(streaming: boolean) {
     const finish = this.trace.finish;
-    if (!finish && !this.boundary) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_finish' });
+    if (!finish) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_finish' });
     if (streaming && this.protocol === 'anthropic' && !this.boundary) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.message_stop' });
     if (streaming && this.protocol === 'anthropic' && this.blocks.size) invalid();
     if (this.tools.size || finish === 'tool_use' || finish === 'tool_calls') {
-      if (!this.tools.size || !(finish === 'tool_use' || finish === 'tool_calls' || (this.protocol === 'gemini' && finish === 'STOP'))) {
-        throw new AiError(finish === 'length' || finish === 'max_tokens' ? 'output_limit' : 'invalid_output');
+      if (!this.tools.size || !providerToolFinish(this.protocol, finish)) {
+        throw new AiError(['length', 'max_tokens'].includes(finish.toLowerCase()) ? 'output_limit' : 'invalid_output', undefined, { fieldPath: 'tavern.upstream.tool' });
       }
+      // Undefined permits generic multi-tool processing. Null means this delivery requested text only.
+      if (this.expectedContentTool !== undefined && (this.tools.size !== 1 || this.hasText)) invalid();
       const ids = new Set<string>();
       for (const tool of this.tools.values()) {
-        if (!tool.id || !tool.name || ids.has(tool.id)) invalid();
+        if (!tool.id.trim() || !tool.name.trim() || ids.has(tool.id)) invalid();
         const args = parse(tool.args);
         if (!objectArgs(args)) invalid();
-        if (this.expectedContentTool === tool.name && this.tools.size === 1) {
+        if (this.expectedContentTool !== undefined) {
+          if (tool.name !== this.expectedContentTool || Object.keys(record(args)).length !== 1) invalid();
           const content = record(args).content;
-          // The wrapper can prefer a competing plain answer. Check what the client actually received.
-          if (typeof content === 'string' && content.trim()) {
-            const padding = this.preToolPaddingLength;
-            this.trace.matchesDelivery = restored => restored === content || restored === splitLeadingThink(content).content ||
-              // A wrapper can already have forwarded whitespace-only SSE deltas before seeing the tool.
-              (padding > 0 && restored.length === padding + content.length && restored.endsWith(content) &&
-                !/[^ \t\r\n]/u.test(restored.slice(0, padding)));
-          }
+          if (typeof content !== 'string' || !content.trim()) invalid();
+          const padding = this.preToolPaddingLength;
+          this.trace.matchesDelivery = restored => restored === content || restored === splitLeadingThink(content).content ||
+            // A wrapper can already have forwarded whitespace-only SSE deltas before seeing the tool.
+            (padding > 0 && restored.length === padding + content.length && restored.endsWith(content) &&
+              !/[^ \t\r\n]/u.test(restored.slice(0, padding)));
         }
         ids.add(tool.id);
       }
@@ -223,7 +241,7 @@ class Frames {
     this.trace.clock.first('upstreamCompleteMs');
   }
 }
-export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace, expectedContentTool?: string) {
+export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace, expectedContentTool?: string | null) {
   trace.status = response.status;
   trace.contentType = safeMime(response.headers);
   trace.requestedStream = stream;
