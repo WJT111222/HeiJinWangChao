@@ -2,6 +2,8 @@
 
 从 `release/1.0` 的 `5d4a42104c3f363d8bf6559f20a5dea719d7e12f` 开发，最后同步含 #255 手机收件箱的 `ae55434d24d17de651cf94b46583387d6ac67efc`。玩家可在设置的「运行 → 正文预设」选择「小猫之神」，保存后打开「神域控制台」。原生、独立防截断和两个浪潮版本保留各自的入口。开发环境的 C2 夹具继续使用单独的预设 ID 和 `submit_scene`。
 
+本次整改的数据库升级、流式阅读、纸条历史、双端截图与 HTTP／IndexedDB 证据见[定向复审记录](review-repair/README.md)。
+
 ## 适配了哪些原版内容
 
 输入文件为 SoliUmbra 的 `Meowssiah-2.1.7.json`，内部标识为 `3.0-Preview-01 / 301`。完整 SHA-256 为 `81c74429031e005fec1d0ea0a2cb7b4c35e3a055c3ce2ad4a7f3cf9c2fdf57f0`。原件有 56 项提示词，100001 顺序表列出其中 54 项。两份各 8 条的正则清单逐项相同。两份 TavernHelper 脚本分别是 SPreset 加载器和菜单。原件仅作为数据静态读取。拥有原件的维护者可在仓库根目录执行 `python3 scripts/adapt-meowssiah.py /path/to/Meowssiah-2.1.7.json`，重建文学资源、菜单、原件声明、清单及版本指纹。[逐条清单](inventory.md) · [固定来源与摘要](../../../experiments/meowssiah/SOURCES.json)
@@ -24,7 +26,7 @@
 
 `src/presets/meowssiah/` 提供独立注册、资源及版本。`src/ui/settings/meowssiah/` 保存按预设版本校验的方案；互斥组选项、启用项文本与采样实值进入 v4 文学指纹。文学版本摘要绑定发行资源、两条历史正则和本地处理组件。关闭预设后恢复原生设置。编辑中的旧标签页保存前会检查已持久化版本。
 
-`StoryStage.generate` 获取世界观租约后读取当前存档实例的小纸条。一次性纸条 ID 只随成功候选交给 `SaveRepository`。写入候选、发布世界观来源、删除匹配的一次性纸条在同一 IndexedDB 事务内完成。发生竞争时，较新的纸条得到保留。打开设置、取消、保存失败和单纯阅读不消费纸条。纸条属于本机存档控制数据，不进入正式 GameState 或备份文件。
+`StoryStage.generate` 获取世界观租约后读取当前存档实例的小纸条。一次性纸条 ID 只随成功候选交给 `SaveRepository`。写入候选、发布世界观来源、删除匹配的一次性纸条在同一 IndexedDB 事务内完成。发生竞争时，较新的纸条得到保留。打开设置、取消、保存失败和单纯阅读不消费纸条。纸条及最近六条历史位于本机当前存档的独立 oracleNotes 仓库，不进入正式 GameState 或备份文件。
 
 `executePrepared` 只在 Story 选择猫神时启动正式文学沙箱。宿主所在的页面持有渠道凭证及正式存档权限。固定处理器运行在不透明来源 iframe 的专属 Worker 中，每个请求具有一个私有端口，依次执行 prepare 和 finish。真实 HTTP 响应先经过公共 `UpstreamFrames` 的顺序与终止校验，然后交付调用参数。候选建立后仍须通过王朝原有的正文、世界观和业务校验，正式提交才改变回合及 revision。错误或取消原样交回原流程。普通隔离生成使用单次直连；需要通过跨域中转的真实渠道仍受既有传输能力限制。
 
