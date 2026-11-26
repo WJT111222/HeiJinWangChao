@@ -15,3 +15,9 @@ normalizeUpstream 的最后一个可选参数约束本次交付。省略时保�
 C2 接收原协议时应先走同一帧解析器的 project / finish，在处理器执行或签发本地收据前检查错误。SPreset 的单终端工具使用 submit_scene，未来有多工具需求的注册项可单独定义自己的交付规则。已有工具输出不能替代上游完成标记。
 
 回归入口为 src/tests/tavern-provider-integrity.test.ts 与 src/tests/tavern-backend.test.ts。
+
+### Anthropic SSE 内容块
+
+每条消息独立记录内容块的供应商索引、类型和关闭状态。start、delta、stop 使用原始 JSON 索引，均要求其为非负安全整数。索引可以从非零值开始，同一消息中的索引只可建立一次。delta 和 stop 必须指向仍打开的块。所有块关闭且收到供应商结束原因及 message_stop 后，才允许交付。
+
+文本块接受文本与引用增量，思考块接受思考与签名增量，本地工具块仅拼接本块的 input_json_delta。redacted_thinking 可正常开始与关闭。签名和隐藏数据沿用原有展示边界。工具的供应商块索引与归一化后的调用索引分别保存，通用多工具仍可分别完成。异常在公共解析层返回错误，开发原型的工具执行与收据必须等校验通过。[收口测试记录](review-fixes.md#anthropic-sse-内容块收口)
