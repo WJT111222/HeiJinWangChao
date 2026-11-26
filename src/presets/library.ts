@@ -4,13 +4,14 @@ import { scriptOrder } from './scriptOrder';
 import { sameWritingSource, type StoryWriting } from '../domain/storyWriting';
 import { canonicalJson, sha256Hex } from '../domain/worldbook/canonical';
 import { narrativeRange, type Settings } from '../ui/settings/model';
+import peinture1124 from './resources/peinture-1124-manifest.json';
 import controls from './resources/peinture-controls.json';
 import peinture from './resources/peinture-manifest.json';
 import { loadPreset, type PresetDefinition, type PackageOverride, type LoadedPreset } from './package';
 import { nativeDeliveryId, readPresetSettings, storyMode } from './settings';
 
 interface PresetRegistration {
-  definition: typeof peinture;
+  definition: PresetDefinition & { title: string; author: string };
   read: () => Promise<string>;
   // Return null for UI-only scripts. Other presets can consume their full settings by default.
   scriptInputs?: (id: string, variables: Record<string, unknown>) => unknown;
@@ -24,6 +25,8 @@ const registry = new Map<string, PresetRegistration>([
       read: async () => (await import('./resources/peinture-1118.json?raw')).default,
     },
   ],
+  [peinture1124.id, { definition: peinture1124, scriptInputs: peintureWritingVariables, readsPresetVariables: false,
+    read: async () => (await import('./resources/peinture-1124.json?raw')).default }],
 ]);
 export const builtInPresets = [...registry.values()].map((item) => item.definition);
 export type PresetSelection = { definition: PresetDefinition; overrides?: PackageOverride } | null;

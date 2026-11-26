@@ -10,27 +10,60 @@ export const samplingFields = [
   { key: 'frequency_penalty', label: '频率惩罚', min: -2, max: 2 },
   { key: 'presence_penalty', label: '存在惩罚', min: -2, max: 2 },
 ] as const;
-const editable = new Set(controls.sections.flatMap((section) => section.ids));
+const animeControls = {
+  ...controls,
+  sections: controls.sections.map(section => {
+    if (section.name === '人物与关系') return { ...section, ids: [...section.ids, 'wave-core-anti-ceo'] };
+    if (section.name === '篇幅与文风') return { ...section, ids: [...section.ids, 'wave-style-xianzi', 'wave-style-stream-of-consciousness'] };
+    return section;
+  }),
+  groups: controls.groups.map(group => group.name === '文风'
+    ? { ...group, ids: [...group.ids, 'wave-style-xianzi', 'wave-style-stream-of-consciousness'] } : group),
+};
+export const isPeinture = (id: string) => id === 'peinture-1118' || id === 'peinture-1124';
+export const controlsFor = (id: string) => id === 'peinture-1124' ? animeControls : controls;
 export function emptyOverride(preset: LoadedPreset): PackageOverride {
   return { version: preset.definition.version, entries: {}, scripts: {} };
 }
 export function enabled(preset: LoadedPreset, edits: PackageOverride, id: string) {
   return edits.entries[id]?.enabled ?? preset.entries.find((row) => row.identifier === id)?.enabled ?? false;
 }
+const streamStyle = 'wave-style-stream-of-consciousness';
+const streamRequired = ['wave-person-first', 'wave-mind-blackbox'];
+const dialogueOnly = 'wave-dialogue-only';
+const streamLocked = new Set([dialogueOnly, ...animeControls.groups
+  .filter(group => group.ids.some(id => streamRequired.includes(id))).flatMap(group => group.ids)]);
+
+export function lockedByWritingStyle(preset: LoadedPreset, edits: PackageOverride, id: string) {
+  return preset.definition.id === 'peinture-1124' && enabled(preset, edits, streamStyle) && streamLocked.has(id);
+}
 export function toggleEntry(preset: LoadedPreset, edits: PackageOverride, id: string, on: boolean) {
-  if (!editable.has(id)) throw new Error('此条目由王朝管理。');
+  const controls = controlsFor(preset.definition.id);
+  if (!controls.sections.some(section => section.ids.includes(id))) throw new Error('此条目由王朝管理。');
+  if (lockedByWritingStyle(preset, edits, id)) throw new Error('请先切换意识流文风，再调整视角、心声或纯对白。');
   const next = structuredClone(edits);
-  const group = controls.groups.find((g) => g.ids.includes(id));
-  for (const key of on && group ? group.ids : [id]) {
-    const value = key === id && on;
-    if (enabled(preset, next, key) !== value) next.entries[key] = { ...next.entries[key], enabled: value };
+  function setChoice(target: string, active: boolean) {
+    const group = controls.groups.find(g => g.ids.includes(target));
+    for (const key of active && group ? group.ids : [target]) {
+      const value = key === target && active;
+      if (enabled(preset, next, key) !== value) next.entries[key] = { ...next.entries[key], enabled: value };
+    }
+  }
+  setChoice(id, on);
+  if (id === streamStyle && on) {
+    for (const required of streamRequired) setChoice(required, true);
+    setChoice(dialogueOnly, false);
   }
   return next;
 }
 export function checkSelection(preset: LoadedPreset, edits: PackageOverride) {
   if (edits.version !== preset.definition.version) throw new Error('预设覆盖版本不匹配，请先恢复默认。');
   packageOverride.parse(edits);
-  for (const group of controls.groups) {
+  if (lockedByWritingStyle(preset, edits, dialogueOnly) &&
+    (enabled(preset, edits, dialogueOnly) || streamRequired.some(id => !enabled(preset, edits, id)))) {
+    throw new Error('意识流须使用第一人称和黑箱心声，并关闭纯对白。');
+  }
+  for (const group of controlsFor(preset.definition.id).groups) {
     if (group.ids.filter((id) => enabled(preset, edits, id)).length > 1)
       throw new Error('请重新选择「' + group.name + '」，同组最多启用一项。');
   }

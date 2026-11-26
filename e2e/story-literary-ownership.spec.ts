@@ -3,7 +3,7 @@ import { expect, test } from './helpers/test';
 const story = '<正文>林舟核对笔记，留在车站等车。</正文><短期记忆>核对笔记。</短期记忆><变量规划>[]</变量规划>';
 const cases = ['完整短正文', '空正文', '截断', '拒答', '无效协议', '不可见正文'] as const;
 
-for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
+for (const mode of ['原生', '独立防截断', '文学预设', '文学预设 1124'] as const) {
   test(mode + '：相同存档与 4000 字设置的实际请求和候选', async ({ page }, info) => {
     const wires: string[] = [];
     await page.route('**/*', async route => {
@@ -27,7 +27,7 @@ for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
     await page.goto('/');
     await page.evaluate(async mode => {
       const {enableNativeDelivery, savePresetSettings} = await import('/src/presets/settings.ts' as string);
-      const settings = { enabled:mode === '文学预设', selected:mode === '文学预设' ? 'peinture-1118' : null, packages:{} };
+      const settings = { enabled:mode.startsWith('文学预设'), selected:mode.startsWith('文学预设') ? (mode.endsWith('1124') ? 'peinture-1124' : 'peinture-1118') : null, packages:{} };
       if (mode === '独立防截断') enableNativeDelivery(settings);
       savePresetSettings(settings);
     }, mode);
@@ -75,9 +75,9 @@ for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
     }, cases.length);
     expect(wires.length, JSON.stringify(result.rows)).toBe(cases.length);
     expect(result.revisionUnchanged).toBe(true);
-    expect(result.rows[0]).toMatchObject(mode === '文学预设' ? {saved:'林舟核对笔记，留在车站等车。',source:'preset'}
+    expect(result.rows[0]).toMatchObject(mode.startsWith('文学预设') ? {saved:'林舟核对笔记，留在车站等车。',source:'preset'}
       : {rule:'narrative_short',preserved:true});
-    expect(result.committed).toEqual(mode === '文学预设'
+    expect(result.committed).toEqual(mode.startsWith('文学预设')
       ? {narrative:'林舟核对笔记，留在车站等车。', advanced:1, replayed:false} : null);
     const outcomes = ['invalid_output','output_limit','content_filter','invalid_output','invalid_output'];
     expect(result.rows.at(-1)).toMatchObject({rule:'narrative_empty',preserved:true});
@@ -90,10 +90,10 @@ for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
         matchedExcerpts: ['4000～5678 字', '本文叙事始终以主角的“我”为第一人称镜头', '剧情风格：冷硬黑色', '800至1000字'].filter(excerpt => text.includes(excerpt)) };
     });
     for (const request of requests) {
-      expect(request.nativeRange).toBe(mode !== '文学预设');
-      expect(request.nativePerspective).toBe(mode !== '文学预设');
-      expect(request.nativeStyle).toBe(mode !== '文学预设');
-      expect(request.presetRange).toBe(mode === '文学预设');
+      expect(request.nativeRange).toBe(!mode.startsWith('文学预设'));
+      expect(request.nativePerspective).toBe(!mode.startsWith('文学预设'));
+      expect(request.nativeStyle).toBe(!mode.startsWith('文学预设'));
+      expect(request.presetRange).toBe(mode.startsWith('文学预设'));
       expect(request.gameProtocol).toBe(true);
       expect(request.tools).toEqual(mode === '原生' ? [] : ['wave_context_reference','actual_content']);
     }
