@@ -19,10 +19,16 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://**/*', route => route.fulfill({ status: 503, body: 'offline mock' }));
 });
 
-async function finishNotices(page: Page) {
+async function finishNotices(page: Page, keyboard = false) {
   await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
   await expect(announcement(page)).toBeVisible();
-  await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
+  const close = announcement(page).getByRole('button', { name: '关闭王朝公告' });
+  if (keyboard) {
+    // Avoid opening the underlying weather popover when the game regains pointer events.
+    await page.mouse.move(0, 0);
+    await close.focus();
+    await close.press('Enter');
+  } else await close.click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 }
 
@@ -185,7 +191,7 @@ test('直接打开存档仍显示两步公告，关闭与从游戏设置查看�
   await page.goto(`/#game/${before.saveId}`);
   await page.reload();
   await expect(disclaimer(page)).toBeVisible();
-  await finishNotices(page);
+  await finishNotices(page, true);
   await expect(page.getByTestId('story-reader')).toBeVisible();
   await page.getByRole('button', { name: '设置', exact: true }).click();
   const settings = page.getByRole('dialog', { name: '设置', exact: true });

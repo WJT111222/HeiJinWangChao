@@ -1819,10 +1819,10 @@
     },
     "shared/entity_output.md": {
       "origin": "project",
-      "sourceSha256": "40cc57d218e92a738f2fcba020db0895fd483304d13079588252a6604960adef",
+      "sourceSha256": "a3a28dcd80ea155d1fbcdc7e0439a57bef9d7d7e6cabd8894766c31f203551a5",
       "treatment": "project-authored",
       "threeStageVariables": {
-        "sha256": "40cc57d218e92a738f2fcba020db0895fd483304d13079588252a6604960adef"
+        "sha256": "a3a28dcd80ea155d1fbcdc7e0439a57bef9d7d7e6cabd8894766c31f203551a5"
       }
     },
     "shared/history_output.md": {
