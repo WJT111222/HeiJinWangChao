@@ -73,8 +73,8 @@ export function projectTurnCandidates(state: GameState, draft: TurnDraft, worldC
     : { commands:variableCommandsForTurn(state,draft,variables), acknowledgedReceipts:undefined, entities:undefined };
   if (prepared.entities) assertWorldEntityDependencies(prepared.entities, worldCommands, state.tasks);
   const projected = commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision,
-    [...prepared.commands, ...worldCommands], state.updatedAt, validated ? storySceneAuthority(state,draft,variables) : undefined,
-    prepared.acknowledgedReceipts);
+    prepared.commands, state.updatedAt, validated ? storySceneAuthority(state,draft,variables) : undefined,
+    prepared.acknowledgedReceipts, worldCommands);
   if (draft.entities && prepared.entities && !historicalPerspective(state,draft)) markStoryPeople(projected, draft.entities.contactedNpcIds.filter(id => !prepared.entities?.removedIds.has(id)), prepared.entities.commands);
   if(validated) validateNarrationClock(state,draft,projected.worldClock);
   return { state:projected, entities:prepared.entities };
