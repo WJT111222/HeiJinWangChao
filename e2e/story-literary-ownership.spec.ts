@@ -1,9 +1,10 @@
 import { expect, test } from './helpers/test';
 
 const story = '<正文>林舟核对笔记，留在车站等车。</正文><短期记忆>核对笔记。</短期记忆><变量规划>[]</变量规划>';
-const cases = ['完整短正文', '空正文', '截断', '拒答', '无效协议', '不可见正文'] as const;
+const usualCases = ['完整短正文', '空正文', '截断', '拒答', '无效协议', '不可见正文'] as const;
 
 for (const mode of ['原生', '独立防截断', '文学预设', '文学预设 1124'] as const) {
+  const cases = mode.startsWith('文学预设') ? [...usualCases, '供应商结束错配'] : usualCases;
   test(mode + '：相同存档与 4000 字设置的实际请求和候选', async ({ page }, info) => {
     const wires: string[] = [];
     await page.route('**/*', async route => {
@@ -21,7 +22,7 @@ for (const mode of ['原生', '独立防截断', '文学预设', '文学预设 1
       const message = kind === '拒答' ? { content: '', refusal: 'synthetic refusal' }
         : tool ? { tool_calls: [{ type: 'function', id: 'delivery', function: { name: 'actual_content',
           arguments: kind === '截断' ? '{"content":"未结束' : JSON.stringify({ content }) } }] } : { content };
-      const finish = kind === '截断' ? 'length' : kind === '拒答' ? 'content_filter' : tool ? 'tool_calls' : 'stop';
+      const finish = kind === '供应商结束错配' ? 'tool_use' : kind === '截断' ? 'length' : kind === '拒答' ? 'content_filter' : tool ? 'tool_calls' : 'stop';
       return route.fulfill({json:{ choices:[{ message, finish_reason:finish }] }});
     });
     await page.goto('/');
@@ -56,7 +57,7 @@ for (const mode of ['原生', '独立防截断', '文学预设', '文学预设 1
           const previous = JSON.stringify(draft);
           try {
             draft = await stage.generate({draft,settings:input.settings,config,vault,
-              ...(index === count - 1 && draft.story && {onFailureSaved: () => {}})});
+              ...(index >= 5 && draft.story && {onFailureSaved: () => {}})});
             rows.push({ saved:draft.story.narrative, source:draft.storyWriting?.source });
           } catch (err) {
             const error = err as {code?:string;details?:{storyRule?:string}};
@@ -67,7 +68,7 @@ for (const mode of ['原生', '独立防截断', '文学预设', '文学预设 1
         const revisionUnchanged = (await repo.load(draft.saveId)).revision === initialState.revision;
         if (!draft.story) return {rows, revisionUnchanged, committed:null};
         // Only the complete first candidate is still selected after the failed attempts.
-        const submitted = await repo.commitTurn({draft, nextAction:'', useVariableStage:false, useWorldStage:false});
+        const submitted = await repo.commitTurn({draft:await repo.loadDraft(draft.saveId), nextAction:'', useVariableStage:false, useWorldStage:false});
         const saved = await repo.load(draft.saveId);
         return {rows, revisionUnchanged, committed:{narrative:saved.journal.at(-1).story.narrative,
           advanced:saved.turnNumber - initialState.turnNumber, replayed:submitted.replayed}};
@@ -80,7 +81,8 @@ for (const mode of ['原生', '独立防截断', '文学预设', '文学预设 1
     expect(result.committed).toEqual(mode.startsWith('文学预设')
       ? {narrative:'林舟核对笔记，留在车站等车。', advanced:1, replayed:false} : null);
     const outcomes = ['invalid_output','output_limit','content_filter','invalid_output','invalid_output'];
-    expect(result.rows.at(-1)).toMatchObject({rule:'narrative_empty',preserved:true});
+    expect(result.rows[5]).toMatchObject({rule:'narrative_empty',preserved:true});
+    if (mode.startsWith('文学预设')) expect(result.rows[6]).toMatchObject({code:'stream_interrupted',preserved:true});
     for (const [index, expected] of outcomes.entries()) expect(result.rows[index + 1]).toMatchObject({code:expected,preserved:true});
     const requests = wires.map(text => {
       const body = JSON.parse(text);
