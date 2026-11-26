@@ -37,24 +37,35 @@ const streamLocked = new Set([dialogueOnly, ...animeControls.groups
 export function lockedByWritingStyle(preset: LoadedPreset, edits: PackageOverride, id: string) {
   return preset.definition.id === 'peinture-1124' && enabled(preset, edits, streamStyle) && streamLocked.has(id);
 }
-export function toggleEntry(preset: LoadedPreset, edits: PackageOverride, id: string, on: boolean) {
+/** Resolve an entire menu edit before applying the final style's linked choices. */
+export function applyMenuChoices(preset: LoadedPreset, edits: PackageOverride, choices: ReadonlyMap<string, boolean>) {
   const controls = controlsFor(preset.definition.id);
-  if (!controls.sections.some(section => section.ids.includes(id))) throw new Error('此条目由王朝管理。');
-  if (lockedByWritingStyle(preset, edits, id)) throw new Error('请先切换意识流文风，再调整视角、心声或纯对白。');
   const next = structuredClone(edits);
-  function setChoice(target: string, active: boolean) {
-    const group = controls.groups.find(g => g.ids.includes(target));
-    for (const key of active && group ? group.ids : [target]) {
-      const value = key === target && active;
-      if (enabled(preset, next, key) !== value) next.entries[key] = { ...next.entries[key], enabled: value };
+  function set(id: string, on: boolean) {
+    if (enabled(preset, next, id) !== on) next.entries[id] = { ...next.entries[id], enabled: on };
+  }
+  for (const [id, on] of choices) {
+    if (!controls.sections.some(s => s.ids.includes(id))) throw new Error('此条目由王朝管理。');
+    set(id, on);
+  }
+  for (const group of controls.groups) {
+    const chosen = group.ids.filter(id => choices.get(id));
+    if (chosen.length > 1) throw new Error('「' + group.name + '」存在互斥选项，最多启用一项。');
+    if (chosen.length) for (const id of group.ids) set(id, id === chosen[0]);
+  }
+  if (preset.definition.id === 'peinture-1124' && enabled(preset, next, streamStyle)) {
+    for (const id of streamLocked) {
+      const required = streamRequired.includes(id);
+      if (choices.has(id) && choices.get(id) !== required)
+        throw new Error('意识流须使用第一人称和黑箱心声，并关闭纯对白。');
+      set(id, required);
     }
   }
-  setChoice(id, on);
-  if (id === streamStyle && on) {
-    for (const required of streamRequired) setChoice(required, true);
-    setChoice(dialogueOnly, false);
-  }
   return next;
+}
+export function toggleEntry(preset: LoadedPreset, edits: PackageOverride, id: string, on: boolean) {
+  if (lockedByWritingStyle(preset, edits, id)) throw new Error('请先切换意识流文风，再调整视角、心声或纯对白。');
+  return applyMenuChoices(preset, edits, new Map([[id, on]]));
 }
 export function checkSelection(preset: LoadedPreset, edits: PackageOverride) {
   if (edits.version !== preset.definition.version) throw new Error('预设覆盖版本不匹配，请先恢复默认。');

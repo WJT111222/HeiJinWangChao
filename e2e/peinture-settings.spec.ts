@@ -3,8 +3,8 @@ import type { Locator, Page } from '@playwright/test';
 import { openGameTools, openSettings, openStageRaw } from './helpers/gameLayout';
 import { settingsTextContrast } from './helpers/settingsContrast';
 import { createHash } from 'node:crypto';
-import { gzipSync } from 'node:zlib';
-import { writeFile } from 'node:fs/promises';
+import { gunzipSync, gzipSync } from 'node:zlib';
+import { readFile, writeFile } from 'node:fs/promises';
 import controls from '../src/presets/resources/peinture-controls.json' with { type: 'json' };
 import fixture from './fixtures/peinture-game.json' with { type: 'json' };
 
@@ -977,4 +977,45 @@ for (const failure of ['content_filter','stream_interrupted'] as const) test('C1
   });
   expect(persisted).toEqual({revision:1,storyRevision:0,story:null});
   expect([posted.length,count]).toEqual([0,1]);
+});
+
+test('复审：1118 原控制台方案导入、保存、刷新，散文进入下一次实际请求', async ({page}, info) => {
+  test.slow();
+  const sent = await prepare(page,'openai',false,false,false,museumAction,true,true);
+  await choose1124(page);
+  await page.goto('/#game/peinture-smoke');
+  let panel = await editPreset(page);
+  await sectionButton(panel,'篇幅与文风').click();
+  await panel.getByRole('button',{name:'意识流',exact:true}).click();
+  await panel.getByRole('button',{name:'保存调整'}).click();
+  await expect(panel.getByRole('status')).toContainText('已保存');
+  await sectionButton(panel,'我的方案').click();
+  const buffer = gunzipSync(await readFile('e2e/fixtures/peinture-1118-essay.json.gz'));
+  const file = {name:'1118码头散文.json',mimeType:'application/json',buffer};
+  await panel.getByLabel('导入方案 JSON').setInputFiles(file);
+  await panel.getByRole('button',{name:'取消',exact:true}).click();
+  await sectionButton(panel,'篇幅与文风').click();
+  await expect(panel.getByRole('button',{name:'意识流',exact:true})).toHaveAttribute('aria-pressed','true');
+  await sectionButton(panel,'我的方案').click();
+  await panel.getByLabel('导入方案 JSON').setInputFiles(file);
+  await panel.getByRole('button',{name:'载入编辑区'}).click();
+  await expect(panel.getByRole('status')).toContainText('已载入 85 项');
+  await panel.getByRole('button',{name:'保存调整'}).click();
+  await expect(panel.getByRole('status').filter({hasText:'已保存'})).toBeVisible();
+  await page.reload();
+  panel = await editPreset(page);
+  await sectionButton(panel,'篇幅与文风').click();
+  await expect(panel.locator('[value="wave-style-essay"]')).toHaveAttribute('aria-pressed','true');
+  await expect(panel.locator('[value="wave-style-stream-of-consciousness"]')).toHaveAttribute('aria-pressed','false');
+  expect(sent).toHaveLength(0);
+  await page.goto('/');
+  await generate(page,'peinture-smoke',undefined,'生成本回合正文');
+  expect(sent).toHaveLength(1);
+  expect(sent[0]).toContain('当前文风：散文随笔');
+  expect(sent[0]).toContain('旧方案校样：渡船离岸。');
+  expect(sent[0]).not.toContain('当前文风：意识流');
+  await writeFile(info.outputPath('scheme-wire.json'),JSON.stringify({
+    device:info.project.name,schemeSha256:createHash('sha256').update(buffer).digest('hex'),
+    requestSha256:createHash('sha256').update(sent[0]).digest('hex'),posts:sent.length,style:'散文随笔',saved:true,
+  }));
 });

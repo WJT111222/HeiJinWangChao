@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { LoadedPreset, PackageOverride } from './package';
-import { controlsFor, enabled, toggleEntry } from './peintureSettings';
+import { applyMenuChoices, checkSelection, controlsFor, enabled } from './peintureSettings';
 
 const schemeSchema = z.object({
   format: z.literal('wave-console-scheme'),
@@ -34,14 +34,9 @@ export function snapshotScheme(preset: LoadedPreset, edits: PackageOverride, nam
 
 export function applyScheme(preset: LoadedPreset, edits: PackageOverride, scheme: PeintureScheme) {
   const ids = editableIds(preset);
-  const style = 'wave-style-stream-of-consciousness';
   const entries = scheme.prompts.filter(p => ids.has(p.id));
-  const stream = entries.find(p => p.id === style)?.enabled ?? enabled(preset, edits, style);
-  let next = toggleEntry(preset, edits, style, false);
-  for (const row of entries) {
-    if (row.id !== style) next = toggleEntry(preset, next, row.id, row.enabled);
-    next.entries[row.id] = { ...next.entries[row.id], content: row.content };
-  }
-  if (stream) next = toggleEntry(preset, next, style, true);
+  const next = applyMenuChoices(preset, edits, new Map(entries.map(row => [row.id, row.enabled])));
+  for (const row of entries) next.entries[row.id] = { ...next.entries[row.id], content: row.content };
+  checkSelection(preset, next);
   return { edits: next, applied: entries.length, skipped: scheme.prompts.length - entries.length };
 }

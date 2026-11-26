@@ -50,6 +50,7 @@ export function PeintureSchemes({ preset, edits, change }: {
       const file = event.target.files?.[0];
       event.target.value = '';
       if (!file) return;
+      setPreview(undefined);
       try {
         if (file.size > 8 * 1024 * 1024) throw new Error('方案文件超过 8 MB。');
         setPreview(parseScheme(JSON.parse((await file.text()).replace(/^\uFEFF/u, ''))));

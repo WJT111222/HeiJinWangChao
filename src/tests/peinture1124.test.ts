@@ -62,3 +62,25 @@ it('1124 意识流联动视角与心声，方案只恢复可编辑的文学条�
   expect(enabled(preset, loaded.edits, 'wave-mind-blackbox')).toBe(true);
   expect(() => parseScheme({...scheme, prompts:[scheme.prompts[0], scheme.prompts[0]]})).toThrow();
 });
+
+it('局部旧方案按最终文风联动，导入顺序无关，冲突不改变现有编辑', async () => {
+  const preset = await resolveStoryPreset({definition:manifest});
+  const defaults = emptyOverride(preset);
+  const stream = 'wave-style-stream-of-consciousness', essay = 'wave-style-essay';
+  const edits = toggleEntry(preset,defaults,stream,true), saved = structuredClone(edits);
+  const row = (id: string, on = true) => ({id,enabled:on,content:'旧方案测试'});
+  const apply = (...prompts: ReturnType<typeof row>[]) => applyScheme(preset,edits,
+    parseScheme({name:'旧方案',version:1,format:'wave-console-scheme',family:'wave-1103-dame',prompts})).edits;
+  expect(enabled(preset,apply(row('wave-pace-fast')),stream)).toBe(true);
+  const rows = [row(essay),row('wave-person-third'),row('wave-style-adaptive',false)];
+  const next = apply(...rows);
+  expect(apply(...[...rows].reverse())).toEqual(next);
+  expect(enabled(preset,next,stream)).toBe(false);
+  expect(enabled(preset,next,essay)).toBe(true);
+  expect(enabled(preset,next,'wave-person-third')).toBe(true);
+  expect(() => apply(row(essay),row('wave-style-wuxia'))).toThrow('互斥');
+  expect(() => apply(row(stream),row('wave-person-third'))).toThrow('意识流');
+  expect(() => apply(row('wave-mind-blackbox',false))).toThrow('意识流');
+  expect(apply(row('main')).entries.main).toBeUndefined();
+  expect(edits).toEqual(saved);
+});
