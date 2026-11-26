@@ -22,6 +22,7 @@ import { NoticeLinks } from '../notices/Notices';
 import './settings-paper.css';
 import type { NoticeKind } from '../notices/useNotices';
 
+const ImageSettings=lazy(()=>import('../images/ImageSettings').then(m=>({default:m.ImageSettings})));
 const PromptInspector = lazy(() =>
   import('./PromptInspector').then((module) => ({ default: module.PromptInspector })),
 );
@@ -29,8 +30,8 @@ const WorldbookLibraryPanel = lazy(() =>
   import('./WorldbookLibrary').then((module) => ({ default: module.WorldbookLibraryPanel })),
 );
 
-const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关、超时与失败重试','外观':'日间 / 夜间配色与提示音','世界书':'导入酒馆世界书与开关','提示词管理':'查看与编辑提示词','变量管理':'查看并修正当前存档','反馈建议':'向开发者匿名反馈'};
-const tabs = ['AI 连接', '提示词', '记忆', '运行', '外观', '世界书', '提示词管理', '变量管理', '反馈建议'] as const;
+const descriptions={'文生图':'图片接口、图片管理与人生相册','AI 连接':'渠道、密钥与模型路由','提示词':'叙事人称、风格与开关','记忆':'即时记忆与记忆总结','运行':'阶段开关、超时与失败重试','外观':'日间 / 夜间配色与提示音','世界书':'导入酒馆世界书与开关','提示词管理':'查看与编辑提示词','变量管理':'查看并修正当前存档','反馈建议':'向开发者匿名反馈'};
+const tabs = ['AI 连接', '提示词', '记忆', '运行', '外观', '世界书', '提示词管理', '变量管理', '文生图', '反馈建议'] as const;
 const chimes = [['background', '切到别处时', '默认。切到其他标签页或窗口时才提醒，看着游戏时不打扰'], ['always', '总是', '每次生成完成都提醒'], ['off', '关闭', '不播放提示音']] as const;
 const appearances = [['night', '夜间', '黑金配色，适合夜里或暗处'], ['day', '日间', '浅色纸页，适合白天或光线充足时'], ['system', '跟随系统', '随设备的深浅色自动切换']] as const;
 function literarySettingsActive() {
@@ -230,7 +231,7 @@ export function SettingsPanel({
               showCategory(name);
             }}
           >
-            <i aria-hidden="true">{{'AI 连接':'连','提示词':'词','记忆':'忆','运行':'运','外观':'色','世界书':'书','提示词管理':'管','变量管理':'量','反馈建议':'言'}[name]}</i>{desktop?<span>{name}</span>:<span className="settings-row-text"><strong>{name}</strong><small>{descriptions[name]}</small></span>}{((name==='AI 连接'&&aiDirty)||(name==='记忆'&&summaryDirty)||(name==='世界书'&&worldbookDirty)||((name==='提示词'||name==='运行')&&localDirty))&&<span className="dirty" aria-hidden="true" title="有未保存的修改"/>}{!desktop&&<span aria-hidden="true">›</span>}
+            <i aria-hidden="true">{{'文生图':'图','AI 连接':'连','提示词':'词','记忆':'忆','运行':'运','外观':'色','世界书':'书','提示词管理':'管','变量管理':'量','反馈建议':'言'}[name]}</i>{desktop?<span>{name}</span>:<span className="settings-row-text"><strong>{name}</strong><small>{descriptions[name]}</small></span>}{((name==='AI 连接'&&aiDirty)||(name==='记忆'&&summaryDirty)||(name==='世界书'&&worldbookDirty)||((name==='提示词'||name==='运行')&&localDirty))&&<span className="dirty" aria-hidden="true" title="有未保存的修改"/>}{!desktop&&<span aria-hidden="true">›</span>}
           </button>
         ))}
         {onOpenNotice && <NoticeLinks onOpen={onOpenNotice} />}
@@ -314,6 +315,7 @@ export function SettingsPanel({
         {tab === '记忆' && (isValidElement<{ onDirtyChange?: (dirty: boolean) => void }>(memoryMaintenance)
           ? cloneElement(memoryMaintenance, { onDirtyChange: summaryDirtyChanged })
           : <MemorySummarySettings settings={settings} onSave={onSave} onDirtyChange={summaryDirtyChanged} />)}
+        {tab==='文生图'&&<Suspense fallback={<p>读取配置…</p>}><ImageSettings repository={repository}/></Suspense>}
         {tab === '外观' && (
           <>
             <div className="appearance-options" role="radiogroup" aria-label="外观">
@@ -431,7 +433,7 @@ export function SettingsPanel({
           </>
         )}
         <div className="local-save-bar"><Feedback role="status" level={noticeLevel} className="field-hint">{notice||(localDirty&&(tab==='提示词管理'||(desktop&&(tab==='提示词'||tab==='运行')))?'本地设置尚未保存。':'')}</Feedback>
-        {tab !== 'AI 连接' && tab !== '记忆' && tab !== '外观' && tab !== '世界书' && tab !== '变量管理' && tab !== '反馈建议' && (
+        {tab !== '文生图' && tab !== 'AI 连接' && tab !== '记忆' && tab !== '外观' && tab !== '世界书' && tab !== '变量管理' && tab !== '反馈建议' && (
           <button className="primary" onClick={save}>
             保存本地设置
           </button>

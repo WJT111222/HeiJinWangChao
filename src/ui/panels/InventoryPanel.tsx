@@ -1,3 +1,4 @@
+import { ImageEntry } from '../images/ImageGallery';
 import { useEffect, useRef, useState } from 'react';
 import { Dialog, Detail, Empty } from '../Dialog';
 import { categoryLabels, money } from './playerView';
@@ -52,7 +53,8 @@ export function InventoryPanel({ view, desktop = false, initialId, onSelect, onO
           <div className="inventory-badges">{equipped.has(selected.id) && <span className={desktop ? 'b-eq' : undefined}>已装备</span>}{selected.questItem && <span className={desktop ? 'b-quest' : undefined}>任务物品</span>}</div>
         </div>
       </div>
-      <p className="inventory-description">{itemDescription(selected)}</p>
+      <ImageEntry kind="item" id={selected.id}/>
+          <p className="inventory-description">{itemDescription(selected)}</p>
       <dl className={desktop ? 'dl' : undefined}>
         <Detail label="数量">{selected.quantity}</Detail>
         <Detail label="单件参考价值">{selected.referenceValue == null ? '待估价' : money(selected.referenceValue)}</Detail>

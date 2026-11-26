@@ -175,7 +175,7 @@ it('旧自动描述符无新摘要仍可读，当前数据库版本保留历史�
   await turns(3); const before = await raw(), control = before.records.saveControls![0].value as { records: object[] };
   await edit('saveControls', s => s.put({ ...control, records: control.records.map(entry => { const row = { ...entry } as { summary?: unknown }; delete row.summary; return row; }) }));
   const preview = await repo.history.preview('save-a', await oldest()); expect(preview.state.turnNumber).toBe(1);
-  expect(saveDatabaseVersion).toBe(7);
+  expect(saveDatabaseVersion).toBe(8);
 });
 it('删除正式存档原子删除关联收藏；导入同 ID 备份保留收藏但标记旧时间线', async () => {
   await turns(3); await repo.history.create('save-a', '收藏');

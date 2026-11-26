@@ -9,6 +9,7 @@ import type { GameState } from '../domain/state';
 import type { TurnDraft } from '../domain/drafts';
 import { maxBackupEntries } from '../services/storage/backup';
 import { SaveRepository } from '../services/storage/saveRepository';
+import { imageChange } from '../services/images/library';
 import { theaterChangeKey } from '../services/storage/theaters';
 import { readDocument, writeDocument } from '../services/local/documents';
 import { loadCompanionProfile, companionProfileKey } from '../services/local/companionProfile';
@@ -154,10 +155,12 @@ export function App() {
         if (disposed) repo.close();
         else setRepository(repo);
       })
-      .catch(() => {
+      .catch(failure => {
         if (!disposed) {
-          setError(openFailure);
-          setListError(openFailure);
+          const message = failure instanceof DataError && ['STORAGE_BLOCKED', 'STORAGE_SCHEMA'].includes(failure.code)
+            ? failure.message : openFailure;
+          setError(message);
+          setListError(message);
           setLoading(false);
         }
       });
@@ -248,13 +251,15 @@ export function App() {
       void repository.list().then(items => { if (request === latest) acceptList(items); },
         () => { if (request === latest) setListError(listFailure); });
     };
-    const storage = (event: StorageEvent) => { if (event.key === theaterChangeKey) reload(); };
+    const storage = (event: StorageEvent) => { if (event.key === theaterChangeKey || event.key === imageChange) reload(); };
     window.addEventListener('storage', storage);
     window.addEventListener('focus', reload);
+    window.addEventListener(imageChange,reload);
     return () => {
       latest++;
       window.removeEventListener('storage', storage);
       window.removeEventListener('focus', reload);
+      window.removeEventListener(imageChange,reload);
     };
   }, [repository, route, gameRoute]);
   function acceptList(items: SaveSummary[]) {
@@ -383,7 +388,7 @@ export function App() {
       try { acceptList(await repository.list()); }
       catch { setListError(listFailure); setError(listFailure); }
     } catch (error) {
-      setDeleteError(error instanceof DataError && ['HISTORY_RECOVERY_REQUIRED', 'THEATER_RECOVERY_REQUIRED'].includes(error.code)
+      setDeleteError(error instanceof DataError && ['HISTORY_RECOVERY_REQUIRED', 'THEATER_RECOVERY_REQUIRED','IMAGE_RECOVERY_REQUIRED'].includes(error.code)
         ? error.message : '删除失败，存档可能已更新或存储不可用。请刷新列表后重试；本次未删除数据。');
     } finally {
       lock.current = false;

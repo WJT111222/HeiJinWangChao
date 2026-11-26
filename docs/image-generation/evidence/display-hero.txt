@@ -1,0 +1,38 @@
+
+> heijinwangchao@1.0.0-beta test:e2e
+> playwright test e2e/image-placements.spec.ts --grep 主角状态和资料共享头像 --workers=1 --reporter=line
+
+[WebServer] (node:37277) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:37290) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] npm notice
+[WebServer] npm notice New major version of npm available! 11.9.0 -> 12.2.3
+[WebServer] npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+[WebServer] npm notice To update run: npm install -g npm@12.2.3
+[WebServer] npm notice
+
+[WebServer] (node:37323) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 2 tests using 1 worker
+
+(node:37358) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/2] [desktop] › e2e/image-placements.spec.ts:542:1 › 主角状态和资料共享头像缩略图，点击才读取原图
+(node:37664) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/2] [mobile] › e2e/image-placements.spec.ts:542:1 › 主角状态和资料共享头像缩略图，点击才读取原图
+  2 passed (16.5s)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.3
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+npm notice To update run: npm install -g npm@12.2.3
+npm notice

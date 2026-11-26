@@ -1,3 +1,4 @@
+import { ImageAvatar, ImageEntry } from '../images/ImageGallery';
 import type {ReactNode} from 'react';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import type {PlayerView} from './playerView';
@@ -83,11 +84,12 @@ export function MapPanel({view,initialId,uiState,onUiStateChange,onNpc,onEvent,m
     </section>):<Empty>该地点尚无下级地点记录</Empty>}{more('diagram',districts.length,20)}</div>
    </section>}
    <article className="place-card"><nav className="pc-crumb" aria-label="地点路径">{path.map((p,i)=><span key={p.id}>{i>0&&' › '}{i===path.length-1?<span aria-current="location">{p.name}</span>:<button onClick={()=>choose(p.id)}>{p.name}</button>}</span>)}</nav>
-    <div className="pc-title"><h3 ref={heading} tabIndex={-1}>{place.name}</h3><span className="lv">{path.length===1?'层级根地点':map.children.has(place.id)?`区域 · 第 ${path.length} 级`:'具体地点'}</span></div>
+    <ImageEntry kind="place" id={place.id}/>
+          <div className="pc-title"><h3 ref={heading} tabIndex={-1}>{place.name}</h3><span className="lv">{path.length===1?'层级根地点':map.children.has(place.id)?`区域 · 第 ${path.length} 级`:'具体地点'}</span></div>
     {me.has(place.id)&&<span className="pc-here">{place.id===view.protagonist.locationId?'你 · 主角当前所在':'主角在此区域内'}</span>}
     {map.issues.has(place.id)&&<p className="map-issue" role="note">{map.issues.get(place.id)}</p>}
     {Boolean(map.children.get(place.id)?.length)&&<section className="sec"><h4>下级地点</h4><div className="kids">{(map.children.get(place.id)??[]).slice(0,limits['kids']??50).map(p=><button key={p.id} onClick={()=>mobile?drill(p.id):choose(p.id)}>{p.name}<small>{map.descendants.get(p.id)??0}</small></button>)}</div>{!map.children.get(place.id)?.length&&<Empty>暂无下级地点</Empty>}{more('kids',(map.children.get(place.id)??[]).length)}</section>}
-    <div className="pc-grid"><section className="sec"><h4>此地人物</h4><p className="derived-note">按人物当前位置汇总</p><MapRecords label="此地人物" entries={people} text={n=>n.name} render={n=><p className="who-row"><span className="seal" aria-hidden="true">{Array.from(n.name)[0]}</span><button className="link-btn" onClick={()=>onNpc(n.id)}>{n.name}</button><span className="pill">{n.onScene?'本幕在场':'场外人物'}</span></p>}/>
+    <div className="pc-grid"><section className="sec"><h4>此地人物</h4><p className="derived-note">按人物当前位置汇总</p><MapRecords label="此地人物" entries={people} text={n=>n.name} render={n=><p className="who-row"><span className="seal"><ImageAvatar kind="npc" id={n.id}>{Array.from(n.name)[0]}</ImageAvatar></span><button className="link-btn" onClick={()=>onNpc(n.id)}>{n.name}</button><span className="pill">{n.onScene?'本幕在场':'场外人物'}</span></p>}/>
      <h5>常驻于此</h5><MapRecords label="常驻人物" entries={usual} text={row=>row.npc.name} render={row=><p className="who-row"><button className="link-btn" onClick={()=>onNpc(row.npc.id)}>{row.npc.name}</button><span className="pill">{{home:'住处',work:'工作地点',frequent:'经常活动'}[row.role]} · {row.knownToProtagonist?'主角已知':'主角未确认'}</span></p>}/></section>
      <section className="sec"><h4>此地动态</h4><MapRecords label="地点事件" entries={events} text={e=>e.title} render={e=><p><button className="link-btn" onClick={()=>onEvent(e.id)}>{e.title}</button> <span className="ev-st">{eventStatusLabels[e.status]}</span></p>}/><h5>主角资产</h5><MapRecords label="地点资产" entries={assets} text={a=>a.name} render={a=><p>{a.name} · {a.kind==='property'?'房产':'车辆'} · {a.statusText}</p>}/></section></div>
     <WorldRecord title="地点资料" value={place}/>

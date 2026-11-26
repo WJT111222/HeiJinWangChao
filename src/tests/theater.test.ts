@@ -7,6 +7,7 @@ import { AiClient } from '../services/ai/client';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
+import { targetFor } from '../services/images/model';
 import { backupSummary, parseBackup, serializeBackup } from '../services/storage/backup';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { createTheaterStores } from '../services/storage/theaters';
@@ -395,6 +396,41 @@ describe('小剧场存储和主线结算', () => {
     repo = await SaveRepository.open('theater-test', factory);
     expect((await repo.theaters.open('save-a', saved.record.id)).record).toEqual(saved.record);
     expect((await repo.theaters.list(other.saveId)).items).toEqual([]);
+  });
+
+  it('同一份三段草稿、图片和小剧场通过 v3 恢复；同身份 v2 覆盖保留图片，草稿只结算一次', async () => {
+    const { opened } = await open();
+    const episode = await saveBody(opened);
+    const draft = await completeDraft(repo, { variables: await elapsedVariables(repo, '馆内停留一分钟', 60) });
+    const state = await repo.load(draft.saveId);
+    const target = targetFor(state, 'player', state.protagonist.id)!;
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAJUlEQVR4nGMwd/GHo40TwuAIlzjDINRAjCJk8cGoYRAG60iMBwCD3jCQMEj40QAAAABJRU5ErkJggg==', 'base64');
+    await repo.images.save({ saveId: state.saveId, createdAt: state.createdAt }, target, 'avatar', png);
+    const copy = await SaveRepository.open('restored-theater-and-images', factory);
+    try {
+      for (const withImages of [true, false]) {
+        const files = await repo.exportBackup([state.saveId], withImages);
+        const text = await serializeBackup(files, 'test');
+        expect(JSON.parse(text).version).toBe(withImages ? 3 : 2);
+        const parsed = await parseBackup(text);
+        expect(parsed.checksum).toBe('valid');
+        const [entry] = parsed.entries;
+        if (!entry.ok) throw new Error(entry.error);
+        const comparison = await copy.compareBackup(entry);
+        await copy.importBackup(entry, comparison.confirmation, { overwrite: !withImages });
+        const [exported] = await copy.exportBackup([state.saveId]);
+        expect(exported.state).toEqual(state);
+        expect(exported.draft).toMatchObject({ entities: draft.entities, variables: draft.variables, world: draft.world });
+        expect(exported.images?.files.map(file => file.data)).toEqual([png.toString('base64')]);
+        expect((await copy.theaters.open(state.saveId, episode.record.id)).record).toEqual(episode.record);
+      }
+      const restored = await copy.loadDraft(state.saveId);
+      const input = submission(restored!);
+      const committed = await copy.commitTurn(input);
+      expect(committed.state.journal.map(entry => entry.turnId)).toEqual([draft.turnId]);
+      expect((await copy.commitTurn(input)).replayed).toBe(true);
+      expect(await copy.load(state.saveId)).toEqual(committed.state);
+    } finally { copy.close(); }
   });
 
   it('删除、写入和导入确认互不覆盖，单条容量超限不改原正文', async () => {

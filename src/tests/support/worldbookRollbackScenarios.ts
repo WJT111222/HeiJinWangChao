@@ -12,7 +12,7 @@
  * 两处都直接打开数据库，不用备份导入代替。
  */
 import { SaveRepository, saveDatabaseVersion } from '../../services/storage/saveRepository';
-import { parseBackup, serializeBackup, backupSummary } from '../../services/storage/backup';
+import { parseBackup, serializeBackup, backupSummary, backupVersion } from '../../services/storage/backup';
 import { digestBytes } from '../../services/storage/history/codec';
 import { worldState } from '../fixtures/world';
 import { completeDraft, elapsedVariables, submission } from '../fixtures/turn';
@@ -196,7 +196,7 @@ export async function runRollbackScenarios(factory: IDBFactory, prefix: string):
       const state = await repo!.load('save-a');
       const latest = JSON.parse(await serializeBackup([{ summary: backupSummary(state), state }], 'new'));
       const v1 = { ...latest, version: 1 };
-      check('备份：未来版本文件', '当前版解析', await outcome(() => parseBackup(JSON.stringify({ ...v1, version: 3, worldbooks: [] }))), /^失败：BACKUP_FUTURE/);
+      check('备份：未来版本文件', '当前版解析', await outcome(() => parseBackup(JSON.stringify({ ...v1, version: backupVersion + 1, worldbooks: [] }))), /^失败：BACKUP_FUTURE/);
       const withField = { ...v1, saves: [{ ...v1.saves[0], state: { ...state, worldbook: WORLDBOOK } }] };
       delete withField.checksum;
       const parsed = await parseBackup(JSON.stringify(withField));
