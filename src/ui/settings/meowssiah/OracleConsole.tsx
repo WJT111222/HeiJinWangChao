@@ -278,7 +278,22 @@ export default function OracleConsole({ close, saveId }: { close(): void; saveId
                 {recent.statistics.actual.outputTokens ?? '未返回'} · 缓存读取{' '}
                 {recent.statistics.actual.cacheReadTokens ?? '未返回'}
               </p>
-              <pre>{JSON.stringify(recent.presetSampling, null, 2)}</pre>
+              <ul aria-label="实际出站采样参数">
+                {recent.presetSampling?.map((item) => (
+                  <li key={item.field}>
+                    {samplingFields.find((field) => field.key === item.field)?.label ?? item.field}
+                    {' · '}预设 {item.desired}
+                    {' · '}
+                    {'sent' in item
+                      ? '已发送 ' + item.sent
+                      : {
+                          known_capability: '模型不支持',
+                          remembered_rejection: '该渠道此前拒绝此参数',
+                          channel_setting: '渠道设置已关闭',
+                        }[item.omission]}
+                  </li>
+                ))}
+              </ul>
             </>
           ) : (
             <p>暂无本档实发请求记录。</p>

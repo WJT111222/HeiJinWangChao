@@ -8,12 +8,16 @@ import { toolReply } from './helpers/literaryTool';
 
 const body = '<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>';
 const direction = '镜头停在褪色的书签上。';
-async function activate(page: Page) {
+async function activate(page: Page, appearance: 'day' | 'night' = 'night') {
   await page.goto('/');
-  await page.evaluate(async () => {
+  await page.evaluate(async (appearance) => {
+    const { settingsKey, defaultSettings } = await import('/src/ui/settings/model.ts' as string);
+    const settings = defaultSettings();
+    settings.display.appearance = appearance;
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
     const { savePresetSettings } = await import('/src/presets/settings.ts' as string);
     savePresetSettings({ enabled: true, selected: 'meowssiah', packages: {} });
-  });
+  }, appearance);
   await page.reload();
 }
 async function control(page: Page) {
@@ -70,7 +74,7 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
       await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
       try {
         const base = 'http://127.0.0.1:' + (server.address() as AddressInfo).port;
-        await activate(page);
+        await activate(page, info.project.name === 'desktop' ? 'day' : 'night');
         const dialog = await control(page);
         await dialog.getByLabel('自定义创作要求').fill(direction);
         await dialog.getByRole('button', { name: '📝纯五感写实', exact: true }).click();
@@ -82,13 +86,14 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
         if (protocol === 'openai' && !stream) {
           await dialog.getByRole('button', { name: '创作菜单', exact: true }).click();
           await dialog.getByRole('heading', { name: '角色控制', exact: true }).scrollIntoViewIfNeeded();
-          await page.evaluate(
-            (mode) => {
-              document.documentElement.dataset.appearance = mode;
-            },
+          await expect(page.locator('html')).toHaveAttribute(
+            'data-appearance',
             info.project.name === 'desktop' ? 'day' : 'night',
           );
-          await info.attach('神域控制台', { contentType: 'image/png', body: await page.screenshot() });
+          await info.attach('神域控制台', {
+            contentType: 'image/png',
+            body: await page.screenshot({ animations: 'disabled' }),
+          });
         }
         const result = await page.evaluate(
           async ({ protocol, stream, base }) => {

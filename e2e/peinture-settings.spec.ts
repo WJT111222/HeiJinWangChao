@@ -1060,4 +1060,13 @@ test('正式设置选择小猫之神并通过隔离工具交付开局候选', as
   expect(await license.text()).toContain('GNU GENERAL PUBLIC LICENSE');
   const source=await page.request.get('/literature/meowssiah/source/SOURCES.json');
   expect((await source.json()).commit).toBe('53bd585da14248ba10baaede7fc7ed0cebe1eeeb');
+  const after = await runtimeSettings(page);
+  await after.getByRole('button',{name:'神域控制台',exact:true}).click();
+  await oracle.getByRole('button',{name:'场外小纸条',exact:true}).click();
+  await expect(oracle.getByLabel('本档下次正文的附加要求')).toBeEnabled();
+  await expect(oracle.getByLabel('本档下次正文的附加要求')).toHaveValue('');
+  await oracle.getByRole('button',{name:'采样与用量',exact:true}).click();
+  await expect(oracle.getByLabel('实际出站采样参数')).toContainText('已发送');
+  await expect(oracle.getByText(/供应商输入/)).toContainText('未返回');
+  expect(wires).toHaveLength(1);
 });
