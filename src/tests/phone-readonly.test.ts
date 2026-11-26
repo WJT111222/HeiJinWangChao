@@ -91,7 +91,7 @@ describe('只读手机', () => {
     try {
       await repo.importBackup({ state }, (await repo.compareBackup({ state })).confirmation);
       const file = await serializeBackup(await repo.exportBackup([state.saveId]), 'test');
-      expect(JSON.parse(file).version).toBe(4);
+      expect(JSON.parse(file).version).toBe(5);
       expect((await parseBackup(file)).entries[0]).toMatchObject({
         ok: true,
         state: JSON.parse(JSON.stringify(state)),

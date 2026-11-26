@@ -1,6 +1,7 @@
-import { commandsForPhase } from './stageCommands';
+import { allowedOffscreenCommand, commandsForPhase } from './stageCommands';
 import { hasVisibleNarrative } from './storyContent';
 import { validateStageSettlement } from './events/stages';
+import { deliverPhone } from './phone';
 import { historicalPerspective } from './timePreflight';
 import { z } from 'zod';
 import { projectTurn, projectTurnCandidates, preparedVariableCommands, variableCommandsForTurn } from './turnProjection';
@@ -105,11 +106,16 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     '回合已有独立命令记录',
   );
   const world = draft.world?.result;
+  if (world) {
+    for (const group of ['worldCommands','taskCommands','eventCommands'] as const)
+      requireData(world[group].every(c => allowedOffscreenCommand(group,c.type,draft.turnKind)), 'STAGE_PERMISSION', '场外命令分组或回合权限无效');
+  }
   const { state:projected, entities } = projectTurnCandidates(current, draft, world ? [...world.worldCommands, ...world.taskCommands, ...world.eventCommands] : []);
   if (world && !historicalPerspective(current, draft)) {
     const beforeWorld = projectTurn(current, draft);
     validateStageSettlement(beforeWorld, projected, draft.turnId, world.deferredEvents?.filter(id => beforeWorld.events[id]?.eventKind === 'sub'));
   }
+  if (!historicalPerspective(current, draft)) deliverPhone(projected, draft.turnId);
   const entitySettlement = entities?.settlement;
   const variableSettlement = draft.variables?.result.settlement;
   const worldSettlement = world?.settlement;

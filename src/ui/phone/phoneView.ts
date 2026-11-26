@@ -14,6 +14,11 @@ export function phoneDate(time: string) {
   return date.month + '月' + date.day + '日';
 }
 
+export function phoneDateTime(at: string) {
+  const { hour, minute } = chinaCalendar(at);
+  return phoneDate(at) + ' ' + String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+}
+
 const dayMs = 86_400_000;
 const gameDay = (time: string) => Math.floor((Date.parse(time) + 8 * 3_600_000) / dayMs);
 export const loanReminderDays = 3;

@@ -19,6 +19,8 @@ import { maintainSceneTransition } from './sceneTransitions';
 import { completeTaskEventLinks } from './events/taskLinks';
 import { OpeningInitialStateSchema, initializeOpeningState } from './openingInitialization';
 
+import { recordPhone, schedulePhone, ScheduledPhoneInput, StoryPhoneInput } from './phone';
+
 const base = { commandId: IdSchema, evidence: TextSchema };
 const positiveMoney = MoneySchema.refine((amount) => amount > 0, '金额必须为正');
 export const SceneDescriptionField = z.enum(['weatherText', 'environmentText']);
@@ -47,6 +49,8 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('UpdateOrganization'), organizationId: IdSchema, expectedRevision: CountSchema, changes: OrganizationChangesSchema, financialBasis: FinancialBasisSchema.optional() }),
   z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema, faction: FactionBindingSchema.optional() }),
   z.strictObject({ ...base, type: z.literal('RecordOrgKnowledge'), organizationId: IdSchema, entry: ProtagonistOrgKnowledgeSchema }),
+  z.strictObject({ ...base, type: z.literal('RecordPhoneMessage'), npcId: IdSchema, ...StoryPhoneInput.shape }),
+  z.strictObject({ ...base, type: z.literal('SchedulePhoneMessage'), ...ScheduledPhoneInput.shape }),
   z.strictObject({ ...base, type: z.literal('RegisterContact'), npcId: IdSchema, reason: TextSchema }),
   // Parse historical drafts/receipts, but never authorize a fresh deletion.
   ...variableCommandSchemas,
@@ -145,6 +149,8 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
         'AMBIGUOUS_NPC', '别名或初始同伴身份重叠，需先确认已有稳定 ID');
       s.npc[c.npc.id] = NpcSchema.parse(c.npc.kind === 'special'
         ? { ...c.npc, memories: [...c.npc.memories, ...(c.npc.longTermMemories ?? [])], longTermMemories: [] } : c.npc); break;
+    case 'RecordPhoneMessage': recordPhone(s, c.npcId, c, turnId, pendingSceneClock); break;
+    case 'SchedulePhoneMessage': schedulePhone(s, c, turnId); break;
     case 'RegisterContact':
       requireData(s.npc[c.npcId], 'NOT_FOUND', '联系人不存在');
       if (!s.contactNpcIds.includes(c.npcId)) s.contactNpcIds.push(c.npcId);
@@ -287,12 +293,13 @@ export function projectEntityChanges(state: GameState, turnId: string, commands:
 export function commitCommands(state: GameState, turnId: string, expectedRevision: number,
   commands: readonly DomainCommand[], now = new Date().toISOString(),
   sceneAuthority: ReadonlyMap<string,SceneIntervention> = new Map(),
-  acknowledgedReceipts: ReadonlySet<string> = new Set()): GameState {
+  acknowledgedReceipts: ReadonlySet<string> = new Set(),
+  worldCommands: readonly DomainCommand[] = []): GameState {
   const current = GameStateSchema.parse(state);
   requireData(!current.openingTimePending, 'OPENING_TIME', '开局时间待确认，不能将内部占位时钟用于命令执行');
   IdSchema.parse(turnId);
   CountSchema.parse(expectedRevision);
-  const parsed = z.array(DomainCommandSchema).parse(commands);
+  const parsed = z.array(DomainCommandSchema).parse([...commands, ...worldCommands]);
   requireData(new Set(parsed.map((c) => c.commandId)).size === parsed.length, 'DUPLICATE_COMMAND', '同批命令 ID 重复');
   const fresh = parsed.filter((command) => {
     const prior = current.appliedCommands.find((c) => c.turnId === turnId && c.commandId === command.commandId);
@@ -309,8 +316,8 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   // Variables 的家庭变更先落地，World 的场外推进在其结果上执行。
   const household = fresh.filter(c => c.type === 'ApplyHaremChanges'), background = fresh.filter(c => c.type === 'ApplyHaremBackground');
   requireData(household.length <= 1 && background.length <= 1, 'HAREM_BATCH', '同一批次每个阶段只能提交一组家庭变更');
-  const ordered = [...fresh.filter(c => !cleanup(c) && c.type !== 'ApplyHaremChanges' && c.type !== 'ApplyHaremBackground'), ...household, ...background, ...fresh.filter(cleanup)];
-  for (const command of ordered) {
+  const ordinary = new Set<DomainCommand>(fresh.filter(c => !cleanup(c) && c.type !== 'ApplyHaremChanges' && c.type !== 'ApplyHaremBackground'));
+  function execute(command: DomainCommand) {
     try { apply(current, command, turnId, acknowledgedReceipts); }
     catch (error) {
       if (error instanceof DataError) throw new CommandDataError(error, parsed.indexOf(command), command.type);
@@ -318,6 +325,13 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
     }
     current.appliedCommands.push({ turnId, commandId: command.commandId, fingerprint: fingerprint(command) });
   }
+  const scene = parsed.slice(0, commands.length).filter(c => ordinary.has(c));
+  scene.forEach(execute);
+  const world = parsed.slice(commands.length).filter(c => ordinary.has(c));
+  // 排期须看到场外提示词使用的现场状态。仍在本次私有投影内，后续命令照原顺序校验和记账。
+  if (world.some(c => c.type === 'SchedulePhoneMessage')) maintainSceneTransition(state, current, scene);
+  world.forEach(execute);
+  [...household, ...background, ...fresh.filter(cleanup)].forEach(execute);
   linkMortgages(current, fresh);
   validateTaskTransitions(state, current, fresh.flatMap((c) => c.type === 'SaveTask' ? [c.task] : []));
   completeTaskEventLinks(state, current);

@@ -1862,6 +1862,11 @@
         "baseCommit": "3be381f64808b16d46ed54c6cf1fb0065555c0ed",
         "notes": "按手机定稿区分新建旧识与新认识的陌生人。",
         "sha256": "4aca44119c6bfb10cd055e9016721e34456db7164e5bee2ac6a5f3f6d1c815eb"
+      },
+      "phoneStoryInbox": {
+        "baseCommit": "75e8abc2dee53078d126886058acbc2a0dce70de",
+        "notes": "人物与实体记录正文手机消息与通话，正文提及标记可独立写入。",
+        "sha256": "53d60c085739ce86301893f497fd21731972d165e2075f361edc47000e2ffb6a"
       }
     },
     "shared/history_output.md": {

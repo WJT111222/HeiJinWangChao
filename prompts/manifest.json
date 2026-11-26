@@ -1846,7 +1846,7 @@
       "modes": [],
       "toggle": null,
       "domain": null,
-      "characters": 15264,
+      "characters": 15403,
       "version": "1.2.0-variable-source-port",
       "messageRole": null,
       "activation": "never",
@@ -1856,7 +1856,7 @@
       "orderGroup": "reference",
       "reorderable": false,
       "category": "documentation",
-      "contentSha256": "e702c6389b779c25e826abd30dc904b2aa3a1e8aae0fd6e82ee276f2325e7132",
+      "contentSha256": "447d28a902ed0b343a44b97f6b78419dffe5728a77fc81b8d25e7f748d17383e",
       "placeholders": [
         "immediateMemoryTurns",
         "maxNarrativeChars",
@@ -2647,7 +2647,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 4115,
+      "characters": 4360,
       "version": "0.8.0-m8-p0a",
       "messageRole": "system",
       "activation": "always",
@@ -2657,7 +2657,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "4aca44119c6bfb10cd055e9016721e34456db7164e5bee2ac6a5f3f6d1c815eb",
+      "contentSha256": "53d60c085739ce86301893f497fd21731972d165e2075f361edc47000e2ffb6a",
       "placeholders": []
     },
     {

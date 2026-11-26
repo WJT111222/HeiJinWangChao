@@ -310,3 +310,18 @@
   min-height: 44px;
   min-width: 44px;
 }
+.ph-chat-row { display:flex; align-items:center; gap:10px; width:100%; padding:12px 4px; border:0; border-bottom:1px solid var(--line); background:transparent; color:var(--text); text-align:left }
+.ph-chat-body,.ph-note > span:last-child { min-width:0; flex:1 }
+.ph-preview { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted) }
+.ph-chat-row time,.ph-chat-row small,.ph-thread small,.ph-appbar small { color:var(--muted); font-size:12px }
+.ph-chat-row.ph-invalid { opacity:.7 }
+.ph-dot { display:block; margin:4px 0 0 auto; width:8px; height:8px; border-radius:50%; background:var(--warning,#ad492d) }
+.ph-thread { display:flex; flex-direction:column; gap:12px; padding:10px 4px }
+.ph-message { max-width:84%; align-self:flex-start }
+.ph-message p { margin:0 0 2px; padding:8px 12px; border:1px solid var(--line); border-radius:12px 12px 12px 2px; background:var(--os-card); white-space:pre-wrap; overflow-wrap:anywhere }
+.ph-message small { display:block }
+.ph-message.ph-out { align-self:flex-end; text-align:right }
+.ph-out p { text-align:start; border-radius:12px 12px 2px 12px; background:color-mix(in srgb,var(--gold) 30%,var(--os-card)) }
+.game-phone .ph-peer { flex:1; text-align:start; border:0; background:transparent; color:inherit }
+
+.ph-note time { margin-inline-start:6px; font-size:11px; color:var(--muted); white-space:nowrap }

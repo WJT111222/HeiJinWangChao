@@ -1,3 +1,4 @@
+import { PhoneSchema, emptyPhone, validPhone } from './phone';
 import { HaremSchema } from './harem/schema';
 import { householdIssue } from './harem/validation';
 import { JournalSettlementSchema } from './updateSettlement';
@@ -37,9 +38,7 @@ export const StorySchema = z.strictObject({
 });
 export const SaveShape = {
   schemaVersion: z.literal(11),
-  phone: z.strictObject({
-    threads: z.record(IdSchema, z.never()), scheduled: z.array(z.never()), topics: z.array(z.never()),
-  }), saveId: IdSchema, title: TextSchema,
+  phone: PhoneSchema, saveId: IdSchema, title: TextSchema,
   openingCityId: IdSchema.nullable().optional(),
   /** 自定义开局城市的名称、地区与可选介绍快照；官方城市不写。 */
   openingCityProfile: OpeningCityProfileSchema.optional(),
@@ -71,6 +70,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   function check(ok: unknown, message: string, path: (string | number)[] = [], integrityRule = 'domain_state') {
     if (!ok) ctx.addIssue({ code: 'custom', message, path, params: { integrityRule } });
   }
+  check(validPhone(s), '手机会话人物引用或消息 ID 无效', ['phone']);
   if (s.harem) {
     const issue = householdIssue(s.harem,s.npc,s.worldClock);
     if (issue) check(false,issue,['harem'],'harem_integrity');
@@ -316,7 +316,7 @@ export function createGameState(input: {
   companion?: z.infer<typeof SpecialNpcSchema>;
 }, now = new Date().toISOString()): GameState {
   return GameStateSchema.parse({
-    schemaVersion: 11, phone: { threads: {}, scheduled: [], topics: [] }, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
+    schemaVersion: 11, phone: emptyPhone(), saveId: input.saveId, title: input.title, worldClock: input.worldClock,
     openingCityId: input.openingCityId ?? null,
     ...(input.openingCityProfile ? { openingCityProfile: input.openingCityProfile } : {}),
     createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,

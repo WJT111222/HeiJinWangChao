@@ -12,26 +12,34 @@ export const worldTypes = offscreenGroups.worldCommands;
 type CatalogStage = 'variables' | 'world';
 const CATALOG_REF_RULE = 'schema.definitions 是只写一次的公共结构；字段写作 {"$ref":"#/definitions/名称"} 时，表示它的格式与该同名定义完全相同，按展开后的结构填写，输出中不要写 $ref。';
 const compactCatalogs = new Map<string, ReturnType<typeof compactCatalog>>();
-function compactCatalog(stage: CatalogStage, historical: boolean) {
+function compactCatalog(stage: CatalogStage, historical: boolean, allowLetters: boolean) {
   const inline = inlineCommandCatalog(stage, historical);
   // Greedy factoring runs in catalog:refresh, never on the player's main thread.
   // Formal equivalence tests reject stale generated schemas after domain changes.
   type Schema = ReturnType<typeof factorRepeatedSchemas<(typeof inline.schema.oneOf)[number]>>;
   const schema = structuredClone(generatedSchemas[stage === 'world' && !historical ? 'regularWorld' : stage]) as unknown as Schema;
+  if (!allowLetters && stage === 'world') {
+    const index = inline.commandTypes.indexOf('SchedulePhoneMessage');
+    inline.commandTypes.splice(index, 1);
+    schema.oneOf.splice(index, 1);
+    const available = worldTypes.filter(type => type !== 'SchedulePhoneMessage' && (historical || type !== 'RecordHistory'));
+    if (typeof inline.stagePermissions === 'object') inline.stagePermissions.worldCommands = available;
+    if (inline.outputFields) inline.outputFields.worldCommands.commandTypes = available;
+  }
   return { ...inline, schema, rules: [...inline.rules, CATALOG_REF_RULE] };
 }
 /** 发给模型的命令目录：重复结构只写一次（见 catalogCompaction）。程序校验不读取本目录。 */
-export function commandCatalog(stage: CatalogStage, historical = true) {
-  const key = stage + historical;
+export function commandCatalog(stage: CatalogStage, historical = true, allowLetters = true) {
+  const key = stage + historical + allowLetters;
   let catalog = compactCatalogs.get(key);
-  if (!catalog) { catalog = compactCatalog(stage, historical); compactCatalogs.set(key, catalog); }
+  if (!catalog) { catalog = compactCatalog(stage, historical, allowLetters); compactCatalogs.set(key, catalog); }
   return structuredClone(catalog);
 }
 /** 未合并重复结构的原始内联目录，仅供测试核对合并前后逐字段等价。 */
 export function inlineCommandCatalog(stage: CatalogStage, historical = true) {
   // The legacy JSON Variables catalog predates the household text operation.
   const types = new Set<string>(stage === 'world' ? stageCommands.offscreen :
-    [...stageCommands.entities, ...stageCommands.scene].filter(type => type !== 'ApplyHaremChanges'));
+    [...stageCommands.entities, ...stageCommands.scene].filter(type => type !== 'ApplyHaremChanges' && type !== 'RecordPhoneMessage'));
   if (!historical) types.delete('RecordHistory');
   const worldCommands = worldTypes.filter(type => historical || type !== 'RecordHistory');
   const options = DomainCommandSchema.options.filter(option => types.has(option.shape.type.value));
@@ -42,7 +50,7 @@ export function inlineCommandCatalog(stage: CatalogStage, historical = true) {
       $schema: 'http://json-schema.org/draft-07/schema#',
       oneOf: options.map((option) => {
         const modelOption = stage === 'world' && option.shape.type.value === 'UpdateNpc'
-          ? variableCommandSchemas[1].safeExtend({changes:variableCommandSchemas[1].shape.changes.omit({name:true,aliases:true,identity:true,addressing:true,phoneContact:true,usualLocations:true,detailedBackground:true,habits:true,relationshipNetwork:true})})
+          ? variableCommandSchemas[1].safeExtend({changes:variableCommandSchemas[1].shape.changes.omit({name:true,aliases:true,identity:true,addressing:true,phoneContact:true,appearedInStory:true,usualLocations:true,detailedBackground:true,habits:true,relationshipNetwork:true})})
           : option.shape.type.value === 'CreateNpc'
           ? option.extend({ npc: z.discriminatedUnion('kind', [OrdinaryNpcCreationSchema, SpecialNpcCreationSchema.omit({longTermMemories:true})]) })
           : option.shape.type.value==='SaveEvent' ? option.extend({event:z.union([WorldEventSchema,StoredWorldEventSchema.extend({status:z.enum(['resolved','cancelled'])})])}) : option;
