@@ -23,9 +23,9 @@ function input(mode:'opening'|'regular'='regular') {
 }
 const textModules=promptManifest.modules.filter(m=>m.applicableStages.join()==='variables');
 describe('文本协议真实资源与离线组装',()=>{
-  it('普通回合目录91条路径类型齐备，含一条开局专用初始化，现场任务事件复用旧命令',()=>{
+  it('普通回合目录93条路径类型齐备，含一条开局专用初始化，现场任务事件复用旧命令',()=>{
     const catalog=textVariableCatalog();
-    expect(catalog.entries).toHaveLength(91);
+    expect(catalog.entries).toHaveLength(93);
     for (const path of ['weatherText', 'environmentText']) {
       expect(catalog.entries.find(e => e.path === path)).toMatchObject({
         operation: 'set', commandType: 'SetSceneDescription', valueSchema: {type: 'string'},
@@ -33,10 +33,10 @@ describe('文本协议真实资源与离线组装',()=>{
       expect(textVariableCatalog('opening').entries.some(e => e.path === path)).toBe(false);
     }
     expect(catalog.entries).toContainEqual(expect.objectContaining({operation:'set',path:'organizations[id].state',commandType:'UpdateOrganization'}));
-    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(91);
+    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(93);
     for (const field of ['name', 'aliases', 'identity', 'addressing'])
       expect(catalog.entries).toContainEqual(expect.objectContaining({ operation: 'set', path: `npc[id].${field}`, commandType: 'UpdateNpc' }));
-    expect(new Set(catalog.entries.map(e=>e.commandType)).size).toBe(30);
+    expect(new Set(catalog.entries.map(e=>e.commandType)).size).toBe(31);
     expect(catalog.entries.some(entry => entry.commandType === 'RegisterContact')).toBe(false);
     expect(catalog.entries.some(entry => entry.path === 'npc[id].phoneContact')).toBe(true);
     for(const e of catalog.entries)expect(e.valueSchema).toHaveProperty('$schema');

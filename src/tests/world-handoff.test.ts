@@ -244,7 +244,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
     const d = await completeDraft(repo, { narrative: fact, variables: { ...await elapsedVariables(repo, fact, 60), commands: [...(await elapsedVariables(repo, fact, 60)).commands,
       { type: 'RegisterContact', commandId: 'contact', npcId: 'scene', reason: '交换联络方式', evidence: fact }] } });
     const result = await repo.commitTurn(submission(d)); expect(result.state.contactNpcIds).toContain('scene');
-    expect((await repo.load('save-a')).npc.scene).toEqual(before.npc.scene);
+    expect((await repo.load('save-a')).npc.scene).toEqual({...before.npc.scene,appearedInStory:true});
     const world = worldResult([{ type: 'RegisterContact', commandId: 'forged-contact', npcId: 'npc-a', reason: '任意', evidence: proof() }]);
     expect(() => parse(before, world)).toThrow();
   });

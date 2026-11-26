@@ -1,3 +1,4 @@
+import { phoneContext } from './phoneContext';
 import { checkEntityCommands, EntityDependencyError } from '../domain/entityCandidate';
 import { historyCatalogReason } from './historyCatalog';
 import { storyEventIndex } from '../domain/events/narration';
@@ -107,6 +108,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
     const preflight = input.mode === 'regular' ? timePreflight(state, input.userInput) : undefined;
     return {
       ...sharedContext(state, settings.memory.immediateWindowSize, input.userInput, input.mode === 'regular'),
+      ...phoneContext(state, 'story', input.userInput),
       CREATION_PROFILE:
         input.mode === 'opening'
           ? {
@@ -159,6 +161,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       TURN_TIME_POLICY: turnTimePolicy,
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
       PLAYER_ACTION: draft!.userInput,
+      ...(stage === 'entities' ? phoneContext(state, 'entities', draft!.userInput + '\n' + draft!.story!.narrative) : {}),
       SELECTED_VARIABLE_DOMAINS: input.domains ?? [],
       ...sharedContext(selected ? { ...entities, worldClock: selected.endAt } : entities,
         settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
@@ -202,6 +205,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
+      ...(draft!.turnKind === 'regular' && !historicalPerspective(state,draft!) ? phoneContext(temporary, 'world', draft!.story!.narrative) : {}),
       BASE_SAVE_REVISION: state.revision,
       worldClock: temporary.worldClock,
       TIME_WINDOW: { from: state.worldClock, to: temporary.worldClock },
@@ -250,7 +254,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         retiredEvents: Object.fromEntries(Object.entries(temporary.retiredEvents).filter(([,record])=>record.detail)),
         locations: temporary.locations,
       },
-      COMMAND_CATALOG: commandCatalog('world', Boolean(historyCatalogReason(state, draft!))),
+      COMMAND_CATALOG: commandCatalog('world', Boolean(historyCatalogReason(state, draft!)), draft!.turnKind === 'regular' && !historicalPerspective(state,draft!)),
     };
   }
   if (input.memoryTask === 'memory.npc_summarize') {

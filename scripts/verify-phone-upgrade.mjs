@@ -1,4 +1,4 @@
-// Run against two installed checkouts on the same browser origin to exercise the real V8 writer.
+// Run two installed checkouts on one browser origin to exercise the real upgrade and recovery paths.
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { resolve, join } from 'node:path';
@@ -7,16 +7,18 @@ import { URL, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 const [baseArg, candidateArg] = process.argv.slice(2);
 if (!baseArg || !candidateArg)
-  throw new Error('Usage: node scripts/verify-phone-upgrade.mjs PR248_MERGE_CHECKOUT PHONE_CHECKOUT');
+  throw new Error('Usage: node scripts/verify-phone-upgrade.mjs ACCEPTED_V8_OR_V9_CHECKOUT PHONE_CHECKOUT');
 const base = resolve(baseArg),
   candidate = resolve(candidateArg);
 const sha = (dir) => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' }).trim();
-assert.equal(
-  sha(base),
-  '3be381f64808b16d46ed54c6cf1fb0065555c0ed',
-  'Use the accepted #248 merge as the V8 writer',
-);
-assert.notEqual(base, candidate, 'Use separate V8 and V9 checkouts');
+const oldWriter = {
+  '3be381f64808b16d46ed54c6cf1fb0065555c0ed': { version: 8, hasWorldview: false },
+  '75e8abc2dee53078d126886058acbc2a0dce70de': { version: 9, hasWorldview: false },
+  '066ddcf6259c0c50ba3ba2771d7f038b4f03282f': { version: 9, hasWorldview: true },
+}[sha(base)];
+assert.ok(oldWriter, 'Use the accepted #248, #254 or integrated worldbook release as the old writer');
+const oldDb = oldWriter.version;
+assert.notEqual(base, candidate, 'Use separate old and new checkouts');
 
 const { chromium } = await import(pathToFileURL(join(candidate, 'node_modules/playwright/index.mjs')));
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
@@ -154,21 +156,21 @@ try {
         }
       }, dbName);
       if (!previous) {
-        assert.equal(data.version, 8);
+        assert.equal(data.version, oldDb);
         previous = data;
       } else {
         const { version: newVersion, backup: newPackage, ...after } = data,
           { version: oldVersion, backup: oldPackage, ...before } = previous;
-        assert.deepEqual([oldVersion, newVersion], [8, 9]);
+        assert.deepEqual([oldVersion, newVersion], [oldDb, 10]);
         for (const state of [before.game.state, before.manualState]) {
-          assert.equal(state.schemaVersion, 10);
+          assert.equal(state.schemaVersion, oldDb === 8 ? 10 : 11);
           state.schemaVersion = 11;
-          state.phone = { threads: {}, scheduled: [], topics: [] };
+          state.phone = { version:1, threads: {}, scheduled: [], topics: [] };
           for (const person of Object.values(state.npc)) person.appearedInStory = true;
         }
         assert.deepEqual(after, before);
-        assert.equal(oldPackage.version, 3);
-        assert.equal(newPackage.version, 4);
+        assert.equal(oldPackage.version, oldDb === 8 ? 3 : 4);
+        assert.equal(newPackage.version, 5);
         assert.equal(after.images.pictures.length, 1);
         for (const file of [oldPackage, newPackage]) {
           const restored = await page.evaluate(
@@ -197,13 +199,31 @@ try {
         assert.equal(after.theaters[0].body, '保留已经写完的小剧场正文。');
 
         for (const field of ['entities', 'variables', 'world']) assert.ok(after.game.draft[field]);
-        const committed = await page.evaluate(async (dbName) => {
+        const committed = await page.evaluate(async ({ dbName, hasWorldview }) => {
           const { SaveRepository } = await import('/src/services/storage/saveRepository.ts');
-          const { submission } = await import('/src/tests/fixtures/turn.ts');
+          const { submission, completeDraft, elapsedVariables } = await import('/src/tests/fixtures/turn.ts');
           const repo = await SaveRepository.open(dbName);
           try {
-            const draft = await repo.loadDraft('save-a'),
-              input = submission(draft);
+            const original = await repo.loadGame('save-a');
+            let draft = original.draft;
+            if (!hasWorldview) {
+              // Pre-worldbook writers cannot attest which worldview generated their candidates.
+              let fieldPath;
+              try {
+                await repo.commitTurn(submission(draft));
+              } catch (error) {
+                fieldPath = error.details?.fieldPath;
+              }
+              if (fieldPath !== 'worldbook.unbound') throw Error('Expected the legacy worldview guard');
+              if (JSON.stringify(await repo.loadGame('save-a')) !== JSON.stringify(original))
+                throw Error('Rejected legacy settlement modified the save or its candidates');
+              draft = await completeDraft(repo, {
+                narrative: '【旁白】重新确认当前世界观后，一分钟过去了。',
+                variables: await elapsedVariables(repo, '停留一分钟', 60),
+              });
+              if (draft.storyRevision <= original.draft.storyRevision) throw Error('Story revision did not advance');
+            }
+            const input = submission(draft);
             const first = await repo.commitTurn(input),
               replay = await repo.commitTurn(input);
             const journal = (await repo.load('save-a')).journal.length;
@@ -225,6 +245,7 @@ try {
             const preview = await repo.history.preview('save-a', { kind: 'manual', id: manual.id });
             const restored = await repo.history.restore(preview.confirmation, '回到江边', true, true);
             return {
+              legacyRecovery: hasWorldview ? 'resumed' : 'unbound-then-regenerated',
               turn: first.state.turnNumber,
               replayed: replay.replayed,
               journal,
@@ -235,8 +256,9 @@ try {
           } finally {
             repo.close();
           }
-        }, dbName);
+        }, { dbName, hasWorldview: oldWriter.hasWorldview });
         assert.deepEqual(committed, {
+          legacyRecovery: oldWriter.hasWorldview ? 'resumed' : 'unbound-then-regenerated',
           turn: 3,
           replayed: true,
           journal: 3,
@@ -249,9 +271,9 @@ try {
             device,
             base: sha(base),
             candidate: sha(candidate),
-            from: 8,
-            to: 9,
-            backup: [3, 4],
+            from: oldDb,
+            to: 10,
+            backup: [oldPackage.version, 5],
             images: 1,
             storedTurns: 2,
             historyNodes: after.nodes.length,

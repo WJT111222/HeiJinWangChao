@@ -35,6 +35,15 @@ export async function comparisonFixture(load, scenario = 'ordinary') {
       ...priorEvent, status: 'resolved', resolvedAt: projectedTime, resolutionText: '会谈完成', sourceTurnIds: ['history-1', 'compare-turn'],
     } });
   }
+  if (scenario === 'phone-inbox') {
+    const { recordPhone, schedulePhone } = await load('domain/phone');
+    for (const person of Object.values(state.npc)) {
+      person.appearedInStory = true;
+      for (let i = 0; i < 12; i++) recordPhone(state, person.id, {messageId:person.id+'-past-'+i,
+        sender:'npc', medium:'text', text:'资料放在楼下，请留意签收。'}, 'history-1', false);
+      if (!person.onScene) schedulePhone(state,{messageId:person.id+'-due',npcId:person.id,dueAt:projectedTime,text:'前台已经收到了。'},'history-1');
+    }
+  }
   const draft = rerollStory(createTurnDraft(state.saveId, state.revision, 'compare-turn', mode, userInput), {
     turnKind: mode, narrative, summary: narrative, variableGuide,
   });

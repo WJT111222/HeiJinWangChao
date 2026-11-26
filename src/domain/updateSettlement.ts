@@ -4,7 +4,7 @@ import { CountSchema, IdSchema } from './common';
 export const SettlementFieldSchema = z.enum([
   'ownerRef', 'parentId', 'createdAtGameTime', 'locationId', 'actorRef', 'actorRefs', 'linkedEventId', 'linkedTaskIds', 'predecessorEventIds',
   'protagonistEntry', 'entryIntent', 'status', 'resolvedAt', 'fixedEndAt', 'estimatedEndAt', 'lastInteractionAt', 'worldClock', 'commandId',
-  'expectedRevision', 'amount', 'price', 'healthText', 'quantity', 'name', 'type',
+  'at', 'expectedRevision', 'amount', 'price', 'healthText', 'quantity', 'name', 'type',
 ]);
 export const SkippedUpdateSchema = z.strictObject({
   commandIndex: CountSchema,

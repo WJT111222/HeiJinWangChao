@@ -14,7 +14,7 @@ import { migrateSave } from './migrations';
  * 含游戏进度、未结算草稿和独立小剧场；不含 AI 密钥、渠道配置、全局设置、提示词排序、撤回快照与提交回执。
  */
 export const backupFormat = 'heijin-backup';
-export const backupVersion = 4;
+export const backupVersion = 5;
 
 export interface BackupEntry {
   summary: { title: string; turnNumber: number; revision: number; schemaVersion: number; updatedAt: string };
@@ -28,7 +28,7 @@ export interface BackupEntry {
 }
 export interface BackupFile {
   format: typeof backupFormat;
-  version: 1 | 2 | 3 | typeof backupVersion;
+  version: 1 | 2 | 3 | 4 | typeof backupVersion;
   app: string;
   exportedAt: string;
   saves: BackupEntry[];
@@ -159,7 +159,7 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
   if (format.success && format.data.format === backupFormat && format.data.version > backupVersion)
     throw new DataError('BACKUP_FUTURE', '这份备份来自更新的游戏版本，请先更新游戏再导入；本机存档没有任何改动。');
   const envelope = EnvelopeSchema.safeParse(raw);
-  if (!envelope.success || ![1, 2, 3, backupVersion].includes(envelope.data.version))
+  if (!envelope.success || ![1, 2, 3, 4, backupVersion].includes(envelope.data.version))
     throw new DataError('BACKUP_INVALID', '这不是黑金王朝的备份文件。请选择导出时得到的 .heijin.json 文件。');
   const { saves, checksum } = envelope.data;
   let checksumStatus: BackupChecksumStatus = 'unverified';

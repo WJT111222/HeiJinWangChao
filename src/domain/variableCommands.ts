@@ -40,7 +40,7 @@ const npcChanges = OrdinaryNpcSchema.pick({
   lastInteractionAt: true,
   gender: true,
   addressing: true,
-  phoneContact: true, usualLocations: true,
+  appearedInStory: true, phoneContact: true, usualLocations: true,
 })
   .partial()
   .extend({
