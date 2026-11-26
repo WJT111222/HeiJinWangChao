@@ -1,7 +1,7 @@
 import type { SceneIntervention } from './events/narration';
 import { validateStageWrite } from './events/stages';
 import { z } from 'zod';
-import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, VehicleAssetSchema } from './economy/schema';
+import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, OtherAssetSchema, PropertyAssetSchema, VehicleAssetSchema } from './economy/schema';
 import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
 import { EquipmentSchema } from './protagonist/schema';
 import { OwnedItemInputSchema } from './items/schema';
@@ -24,6 +24,10 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('InitializeOpeningState'), changes: OpeningInitialStateSchema }),
   z.strictObject({ ...base, type: z.literal('PurchaseItem'), account: AccountSchema, price: positiveMoney, item: OwnedItemInputSchema }),
   z.strictObject({ ...base, type: z.literal('PurchaseVehicle'), account: AccountSchema, price: positiveMoney, vehicle: VehicleAssetSchema }),
+  z.strictObject({ ...base, type: z.literal('PurchaseProperty'), account: AccountSchema, price: positiveMoney, property: PropertyAssetSchema }),
+  z.strictObject({ ...base, type: z.literal('PurchaseOtherAsset'), account: AccountSchema, price: positiveMoney, asset: OtherAssetSchema }),
+  // 原本持有、继承、受赠等不经本回合付款的资产登记；不改变余额。
+  z.strictObject({ ...base, type: z.literal('AcquireAsset'), asset: z.discriminatedUnion('kind', [PropertyAssetSchema, VehicleAssetSchema, OtherAssetSchema]) }),
   z.strictObject({ ...base, type: z.literal('TransferFunds'), from: AccountSchema, to: AccountSchema, amount: positiveMoney }),
   z.strictObject({ ...base, type: z.literal('ReceiveIncome'), income: IncomeRecordSchema.extend({ amount: positiveMoney, status: z.literal('received'), receivedAt: GameTimeSchema }) }),
   z.strictObject({ ...base, type: z.literal('Borrow'), account: AccountSchema, debt: DebtRecordSchema.extend({ principal: positiveMoney, outstanding: positiveMoney, status: z.literal('active') }) }),
@@ -81,6 +85,18 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
     case 'PurchaseVehicle':
       newEntity(s, c.vehicle.id); ownedByProtagonist(s, c.vehicle.ownerRef);
       balance(s, c.account, -c.price); s.economy.vehicles[c.vehicle.id] = c.vehicle; break;
+    case 'PurchaseProperty':
+      newEntity(s, c.property.id); ownedByProtagonist(s, c.property.ownerRef);
+      balance(s, c.account, -c.price); s.economy.properties[c.property.id] = c.property; break;
+    case 'PurchaseOtherAsset':
+      newEntity(s, c.asset.id); ownedByProtagonist(s, c.asset.ownerRef);
+      balance(s, c.account, -c.price); s.economy.otherAssets[c.asset.id] = c.asset; break;
+    case 'AcquireAsset':
+      newEntity(s, c.asset.id); ownedByProtagonist(s, c.asset.ownerRef);
+      if (c.asset.kind === 'property') s.economy.properties[c.asset.id] = c.asset;
+      else if (c.asset.kind === 'vehicle') s.economy.vehicles[c.asset.id] = c.asset;
+      else s.economy.otherAssets[c.asset.id] = c.asset;
+      break;
     case 'TransferFunds':
       requireData(c.from !== c.to, 'SAME_ACCOUNT', '内部转账需要两个不同账户');
       balance(s, c.from, -c.amount); balance(s, c.to, c.amount); break;

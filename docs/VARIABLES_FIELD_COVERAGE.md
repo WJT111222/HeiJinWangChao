@@ -31,7 +31,7 @@
 | `items` | AcquireItem、PurchaseItem、UpdateItem、TransferItem、LoseItem。数量、状态、地点、描述、估值、分类、任务标记及明细有相应操作；归属按移交处理，购买联动扣款 | World 不能更改主角物品；id、来源回合没有普通覆盖命令；失去或耗尽会维护装备 | 已有物品可改 name、description、conditionText、itemDetails、questItem、locationId；数量、估值、归属等只读 |
 | `economy.cash / onlineBalance` | 开局补未定值；普通回合消费、内部转账、收入、借还、购买走专用交易命令 | 余额与交易一起提交；World 的组织金额不能当作主角资金 | 只读 |
 | `economy.incomes / debts` | 开局 expectedIncomes，日常 ReceiveIncome 新建已到账记录；Borrow 新建借款，RepayDebt 减少未偿本金并可结清。没有任意修改旧账的命令 | 到账、扣款与状态联动；旧账 ID 和原始记录保留 | 只读 |
-| `economy.vehicles / properties / otherAssets` | PurchaseVehicle 可购买并登记整辆车；没有旧资产无交易登记、购置房产、其他资产登记或任意重估入口 | 资产估值、产权、位置、抵押／归属引用不是可直接调整的余额；World 不管理个人资产 | 只读 |
+| `economy.vehicles / properties / otherAssets` | PurchaseVehicle／PurchaseProperty／PurchaseOtherAsset 扣款并登记车辆、房产、其他资产；AcquireAsset 登记原本持有或无偿得到的资产（不改余额）；没有出售或任意重估入口 | 资产估值、产权、位置、抵押／归属引用不是可直接调整的余额；World 不管理个人资产 | 只读 |
 | `organizations` | CreateOrganization、UpdateOrganization、RecordOrgRelation。共有 name、description、keyNpcIds、currentTaskIds、leadership、relations，四类组织各有自己的产业、职能、地域及运营字段；资金、资产或流动性估计要求财务依据；关系操作联动 relationHistory | World 可在其权限内建档和更新。Variables 的同轮同字段优先，保留 World 的独立合法更新。id、kind 与旧关系历史不允许任意改写 | 仅已有组织的 name、description 及适用的 internalStatus、missionText、operatingStatus |
 | `tasks` | SaveTask 处理现场任务，字段包括承办人、目标、起止安排、状态、地点、关联事件、前置／阻碍、结果和交接；既有目标、起点与终态受限 | 场外任务归 World，稳定引用和事件反向关联由领域维护 | 只读 |
 | `events` | 仅已有现场事件的 sceneState → SaveEvent，有限更新 status、resolvedAt、resolutionText、outcome、resultKnowledge。不能借此建新事件或改写整个计划 | World 负责新建、后台进展、时限、父子／承接及终结。protagonistEntry 和 protagonistKnowledge 受回执、已知快照与领域权限约束 | 只读 |

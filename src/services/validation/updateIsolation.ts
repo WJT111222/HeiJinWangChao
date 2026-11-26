@@ -28,7 +28,8 @@ const referenceFields = new Set([
   'accessoryItemIds', 'currentVehicleAssetId',
 ]);
 const referenceObjects = new Set([
-  'location', 'npc', 'organization', 'event', 'task', 'item', 'entry', 'vehicle', 'debt', 'memory', 'actorRef',
+  'location', 'npc', 'organization', 'event', 'task', 'item', 'entry', 'vehicle', 'property', 'asset', 'debt', 'memory', 'actorRef',
+  'properties', 'vehicles', 'otherAssets',
   'actorRefs', 'ownerRef', 'affectedEntityRefs', 'expectedOwner', 'from', 'to', 'transfer', 'loss', 'changes',
   'purchase', 'profile', 'specialProfile', 'usualLocations', 'relationshipNetwork', 'relations', 'leadership',
   'handoff', 'continuation', 'protagonistEntry', 'currentWear', 'equipment', 'state',

@@ -694,6 +694,10 @@
         "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
         "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
         "sha256": "73e9f2d96a04f1fd75d82a88b2fe7d4e15e5959072f2e806baaa3f19271a2fd5"
+      },
+      "propertyAssetsV1": {
+        "notes": "资产登记补齐：车辆、房产、其他资产的购买路径，以及原本持有或无偿得到的资产直接登记路径；车辆房产仍不进重要物品表。",
+        "sha256": "eca6dcc7714f07aa3cf5eb10a53c96f9fe2fac7cd3b9d771605ad7dcd35a0e2b"
       }
     },
     "shared/08_world_output.md": {
@@ -868,6 +872,10 @@
         "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
         "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
         "sha256": "0880d1cd44027f54eafd72b4cc6ddbe1f7568b26c27d12389fc3859fb28a2ef6"
+      },
+      "propertyAssetsV1": {
+        "notes": "资产登记补齐：开局原本持有的房产、车辆和其他资产可直接登记，不虚构购买；移除已补齐能力的缺口说明，保留历史债务缺口。",
+        "sha256": "3f536035331ca924210bec7ae807dff5941670d1648f09265773251892041b29"
       }
     },
     "stages/opening/world.md": {
@@ -1073,6 +1081,10 @@
       "openingLifeInitialization": {
         "notes": "六代目任务明确批准：开局完整人生叙事与一次性生活初始化；保留此前来源和适配哈希，普通回合与输出协议不变。",
         "sha256": "0088b33ac7ce1092a976766b82284f44b7cc06ef4e50eaa6baec2d6e968fc6b0"
+      },
+      "propertyAssetsV1": {
+        "notes": "资产登记补齐：开局购房、购入其他资产及原本持有资产的登记写法；移除已补齐能力的缺口说明，保留历史债务缺口与不得无依据塞入资产的要求。",
+        "sha256": "5c2f3735f2920aa8c5fc51b551fa8a775fc1a24f0bdba2e4801f8892787f87bc"
       }
     },
     "variableGroups/economy/update.md": {
@@ -1089,6 +1101,10 @@
         "reference": "variableProtocolReference",
         "sha256": "85a2955185568b82940f236e41b074206c1cf27ef99dcf58059c737b2dfa1a96",
         "notes": "沿用源三标签及四操作体例，按现有域的实际目录列明能力，后台规则不变。"
+      },
+      "propertyAssetsV1": {
+        "notes": "资产登记补齐：购房（含按揭与房贷关联）、购入其他资产、无偿得到资产的登记写法；出售与估值变化仍写说明。",
+        "sha256": "9a4afeaa86ef6a79ee38fede3f501efa7b51cae9700e4ab2349caf98199ced80"
       }
     },
     "variableGroups/economy/offscreen.md": {

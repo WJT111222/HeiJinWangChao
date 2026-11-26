@@ -221,7 +221,8 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     if (prior && fingerprint(prior) !== fingerprint(parsed.data)) return failed('duplicate_or_conflicting_command', origin);
     const c = parsed.data;
     const created = c.type === 'AcquireItem' || c.type === 'PurchaseItem' ? c.item.id
-      : c.type === 'PurchaseVehicle' ? c.vehicle.id : c.type === 'ReceiveIncome' ? c.income.id
+      : c.type === 'PurchaseVehicle' ? c.vehicle.id : c.type === 'PurchaseProperty' ? c.property.id
+      : c.type === 'PurchaseOtherAsset' || c.type === 'AcquireAsset' ? c.asset.id : c.type === 'ReceiveIncome' ? c.income.id
       : c.type === 'Borrow' ? c.debt.id : c.type === 'CreateLocation' ? c.location.id
       : c.type === 'CreateNpc' ? c.npc.id : c.type === 'CreateOrganization' ? c.organization.id : undefined;
     if (created !== undefined) {

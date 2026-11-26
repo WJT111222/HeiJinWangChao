@@ -8,8 +8,13 @@ import { diagnosticForObject, diagnosticForRule, safeVariablePath } from './diag
 import type { ExecutionResult } from './model';
 
 type TransactionType = 'ReceiveIncome' | 'Borrow' | 'TransferFunds' | 'RepayDebt'
-  | 'AcquireItem' | 'PurchaseItem' | 'TransferItem' | 'LoseItem' | 'PurchaseVehicle' | 'SetEquipment';
-interface Target { type: TransactionType; operation: 'set' | 'push'; id?: string }
+  | 'AcquireItem' | 'PurchaseItem' | 'TransferItem' | 'LoseItem' | 'PurchaseVehicle' | 'SetEquipment'
+  | 'PurchaseProperty' | 'PurchaseOtherAsset' | 'AcquireAsset';
+// 资产表与资产kind一一对应；路径里的表决定登记到哪一类。
+const assetTables = { properties: 'property', vehicles: 'vehicle', otherAssets: 'other' } as const;
+type AssetTable = keyof typeof assetTables;
+const isAssetTable = (name: string): name is AssetTable => Object.hasOwn(assetTables, name);
+interface Target { type: TransactionType; operation: 'set' | 'push'; id?: string; table?: AssetTable }
 const object = z.record(z.string(), z.unknown());
 function target(command: ParsedVariableCommand): Target | undefined {
   const [root, second, third, fourth] = command.path.nodes, length = command.path.nodes.length;
@@ -28,9 +33,12 @@ function target(command: ParsedVariableCommand): Target | undefined {
   if (third?.kind !== 'id' || !IdSchema.safeParse(third.id).success) return;
   if (length === 3 && second.name === 'incomes') return {type:'ReceiveIncome',operation:'set',id:third.id};
   if (length === 3 && second.name === 'debts') return {type:'Borrow',operation:'set',id:third.id};
+  if (length === 3 && isAssetTable(second.name)) return {type:'AcquireAsset',operation:'set',id:third.id,table:second.name};
   if (length === 4 && fourth?.kind === 'field') {
     if (second.name === 'debts' && fourth.name === 'repayments') return {type:'RepayDebt',operation:'push',id:third.id};
     if (second.name === 'vehicles' && fourth.name === 'purchase') return {type:'PurchaseVehicle',operation:'set',id:third.id};
+    if (second.name === 'properties' && fourth.name === 'purchase') return {type:'PurchaseProperty',operation:'set',id:third.id};
+    if (second.name === 'otherAssets' && fourth.name === 'purchase') return {type:'PurchaseOtherAsset',operation:'set',id:third.id};
   }
 }
 /** ID来自路径；其余数据完全交给原DomainCommandSchema，不复制经济/物品Schema。 */
@@ -69,6 +77,21 @@ export function compileTransaction(command: ParsedVariableCommand, common: {comm
     case 'PurchaseVehicle': {
       const vehicle = identified(data.vehicle,path.id); if (!vehicle) return failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
       raw = {...data,...common,type:path.type,vehicle}; break;
+    }
+    case 'PurchaseProperty': {
+      const property = identified(data.property,path.id); if (!property) return failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
+      raw = {...data,...common,type:path.type,property}; break;
+    }
+    case 'PurchaseOtherAsset': {
+      const asset = identified(data.asset,path.id); if (!asset) return failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
+      raw = {...data,...common,type:path.type,asset}; break;
+    }
+    case 'AcquireAsset': {
+      const asset = identified(data,path.id); if (!asset) return failed('type_mismatch', null, [], diagnosticForRule(command, 'path_identity'));
+      // kind 可省略，由路径补齐；写了就必须与路径的资产表一致。
+      const kind = assetTables[path.table!];
+      if (Object.hasOwn(asset,'kind') && Reflect.get(asset,'kind') !== kind) return failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
+      raw = {...common,type:path.type,asset:{...asset,kind}}; break;
     }
     case 'LoseItem':
       if (Object.hasOwn(data,'itemId')) return failed('type_mismatch', null, [], diagnosticForRule(command, 'reserved_field'));

@@ -49,6 +49,9 @@
 | --- | --- |
 | PurchaseItem | account、price、item |
 | PurchaseVehicle | account、price、vehicle |
+| PurchaseProperty | account、price、property |
+| PurchaseOtherAsset | account、price、asset |
+| AcquireAsset | asset（property／vehicle／other，不改余额） |
 | TransferFunds | from、to、amount |
 | ReceiveIncome | income |
 | Borrow | account、debt |

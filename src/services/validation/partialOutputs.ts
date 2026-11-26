@@ -106,8 +106,8 @@ function variableUnit(input: VariableStatement, commandIndex: number, hasLooseBa
   const writes = id && (createsEntity || name === 'events' ||
     (name === 'items' && action?.kind === 'field' && action.name === 'purchase')) ? [id] : [];
   if (economyId && target?.kind === 'field' && (
-    (target.name === 'incomes' || target.name === 'debts') && !nestedAction
-    || target.name === 'vehicles' && nestedAction?.kind === 'field' && nestedAction.name === 'purchase'
+    ['incomes', 'debts', 'properties', 'vehicles', 'otherAssets'].includes(target.name) && !nestedAction
+    || ['properties', 'vehicles', 'otherAssets'].includes(target.name) && nestedAction?.kind === 'field' && nestedAction.name === 'purchase'
   )) writes.push(economyId);
   const subject = id ?? economyId;
   if (subject && !writes.length) refs.push(subject);
