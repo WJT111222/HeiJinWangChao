@@ -1,3 +1,4 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { actionTime } from './fixtures/world';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
@@ -8,9 +9,9 @@ import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import { newChannel, defaultAiConfig } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
-import { createTurnDraft, rerollStory, startStageAttempt } from '../domain/drafts';
+import { rerollStory, startStageAttempt } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
-import { defaultSettings } from '../ui/settings/model';
+
 import { requestInspections } from '../services/ai/inspection';
 import { worldState, worldDraft, worldResult, npcUpdate, proof } from './fixtures/world';
 import { gameTime, task, event } from './fixtures/game';

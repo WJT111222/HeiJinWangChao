@@ -525,7 +525,7 @@ export function GameScreen({
   const worldRetryHint = '本次仅重试场外与网络，保留已通过的正文和变量。重新请求可能产生模型费用。';
   const canGenerate = Boolean(validDraft && !awaitingAction && !openingIssue && (storyNeeded || entitiesNeeded || variablesNeeded || worldNeeded || stageSettingsChanged));
   const recoveryStagesOff = Boolean(draft?.legacyNotificationRecovery
-    && (!settings.runtime.useEntityStage || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage));
+    && ( !settings.runtime.useVariableStage || !settings.runtime.useWorldStage));
   const disabledGuidance = recoveryStagesOff
     ? '结算旧通知需要启用主角与现场和场外与网络。'
     : !useEntityStage || !useVariableStage || !useWorldStage
@@ -730,7 +730,7 @@ export function GameScreen({
     : openingReuse ? '继续时会重新校验已有变量候选，通过后直接复用。'
     : workflowGuidance || (awaitingAction ? undefined
       : canCommit ? '候选已完成，可点击左侧按钮完成本回合结算；发送新行动将先结算，再绑定下一回合。'
-      : nextStage === 'variables' || nextStage === 'world'
+      : nextStage === 'entities' || nextStage === 'variables' || nextStage === 'world'
         ? `本回合尚未结算，请点击输入框左侧${compactSidebars ? `“续”（${workflowAction.label}）` : `“${workflowAction.label}”`}。${retryWorldOnly ? worldRetryHint : '输入仅本页暂存，不会替换已绑定行动。'}`
         : rebindAction ? `尚无正文候选。可修改回填行动后尝试发送；左侧“${compactSidebars ? '续' : workflowAction.label}”使用原已绑定行动。请求前仍会检查运行锁。`
         : '请先使用左侧按钮生成本回合正文，再继续必要阶段。');
@@ -776,7 +776,7 @@ export function GameScreen({
         <div className="wf-banner" data-level="warn" role="note">
           <span className="wf-banner-tag" aria-hidden="true">复</span>
           <div className="wf-banner-msg"><p>发现到期的旧入场。纯通知可主动恢复，待决请求继续保留。</p></div>
-          <button type="button" disabled={busy || !navigator.locks || !settings.runtime.useEntityStage || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage}
+          <button type="button" disabled={busy || !navigator.locks || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage}
             onClick={() => setLegacyRecoveryDialog(recoveryDraftKey)}>修复旧通知回合</button>
         </div>
       )}

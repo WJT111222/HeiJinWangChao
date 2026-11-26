@@ -1,4 +1,5 @@
-import { createTurnDraft } from '../domain/drafts';
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
+
 import { IDBFactory } from 'fake-indexeddb';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { VariableStage } from '../workflows/variableStage';
@@ -12,7 +13,7 @@ import type { Protocol } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
 import { stageResponses, StageResponseStore, selectStageResponse, candidateResponseLimits } from '../services/ai/stageResponses';
 import { StageResponseContent } from '../ui/game/StageResponsesPanel';
-import { defaultSettings } from '../ui/settings/model';
+
 import { worldState, worldDraft } from './fixtures/world';
 
 const key = 'mock-observation-secret';

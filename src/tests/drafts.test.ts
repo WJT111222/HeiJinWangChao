@@ -10,7 +10,7 @@ function withCandidates() {
     variables: { storyRevision: 1, candidateRevision: 1, validation: 'validated', result: { commands: [purchase()], rejectedSuggestions: [], unresolved: [] } },
     world: { storyRevision: 1, candidateRevision: 1, basedOnVariableRevision: 1, validation: 'validated',
       result: { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] } },
-    stageStatus: { story: 'ready', variables: 'ready', world: 'ready' },
+    stageStatus: { ...draft.stageStatus, variables: 'ready', world: 'ready' },
   });
 }
 describe('候选来源与版本控制', () => {

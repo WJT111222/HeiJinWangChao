@@ -17,7 +17,7 @@ describe('三段命令目录', () => {
       expect(new Set(catalog.entries.map(entry => entry.commandType))).toEqual(new Set(types));
     }
   });
-  it('回顾往事才装配 RecordHistory', () => {
+  it('由场外请求明确选择是否装配 RecordHistory', () => {
     expect(commandsForPhase('offscreen', 'regular')).not.toContain('RecordHistory');
     expect(commandsForPhase('offscreen', 'regular', true)).toContain('RecordHistory');
   });

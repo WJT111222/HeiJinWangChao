@@ -84,6 +84,7 @@ const draftSchema = z.strictObject({
       if (draft.stageStatus[stage] === 'ready') check(candidate.validation === (stage === 'entities' ? 'structural' : 'validated'), '阶段尚未通过校验');
     } else check(!['ready', 'preview'].includes(draft.stageStatus[stage]), '阶段缺少候选');
   }
+  if (draft.variables || draft.world) check(!draft.useEntityStage || Boolean(draft.entities), '缺少已启用的人物与实体候选');
   if (draft.variables) check(draft.variables.basedOnEntityRevision === draft.entities?.candidateRevision, '现场候选引用过期实体');
   if (draft.world) {
     check(draft.world.basedOnEntityRevision === draft.entities?.candidateRevision, '场外候选引用过期实体');
@@ -159,8 +160,8 @@ function resetStageCandidates(current: TurnDraft, config: StageConfig, requested
 
 export function configureTurnStages(draft: TurnDraft, config: StageConfig): TurnDraft {
   const current = TurnDraftSchema.parse(draft);
-  requireData(!current.legacyNotificationRecovery || candidateStages.every(stage => config[stageSwitch[stage]] ?? current[stageSwitch[stage]]),
-    'LEGACY_RECOVERY_STAGES', '结算旧通知需要启用所有阶段。');
+  requireData(!current.legacyNotificationRecovery || ((config.useVariableStage ?? current.useVariableStage) && (config.useWorldStage ?? current.useWorldStage)),
+    'LEGACY_RECOVERY_STAGES', '结算旧通知需要主角与现场、场外与网络阶段。');
   if (!candidateStages.some(stage => config[stageSwitch[stage]] !== undefined && config[stageSwitch[stage]] !== current[stageSwitch[stage]])) return current;
   return resetStageCandidates(current, config, []);
 }

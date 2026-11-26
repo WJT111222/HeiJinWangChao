@@ -8,7 +8,7 @@ export const SettlementFieldSchema = z.enum([
 ]);
 export const SkippedUpdateSchema = z.strictObject({
   commandIndex: CountSchema,
-  group: z.enum(['variables', 'worldCommands', 'taskCommands', 'eventCommands']),
+  group: z.enum(['entities', 'variables', 'worldCommands', 'taskCommands', 'eventCommands']),
   groupIndex: CountSchema,
   category: z.enum(['item', 'economy', 'person', 'task', 'event', 'world', 'state']),
   field: SettlementFieldSchema.optional(),
@@ -21,6 +21,7 @@ export const UpdateSettlementSchema = z.strictObject({
   formatWarning: z.literal(true).optional(),
 });
 export const JournalSettlementSchema = z.strictObject({
+  entities: UpdateSettlementSchema.optional(),
   variables: UpdateSettlementSchema.optional(),
   world: UpdateSettlementSchema.optional(),
   deferred: CountSchema.optional(),

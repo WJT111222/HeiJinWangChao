@@ -1,3 +1,4 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { AiClient } from '../services/ai/client';
@@ -5,10 +6,10 @@ import { AiError, manualRetryOnly } from '../services/ai/errors';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { AiStage } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
-import { createTurnDraft } from '../domain/drafts';
+
 import { SaveRepository } from '../services/storage/saveRepository';
 import { DataError } from '../domain/common';
-import { defaultSettings, SettingsSchema } from '../ui/settings/model';
+import { SettingsSchema } from '../ui/settings/model';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
 import { VariableStage } from '../workflows/variableStage';
 import { reserveStageSession, withHeldStageLock } from '../workflows/stageGuard';

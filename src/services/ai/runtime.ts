@@ -1,4 +1,4 @@
-import { parseEntities } from '../validation/aiOutputs';
+import { parsePartialEntities } from '../validation/partialOutputs';
 import { logicalMessageCount } from '../../domain/worldbook/timedEffects';
 import { prepareStoryWorldbook } from '../worldbook/storyWorldbook';
 import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
@@ -107,6 +107,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision, protocol: snapshot.channel.protocol, baseSaveRevision: captured.state.revision,
     draftRevision: captured.draft?.draftRevision, executionRevision: captured.draft?.executionRevision,
     stageRequestRevision: captured.stage === 'story' ? undefined : captured.draft?.stageRequestRevisions[captured.stage],
+    basedOnEntityRevision: ['variables','world'].includes(captured.stage) ? captured.draft?.entities?.candidateRevision : undefined,
     basedOnVariableRevision: captured.stage === 'world' ? captured.draft?.variables?.candidateRevision : undefined }, generation);
   const secrets = config.channels.map(channel => vault.get(channel.id)).filter(Boolean);
   if (presetSelection && captured.stage === 'story') secrets.push(secretFor(snapshot));
@@ -263,7 +264,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
       envelope.notes.push('本幕事件回执未通过核验，未授予事件操作。');
     }
   }
-  const result = story ?? (captured.stage === 'entities' ? await parseEntities(responseText, captured.state, captured.draft!) : captured.stage === 'variables'
+  const result = story ?? (captured.stage === 'entities' ? await parsePartialEntities(responseText, captured.state, captured.draft!) : captured.stage === 'variables'
         ? await parsePartialVariables(responseText, captured.state, captured.draft!)
         : await parsePartialWorld(responseText, captured.state, captured.draft!));
   const notes = envelope ? [...storyNotes, ...envelope.notes] : worldNormalizationNotes.get(result);
@@ -290,6 +291,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
         captured.stage === 'story'
           ? undefined
           : captured.draft?.stageRequestRevisions[captured.stage],
+      basedOnEntityRevision: ['variables','world'].includes(captured.stage) ? captured.draft?.entities?.candidateRevision : undefined,
       basedOnVariableRevision:
         captured.stage === 'world' ? captured.draft?.variables?.candidateRevision : undefined,
     },

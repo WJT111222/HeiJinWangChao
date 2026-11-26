@@ -2,7 +2,7 @@ import { entityCreationProjection } from '../domain/entityCandidate';
 import { historyCatalogReason } from './historyCatalog';
 import { storyEventIndex } from '../domain/events/narration';
 import { stageResults } from '../domain/events/stages';
-import { worldNpcAllowed } from '../domain/npc/worldAccess';
+import { worldNpcAllowed, worldTaskNpcAllowed } from '../domain/npc/worldAccess';
 import { pendingEventEntries } from '../domain/events/interactions';
 import { worldEventSchedule } from '../domain/events/schedule';
 import { protagonistKnownEvent } from '../domain/events/knowledge';
@@ -231,12 +231,13 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         npcIds: Object.values(temporary.npc).filter(
           (npc) => worldNpcAllowed(temporary, draft!, npc.id, original),
         ).map(npc=>npc.id),
+        taskNpcIds: Object.values(temporary.npc).filter(npc => worldTaskNpcAllowed(temporary, draft!, npc.id)).map(npc => npc.id),
         organizations: temporary.organizations,
         tasks: Object.values(temporary.tasks).filter(
           (task) =>
             (task.actorRef.kind === 'organization' ||
             (task.actorRef.kind === 'npc' &&
-              worldNpcAllowed(temporary, draft!, task.actorRef.id, original))),
+              worldTaskNpcAllowed(temporary, draft!, task.actorRef.id))),
         ),
         events: temporary.events,
         history: temporary.timeline,

@@ -1,6 +1,7 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
-import { configureTurnStages, createTurnDraft, rerollStory } from '../domain/drafts';
+import { configureTurnStages, rerollStory } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import { completeTurnDraft, settlementDraft } from '../domain/turnCommit';
 import { openingSettlementIssue } from '../services/validation/turnCommit';
@@ -14,7 +15,7 @@ import { CredentialVault } from '../services/ai/credentials';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
 import { generateAndSettleTurn } from '../workflows/automaticTurn';
 import { buildCreationState, newCreation } from '../ui/creation/model';
-import { defaultSettings } from '../ui/settings/model';
+
 import { worldState, worldResult } from './fixtures/world';
 import { completeDraft } from './fixtures/turn';
 import { variableReply } from './fixtures/variableReply';

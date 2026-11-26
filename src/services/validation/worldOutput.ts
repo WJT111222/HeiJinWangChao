@@ -19,9 +19,9 @@ import { protagonistKnownEvent } from '../../domain/events/knowledge';
 import { worldTypes } from './commandCatalog';
 import { requireWorld, safeWorldPath, worldValidationError } from './worldDiagnostics';
 import { worldProjectionError } from './worldProjectionDiagnostics';
-import { worldNpcAllowed } from '../../domain/npc/worldAccess';
+import { worldNpcAllowed, worldTaskNpcAllowed } from '../../domain/npc/worldAccess';
 import { NpcSchema } from '../../domain/npc/schema';
-import { stripVariableSceneWrites, worldForbiddenNpcChange, worldNormalizationNotes } from './worldSceneWrites';
+import { conflictingSceneField, stripVariableSceneWrites, worldForbiddenNpcChange, worldNormalizationNotes } from './worldSceneWrites';
 import { keepTaskIdentity, sameTaskInstant, sameTaskText } from './worldTaskIdentity';
 
 function sameActor(a: ActorRef, b: ActorRef) { return a.kind === b.kind && a.id === b.id; }
@@ -111,6 +111,8 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     (ref.kind === 'npc' ? worldNpcAllowed(base, draft, ref.id, original) : offscreen(base, ref))
     || (ref.kind === 'npc' && createdNpcs.has(ref.id) && !createdNpcs.get(ref.id)?.onScene)
     || (ref.kind === 'organization' && createdOrgs.has(ref.id));
+  const taskActorAllowed = (ref: ActorRef) => actorAllowed(ref) ||
+    (ref.kind === 'npc' && worldTaskNpcAllowed(base, draft, ref.id));
   const causal = structuredClone(base);
   // Only structured ID dependencies are ordered. Evidence is a non-executing explanation.
   for (const command of orderWorldCommands(commands)) {
@@ -166,12 +168,15 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         case 'CreateLocation': break; // Domain validation enforces hierarchy and references.
         case 'SaveTask': {
           const task = command.task, old = base.tasks[task.id], formal = state.tasks[task.id];
+          const sceneWrite = draft.variables?.result.commands.find(c => c.type === 'SaveTask' && c.task.id === task.id);
+          const conflict = sceneWrite?.type === 'SaveTask' && conflictingSceneField(formal, sceneWrite.task, task);
+          requireWorld(!conflict, 'permission', 'actor_permission', conflict ? `task.${conflict}` : undefined);
           requireWorld(!formal || sameActor(formal.actorRef, task.actorRef), 'permission','actor_permission','task.actorRef');
-          requireWorld(actorAllowed(task.actorRef) && (!old || sameActor(old.actorRef, task.actorRef)), 'permission', 'actor_permission', 'task.actorRef');
+          requireWorld(taskActorAllowed(task.actorRef) && (!old || sameActor(old.actorRef, task.actorRef)), 'permission', 'actor_permission', 'task.actorRef');
           if (task.handoff && !old) {
             const transfer = task.handoff, prior = causal.tasks[transfer.fromTaskId];
             requireWorld(prior?.resolution && ['completed','cancelled'].includes(prior.status), 'invalid_output', 'task_state','task.handoff.fromTaskId');
-            requireWorld(actorAllowed(prior.actorRef), 'permission','actor_permission','task.handoff.fromTaskId');
+            requireWorld(taskActorAllowed(prior.actorRef), 'permission','actor_permission','task.handoff.fromTaskId');
             requireWorld(Date.parse(transfer.at) >= Date.parse(state.worldClock)
               && Date.parse(prior.resolution.at) <= Date.parse(transfer.at)
               && Date.parse(transfer.at) <= Date.parse(task.startAt) && Date.parse(transfer.at) <= now, 'invalid_output', 'event_time','task.handoff.at');
@@ -197,6 +202,9 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         }
         case 'SaveEvent': {
           const event = command.event, old = base.events[event.id];
+          const sceneWrite = draft.variables?.result.commands.find(c => c.type === 'SaveEvent' && c.event.id === event.id);
+          const conflict = sceneWrite?.type === 'SaveEvent' && conflictingSceneField(state.events[event.id], sceneWrite.event, event);
+          requireWorld(!conflict, 'permission', 'actor_permission', conflict ? `event.${conflict}` : undefined);
           if(event.eventKind==='sub' && old && terminalEvent(old))
             requireWorld(false,'invalid_output','event_transition',changedRecordField('event',old,event));
           if(event.eventKind==='sub' && (!old || !terminalEvent(old))) {

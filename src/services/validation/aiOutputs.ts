@@ -54,26 +54,35 @@ export async function parseTextVariables(text: string, state: GameState, draft: 
   return validateVariableStatements(ast.value, state, draft, Boolean(envelope.value.description.trim()));
 }
 
-export async function parseEntities(text: string, state: GameState, draft: TurnDraft) {
-  const contactTag = /^\s*<接触者>([^<]*)<\/接触者>/u.exec(text);
-  const declared = contactTag ? IdSchema.array().safeParse(json(contactTag[1])) : undefined;
+export function entityEnvelope(text: string) {
+  const tag = /^\s*<接触者>([^<]*)<\/接触者>/u.exec(text);
+  const declared = tag ? IdSchema.array().safeParse(json(tag[1])) : undefined;
   if (declared && !declared.success) throw new AiError('schema_fields');
-  const ast = parseVariableText(contactTag ? text.slice(contactTag[0].length) : text);
+  return { contactedNpcIds: declared?.data ?? [], text: tag ? text.slice(tag[0].length) : text };
+}
+
+export async function parseEntities(text: string, state: GameState, draft: TurnDraft) {
+  const envelope = entityEnvelope(text);
+  const ast = parseVariableText(envelope.text);
   if (!ast.ok) throw new AiError('variable_text_syntax', undefined, { variableStep: 'commands' });
-  const plan = await compileVariableCommands(ast.value, state, { draft, expectedRevision: state.revision, phase: 'entities' });
+  const result = await validateEntityStatements(ast.value, state, draft, envelope.contactedNpcIds);
+  return { ...result, contactedNpcIds: envelope.contactedNpcIds };
+}
+
+export async function validateEntityStatements(ast: readonly ParsedVariableCommand[], state: GameState, draft: TurnDraft, contactedNpcIds: string[]) {
+  const plan = await compileVariableCommands(ast, state, { draft, expectedRevision: state.revision, phase: 'entities' });
   if (!plan.ok) throw textExecutionError(plan.error, 'mapping');
   // System opening clocks belong to the scene/Story path, never to this candidate.
   const commands = plan.value.commands.filter((_, index) => plan.value.origins[index] !== null);
-  const contactedNpcIds = declared?.data ?? [];
   checkEntityCommands(state, draft, contactedNpcIds, commands);
-  return { commands, contactedNpcIds, rejectedSuggestions: [], unresolved: [] };
+  return VariableResultSchema.parse({ commands, rejectedSuggestions: [], unresolved: [] });
 }
 
-export async function validateVariableStatements(ast: readonly ParsedVariableCommand[], state: GameState, draft: TurnDraft, hasDescription: boolean) {
+export async function validateVariableStatements(ast: readonly ParsedVariableCommand[], state: GameState, draft: TurnDraft, hasDescription: boolean, sceneOnly = false) {
   const context = { draft, expectedRevision: state.revision };
   const compiled = await compileVariableCommands(ast, state, context);
   if (!compiled.ok) throw textExecutionError(compiled.error, 'mapping');
-  if (draft.requestedStages.includes('variables')) {
+  if (sceneOnly || draft.requestedStages.includes('variables')) {
     const allowed = new Set(commandsForPhase('scene', draft.turnKind));
     for (const [index, command] of compiled.value.commands.entries())
       if (!allowed.has(command.type)) throw new AiError('permission', undefined, { commandIndex: index, commandType: command.type });

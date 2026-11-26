@@ -1,5 +1,6 @@
+import { stagedFixture } from './stageScope';
 import { GameStateSchema } from '../../domain/state';
-import { TurnDraftSchema } from '../../domain/drafts';
+
 import { defaultSettings } from '../../ui/settings/model';
 import { game, npc, gameTime, event, task } from './game';
 import { worldDraft } from './world';
@@ -41,7 +42,7 @@ export function longCompanionRecallFixture() {
   }));
   state.revision = state.turnNumber = 300;
   const base = worldDraft();
-  const draft = TurnDraftSchema.parse({ ...base, saveId: state.saveId, baseSaveRevision: 300,
+  const draft = stagedFixture({ ...base, saveId: state.saveId, baseSaveRevision: 300,
     userInput: '和她去吃早餐。', story: { ...base.story!, narrative: '林晚和主角在住处吃早餐，随后收拾餐桌。', variableGuide: [] },
     variables: { ...base.variables!, result: { commands: [], rejectedSuggestions: [], unresolved: [] } } });
   const settings = defaultSettings(); settings.memory.immediateWindowSize = 3;

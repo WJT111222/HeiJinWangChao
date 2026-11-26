@@ -1,8 +1,9 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { variableReply } from './fixtures/variableReply';
 import { variableCommandsForTurn } from '../domain/turnProjection';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { newCreation, buildCreationState } from '../ui/creation/model';
-import { defaultSettings } from '../ui/settings/model';
+
 import { composePrompt } from '../prompts/composer';
 
 function form() {
@@ -32,7 +33,7 @@ describe('开局时间不取设备日期', () => {
 
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { openingTimeSelection, openingTimeBase, openingTimeContext, chinaCalendar, pendingOpeningClock } from '../domain/openingTime';
-import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { rerollStory } from '../domain/drafts';
 import { GameStateSchema, StorySchema } from '../domain/state';
 import { commitCommands } from '../domain/commands';
 import { projectTurn } from '../domain/turnProjection';

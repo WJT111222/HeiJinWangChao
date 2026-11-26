@@ -14,7 +14,7 @@ AI负责判断剧情事实、动机、真实耗时、行动与结果；程序检
 
 ## 填写与约束
 查 SAVE_STATE 和本轮候选复用稳定 ID。commands 使用 BASE_SAVE_REVISION。按 COMMAND_CATALOG.commandGuides 填写 UpdateNpc、RecordNpcMemory、SaveTask、SaveEvent。visibleHooks 是内部线索，不自动授予人物知识。
-PROTECTED_SCENE 包含回合开始在场或人物阶段声明的接触者，离场仍受保护。场外可建立离场人物、地点、组织，不能更改受保护人物、主角钱物或时钟。SaveEvent.actorRefs 仅记录参与身份。UpdateOrganization 可以更新未被现场占用的字段，主势力绑定与主角已知只归现场阶段。
+PROTECTED_SCENE 包含回合开始在场或人物阶段声明的接触者，离场后也不能改写该人的档案或记忆。SaveTask 只写任务表，可用 OFFSCREEN_STATE.taskNpcIds 中已离场的人作执行人。场外可建立离场人物、地点、组织，不能更改受保护人物、主角钱物或时钟。SaveEvent.actorRefs 仅记录参与身份。UpdateOrganization 可以更新未被现场占用的字段，主势力绑定与主角已知只归现场阶段。
 按 TIME_WINDOW 推演。任务提供 dueAt 或非空 completionCondition。completed 的 resolution.outcome 为 success；失败终止或取消使用 cancelled。handoff.fromTaskId 引用有 resolution 的终态任务，resolution.at ≤ handoff.at ≤ 后继 startAt。任务与事件可单侧填写 linkedEventId 或 linkedTaskIds，复用实体 ID。同批每个任务、事件各有一个最终对象。
 main 的 estimatedEndAt 只供参考。sub 使用 parentEventId 和固定的 fixedEndAt，到期按 EVENT_SCHEDULE 结案，resolvedAt 使用固定终止时刻。同批可以创建并完成多段，predecessorEventIds 只引用真实已结束前序。旧事件沿用 estimatedEndAt。取消可发生于计划开始前，不能伪造发生结果。DeleteEvent 保留退役身份、阶段结果和有效引用。
 ## 固定阶段与主角入场

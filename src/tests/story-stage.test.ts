@@ -149,7 +149,7 @@ describe('真实正文入口与草稿原子替换', () => {
       expect(saved.turnId).toBe(draft.turnId);
       expect(saved.userInput).toBe('');
       expect(saved.useVariableStage).toBe(false);
-      expect(saved.stageStatus).toEqual({ story: 'ready', variables: 'skipped', world: 'pending' });
+      expect(saved.stageStatus).toEqual({ story: 'ready', entities: 'skipped', variables: 'skipped', world: 'pending' });
       expect(visible.some((text) => text.length > 0 && text.length < narrative.length)).toBe(true);
       expect(visible.every((text) => narrative.startsWith(text))).toBe(true);
       expect(await repo.loadDraft(draft.saveId)).toEqual(saved);

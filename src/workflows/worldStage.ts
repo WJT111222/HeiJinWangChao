@@ -108,6 +108,7 @@ export class WorldStage {
           basis.storyRevision !== draft.storyRevision ||
           basis.executionRevision !== draft.executionRevision ||
           basis.stageRequestRevision !== draft.stageRequestRevisions.world ||
+          basis.basedOnEntityRevision !== draft.entities?.candidateRevision ||
           basis.basedOnVariableRevision !== draft.variables?.candidateRevision ||
           response.variablePending !== preview
         )

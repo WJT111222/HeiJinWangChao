@@ -1,40 +1,39 @@
-// Run against either checkout with the same fixed story, action and save.
 import { createServer } from 'vite';
 import { resolve } from 'node:path';
-import { argv } from 'node:process';
 import process from 'node:process';
 import { log, warn } from 'node:console';
+import { comparisonFixture, fixedSceneCandidate } from './variable-comparison-fixture.mjs';
 
-const root = resolve(argv[2] || '.');
-const server = await createServer({ root, server: { middlewareMode: true }, appType: 'custom' });
+const server = await createServer({logLevel:'error', root: resolve(process.argv[2] || '.'), server: { middlewareMode: true }, appType: 'custom' });
+let exceeded = false;
 try {
   const load = path => server.ssrLoadModule('/src/' + path + '.ts');
-  const [{ composePrompt }, { worldState, worldDraft }, { defaultSettings }, { estimateTokens },
-    { promptManifest }, { selectVariableDomains }] = await Promise.all([
-    load('prompts/composer'), load('tests/fixtures/world'), load('ui/settings/model'),
-    load('prompts/statistics'), load('prompts/manifest'), load('prompts/variableDomains'),
-  ]);
-  const state = worldState(), draft = worldDraft(), settings = defaultSettings();
-  const stages = promptManifest.modules.some(module => module.applicableStages.includes('entities'))
-    ? ['entities', 'variables', 'world'] : ['variables', 'world'];
-  const rows = [];
-  for (const stage of stages) {
-    const { messages, context, modules } = await composePrompt({ stage, mode: 'regular', state, draft,
-      settings, userInput: draft.userInput, domains: selectVariableDomains(state, draft).domains });
-    const catalog = JSON.stringify(context.TEXT_COMMAND_CATALOG ?? context.COMMAND_CATALOG);
-    const special = modules.flatMap((record, index) => {
-      const category = promptManifest.modules.find(module => module.id === record.id).category;
-      return ['stage', 'output', 'variable_group'].includes(category) ? [messages[index].content] : [];
-    });
-    const dedicated = [...special, catalog, messages.at(-1).content].join('\n');
-    const all = messages.map(message => message.content).join('\n');
-    rows.push({ stage, dedicatedChars: Array.from(dedicated).length, dedicatedTokenEstimate: estimateTokens(dedicated).estimatedTokens,
-      totalChars: Array.from(all).length, totalTokenEstimate: estimateTokens(all).estimatedTokens });
+  const [{ composePrompt }, { defaultSettings }, { estimateTokens }, { promptManifest }, { selectVariableDomains },
+    { selectWorldDomains }, { projectTurn }] = await Promise.all([load('prompts/composer'), load('ui/settings/model'),
+    load('prompts/statistics'), load('prompts/manifest'), load('prompts/variableDomains'), load('prompts/worldDomains'), load('domain/turnProjection')]);
+  const settings = defaultSettings(), rows = [];
+  for (const scenario of ['ordinary', 'scene-closure', 'historical']) {
+    const { state, draft, scene } = await comparisonFixture(load, scenario);
+    const stages = 'useEntityStage' in draft ? ['entities', 'variables', 'world'] : ['variables', 'world'];
+    for (const stage of stages) {
+      if (stage === 'world') fixedSceneCandidate(draft, scene);
+      const { domains } = stage === 'world' ? selectWorldDomains(projectTurn(state, draft), draft) : selectVariableDomains(state, draft);
+      const { messages, context, modules } = await composePrompt({ stage, mode: 'regular', state, draft, settings, userInput: draft.userInput, domains });
+      const special = modules.flatMap((record, index) => {
+        const category = promptManifest.modules.find(module => module.id === record.id).category;
+        return ['stage', 'output', 'variable_group'].includes(category) ? [messages[index].content] : [];
+      });
+      const dedicated = [...special, JSON.stringify(context.TEXT_COMMAND_CATALOG ?? context.COMMAND_CATALOG), messages.at(-1).content].join('\n');
+      const all = messages.map(message => message.content).join('\n');
+      rows.push({ scenario, stage, dedicatedChars: Array.from(dedicated).length, dedicatedTokenEstimate: estimateTokens(dedicated).estimatedTokens,
+        totalChars: Array.from(all).length, totalTokenEstimate: estimateTokens(all).estimatedTokens });
+    }
+    if (stages.length === 3) {
+      const sizes = rows.filter(row => row.scenario === scenario).map(row => row.dedicatedChars);
+      exceeded ||= Math.max(...sizes) > 60_000;
+      if (Math.max(...sizes) > Math.min(...sizes) * 1.2) warn(scenario + ' 三段专属字数差异超过 20%');
+    }
   }
   log(JSON.stringify(rows, null, 2));
-  if (stages.length === 3) {
-    const sizes = rows.map(row => row.dedicatedChars);
-    if (Math.max(...sizes) > 60_000) process.exitCode = 1;
-    if (Math.max(...sizes) > Math.min(...sizes) * 1.2) warn('三段专属提示词字数差异超过 20%');
-  }
 } finally { await server.close(); }
+if (exceeded) process.exitCode = 1;

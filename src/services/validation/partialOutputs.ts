@@ -8,7 +8,7 @@ import { parseVariablePath } from '../../parsers/variableText';
 import { variableStatements } from '../../parsers/variableText/isolation';
 import type { VariableStatement } from '../../parsers/variableText/isolation';
 import { AiError } from '../ai/errors';
-import { parseVariables, validateVariableStatements, validateWorldCandidate, worldJson } from './aiOutputs';
+import { entityEnvelope, validateEntityStatements, parseVariables, validateVariableStatements, validateWorldCandidate, worldJson } from './aiOutputs';
 import { worldValidationError } from './worldDiagnostics';
 import { commandEnvelope } from './commandEnvelope';
 import { isolateUpdates, settlementField, structuredRefs } from './updateIsolation';
@@ -196,7 +196,14 @@ function addSceneDependencies(state: GameState, units: UpdateUnit<VariableStatem
   }
 }
 
-export async function parsePartialVariables(text: string, state: GameState, draft: TurnDraft) {
+export async function parsePartialEntities(text: string, state: GameState, draft: TurnDraft) {
+  const { text: body, contactedNpcIds } = entityEnvelope(text);
+  const result = await parsePartialVariables(body, state, draft, contactedNpcIds);
+  if (result.settlement) for (const update of result.settlement.skipped) update.group = 'entities';
+  return { ...result, contactedNpcIds };
+}
+
+export async function parsePartialVariables(text: string, state: GameState, draft: TurnDraft, contacts?: string[]) {
   const envelope = commandEnvelope(text);
   if (!envelope) throw new AiError('variable_text_syntax', undefined, { variableStep: 'envelope', fieldPath: 'text.block_structure' });
   const statements = variableStatements(envelope.text);
@@ -225,12 +232,14 @@ export async function parsePartialVariables(text: string, state: GameState, draf
   }
   addSceneDependencies(state, units);
   // A world-clock statement is the temporal basis shared by application groups.
-  const clocks = units.filter(unit => unit.input.ast?.path.nodes.some(node => (node.kind === 'root' || node.kind === 'field') && node.name === 'worldClock') && unit.position.category === 'state');
+  const clocks = contacts ? [] : units.filter(unit => unit.input.ast?.path.nodes.some(node => (node.kind === 'root' || node.kind === 'field') && node.name === 'worldClock') && unit.position.category === 'state');
   const optional = units.filter(unit => !clocks.includes(unit));
   const { result, skipped } = await isolateUpdates(optional, selected => {
     const basis = units.filter(unit => clocks.includes(unit) || selected.includes(unit));
     const ast = basis.map(unit => unit.input.ast!);
-    return validateVariableStatements(ast, state, draft, envelope.hasDescription)
+    const validation = contacts ? validateEntityStatements(ast, state, draft, contacts) :
+      validateVariableStatements(ast, state, draft, envelope.hasDescription, true);
+    return validation
       .catch(error => {
         if (!(error instanceof AiError)) throw error;
         const offset = error.details?.commandIndex;

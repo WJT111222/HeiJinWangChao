@@ -1,6 +1,7 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
-import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { rerollStory } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { readDocument } from '../services/local/documents';
@@ -10,7 +11,7 @@ import { newChannel, defaultAiConfig } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
 import { payloadMessages } from '../services/ai/inspection';
 import { stageResponses } from '../services/ai/stageResponses';
-import { defaultSettings, SettingsSchema, settingsKey } from '../ui/settings/model';
+import { SettingsSchema, settingsKey } from '../ui/settings/model';
 import { VariableStage } from '../workflows/variableStage';
 import { WorldStage } from '../workflows/worldStage';
 import { TurnCoordinator } from '../workflows/turnCoordinator';

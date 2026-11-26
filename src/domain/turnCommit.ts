@@ -109,11 +109,12 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     const beforeWorld = projectTurn(current, draft);
     validateStageSettlement(beforeWorld, projected, draft.turnId, world.deferredEvents?.filter(id => beforeWorld.events[id]?.eventKind === 'sub'));
   }
+  const entitySettlement = draft.entities?.result.settlement;
   const variableSettlement = draft.variables?.result.settlement;
   const worldSettlement = world?.settlement;
   const deferred = world?.deferredEvents?.length;
-  const settlement = variableSettlement || worldSettlement || deferred
-    ? { variables: variableSettlement, world: worldSettlement, deferred } : undefined;
+  const settlement = entitySettlement || variableSettlement || worldSettlement || deferred
+    ? { entities: entitySettlement, variables: variableSettlement, world: worldSettlement, deferred } : undefined;
   projected.updatedAt = now;
   delete projected.openingInitializationPending;
   requireData(draft.story!.summary.trim(), 'MISSING_SUMMARY', '正文缺少有效摘要，请重新生成正文后重试');

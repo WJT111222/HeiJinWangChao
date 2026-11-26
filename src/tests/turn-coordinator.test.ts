@@ -19,13 +19,14 @@ import { VariableStage } from '../workflows/variableStage';
 import { WorldStage } from '../workflows/worldStage';
 import { worldState, worldDraft, worldResult, npcUpdate, worldNarrative } from './fixtures/world';
 
-const stages: AiStage[] = ['story', 'variables', 'world'];
+const stages: AiStage[] = ['story', 'entities', 'variables', 'world'];
 function setup() {
   const config = defaultAiConfig(),
     channel = newChannel();
   channel.baseUrl = 'https://coordinator.mock.invalid/v1';
   config.channels = [channel];
   config.routes.story = { channelId: channel.id, modelId: 'story' };
+  config.routes.entities = {mode:'independent',channelId:channel.id,modelId:'entities'};
   config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' };
   config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
   const values = new Map<string, string>();
@@ -50,7 +51,7 @@ function wire(stage: AiStage, invalid = false, expectedRevision = 0) {
     ? '{bad'
     : stage === 'story'
       ? `<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>${worldNarrative}</正文><短期记忆>用餐</短期记忆><变量规划>[]</变量规划>`
-      : (stage === 'variables' ? variableReply(worldDraft().variables!.result) : JSON.stringify(worldResult([{ ...npcUpdate(), expectedRevision }])));
+      : stage === 'entities' ? '<接触者>[]</接触者>' + variableReply({commands:[]}) : (stage === 'variables' ? variableReply(worldDraft().variables!.result) : JSON.stringify(worldResult([{ ...npcUpdate(), expectedRevision }])));
   return stage === 'story'
     ? new Response(
         `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`,
@@ -138,6 +139,7 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
       expect(outcome.status).toBe('complete');
       expect(outcome.draft.stageStatus).toEqual({
         story: 'ready',
+        entities: 'ready',
         variables: 'ready',
         world: 'ready',
       });
@@ -180,7 +182,7 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
       }),
       input = setup();
     await expect(coordinator.generate({ ...input, draft })).rejects.toMatchObject({
-      code: failedStage === 'story' ? 'invalid_output' : failedStage === 'variables' ? 'variable_text_syntax' : 'invalid_json',
+      code: failedStage === 'story' ? 'invalid_output' : ['entities','variables'].includes(failedStage) ? 'variable_text_syntax' : 'invalid_json',
     });
     const failed = await currentDraft();
     expect(calls).toEqual(stages.slice(0, stages.indexOf(failedStage) + 1));
@@ -220,7 +222,7 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
         : wire(stage);
     });
     expect((await coordinator.generate({ ...setup(), draft })).status).toBe('complete');
-    expect(calls).toEqual(['story', 'variables', 'variables', 'world']);
+    expect(calls).toEqual(['story', 'entities', 'variables', 'variables', 'world']);
     expect((await currentDraft()).failures).toMatchObject([
       { stage: 'variables', errorCode: 'server' },
     ]);
@@ -291,16 +293,16 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
       });
       const result = await coordinator.generate({ ...input, draft });
       expect(calls).toEqual([
-        'story',
+        'story', 'entities',
         ...(useVariableStage ? ['variables'] : []),
         ...(useWorldStage ? ['world'] : []),
       ]);
-      expect(result.status).toBe(useWorldStage ? 'preview' : 'complete');
-      expect((await coordinator.generate({ ...input, draft: result.draft })).status).toBe(useWorldStage ? 'preview' : 'complete');
-      expect(calls).toHaveLength(useWorldStage || useVariableStage ? 2 : 1);
+      expect(result.status).toBe('complete');
+      expect((await coordinator.generate({ ...input, draft: result.draft })).status).toBe('complete');
+      expect(calls).toHaveLength(useWorldStage || useVariableStage ? 3 : 2);
     },
   );
-  it('已合法变量在关闭变量开关时仍可供世界复用', async () => {
+  it('关闭现场阶段使旧场外依赖失效，场外使用本次有效投影', async () => {
     const input = setup();
     input.settings.runtime.useWorldStage = false;
     const coordinator = runner(async (_url, init) => wire(model(init)));
@@ -309,7 +311,7 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
     input.settings.runtime.useWorldStage = true;
     const final = await coordinator.generate({ ...input, draft: partial.draft });
     expect(final.draft.world?.validation).toBe('validated');
-    expect(final.draft.variables).toEqual(partial.draft.variables);
+    expect(final.draft.variables).toBeUndefined();
     expect(final.status).toBe('complete');
   });
 });
@@ -451,7 +453,7 @@ describe('会话互斥、取消、版本与配置快照', () => {
     let changed: Promise<TurnDraft> | undefined;
     const input = setup();
     const transport = vi.fn<typeof fetch>(async (_url, init) =>
-      model(init) === 'variables' ? new Response('', { status: 503 }) : wire('story'),
+      model(init) === 'variables' ? new Response('', { status: 503 }) : wire(model(init)),
     );
     await expect(
       runner(transport).generate({
@@ -549,7 +551,7 @@ describe('会话互斥、取消、版本与配置快照', () => {
     });
     expect((await coordinator.generate({ ...input, draft })).status).toBe('complete');
     expect(calls).toEqual(stages);
-    expect(keys).toEqual(Array(3).fill('Bearer mock-turn-key'));
+    expect(keys).toEqual(Array(4).fill('Bearer mock-turn-key'));
   });
   it('重新 Roll 显式使旧变量与世界候选失效，之后自动执行只补下游', async () => {
     const input = setup(),
@@ -568,6 +570,6 @@ describe('会话互斥、取消、版本与配置快照', () => {
     expect(rerolled.world).toBeUndefined();
     calls.length = 0;
     expect((await coordinator.generate({ ...input, draft: rerolled })).status).toBe('complete');
-    expect(calls).toEqual(['variables', 'world']);
+    expect(calls).toEqual(['entities', 'variables', 'world']);
   });
 });

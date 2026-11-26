@@ -1,3 +1,4 @@
+import { sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { SaveRepository } from '../services/storage/saveRepository';
@@ -8,7 +9,7 @@ import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
 import { array, record, string } from '../services/ai/protocols';
 import { stageResponses } from '../services/ai/stageResponses';
-import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { rerollStory } from '../domain/drafts';
 import { projectTurn } from '../domain/turnProjection';
 import { composePrompt } from '../prompts/composer';
 import { contextV2Fixture } from './fixtures/contextV2';

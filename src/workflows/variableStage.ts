@@ -114,6 +114,7 @@ export class VariableStage {
           basis.turnId !== draft.turnId ||
           basis.baseSaveRevision !== draft.baseSaveRevision ||
           basis.draftRevision !== draft.draftRevision ||
+          (stage === 'variables' && basis.basedOnEntityRevision !== draft.entities?.candidateRevision) ||
           basis.storyRevision !== draft.storyRevision ||
           basis.executionRevision !== draft.executionRevision ||
           basis.stageRequestRevision !== draft.stageRequestRevisions[stage]
