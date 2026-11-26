@@ -224,4 +224,3 @@ describe('审查修订：部门撤销与开局保护', () => {
     expect(() => prepareVariableProjection(state, draft, [relation('org-gang', bind())])).toThrow(/开局回合不能绑定主势力/);
   });
 });
-
