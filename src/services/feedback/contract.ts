@@ -23,7 +23,7 @@ export const feedbackStatuses = {
 
 export const categorySchema = z.enum(Object.keys(feedbackCategories) as (keyof typeof feedbackCategories)[]);
 export const statusSchema = z.enum(Object.keys(feedbackStatuses) as (keyof typeof feedbackStatuses)[]);
-export const feedbackErrorStages = { story: '正文生成', variables: '变量管理', world: '动态世界',
+export const feedbackErrorStages = { story: '正文生成', entities: '人物与实体', variables: '主角与现场', world: '场外与网络',
   workflow: '自动工作流', commit: '正式结算', memory: '记忆总结' } as const;
 export const feedbackStageSchema = z.enum(Object.keys(feedbackErrorStages) as (keyof typeof feedbackErrorStages)[]);
 const protocol = z.enum(['openai', 'deepseek', 'gemini', 'anthropic']);

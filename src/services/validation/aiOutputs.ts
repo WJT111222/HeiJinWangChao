@@ -1,3 +1,6 @@
+import { checkEntityCommands } from '../../domain/entityCandidate';
+import { IdSchema } from '../../domain/common';
+import { commandsForPhase } from '../../domain/stageCommands';
 import { storySceneAuthority, validateNarrationClock } from '../../domain/events/narration';
 import { nestedStoryTag, storyEnvelopeDiagnostic, storySchemaError } from './storyDiagnostics';
 import { recoverStoryEnvelope, repairUnclosedTags } from './storyEnvelopeRecovery';
@@ -51,10 +54,30 @@ export async function parseTextVariables(text: string, state: GameState, draft: 
   return validateVariableStatements(ast.value, state, draft, Boolean(envelope.value.description.trim()));
 }
 
+export async function parseEntities(text: string, state: GameState, draft: TurnDraft) {
+  const contactTag = /^\s*<接触者>([^<]*)<\/接触者>/u.exec(text);
+  const declared = contactTag ? IdSchema.array().safeParse(json(contactTag[1])) : undefined;
+  if (declared && !declared.success) throw new AiError('schema_fields');
+  const ast = parseVariableText(contactTag ? text.slice(contactTag[0].length) : text);
+  if (!ast.ok) throw new AiError('variable_text_syntax', undefined, { variableStep: 'commands' });
+  const plan = await compileVariableCommands(ast.value, state, { draft, expectedRevision: state.revision, phase: 'entities' });
+  if (!plan.ok) throw textExecutionError(plan.error, 'mapping');
+  // System opening clocks belong to the scene/Story path, never to this candidate.
+  const commands = plan.value.commands.filter((_, index) => plan.value.origins[index] !== null);
+  const contactedNpcIds = declared?.data ?? [];
+  checkEntityCommands(state, draft, contactedNpcIds, commands);
+  return { commands, contactedNpcIds, rejectedSuggestions: [], unresolved: [] };
+}
+
 export async function validateVariableStatements(ast: readonly ParsedVariableCommand[], state: GameState, draft: TurnDraft, hasDescription: boolean) {
   const context = { draft, expectedRevision: state.revision };
   const compiled = await compileVariableCommands(ast, state, context);
   if (!compiled.ok) throw textExecutionError(compiled.error, 'mapping');
+  if (draft.requestedStages.includes('variables')) {
+    const allowed = new Set(commandsForPhase('scene', draft.turnKind));
+    for (const [index, command] of compiled.value.commands.entries())
+      if (!allowed.has(command.type)) throw new AiError('permission', undefined, { commandIndex: index, commandType: command.type });
+  }
   try { validateTimeCommands(state, draft, compiled.value.commands); }
   catch (error) { throw variableFailure(error, 'simulation'); }
   const simulated = await simulateVariablePlan(compiled.value, state, context);
@@ -162,7 +185,7 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
   const checked = VariableResultSchema.safeParse(raw);
   if (!checked.success) throw variableValidationError(checked.error, raw);
   if (checked.data.settlement && checked.data.settlement.accepted !== checked.data.commands.filter(command => command.commandId.startsWith('text-v1:')).length) throw new AiError('candidate_conflict');
-  if(checked.data.commands.some(c=>c.type==='DeleteEvent'||c.type==='RecordHistory'))throw new AiError('permission');
+  if (checked.data.commands.some(c => c.type === 'DeleteEvent' || c.type === 'RecordHistory')) throw new AiError('permission');
   if (!draft.story) throw new AiError('candidate_conflict');
   try { state = openingTimeBase(state, draft, checked.data.commands); } catch (error) { throw variableValidationError(error); }
   if (new Set(checked.data.commands.map((c) => c.commandId)).size !== checked.data.commands.length) throw new AiError('candidate_conflict');

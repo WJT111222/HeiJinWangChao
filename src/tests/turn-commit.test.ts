@@ -205,7 +205,7 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
         draftRevision: draft.draftRevision + 1,
         executionRevision: 1,
         requestedStages: ['world'],
-        stageRequestRevisions: { variables: 0, world: 1 },
+        stageRequestRevisions: { entities: 0, variables: 0, world: 1 },
         useVariableStage: false,
         world: undefined,
         stageStatus: { ...draft.stageStatus, world: 'pending' },

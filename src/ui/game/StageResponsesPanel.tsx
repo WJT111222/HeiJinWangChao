@@ -93,7 +93,7 @@ export function StageResponseText({ saveId, turnId, stage, draft }: { saveId: st
   const record = selectStageResponse(records, saveId, turnId, stage, draft);
   return <section aria-label="模型原文">
     <h3>模型原文（临时响应）</h3>
-    <StageResponseContent record={record} label={{story:'正文',variables:'变量',world:'动态世界'}[stage]} />
+    <StageResponseContent record={record} label={{story:'正文',entities: '人物与实体', variables: '主角与现场',world: '场外与网络'}[stage]} />
   </section>;
 }
 
@@ -101,11 +101,11 @@ export function StageResponsesPanel({ saveId, turnId, draft }: { saveId: string;
   const records = useSyncExternalStore(stageResponses.subscribe, stageResponses.getSnapshot);
   const [expanded, setExpanded] = useState(false);
   return <details className="stage-responses" onToggle={event => setExpanded(event.currentTarget.open)}>
-    <summary>查看三阶段模型完整原文与执行结果</summary>
+    <summary>查看四阶段模型完整原文与执行结果</summary>
     <p className="field-hint">仅本页面临时保存，刷新或淘汰后无法恢复；模型原文不等于已执行结果。不会写入正式世界或剧情历史，不会发起请求。系统凭证会隐藏。</p>
-    {expanded && (['story', 'variables', 'world'] as const).map(stage => {
+    {expanded && (['story', 'entities', 'variables', 'world'] as const).map(stage => {
       const record = selectStageResponse(records, saveId, turnId, stage, draft);
-      const label = { story: '正文', variables: '变量', world: '动态世界' }[stage];
+      const label = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络' }[stage];
       return <ResponseDetail key={stage} record={record} label={label}>
         {record?.error && <p role="note">{record.error.message}{'details' in record.error && record.error.details?.worldRule ? ` · ${worldRuleNames[record.error.details.worldRule]}` : ''}</p>}
         {record?.error && 'details' in record.error && record.error.details?.storyRule && <small>正文失败类型：{record.error.details.storyRule} · {storyRuleNames[record.error.details.storyRule]}</small>}

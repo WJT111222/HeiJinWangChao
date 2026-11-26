@@ -1,3 +1,4 @@
+import { commandsForPhase } from './stageCommands';
 import { validateStageSettlement } from './events/stages';
 import { historicalPerspective } from './timePreflight';
 import { z } from 'zod';
@@ -16,6 +17,7 @@ export const TurnSubmissionSchema = z.strictObject({
   draft: TurnDraftSchema,
   // 空字符串仅表示已提交后等待玩家输入，不授权下一次生成。
   nextAction: z.string().max(100000).refine(value => value === '' || value.trim().length > 0).transform(value => value.trim()),
+  useEntityStage: z.boolean().optional(),
   useVariableStage: z.boolean(),
   useWorldStage: z.boolean(),
 });
@@ -23,7 +25,7 @@ export type TurnSubmission = z.infer<typeof TurnSubmissionSchema>;
 export function awaitingPlayerAction(state: GameState, draft?: TurnDraft) {
   return Boolean(draft && state.turnNumber > 0 && draft.turnKind === 'regular' && draft.userInput === ''
     && draft.baseSaveRevision === state.revision && draft.storyRevision === 0 && draft.executionRevision === 0
-    && !draft.story && !draft.variables && !draft.world && draft.failures.length === 0);
+    && !draft.story && !draft.entities && !draft.variables && !draft.world && draft.failures.length === 0);
 }
 /**
  * 已绑定行动、但正文失败或被取消且尚未产生任何候选的普通回合。
@@ -33,24 +35,24 @@ export function awaitingPlayerAction(state: GameState, draft?: TurnDraft) {
 export function rebindableAfterStoryStop(state: GameState, draft?: TurnDraft) {
   return Boolean(draft && state.turnNumber > 0 && draft.turnKind === 'regular' && draft.userInput.trim() !== ''
     && draft.baseSaveRevision === state.revision && draft.executionRevision === 0
-    && !draft.story && !draft.variables && !draft.world && draft.stageStatus.story !== 'ready');
+    && !draft.story && !draft.entities && !draft.variables && !draft.world && draft.stageStatus.story !== 'ready');
 }
 // 这里只检查候选和阶段依赖是否齐备；正式就绪还需按存档状态校验开局时间。
 export function completeTurnDraft(draft: TurnDraft) {
   const parsed = TurnDraftSchema.safeParse(draft);
   if (!parsed.success) return false;
   const current = parsed.data;
-  const ready = (stage: 'variables' | 'world') => current.stageStatus[stage] === 'ready' && current[stage]?.validation === 'validated';
-  const complete = (stage: 'variables' | 'world', enabled: boolean) => ready(stage)
+  const ready = (stage: 'entities' | 'variables' | 'world') => current.stageStatus[stage] === 'ready' && current[stage]?.validation === (stage === 'entities' ? 'structural' : 'validated');
+  const complete = (stage: 'entities' | 'variables' | 'world', enabled: boolean) => ready(stage)
     || (!enabled && current.stageStatus[stage] === 'skipped' && !current[stage]);
   return Boolean(current.story && current.stageStatus.story === 'ready'
-    && complete('variables', current.useVariableStage) && complete('world', current.useWorldStage)
-    && (!current.world || ready('variables') && current.world.basedOnVariableRevision === current.variables?.candidateRevision));
+    && complete('entities', current.useEntityStage) && complete('variables', current.useVariableStage) && complete('world', current.useWorldStage)
+    && (!current.world || (!current.useVariableStage || ready('variables')) && current.world.basedOnVariableRevision === current.variables?.candidateRevision));
 }
 // 只读结算投影：保留草稿内可复用候选，但关闭阶段不应用其结果。
 // World 仍可复用原有合法 Variables 依赖；纯小说模式不应用任何下游候选。
 export function settlementDraft(draft: TurnDraft): TurnDraft {
-  const useVariables = draft.useVariableStage || draft.useWorldStage;
+  const useVariables = draft.useVariableStage;
   return TurnDraftSchema.parse({ ...draft,
     variables: useVariables ? draft.variables : undefined,
     world: draft.useWorldStage ? draft.world : undefined,
@@ -63,7 +65,7 @@ export function settlementDraft(draft: TurnDraft): TurnDraft {
 export function turnCommands(input: TurnDraft, state: GameState): DomainCommand[] {
   const draft = settlementDraft(input);
   return [
-    ...(draft.variables ? preparedVariableCommands(state, draft, draft.variables.result.commands) : variableCommandsForTurn(state, draft, [])),
+    ...(draft.variables || draft.entities ? preparedVariableCommands(state, draft, draft.variables?.result.commands ?? []) : variableCommandsForTurn(state, draft, [])),
     ...(draft.world?.result.worldCommands ?? []),
     ...(draft.world?.result.taskCommands ?? []),
     ...(draft.world?.result.eventCommands ?? []),
@@ -75,6 +77,9 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     storedDraft = TurnDraftSchema.parse(input);
   requireData(completeTurnDraft(storedDraft), 'TURN_INCOMPLETE', '需要合法正文与所有已启用阶段的候选');
   const draft = settlementDraft(storedDraft);
+  const allowed = new Set(commandsForPhase('scene', draft.turnKind));
+  requireData(draft.variables?.result.commands.every(command => allowed.has(command.type)) ?? true,
+    'STAGE_PERMISSION', '主角与现场阶段命令越权');
   requireData(
     current.saveId === draft.saveId && current.revision === draft.baseSaveRevision,
     'REVISION_CONFLICT',

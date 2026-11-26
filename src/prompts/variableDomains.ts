@@ -9,45 +9,12 @@ export function selectVariableDomains(state: GameState, draft: TurnDraft) {
   const add = (domain: string, reason: string) => reasons.set(domain, reason);
   for (const domain of ['protagonist', 'npc_ordinary', 'npc_special', 'items', 'economy'])
     add(domain, '现场基础覆盖：指导可能遗漏人物、消费、物品与时间地点事实');
-  const text = draft.story?.narrative ?? '';
-  const guide = draft.story?.variableGuide ?? [];
-  const kinds = {
-    gang: 'org_gang',
-    government: 'org_government',
-    civil: 'org_civil',
-    business: 'org_business',
-  };
-  for (const org of Object.values(state.organizations))
-    if (
-      text.includes(org.name) ||
-      text.includes(org.id) ||
-      guide.some((g) => g.subjectHint === org.id)
-    )
-      add(kinds[org.kind], `已有组织 ${org.id} 在正文/指导中出现`);
-  const hints: [string, RegExp][] = [
-    ['org_gang', /黑帮|帮派|地下组织|地盘/],
-    ['org_government', /警方|警察|派出所|法院|政府|检察|机关/],
-    ['org_civil', /协会|社区|志愿|工会|公益|社团/],
-    ['org_business', /公司|企业|集团|雇主|商户|商场|银行/],
+  const organizations = [
+    ...Object.values(state.organizations),
+    ...(draft.entities?.result.commands ?? []).flatMap(command =>
+      command.type === 'CreateOrganization' ? [command.organization] : []),
   ];
-  for (const [domain, pattern] of hints)
-    if (pattern.test(text)) add(domain, '正文出现组织类别线索');
-  // 新组织可能没有类别词；语义无法排除时保守覆盖全部四类，不能只信 variableGuide。
-  if (
-    draft.turnKind === 'opening' ||
-    draft.failures.some(
-      (failure) =>
-        failure.stage === 'variables' &&
-        failure.storyRevision === draft.storyRevision &&
-        failure.errorCode === 'permission',
-    ) ||
-    guide.some((g) => g.group === 'organization') ||
-    draft.story?.variableGuideReferences?.some((g) => g.group === 'organization') ||
-    /组织|势力|机构|单位|他们|部门|负责人/.test(text) ||
-    ![...reasons.keys()].some((d) => d.startsWith('org_'))
-  )
-    for (const domain of Object.values(kinds))
-      if (!reasons.has(domain)) add(domain, '组织类别不确定，保守覆盖');
+  for (const org of organizations) add('org_' + org.kind, '存档或前段候选包含该类组织');
   const domains = [
     ...new Set(
       promptManifest.modules.flatMap((m) => (m.domain && reasons.has(m.domain) ? [m.domain] : [])),

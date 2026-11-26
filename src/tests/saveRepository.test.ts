@@ -226,7 +226,7 @@ describe('草稿、候选与失败恢复数据', () => {
     draft = rerollStory(draft, story); await repository.saveDraft(draft, 0);
     draft = { ...draft, draftRevision: 2,
       variables: { storyRevision: 1, candidateRevision: 1, requestRevision: 0, validation: 'validated', result: { commands: [purchase()], rejectedSuggestions: [], unresolved: [] } },
-      stageStatus: { story: 'ready', variables: 'ready', world: 'failed' },
+      stageStatus: { story: 'ready', entities: 'pending', variables: 'ready', world: 'failed' },
       failures: [{ stage: 'world', attempt: 3, storyRevision: 1, errorCode: 'TIMEOUT', retryable: true }],
     };
     await repository.saveDraft(draft, 1);

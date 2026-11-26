@@ -14,10 +14,10 @@ import { StageResponseContent } from './StageResponsesPanel';
 import { MemoryResponses } from './MemoryResponses';
 import type { RuntimeLogEntry } from './runtimeLog';
 
-// 三阶段详情：只重排展示，不新增数据或请求。
+// 四阶段详情：只重排展示，不新增数据或请求。
 // - desktop（>900px）：左侧选阶段，右侧分页查看该阶段全部内容。
 // - sheet（≤900px）：底部抽屉两层——第一层（home）为阶段列表与本回合入口，第二层为同一套分页详情。
-export type WorkflowStage = 'story' | 'variables' | 'world';
+export type WorkflowStage = 'story' | 'entities' | 'variables' | 'world';
 export type WorkflowView = WorkflowStage | 'diagnostics' | 'input' | 'home';
 export type WorkflowLayout = 'desktop' | 'sheet';
 export type WorkflowTab = 'overview' | 'candidates' | 'raw' | 'normalized';
@@ -25,9 +25,9 @@ export type WorkflowStep = { stage: WorkflowStage; name: string; text: string; v
 export type StageAction = { label: string; cancel: boolean; disabled: boolean; onClick: () => void };
 export type StageSwitch = { checked: boolean; onChange: (checked: boolean) => void };
 
-const stageNames = { story: '正文生成', variables: '变量管理', world: '动态世界' } as const;
-const rawLabels = { story: '正文', variables: '变量', world: '动态世界' } as const;
-const stageEyebrows = { story: 'STAGE 01 · STORY', variables: 'STAGE 02 · VARIABLES', world: 'STAGE 03 · WORLD' } as const;
+const stageNames = { story: '正文生成', entities: '人物与实体', variables: '主角与现场', world: '场外与网络' } as const;
+const rawLabels = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络' } as const;
+const stageEyebrows = { story: 'STAGE 01 · STORY', entities: 'STAGE 02 · ENTITIES', variables: 'STAGE 03 · SCENE', world: 'STAGE 04 · WORLD' } as const;
 const viewTitles = { ...stageNames, diagnostics: '运行诊断', input: '本回合已绑定输入' } as const;
 const viewEyebrows = { ...stageEyebrows, diagnostics: 'DIAGNOSTICS', input: 'BOUND INPUT · 只读' } as const;
 const glyphs: Record<string, string> = { done: '✓', fail: '!', run: '', off: '–', idle: '' };
@@ -50,9 +50,9 @@ export function DesktopWorkflowPanel(props: {
   onView: (view: WorkflowView) => void;
   tab: WorkflowTab;
   onTab: (tab: WorkflowTab) => void;
-  switches: Record<'variables' | 'world', StageSwitch>;
+  switches: Record<'entities' | 'variables' | 'world', StageSwitch>;
   switchesRef: RefObject<HTMLOListElement | null>;
-  actions: Record<'variables' | 'world', StageAction>;
+  actions: Record<'entities' | 'variables' | 'world', StageAction>;
   draft?: TurnDraft;
   saveId: string;
   rawTurnId?: string;
@@ -77,23 +77,23 @@ export function DesktopWorkflowPanel(props: {
       className={`workflow-details wf-v2${sheet ? ' wf-mobile-content' : ''}`}
       id="workflow-pop"
       role="region"
-      aria-label="三阶段详情"
+      aria-label="四阶段详情"
       data-level={sheet ? (inner ? 'detail' : 'home') : undefined}
     >
       <header className="wf-hd" data-state={props.state}>
         {inner
-          ? <button className="wf-back" onClick={returnHome} aria-label="返回三阶段列表">三阶段</button>
+          ? <button className="wf-back" onClick={returnHome} aria-label="返回四阶段列表">四阶段</button>
           : <span className="dot" aria-hidden="true" />}
         <div className="wf-hd-title">
-          <span className="wf-eyebrow">{inner ? viewEyebrows[view as Exclude<WorkflowView, 'home'>] : 'THREE STAGES · 三阶段'}</span>
+          <span className="wf-eyebrow">{inner ? viewEyebrows[view as Exclude<WorkflowView, 'home'>] : 'FOUR STAGES · 四阶段'}</span>
           <h3>{inner ? viewTitles[view as Exclude<WorkflowView, 'home'>] : props.label}</h3>
         </div>
         {props.onFollow && <button className="wf-follow" onClick={props.onFollow}>跟随最新正文 ↓</button>}
-        <button className="wf-close" onClick={props.onClose} aria-label="收起三阶段详情">×</button>
+        <button className="wf-close" onClick={props.onClose} aria-label="收起四阶段详情">×</button>
       </header>
       <div className="wf-notices">{props.notices}</div>
       <div className="wf-main">
-        <nav className="wf-rail" aria-label="三阶段导航" hidden={inner}>
+        <nav className="wf-rail" aria-label="四阶段导航" hidden={inner}>
           <p className="wf-rail-h">STAGES</p>
           <ol className={sheet ? 'workflow-stages mobile-stage-switches' : 'workflow-stages'} id="workflow-runtime-switches" ref={props.switchesRef}>
             {steps.map((step, i) => {
@@ -113,7 +113,7 @@ export function DesktopWorkflowPanel(props: {
                         data-stage={step.stage}
                         aria-label={stageNames[step.stage]}
                         checked={props.switches[step.stage].checked}
-                        onChange={(event) => props.switches[step.stage as 'variables' | 'world'].onChange(event.target.checked)}
+                        onChange={(event) => props.switches[step.stage as 'entities' | 'variables' | 'world'].onChange(event.target.checked)}
                       />
                     </label>
                   )}
@@ -143,7 +143,7 @@ export function DesktopWorkflowPanel(props: {
           </ul>
         </nav>
         <div className="wf-detail" id="wf-detail" hidden={sheet && !inner}>
-          {view === 'story' || view === 'variables' || view === 'world'
+          {view === 'story' || view === 'entities' || view === 'variables' || view === 'world'
             ? <StageDetail {...props} stage={view} step={steps.find((step) => step.stage === view)!} compact={sheet} />
             : view === 'input' && draft
               ? <BoundInput draft={draft} compact={sheet} />
@@ -178,9 +178,9 @@ function DetailHead({ eyebrow, title, badges, actions, compact = false }: { eyeb
 function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage: WorkflowStage; step: WorkflowStep; compact: boolean }) {
   const { stage, step, draft } = props;
   const state = stepState(step);
-  const variables = draft?.variables?.result;
+  const variables = stage === 'entities' ? draft?.entities?.result : draft?.variables?.result;
   const world = draft?.world;
-  const count = stage === 'variables' && variables
+  const count = (stage === 'entities' || stage === 'variables') && variables
     ? variables.commands.length + variables.rejectedSuggestions.length + variables.unresolved.length
     : stage === 'world' && world
       ? world.result.worldCommands.length + world.result.taskCommands.length + world.result.eventCommands.length + world.result.unresolved.length
@@ -212,7 +212,7 @@ function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage
   const action = stage === 'story' ? undefined : props.actions[stage];
   const badges = <>
     <span className="wf-pill" data-s={state}>{step.text}</span>
-    {stage === 'variables' && variables && <span className="wf-pill" data-s="preview">未正式结算</span>}
+    {(stage === 'entities' || stage === 'variables') && variables && <span className="wf-pill" data-s="preview">未正式结算</span>}
     {stage === 'world' && world && (world.validation === 'preview'
       ? <span className="wf-pill" data-s="preview">预览 · 变量依赖未完成，不能正式结算</span>
       : <span className="wf-pill" data-s="ok">程序校验通过 · 仍未正式结算</span>)}
@@ -250,7 +250,7 @@ function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage
         {tab === 'raw' ? <StageRaw saveId={props.saveId} turnId={props.rawTurnId} stage={stage} draft={draft} />
           : tab === 'normalized' ? <StageNormalized saveId={props.saveId} turnId={props.rawTurnId} stage={stage} draft={draft} />
               : stage === 'story' ? <StoryOverview {...props} state={state} step={step} />
-                : stage === 'variables' ? (draft && variables ? (tab === 'candidates' ? <VariableList draft={draft} /> : <VariableOverview draft={draft} onAll={() => selectTab('candidates')} saveId={props.saveId} />) : <StageEmpty step={step} state={state} />)
+                : stage === 'entities' || stage === 'variables' ? (draft && variables ? (tab === 'candidates' ? <VariableList stage={stage} draft={draft} /> : <VariableOverview stage={stage} draft={draft} onAll={() => selectTab('candidates')} saveId={props.saveId} />) : <StageEmpty step={step} state={state} />)
                   : draft && world ? (tab === 'candidates' ? <WorldList draft={draft} /> : <WorldOverview draft={draft} onAll={() => selectTab('candidates')} saveId={props.saveId} />)
                     : <StageEmpty step={step} state={state} />}
       </div>
@@ -353,13 +353,13 @@ function CandidateLink({ onAll }: { onAll: () => void }) {
 const variableNotice = '候选尚未改变任何正式资金、人物或时间。完整候选可能包含 NPC 内部资料；查看不会更新主角认知或普通历史。';
 const worldNotice = '此处为只读候选。未改变正式人物、经济、任务、时间或历史；线索尚未发布。查看内部结果不会更新任何人物认知。';
 
-function VariableOverview({ draft, onAll, saveId }: { draft: TurnDraft; onAll: () => void; saveId: string }) {
-  const result = draft.variables!.result!;
+function VariableOverview({ stage, draft, onAll, saveId }: { stage: 'entities' | 'variables'; draft: TurnDraft; onAll: () => void; saveId: string }) {
+  const result = draft[stage]!.result;
   return <>
     <Stats items={[['合法命令', result.commands.length, 'ok'], ['拒绝建议', result.rejectedSuggestions.length, 'err'], ['未解决事项', result.unresolved.length, 'warn']]} />
-    <Meta items={[['正文版本', draft.storyRevision], ['执行版本', draft.executionRevision], ['候选版本', draft.variables?.candidateRevision]]} />
+    <Meta items={[['正文版本', draft.storyRevision], ['执行版本', draft.executionRevision], ['候选版本', draft[stage]?.candidateRevision]]} />
     <CandidateLink onAll={onAll} />
-    <StageUsage saveId={saveId} stage="variables" />
+    <StageUsage saveId={saveId} stage={stage} />
     <Note>{variableNotice}</Note>
   </>;
 }
@@ -379,8 +379,8 @@ function RevealJson({ value, name }: { value: unknown; name: '变量' | '世界'
   </>;
 }
 
-function VariableList({ draft }: { draft: TurnDraft }) {
-  const result = draft.variables!.result!;
+function VariableList({ stage, draft }: { stage: 'entities' | 'variables'; draft: TurnDraft }) {
+  const result = draft[stage]!.result;
   return <>
     <SectionTitle>程序编译和校验后的候选</SectionTitle>
     <VariableRows result={result} />

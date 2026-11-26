@@ -339,15 +339,18 @@ export function SettingsPanel({
         )}
         {tab === '运行' && (
           <>
+            <p>三个变量阶段全部开启时，每回合比旧版多一次模型请求。</p>
             <TavernAssistant dirty={localDirty || aiDirty || summaryDirty}/>
             <div className="settings-fields">
               {(
                 [
-                  ['useVariableStage', '变量管理'],
-                  ['useWorldStage', '动态世界'],
+                  ['useEntityStage', '人物与实体'],
+                  ['useVariableStage', '主角与现场'],
+                  ['useWorldStage', '场外与网络'],
                   ['streamStory', '正文生成 · 流式传输'],
-                  ['streamVariables', '变量管理 · 流式传输'],
-                  ['streamWorld', '动态世界 · 流式传输'],
+                  ['streamEntities', '人物与实体 · 流式传输'],
+                  ['streamVariables', '主角与现场 · 流式传输'],
+                  ['streamWorld', '场外与网络 · 流式传输'],
                 ] as const
               ).map(([key, label]) => (
                 <label className="toggle" key={key}>

@@ -191,7 +191,7 @@ describe('失败自动重试', () => {
     const draft = createTurnDraft('save-a', 0, 'turn-a', 'opening', '');
     await repo.saveDraft(draft, null);
     retryDelays.scale = 0;
-    const counts = { story: 0, variables: 0, world: 0 };
+    const counts = { story: 0, entities: 0, variables: 0, world: 0 };
     const failures: string[] = [];
     const coordinator = new TurnCoordinator(repo, new AiClient(async (_url, init) => {
       const stage = model(init);

@@ -1,3 +1,5 @@
+import { entityCreationProjection } from '../domain/entityCandidate';
+import { historyCatalogReason } from './historyCatalog';
 import { storyEventIndex } from '../domain/events/narration';
 import { stageResults } from '../domain/events/stages';
 import { worldNpcAllowed } from '../domain/npc/worldAccess';
@@ -61,11 +63,12 @@ export function checkedInput(input: ComposeInput): ComposeInput {
     )
       throw new Error();
     if (
-      (input.stage === 'variables' || input.stage === 'world') &&
+      (input.stage === 'entities' || input.stage === 'variables' || input.stage === 'world') &&
       (!draft?.story || draft.stageStatus.story !== 'ready')
     )
       throw new Error();
     if (
+      (input.stage === 'entities' && !draft?.useEntityStage) ||
       (input.stage === 'variables' && !draft?.useVariableStage) ||
       (input.stage === 'world' && !draft?.useWorldStage)
     )
@@ -138,7 +141,8 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       } : undefined,
     };
   }
-  if (stage === 'variables')
+  if (stage === 'variables' || stage === 'entities') {
+    const entities = stage === 'variables' && draft?.entities ? entityCreationProjection(state, draft.entities.result.commands) : state;
     return {
       TURN_CONTEXT: {
         turnId: draft!.turnId,
@@ -146,29 +150,31 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         baseSaveRevision: draft!.baseSaveRevision,
         storyRevision: draft!.storyRevision,
         executionRevision: draft!.executionRevision,
-        requestRevision: draft!.stageRequestRevisions.variables,
+        requestRevision: draft!.stageRequestRevisions[stage],
       },
       OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
       PLAYER_ACTION: draft!.userInput,
       SELECTED_VARIABLE_DOMAINS: input.domains ?? [],
-      ...sharedContext(selected ? { ...state, worldClock: selected.endAt } : state,
+      ...sharedContext(selected ? { ...entities, worldClock: selected.endAt } : entities,
         settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
-          stage: 'variables', playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: draft!.story!.variableGuide,
+          stage, playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: draft!.story!.variableGuide,
         }),
       STORY_RESULT: story,
       ...(variableGuideRaw !== undefined ? { VARIABLE_GUIDE_NOTES: variableGuideRaw,
         ...(variableGuideRawTruncated ? { VARIABLE_GUIDE_NOTES_TRUNCATED: true } : {}) } : {}),
       VARIABLE_GUIDE: draft!.story!.variableGuide,
       ...(variableGuideReferences ? { VARIABLE_GUIDE_REFERENCES: variableGuideReferences } : {}),
-      TEXT_COMMAND_CATALOG: textVariableCatalog(input.mode),
+      TEXT_COMMAND_CATALOG: textVariableCatalog(input.mode, stage === 'entities' ? 'entities' : 'scene'),
+      ...(stage === 'variables' && draft!.entities ? { ENTITY_CANDIDATE: draft!.entities.result.commands } : {}),
       NPC_IMPORTANCE: Object.values(state.npc).map(npc=>({npcId:npc.id,identityKey:npc.identityKey,kind:npc.kind,playerPreference:npc.importancePreference??'automatic',profilePending:npc.kind==='special'&&Boolean(npc.profilePending),canRestoreProfile:Boolean(state.dormantNpcProfiles?.[npc.id])})),
     };
+  }
   if (stage === 'world') {
     if (original.openingTimePending && !selected)
       throw new AiError('time_data', undefined, { storyRule: 'opening_missing', fieldPath: 'worldClock' });
-    const variablePending = !draft?.variables || draft.variables.validation !== 'validated';
+    const variablePending = Boolean(draft?.useVariableStage && draft.variables?.validation !== 'validated');
     const worldVariables = variablePending ? undefined : draft!.variables;
     let temporary = original.openingTimePending ? projectTurn(original, draft!) : state;
     if (!variablePending) {
@@ -198,6 +204,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       variablePending,
       PLAYER_ACTION: draft!.userInput,
       STORY_RESULT: { ...storyForSubsequentStages(draft!.story!), eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction), eventNarrations: draft!.story!.variableGuide.filter(guide=>guide.eventNarration) },
+      ENTITY_CANDIDATE: draft!.entities?.result.commands,
       VARIABLE_RESULT: worldVariables,
       // 投影提供候选内容，不产生新的正式版本；模型的expectedRevision仍须使用正式基线。
       ...sharedContext({ ...temporary, revision: original.revision }, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
@@ -211,7 +218,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         sceneNpcIds: [
           ...new Set(
             Object.values(temporary.npc)
-              .filter((npc) => !worldNpcAllowed(temporary, draft!, npc.id))
+              .filter((npc) => !worldNpcAllowed(temporary, draft!, npc.id, original))
               .map((npc) => npc.id),
           ),
         ],
@@ -222,21 +229,21 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         .filter(e=>e.eventKind==='main').map(e=>[e.id,stageResults(temporary,e.id)])),
       OFFSCREEN_STATE: {
         npcIds: Object.values(temporary.npc).filter(
-          (npc) => worldNpcAllowed(temporary, draft!, npc.id),
+          (npc) => worldNpcAllowed(temporary, draft!, npc.id, original),
         ).map(npc=>npc.id),
         organizations: temporary.organizations,
         tasks: Object.values(temporary.tasks).filter(
           (task) =>
             (task.actorRef.kind === 'organization' ||
             (task.actorRef.kind === 'npc' &&
-              worldNpcAllowed(temporary, draft!, task.actorRef.id))),
+              worldNpcAllowed(temporary, draft!, task.actorRef.id, original))),
         ),
         events: temporary.events,
         history: temporary.timeline,
         retiredEvents: Object.fromEntries(Object.entries(temporary.retiredEvents).filter(([,record])=>record.detail)),
         locations: temporary.locations,
       },
-      COMMAND_CATALOG: commandCatalog('world'),
+      COMMAND_CATALOG: commandCatalog('world', Boolean(historyCatalogReason(state, draft!))),
     };
   }
   if (input.memoryTask === 'memory.npc_summarize') {

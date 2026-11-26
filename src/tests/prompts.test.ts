@@ -290,7 +290,7 @@ describe('正式文本来源与旧架构保留', () => {
     for (const module of promptManifest.modules.filter((m) => m.kind === 'prompt')) {
       const record = sources.resources[module.path as keyof typeof sources.resources];
       expect(record, module.path).toBeDefined();
-      const latest = ['cityExpansionV1','protagonistFactionV1','haremV1','storyDifficultyV1','variableGuideNotes','storyGuideOpeningTime','partialSettlement','issue194LegacyRecovery','issue194NotificationReceipt','issue194EntryHandoff','antiTemplateV1','narrativeLengthTiers','promptCacheOrderingV1','legacyCleanupV10','storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
+      const latest = ['threeStageVariables','cityExpansionV1','protagonistFactionV1','haremV1','storyDifficultyV1','variableGuideNotes','storyGuideOpeningTime','partialSettlement','issue194LegacyRecovery','issue194NotificationReceipt','issue194EntryHandoff','antiTemplateV1','narrativeLengthTiers','promptCacheOrderingV1','legacyCleanupV10','storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
         .map(key=>Reflect.get(record,key)).find(value=>value && typeof value==='object' && 'sha256' in value);
       if(latest) expect(sha(text(module.path)),module.path).toBe(Reflect.get(latest,'sha256'));
       if (record.treatment === 'verbatim')
@@ -305,7 +305,7 @@ describe('正式文本来源与旧架构保留', () => {
     );
   });
   it('六主模板来源仍保留：开局按人生初始化任务更新，普通正文保留V2读取并新增事件叙事裁定', () => {
-    expect(promptManifest.modules.filter(m => m.category === 'stage' && m.applicableStages.some(stage => stage !== 'theater'))).toHaveLength(6);
+    expect(promptManifest.modules.filter(m => m.category === 'stage' && m.applicableStages.some(stage => stage !== 'theater'))).toHaveLength(8);
     expect(promptManifest.modules.find(m => m.id === 'theater.novel')?.applicableStages).toEqual(['theater']);
     for (const mode of ['opening', 'regular'] as const) {
       const path = `stages/${mode}/story.md` as const;

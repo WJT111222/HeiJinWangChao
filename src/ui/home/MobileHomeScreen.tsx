@@ -139,6 +139,6 @@ export function MobileHomeScreen(props: Props) {
     {backupReminder&&!loading&&<p className="mh-reminder" role="note">{backupReminder}</p>}
     {notice&&<p className="mh-status" role="status">{notice}{noticeAction}</p>}
     {!loading&&<TicketActions key={effectiveKey} save={listError?undefined:current} selected={current?.status==='readable'&&current.saveId===active} repository={repository} disabled={disabled||tear.torn} onActivate={listError?onCreate:tear.activate} onSelect={onSelect} onDelete={onDelete} onHistory={onHistory} onExport={onExport} backupExporting={backupExporting}/>}
-    <footer className="mh-foot">{notices}<p>八座城市 · 自定义起点 · 开放人生<br/>三阶段生成 · 原子结算 · 连续回合</p></footer>
+    <footer className="mh-foot">{notices}<p>八座城市 · 自定义起点 · 开放人生<br/>四阶段生成 · 原子结算 · 连续回合</p></footer>
   </main>;
 }

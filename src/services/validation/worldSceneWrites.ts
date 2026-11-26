@@ -41,7 +41,6 @@ export function stripVariableSceneWrites(result: WorldResult, state: GameState, 
   };
   for (const c of prior) {
     if (c.type === 'UpdateOrganization') remember(orgWrites, c.organizationId, Object.entries(c.changes));
-    if (c.type === 'CreateOrganization') { remember(orgWrites, c.organization.id, Object.entries(c.organization)); relationOrgs.add(c.organization.id); }
     if (c.type === 'RecordOrgRelation') relationOrgs.add(c.organizationId);
     if (c.type === 'UpdateNpc') remember(npcWrites, c.npcId, Object.entries(c.changes));
   }
@@ -72,7 +71,7 @@ export function stripVariableSceneWrites(result: WorldResult, state: GameState, 
       return !dropped;
     }
     if (command.type === 'RecordOrgRelation' && relationOrgs.has(command.organizationId)) {
-      notes.push(`RecordOrgRelation（${command.organizationId}）：本轮变量阶段已记录该组织与主角的关系或新建了该组织，动态世界的关系记录整条忽略，以变量阶段为准。`);
+      notes.push(`RecordOrgRelation（${command.organizationId}）：本轮变量阶段已记录该组织与主角的关系，动态世界的关系记录整条忽略，以变量阶段为准。`);
       return false;
     }
     return true;

@@ -60,6 +60,8 @@ export async function parsePartialWorld(text: string, state: GameState, draft: T
   const parsed = rawWorldSchema.safeParse(raw);
   if (!parsed.success) throw worldValidationError(parsed.error, {}, raw);
   const existingLocations = new Set(Object.keys(state.locations));
+  for (const command of draft.entities?.result.commands ?? [])
+    if (command.type === 'CreateLocation') existingLocations.add(command.location.id);
   if (draft.variables?.validation === 'validated') {
     const variables = parseVariables(JSON.stringify(draft.variables.result), state, draft);
     for (const command of variables.commands)

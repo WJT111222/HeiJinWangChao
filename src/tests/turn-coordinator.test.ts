@@ -195,7 +195,7 @@ describe('真实三阶段顺序协调及恢复，正式 GameState 不变', () =>
     expect(await repo.load('save-a')).toEqual(before);
   });
   it.each(stages)('%s 瞬时服务错误只自动重试一次，重复失败后停止', async (failedStage) => {
-    const counts = { story: 0, variables: 0, world: 0 },
+    const counts = { story: 0, entities: 0, variables: 0, world: 0 },
       progress: TurnProgress[] = [];
     const coordinator = runner(async (_url, init) => {
       const stage = model(init);

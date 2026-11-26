@@ -26,8 +26,8 @@ import './prompt-manager.css';
 
 const stages: Record<AiTask, string> = {
   story: '正文生成',
-  variables: '变量管理',
-  world: '动态世界',
+  entities: '人物与实体', variables: '主角与现场',
+  world: '场外与网络',
   memory: '记忆维护（独立任务）',
 };
 const categories: Record<string, string> = {
@@ -58,7 +58,7 @@ const groups = [
 ] as const;
 type GroupKey = (typeof groups)[number]['key'];
 const groupOf = (item: PromptModule) => groups.find((group) => (group.categories as readonly string[]).includes(item.category))!;
-const stageNames: Record<string, string> = { story: '正文', variables: '变量', world: '世界', memory: '记忆' };
+const stageNames: Record<string, string> = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', memory: '记忆' };
 const domainNames: Record<string, string> = {
   protagonist: '主角', npc_ordinary: '普通NPC', npc_special: '特殊NPC', items: '重要物品', economy: '经济与资产',
   org_gang: '黑帮势力', org_government: '官方势力', org_civil: '民间组织', org_business: '企业与资本势力',
@@ -95,6 +95,7 @@ function usage(item: PromptModule) {
     always: `每次${used}请求都会带上。`,
     setting: `随设置开关，发送给${used}阶段。`,
     'relevant-domain': `本回合涉及「${domainNames[item.domain ?? ''] ?? item.domain}」时，才会加进${used}请求。`,
+    'history-recording': '回顾往事或场外阶段可能记录当回合结案时加载。',
     'memory-task': '只在记忆维护任务里使用。',
     'protocol-compatibility': '模型协议需要兼容处理时才会带上。',
     'creation-action': '仅点击对应的创角 AI 补全按钮时使用。',
@@ -673,7 +674,7 @@ export function PromptInspector({
             disabled={!repository || !saveId || busy}
             onClick={() => void assemble()}
           >
-            {busy ? '组装中…' : '生成三阶段组装预览（不联网）'}
+            {busy ? '组装中…' : '生成四阶段组装预览（不联网）'}
           </button>
         </div>
         {!saveId && <p className="notice">没有已选存档，无法组装游戏上下文。模块资源仍可浏览。</p>}
@@ -844,7 +845,7 @@ export function PromptInspector({
                     此阶段/模式没有实际请求快照。正文、变量和世界支持手动生成；不会用组装预览冒充发送。
                   </p>
                 )}
-                <p>记忆维护快照在选择请求中独立标识，不属于三阶段或开局/普通回合预览。</p>
+                <p>记忆维护快照在选择请求中独立标识，不属于四阶段或开局/普通回合预览。</p>
                 <label>
                   选择请求
                   <select

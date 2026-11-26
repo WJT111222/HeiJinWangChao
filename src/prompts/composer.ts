@@ -147,7 +147,7 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
     minNarrativeChars: input.settings.prompts.minNarrativeChars,
     maxNarrativeChars: narrativeRange(input.settings.prompts).max,
     openingTime: input.mode === 'opening' && input.state.openingTimePending
-      ? (input.settings.runtime.useVariableStage || input.settings.runtime.useWorldStage ? 'reference' : 'required')
+      ? (input.settings.runtime.useVariableStage ? 'reference' : 'required')
       : undefined,
   });
   if (confirmation) {

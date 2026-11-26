@@ -108,7 +108,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   const createdNpcs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateNpc' ? [[c.npc.id, c.npc] as const] : []));
   const createdOrgs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateOrganization' ? [[c.organization.id, c.organization] as const] : []));
   const actorAllowed = (ref: ActorRef) =>
-    (ref.kind === 'npc' ? worldNpcAllowed(base, draft, ref.id) : offscreen(base, ref))
+    (ref.kind === 'npc' ? worldNpcAllowed(base, draft, ref.id, original) : offscreen(base, ref))
     || (ref.kind === 'npc' && createdNpcs.has(ref.id) && !createdNpcs.get(ref.id)?.onScene)
     || (ref.kind === 'organization' && createdOrgs.has(ref.id));
   const causal = structuredClone(base);
@@ -259,15 +259,15 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         case 'RecordHistory': break; // 只记录，不广播知识；引用/日期/ID由同一领域投影验证。
         case 'ApplyHaremBackground': {
           // 场外推进：只碰离场成员；Variables 本回合已写的同一计划、成员对或总体局势不得覆盖。
-          const variableEdits = (draft.variables?.validation === 'validated' ? draft.variables.result.commands : [])
+          const variableEdits = (draft.entities?.result.commands ?? [])
             .flatMap(c => c.type === 'ApplyHaremChanges' ? c.changes : []);
           const pairKey = (a: string, b: string) => JSON.stringify([a, b].sort());
           for (const [index, edit] of command.changes.entries()) {
             if (edit.op === 'plan') {
-              requireWorld(worldNpcAllowed(base, draft, edit.npcId), 'permission','actor_permission', `changes.${index}.npcId`);
+              requireWorld(worldNpcAllowed(base, draft, edit.npcId, original), 'permission','actor_permission', `changes.${index}.npcId`);
               requireWorld(!variableEdits.some(v => v.op === 'plan' && v.npcId === edit.npcId), 'permission','actor_permission', `changes.${index}.npcId`);
             } else if (edit.op === 'pair') {
-              requireWorld(worldNpcAllowed(base, draft, edit.value.leftNpcId) && worldNpcAllowed(base, draft, edit.value.rightNpcId),
+              requireWorld(worldNpcAllowed(base, draft, edit.value.leftNpcId, original) && worldNpcAllowed(base, draft, edit.value.rightNpcId, original),
                 'permission','actor_permission', `changes.${index}.value`);
               const key = pairKey(edit.value.leftNpcId, edit.value.rightNpcId);
               requireWorld(!variableEdits.some(v => v.op === 'pair' && pairKey(v.value.leftNpcId, v.value.rightNpcId) === key),
@@ -313,7 +313,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     try { projected = projectTurn(original, draft, retained); }
     catch (error) { throw worldProjectionError(error, result, original, draft, source); }
   }
-  if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) {
+  if ((!draft.useVariableStage || draft.variables?.validation === 'validated') && !historicalPerspective(state,draft)) {
     const deferredStages = allowDeferred ? deferredStageIds(base, projected) : [];
     const deferred = [...deferredStages];
     for (const due of worldEventSchedule(state,base).due.filter(event => event.eventKind !== 'sub')) {

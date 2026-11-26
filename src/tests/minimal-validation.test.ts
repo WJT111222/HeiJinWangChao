@@ -55,7 +55,7 @@ describe('M8-P0A 最小校验失败复现', () => {
   });
   it('已完成候选可零耗时正式提交，不制造固定步长', () => {
     const { state, draft } = regular();
-    const complete = { ...draft, variables: { storyRevision: draft.storyRevision, candidateRevision: 1, requestRevision: 0, validation: 'validated' as const, result: empty }, world: { storyRevision: draft.storyRevision, basedOnVariableRevision: 1, candidateRevision: 1, requestRevision: 0, validation: 'validated' as const, result: world }, stageStatus: { story: 'ready' as const, variables: 'ready' as const, world: 'ready' as const } };
+    const complete = { ...draft, variables: { storyRevision: draft.storyRevision, candidateRevision: 1, requestRevision: 0, validation: 'validated' as const, result: empty }, world: { storyRevision: draft.storyRevision, basedOnVariableRevision: 1, candidateRevision: 1, requestRevision: 0, validation: 'validated' as const, result: world }, useEntityStage: false, stageStatus: { story: 'ready' as const, entities: 'skipped' as const, variables: 'ready' as const, world: 'ready' as const } };
     expect(settleTurn(state, complete, state.updatedAt).worldClock).toBe(state.worldClock);
   });
   it.each([

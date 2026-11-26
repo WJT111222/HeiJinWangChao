@@ -1,3 +1,4 @@
+import { sceneAndEntityCommands } from './entityCandidate';
 import { storySceneAuthority, validateNarrationClock } from './events/narration';
 import { timeOutcome, validateTimeCommands } from './timePreflight';
 import { eventInteractionCommands } from './events/interactions';
@@ -28,6 +29,7 @@ export function prepareVariableProjection(state: GameState, draft: TurnDraft, co
   // 开局一律孤身一人：正式候选入口同样拒绝开局绑定主势力，不只依赖文本编译。
   requireData(draft.turnKind === 'regular' || commands.every(c => c.type !== 'RecordOrgRelation' || !c.faction),
     'FACTION_BINDING', '开局回合不能绑定主势力');
+  commands = sceneAndEntityCommands(state, draft, commands);
   validateTimeCommands(state,draft,commands);
   let variables = variableCommandsForTurn(state, draft, commands);
   if(draft.story?.variableGuideRaw === undefined && draft.turnKind==='regular' && draft.story?.variableGuide.some(g=>g.group==='time'&&g.subjectHint==='time:pause')) {
@@ -62,7 +64,7 @@ export function preparedVariableCommands(state: GameState, draft: TurnDraft, com
 export function projectTurn(state: GameState, draft: TurnDraft, worldCommands: readonly DomainCommand[] = []) {
   const validated = draft.variables?.validation === 'validated';
   const variables = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
-  const prepared = validated ? prepareVariableProjection(state,draft,variables)
+  const prepared = validated || draft.entities ? prepareVariableProjection(state,draft,variables)
     : { commands:variableCommandsForTurn(state,draft,variables), acknowledgedReceipts:undefined };
   const projected = commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision,
     [...prepared.commands, ...worldCommands], state.updatedAt, validated ? storySceneAuthority(state,draft,variables) : undefined,

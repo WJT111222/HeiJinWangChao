@@ -1,6 +1,7 @@
+import { entityCreationProjection } from '../../domain/entityCandidate';
 import { HaremChangesSchema } from '../../domain/harem/schema';
 import { compileSourceOperation, normalizeSourcePath, sourceValues, trackSourceValues } from './sourceSemantics';
-import { SceneEventStateSchema } from '../../domain/events/schema';
+import { SceneEventCreationSchema, SceneEventStateSchema } from '../../domain/events/schema';
 import { OpeningInitialStateSchema } from '../../domain/openingInitialization';
 import { DomainCommandSchema, fingerprint } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
@@ -91,6 +92,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   let base: GameState, clock: string, systemCommands: DomainCommand[];
   try {
     base = openingTimeBase(current, draft, []);
+    if (context.phase !== 'entities' && draft.entities) base = entityCreationProjection(base, draft.entities.result.commands);
     clock = openingTimeSelection(current, draft, [])?.endAt ?? base.worldClock;
     systemCommands = variableCommandsForTurn(current, draft, []);
     // 开局投影的精确重放：占位标记已在模拟副本清除，但保留原程序时钟幂等凭据。
@@ -126,7 +128,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   const sceneEvents = new Map(Object.entries(base.events));
   for (let i = 0; i < ast.length; i++) {
     const command = normalizeSourcePath(ast[i]), origin = { commandIndex: i + 1, source: command.source };
-    const commandId = `text-v1:s${draft.storyRevision}:c${i + 1}`;
+    const commandId = `${context.phase === 'entities' ? 'entity-v1' : 'text-v1'}:s${draft.storyRevision}:c${i + 1}`;
     const prior = priorCommand(current, draft.turnId, commandId);
     const common = { commandId, evidence: `文本变量指令第${i + 1}条` };
     let mapped: DomainCommand;
@@ -154,6 +156,13 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       if (!changes.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, changes.error));
       if (commands.some(c => c.type === 'ApplyHaremChanges')) return failed('duplicate_or_conflicting_command', origin);
       mapped = {...common,type:'ApplyHaremChanges',expectedRevision:context.expectedRevision,changes:changes.data};
+    } else if (root.name === 'events' && node?.kind === 'id' && command.path.nodes.length === 2) {
+      if (command.operation !== 'set') return failed('unsupported_operation', origin);
+      if (sceneEvents.has(node.id)) return failed('duplicate_or_conflicting_command', origin);
+      const event = SceneEventCreationSchema.safeParse(command.value);
+      if (!event.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, event.error));
+      mapped = { ...common, type: 'SaveEvent', event: { ...event.data, id: node.id, sourceTurnIds: [draft.turnId] } };
+      sceneEvents.set(node.id, mapped.event);
     } else if (sceneEvent && node.kind==='id') {
       if(command.operation!=='set')return failed('unsupported_operation',origin);
       const old=sceneEvents.get(node.id),delta=SceneEventStateSchema.safeParse(command.value);

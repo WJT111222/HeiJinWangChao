@@ -40,6 +40,10 @@ export function formatTailMessage(
       `要求：顶层标签顺序固定、各至多一次、打开必须闭合，各块内容中不得再出现顶层标签字面量；<正文>纯文本不少于 ${options.minNarrativeChars} 字${options.maxNarrativeChars && options.maxNarrativeChars > options.minNarrativeChars ? `（目标约 ${options.minNarrativeChars}～${options.maxNarrativeChars} 字，写到自然收束点即可）` : ''}；${guideRule}${actionsRule}写完最后一个闭合标签立即结束输出。`,
     ].join('\n');
   }
+  if (stage === 'entities') return [
+    '先声明本回合新接触人物的稳定 ID，再输出人物与实体阶段的文本命令。',
+    '<接触者>[]</接触者>', '<thinking>人物变化依据</thinking>', '<说明>本轮变化</说明>', '<命令>', '</命令>',
+  ].join('\n');
   if (stage === 'variables') {
     return [
       '【最终格式提醒】从输出的第一个字符起依次给出三个顶层区块，顺序固定、各一次、打开必须闭合，区块之外不得有任何文字或Markdown代码围栏。没有任何变化时的完整合法形状（占位文字换成真实内容）：',

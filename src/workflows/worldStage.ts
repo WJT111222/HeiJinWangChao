@@ -63,10 +63,13 @@ export class WorldStage {
       if (!current.story || current.stageStatus.story !== 'ready')
         throw new AiError('configuration');
       requestSnapshot(config, 'world', input.vault);
+      if (settings.runtime.useEntityStage && !current.entities || settings.runtime.useVariableStage && !current.variables)
+        throw new AiError('candidate_conflict');
       // 不信任持久化的 validated 字样，执行前重新核验变量候选。
       if (current.variables?.validation === 'validated')
         parseVariables(JSON.stringify(current.variables.result), state, current);
       const started = startStageAttempt(current, ['world'], {
+        useEntityStage: settings.runtime.useEntityStage,
         useVariableStage: settings.runtime.useVariableStage,
         useWorldStage: true,
       });
@@ -96,7 +99,7 @@ export class WorldStage {
         responseInspectionId = response.responseInspectionId;
         attempt.check();
         const basis = response.requestBasis;
-        const preview = draft.variables?.validation !== 'validated';
+        const preview = draft.useVariableStage && draft.variables?.validation !== 'validated';
         if (
           basis.saveId !== draft.saveId ||
           basis.turnId !== draft.turnId ||
@@ -131,6 +134,7 @@ export class WorldStage {
               draft.executionRevision,
             ),
             requestRevision: draft.stageRequestRevisions.world,
+            basedOnEntityRevision: draft.entities?.candidateRevision,
             basedOnVariableRevision: draft.variables?.candidateRevision,
             validation: preview ? 'preview' : 'validated',
             result,

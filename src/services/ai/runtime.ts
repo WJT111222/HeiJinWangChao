@@ -1,3 +1,4 @@
+import { parseEntities } from '../validation/aiOutputs';
 import { logicalMessageCount } from '../../domain/worldbook/timedEffects';
 import { prepareStoryWorldbook } from '../worldbook/storyWorldbook';
 import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
@@ -262,7 +263,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
       envelope.notes.push('本幕事件回执未通过核验，未授予事件操作。');
     }
   }
-  const result = story ?? (captured.stage === 'variables'
+  const result = story ?? (captured.stage === 'entities' ? await parseEntities(responseText, captured.state, captured.draft!) : captured.stage === 'variables'
         ? await parsePartialVariables(responseText, captured.state, captured.draft!)
         : await parsePartialWorld(responseText, captured.state, captured.draft!));
   const notes = envelope ? [...storyNotes, ...envelope.notes] : worldNormalizationNotes.get(result);
@@ -299,7 +300,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   } catch (error) {
     // 兼容包装和协议错误已有具体位置；仅将实际正文错误归入 Story 格式诊断。
     const compatibilityError = prompt.preset && error instanceof AiError && error.details?.fieldPath?.startsWith('tavern.');
-    const failure = captured.stage === 'variables' ? variableFailure(error, step)
+    const failure = (captured.stage === 'variables' || captured.stage === 'entities') ? variableFailure(error, step)
       : captured.stage === 'story' && !compatibilityError ? storyFailure(error, true) : error;
     sealed = true;
     if (captured.stage === 'story' && failure && typeof failure === 'object') {
