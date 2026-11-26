@@ -1,6 +1,9 @@
 import { narrativeRange } from './model';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { promptManifest } from '../../prompts/manifest';
+import type { OfficialId, OfficialSelection } from '../../domain/worldbook/mainWorldbook';
+import { WorldbookLibrary } from '../../services/storage/worldbookLibrary';
+import { watchWorldbookChanges } from './worldbookChanges';
 import { moduleActivation, selectPromptModules, comparePromptModes } from '../../prompts/selection';
 import {
   browserPromptOrder,
@@ -69,7 +72,11 @@ const switchFields = ['noControl', 'naturalProse', 'actionOptions', 'realWorld']
 type SwitchField = (typeof switchFields)[number];
 type PromptSettings = Settings['prompts'];
 /* 状态只看 manifest 和当前写作偏好，不依赖「高级」里选的阶段与模式。 */
-function moduleState(item: PromptModule, prompts: PromptSettings): { kind: 'switch'; field: SwitchField } | { kind: 'always' | 'ondemand' | 'never' | 'current' | 'unused'; label: string } {
+function moduleState(item: PromptModule, prompts: PromptSettings, flags?: OfficialSelection): { kind: 'switch'; field: SwitchField } | { kind: 'always' | 'ondemand' | 'never' | 'current' | 'unused'; label: string } {
+  if (item.activation === 'main-worldbook') {
+    if (!flags) return { kind: 'ondemand', label: '待读取开关' };
+    return flags[item.id as OfficialId] ? { kind:'current', label:'已启用' } : { kind:'unused', label:'已关闭' };
+  }
   if (item.toggle) {
     const [field, value] = item.toggle.split(':');
     if ((switchFields as readonly string[]).includes(field)) return { kind: 'switch', field: field as SwitchField };
@@ -92,6 +99,7 @@ function usage(item: PromptModule) {
   if (item.toggle?.startsWith('difficulty:'))
     return `只在「提示词」页的剧情难度选中这一档时发送给${used}阶段；宽松不发送任何难度规则。`;
   return {
+    'main-worldbook': '随设置 → 世界书中的独立开关生效。',
     always: `每次${used}请求都会带上。`,
     setting: `随设置开关，发送给${used}阶段。`,
     'relevant-domain': `本回合涉及「${domainNames[item.domain ?? ''] ?? item.domain}」时，才会加进${used}请求。`,
@@ -162,7 +170,28 @@ export function PromptInspector({
   const secrets = browserCredentials();
   const config = configuration();
   const route = previewRoute(config, stage);
-  const selectionInput = { stage, mode, settings, domains, cotAllowed: route.cotAllowed };
+  const [flags, setFlags] = useState<OfficialSelection>();
+  useEffect(() => {
+    let ticket = 0;
+    async function refresh() {
+      const current = ++ticket;
+      const opened = await WorldbookLibrary.open();
+      if (!opened.ok) { if (current === ticket) { setFlags(undefined); setNotice('世界书库不可用，无法确认官方开关。'); } return; }
+      try {
+        const result = await opened.library.shelf();
+        if (current === ticket) {
+          setFlags(result.ok ? result.official : undefined);
+          if (!result.ok) setNotice('世界书配置读取失败，请在世界书页面检查书库。');
+        }
+      } finally { opened.library.close(); }
+    }
+    void refresh();
+    const stop = watchWorldbookChanges(() => { generation.current++; setBusy(false); setPreviews({}); void refresh(); });
+    return () => { ticket++; stop(); };
+  }, []);
+  const preview = previews[stage];
+  const official = preview?.ok ? preview.prompt.official : flags;
+  const selectionInput = { worldview: official && { official, books: [] }, stage, mode, settings, domains, cotAllowed: route.cotAllowed };
   const selected = selectPromptModules(selectionInput);
   const modeDifference = comparePromptModes(selectionInput);
   const effective = projectPromptOrder(orders, selected);
@@ -170,7 +199,6 @@ export function PromptInspector({
     (a, b) => (effective[a.id] ?? a.defaultOrder) - (effective[b.id] ?? b.defaultOrder),
   );
   const module = promptManifest.modules.find((item) => item.id === moduleId);
-  const preview = previews[stage];
   const stageRecords = records.filter(
     (record) =>
       record.scope?.kind === 'stage' &&
@@ -334,7 +362,7 @@ export function PromptInspector({
     setPage('read');
   }
   function control(item: PromptModule) {
-    const state = moduleState(item, settings.prompts);
+    const state = moduleState(item, settings.prompts, flags);
     if (state.kind === 'switch') {
       const checked = settings.prompts[state.field];
       return (
@@ -351,7 +379,7 @@ export function PromptInspector({
     return <span className={`pm-state ${state.kind}`}>{state.label}</span>;
   }
   const effectiveOn = (item: PromptModule) => {
-    const state = moduleState(item, settings.prompts);
+    const state = moduleState(item, settings.prompts, flags);
     return state.kind === 'switch' ? settings.prompts[state.field] : state.kind !== 'never' && state.kind !== 'unused';
   };
   const meta = (item: PromptModule) =>
@@ -362,7 +390,7 @@ export function PromptInspector({
     ]
       .filter(Boolean)
       .join(' · ');
-  const currentState = module ? moduleState(module, settings.prompts) : undefined;
+  const currentState = module ? moduleState(module, settings.prompts, flags) : undefined;
   const variableFormats = variable
     ? (['json', 'text'] as const).filter((format) => {
         const target = variableModule(variable.domain, variable.part, format);

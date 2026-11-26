@@ -76,7 +76,7 @@ it('off 仍逐字发送未开启世界书时的 HTTP 请求', async () => {
   const base = await composePrompt({ ...input, cotAllowed: snapshot.useCot }, null);
   await runStageRequest(input, config, vault, options, client);
   expect(prepare).toHaveBeenCalledExactlyOnceWith({
-    messages: ['玩家本轮行动', '最近的公开正文', '更早的公开正文'],
+    mainBooks: [], messages: ['玩家本轮行动', '最近的公开正文', '更早的公开正文'],
     contextTokens: 32000, storyRemainingTokens: 4096, messageCount: 5,
     trigger: 'normal', seed: 'save-a:turn-current:1',
   }, expect.objectContaining({ signal: undefined }));

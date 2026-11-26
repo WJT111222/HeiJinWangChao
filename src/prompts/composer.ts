@@ -13,6 +13,7 @@ import { checkedInput, contextFor, contextMessage, worldWeekday } from './contex
 import type { ComposeInput } from './context';
 import type { AiMessage } from '../services/ai/protocols';
 import { estimateTokens } from './statistics';
+import { foundationMessage, insertPlayerWorldbook } from './playerWorldbook';
 import { formatTailMessage } from './formatTail';
 import { AiError } from '../services/ai/errors';
 
@@ -157,8 +158,11 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
   }
   if (nativeDelivery && input.stage === 'story') checkDeliveryBoundaries(messages);
   if (!preset && messages.some((m) => /\{\{[^{}]*\}\}/.test(m.content))) throw new AiError('placeholder');
+  const foundation = input.stage === 'memory' ? undefined : foundationMessage(input.worldview);
   return {
-    messages,
+    messages: foundation ? [...insertPlayerWorldbook(messages, { foundation })] : messages,
+    foundation,
+    official: input.worldview?.official,
     modules: records,
     ...(preset && assembled ? { preset: {
       id: preset.definition.id, version: preset.definition.version,

@@ -96,7 +96,8 @@ export class TriggerExecutor {
     const request = check.request;
     try {
       const result = runWorldbookTrigger({
-        books: releases.map((release) => ({ bookId: release.bookId, versionId: release.versionId, entries: release.entries })),
+        books: releases.map((release, i) => ({ bookId: release.bookId, versionId: release.versionId,
+          entries: request.books[i].keywordsOnly ? release.entries.filter(entry => !entry.constant) : release.entries })),
         messages: request.messages, contextTokens: request.contextTokens, storyRemainingTokens: request.storyRemainingTokens,
         trigger: request.trigger, messageCount: request.messageCount, timedState: request.timedState, seed: request.seed,
         settings: engineSettings(check),

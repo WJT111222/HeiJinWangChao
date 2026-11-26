@@ -1,3 +1,4 @@
+import { officialIds, officialSchema, worldviewSchema, type MainWorldview, type OfficialId, type OfficialSelection, type WorldviewBasis } from '../../domain/worldbook/mainWorldbook';
 import { canonicalJson, sha256Hex } from '../../domain/worldbook/canonical';
 import { WORLDBOOK_LIMITS, WorldbookReleaseSchema, type ImportNotice, type WorldbookRelease } from '../../domain/worldbook/schema';
 import { TRIGGER_RESOURCE_LIMITS, type BookRef } from '../../domain/worldbook/triggerRequest';
@@ -24,11 +25,14 @@ export const WORLDBOOK_LIBRARY_DB = 'heijinwangchao-worldbooks';
  * - 第 1 版：releases、books。
  * - 第 2 版：增加 summaries（版本摘要，列表与资源判断只读它，不读整本书）；升级时从已有版本回填。
  * - 第 3 版：增加 enabled（全局启用的书，键为书 ID）。
+ * - 第 4 版：增加内置开关与生成快照；旧玩家书的用途缺省为普通，不重写已有版本或哈希。
  * 只读的读取器（触发 Worker）按 LIBRARY_READABLE_VERSIONS 判断能否读取，不触发升级。
  */
-export const WORLDBOOK_LIBRARY_VERSION = 3;
+export const WORLDBOOK_LIBRARY_VERSION = 4;
 /** 只读访问（只用 releases 表）能识别的结构版本。将来升版时在这里登记，读取器才会接受。 */
-export const LIBRARY_READABLE_VERSIONS: readonly number[] = [1, 2, 3];
+export const LIBRARY_READABLE_VERSIONS: readonly number[] = [1, 2, 3, 4];
+const MAIN_SETTINGS = 'mainSettings';
+const TURN_WORLDS = 'turnWorldviews';
 const RELEASES = 'releases';
 const BOOKS = 'books';
 const SUMMARIES = 'summaries';
@@ -69,6 +73,7 @@ export interface LibraryFailure { ok: false; code: LibraryFailureCode; message: 
 
 /** 书目索引：每本书一条。 */
 export interface LibraryBook {
+  purpose?: 'main';
   bookId: string;
   title: string;
   /** 最近安装的版本。 */
@@ -79,6 +84,7 @@ export interface LibraryBook {
 }
 /** 版本摘要（单独一张表，不含条目正文）：列表与资源判断只读它。 */
 export interface LibraryVersionSummary {
+  purpose?: 'main';
   bookId: string;
   versionId: string;
   versionLabel: string;
@@ -96,7 +102,7 @@ export interface LibraryVersionSummary {
 export interface ShelfBook { book: LibraryBook; latest: LibraryVersionSummary | null; enabled: boolean }
 /** 一本启用的书在生成时的引用（最近版本）。 */
 export interface EnabledBook { ref: BookRef; title: string }
-interface EnabledRecord { bookId: string; enabledAt: number }
+interface EnabledRecord { bookId: string; enabledAt: number; main?: true }
 interface StoredRelease { release: WorldbookRelease; bookId: string; versionId: string; contentHash: string; installedAt: number }
 
 export type InstallStatus = 'installed' | 'already_installed' | 'duplicate_content';
@@ -156,12 +162,12 @@ function toSummary(release: WorldbookRelease, installedAt: number, canonicalChar
     contentChars += entry.content.length;
   }
   return { bookId: release.bookId, versionId: release.versionId, versionLabel: release.versionLabel, contentHash: release.contentHash,
-    title: release.metadata.title, entryCount: release.entries.length, keyCount, keyChars, contentChars, canonicalChars, installedAt };
+    ...(release.metadata.purpose === 'main' ? { purpose: 'main' as const } : {}), title: release.metadata.title, entryCount: release.entries.length, keyCount, keyChars, contentChars, canonicalChars, installedAt };
 }
 function readSummary(raw: unknown): LibraryVersionSummary {
   const v = raw as Partial<LibraryVersionSummary> | undefined;
   const numbers = [v?.entryCount, v?.keyCount, v?.keyChars, v?.contentChars, v?.canonicalChars, v?.installedAt];
-  if (!v || typeof v.bookId !== 'string' || typeof v.versionId !== 'string' || typeof v.contentHash !== 'string' || typeof v.title !== 'string'
+  if (!v || (v.purpose !== undefined && v.purpose !== 'main') || typeof v.bookId !== 'string' || typeof v.versionId !== 'string' || typeof v.contentHash !== 'string' || typeof v.title !== 'string'
     || typeof v.versionLabel !== 'string' || numbers.some((n) => typeof n !== 'number' || !Number.isFinite(n) || n < 0))
     throw new LibraryAbort(fail('invalid', '书库中的版本摘要已损坏。'));
   return v as LibraryVersionSummary;
@@ -202,6 +208,21 @@ function readBook(raw: unknown): LibraryBook {
   return value as LibraryBook;
 }
 
+/** Keep the enabled index usable even when a selected release or catalogue row is missing. */
+async function updateEnabledPurpose(tx: IDBTransaction, book: LibraryBook) {
+  const store = tx.objectStore(ENABLED);
+  const existing: EnabledRecord | undefined = await request(store.get(book.bookId));
+  if (!existing || Boolean(existing.main) === (book.purpose === 'main')) return;
+  if (book.purpose === 'main') existing.main = true;
+  else delete existing.main;
+  await request(store.put(existing));
+}
+
+async function readOfficial(tx: IDBTransaction): Promise<OfficialSelection> {
+  const store = tx.objectStore(MAIN_SETTINGS);
+  return officialSchema.parse(Object.fromEntries(await Promise.all(officialIds.map(async id => [id, await request(store.get(id))]))));
+}
+
 export class WorldbookLibrary {
   private constructor(private readonly database: IDBDatabase, private readonly limits: LibraryLimits) {}
 
@@ -221,6 +242,11 @@ export class WorldbookLibrary {
       catch { settle(fail('unavailable', MESSAGES.unavailable)); return; }
       operation.onupgradeneeded = () => {
         const db = operation.result, tx = operation.transaction!;
+        if (!db.objectStoreNames.contains(MAIN_SETTINGS)) {
+          const settings = db.createObjectStore(MAIN_SETTINGS);
+          for (const id of officialIds) settings.add(true, id);
+        }
+        if (!db.objectStoreNames.contains(TURN_WORLDS)) db.createObjectStore(TURN_WORLDS);
         if (!db.objectStoreNames.contains(RELEASES)) {
           const releases = db.createObjectStore(RELEASES, { keyPath: ['bookId', 'versionId'] });
           releases.createIndex('contentHash', 'contentHash');
@@ -257,6 +283,80 @@ export class WorldbookLibrary {
 
   close(): void { this.database.close(); }
 
+  async setOfficial(id?: OfficialId, enabled = true): Promise<{ok: true} | LibraryFailure> {
+    try {
+      await transaction(this.database, [MAIN_SETTINGS], 'readwrite', async tx => {
+        for (const key of id ? [id] : officialIds) await request(tx.objectStore(MAIN_SETTINGS).put(enabled, key));
+      });
+      return { ok: true };
+    } catch (error) { return failureOf(error); }
+  }
+
+  /** One consistent read of flags and enabled releases. Ordinary books stay on the existing Worker path. */
+  async worldview(basis?: WorldviewBasis, bind = false, resume = false): Promise<MainWorldview> {
+    const key = basis && [basis.saveId, basis.createdAt, basis.turnId, basis.baseRevision, basis.sourceRevision];
+    const readBinding = (raw: unknown) => {
+      if (raw === undefined) return undefined;
+      const row = raw as { draftRevision: number; worldview: unknown };
+      if (!Number.isSafeInteger(row.draftRevision)) throw new Error('invalid');
+      if (basis?.bindingRevision !== undefined && basis.bindingRevision > row.draftRevision) return undefined;
+      return worldviewSchema.parse(row.worldview);
+    };
+    const captured = await transaction(this.database, [MAIN_SETTINGS, ENABLED, BOOKS, SUMMARIES, RELEASES, TURN_WORLDS], 'readonly', async tx => {
+      if (key) {
+        const saved = readBinding(await request(tx.objectStore(TURN_WORLDS).get(key)));
+        if (saved) return { kind:'bound' as const, saved };
+      }
+      const official = await readOfficial(tx);
+      const releases: WorldbookRelease[] = [];
+      // IndexedDB keys are ordered by stable book ID, independently of activation time or title.
+      for (const selected of await request<EnabledRecord[]>(tx.objectStore(ENABLED).getAll())) {
+        const id = selected.bookId;
+        const raw = await request(tx.objectStore(BOOKS).get(id));
+        if (!selected.main && !raw?.purpose) continue;
+        if (!raw) throw new Error('missing_version');
+        const book = readBook(raw);
+        if (selected.main !== true || book.purpose !== 'main') throw new Error('invalid');
+        const version = [id, book.latestVersionId];
+        const record = await request(tx.objectStore(RELEASES).get(version));
+        if (!record) throw new Error('missing_version');
+        const summary = readSummary(await request(tx.objectStore(SUMMARIES).get(version)));
+        const { release } = readStored(record);
+        if (summary.purpose !== 'main' || release.metadata.purpose !== 'main' || release.bookId !== id ||
+            release.versionId !== book.latestVersionId || release.contentHash !== summary.contentHash) throw new Error('invalid');
+        releases.push(release);
+      }
+      return { kind:'current' as const, official, releases };
+    });
+    if (captured.kind === 'bound') return captured.saved;
+    const books: MainWorldview['books'] = [];
+    for (const release of captured.releases) {
+      const verified = await hashWithinLimit(release, this.limits.maxCanonicalChars);
+      if (!verified.ok || verified.hash !== release.contentHash) throw new Error('invalid');
+      const entries = release.entries.filter(entry => entry.constant && !entry.disabled).map(({entryId, content}) => ({entryId, content}));
+      books.push({ bookId: release.bookId, versionId: release.versionId, contentHash: release.contentHash, title: release.metadata.title, entries });
+    }
+    const snapshot = { official: captured.official, books };
+    const unbound = resume && (books.length > 0 || officialIds.some(id => !snapshot.official[id]));
+    if (!bind || !basis || !key) {
+      if (key && unbound) throw new Error('unbound');
+      return snapshot;
+    }
+    return transaction(this.database, [TURN_WORLDS], 'readwrite', async tx => {
+      const store = tx.objectStore(TURN_WORLDS);
+      const winner = readBinding(await request(store.get(key)));
+      if (winner) return winner;
+      if (unbound) throw new Error('unbound');
+      const range = IDBKeyRange.bound(key.slice(0, 2), [...key.slice(0, 2), []]);
+      for (const existing of await request(store.getAllKeys(range))) {
+        if (Array.isArray(existing) && (Number(existing[3]) < basis.baseRevision ||
+            (existing[2] === basis.turnId && Number(existing[4]) < basis.sourceRevision - 1))) await request(store.delete(existing));
+      }
+      await request(store.put({ worldview: snapshot, draftRevision: basis.bindingRevision ?? 0 }, key));
+      return snapshot;
+    });
+  }
+
   /**
    * 安装一个世界书版本（不可变）。先校验格式并重新计算内容哈希，再在一个事务里：
    * - 同一书 ID + 版本 ID 已存在：内容哈希相同 → already_installed（幂等）；不同 → version_conflict，不覆盖；
@@ -273,7 +373,7 @@ export class WorldbookLibrary {
     if (hashed.hash !== release.contentHash) return fail('hash_mismatch', MESSAGES.hash_mismatch);
     const now = (options.now ?? Date.now)();
     try {
-      return await transaction(this.database, [RELEASES, BOOKS, SUMMARIES], 'readwrite', async (tx) => {
+      return await transaction(this.database, [RELEASES, BOOKS, SUMMARIES, ENABLED], 'readwrite', async (tx) => {
         const releases = tx.objectStore(RELEASES), books = tx.objectStore(BOOKS), summaries = tx.objectStore(SUMMARIES);
         const existing = await request(releases.get([release.bookId, release.versionId]));
         if (existing !== undefined) {
@@ -302,7 +402,10 @@ export class WorldbookLibrary {
         const book: LibraryBook = previous === undefined
           ? { bookId: release.bookId, title: release.metadata.title, latestVersionId: release.versionId, versionCount: 1, installedAt: now, updatedAt: now }
           : { ...readBook(previous), title: release.metadata.title, latestVersionId: release.versionId, versionCount: readBook(previous).versionCount + 1, updatedAt: now };
+        if (release.metadata.purpose === 'main') book.purpose = 'main';
+        else delete book.purpose;
         await request(books.put(book));
+        await updateEnabledPurpose(tx, book);
         return { ok: true as const, status: 'installed' as const, release, book };
       });
     } catch (error) {
@@ -369,10 +472,11 @@ export class WorldbookLibrary {
       return await transaction(this.database, [BOOKS, ENABLED], 'readwrite', async (tx) => {
         const books = tx.objectStore(BOOKS), store = tx.objectStore(ENABLED);
         if (!enabled) { await request(store.delete(bookId)); return { ok: true as const, enabled: false }; }
-        if ((await request(books.get(bookId))) === undefined) throw new LibraryAbort(fail('not_found', MESSAGES.not_found));
+        const book = await request(books.get(bookId));
+        if (book === undefined) throw new LibraryAbort(fail('not_found', MESSAGES.not_found));
         if ((await request(store.get(bookId))) !== undefined) return { ok: true as const, enabled: true };
         if ((await request(store.count())) >= MAX_ENABLED_BOOKS) throw new LibraryAbort(fail('too_many_enabled', MESSAGES.too_many_enabled));
-        const record: EnabledRecord = { bookId, enabledAt: (options.now ?? Date.now)() };
+        const record: EnabledRecord = { bookId, enabledAt: (options.now ?? Date.now)(), ...(book.purpose === 'main' ? {main:true} : {}) };
         await request(store.add(record));
         return { ok: true as const, enabled: true };
       });
@@ -417,7 +521,7 @@ export class WorldbookLibrary {
     if (!hashed.ok) return hashed;
     const now = (options.now ?? Date.now)();
     try {
-      return await transaction(this.database, [RELEASES, SUMMARIES, BOOKS], 'readwrite', async (tx) => {
+      return await transaction(this.database, [RELEASES, SUMMARIES, BOOKS, ENABLED], 'readwrite', async (tx) => {
         const releases = tx.objectStore(RELEASES), summaries = tx.objectStore(SUMMARIES), books = tx.objectStore(BOOKS);
         const rawBook = await request(books.get(bookId));
         if (rawBook === undefined) throw new LibraryAbort(fail('not_found', MESSAGES.not_found));
@@ -435,7 +539,10 @@ export class WorldbookLibrary {
         await request(releases.add(record));
         await request(summaries.add(toSummary(release, now, hashed.chars)));
         const book: LibraryBook = { ...current, title: release.metadata.title, latestVersionId: release.versionId, versionCount: 1, updatedAt: now };
+        if (release.metadata.purpose === 'main') book.purpose = 'main';
+        else delete book.purpose;
         await request(books.put(book));
+        await updateEnabledPurpose(tx, book);
         return { ok: true as const, changed: true, release, book };
       });
     } catch (error) { return failureOf(error); }
@@ -479,9 +586,9 @@ export class WorldbookLibrary {
   }
 
   /** 书架：全部书目、各自最近版本的摘要与启用状态。排序同 listBooks。只读摘要，不读条目正文。 */
-  async shelf(): Promise<{ ok: true; books: ShelfBook[] } | LibraryFailure> {
+  async shelf(): Promise<{ ok: true; official: OfficialSelection; books: ShelfBook[] } | LibraryFailure> {
     try {
-      const items = await transaction(this.database, [BOOKS, SUMMARIES, ENABLED], 'readonly', async (tx) => {
+      const { items, official } = await transaction(this.database, [BOOKS, SUMMARIES, ENABLED, MAIN_SETTINGS], 'readonly', async (tx) => {
         const books = (await request(tx.objectStore(BOOKS).getAll())).map(readBook);
         const enabled = new Set((await request(tx.objectStore(ENABLED).getAllKeys())).map(String));
         const out: ShelfBook[] = [];
@@ -489,10 +596,10 @@ export class WorldbookLibrary {
           const raw = await request(tx.objectStore(SUMMARIES).get([book.bookId, book.latestVersionId]));
           out.push({ book, latest: raw === undefined ? null : readSummary(raw), enabled: enabled.has(book.bookId) });
         }
-        return out;
+        return { items: out, official: await readOfficial(tx) };
       });
       items.sort((a, b) => b.book.updatedAt - a.book.updatedAt || (a.book.bookId < b.book.bookId ? -1 : a.book.bookId > b.book.bookId ? 1 : 0));
-      return { ok: true, books: items };
+      return { ok: true, books: items, official };
     } catch (error) { return failureOf(error); }
   }
 
@@ -513,7 +620,7 @@ export class WorldbookLibrary {
           const rawSummary = await request(tx.objectStore(SUMMARIES).get([book.bookId, book.latestVersionId]));
           if (rawSummary === undefined) continue;
           const summary = readSummary(rawSummary);
-          books.push({ ref: { bookId: book.bookId, versionId: book.latestVersionId, contentHash: summary.contentHash }, title: book.title });
+          books.push({ ref: { bookId: book.bookId, versionId: book.latestVersionId, contentHash: summary.contentHash, ...(summary.purpose === 'main' ? { keywordsOnly: true } : {}) }, title: book.title });
         }
         return { ok: true as const, books };
       });
