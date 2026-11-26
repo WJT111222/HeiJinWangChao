@@ -1,3 +1,4 @@
+import { chatBase } from './phone';
 import { worldTaskNpcAllowed } from './npc/worldAccess';
 import { eventInteractionCommands } from './events/interactions';
 import { validateSceneEventUpdate } from './events/scenePermission';
@@ -22,12 +23,13 @@ export function markStoryPeople(state:GameState, declared:readonly string[], com
 }
 
 export function checkEntityCommands(state: GameState, draft: TurnDraft, declared: readonly string[], commands: readonly DomainCommand[]) {
-  const ids = contactIds(state, declared);
+  const ids = contactIds(state, [...declared, ...(draft.phoneFreeze ? draft.phonePending ?? [] : []).map(row => row.reply.npcId)]);
   const allowed = new Set(commandsForPhase('entities', draft.turnKind));
   const people = new Set(Object.keys(state.npc));
   for (const command of commands)
     requireData(allowed.has(command.type), 'STAGE_PERMISSION', '人物与实体阶段命令越权');
-  const entities = commands.length ? projectEntityChanges(state, draft.turnId, commands) : declared.length ? structuredClone(state) : state;
+  const base = draft.phoneFreeze && commands.some(command => command.type === 'RecordPhoneMessage') ? chatBase(state, draft.phonePending ?? [], draft.turnId) : state;
+  const entities = commands.length ? projectEntityChanges(base, draft.turnId, commands) : declared.length ? structuredClone(state) : state;
   const checkPerson = (id: string) => requireData(Object.hasOwn(entities.npc, id), 'NOT_FOUND', '人物引用不存在');
   const checkLocation = (id: string) => requireData(Object.hasOwn(entities.locations, id), 'NOT_FOUND', '地点引用不存在');
   requireData(new Set(commands.map(command => command.commandId)).size === commands.length, 'DUPLICATE_COMMAND', '候选命令 ID 重复');

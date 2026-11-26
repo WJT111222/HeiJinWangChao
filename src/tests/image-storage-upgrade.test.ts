@@ -4,6 +4,9 @@ import { imageStores } from '../services/images/library';
 import { request, transaction } from '../services/storage/idb';
 import { SaveRepository, saveDatabaseVersion } from '../services/storage/saveRepository';
 import { createTheaterStores } from '../services/storage/theaters';
+import { recordPhone, schedulePhone } from '../domain/phone';
+import { phoneGame } from './fixtures/phone';
+import { createTurnDraft } from '../domain/drafts';
 import { game } from './fixtures/game';
 
 const name = 'image-schema';
@@ -65,6 +68,29 @@ async function snapshot(factory: IDBFactory) {
 }
 
 describe('图片数据库 V8 到 V12 的打开和升级', () => {
+  it('第三步 V10 原地升级保留旧会话、排期、未结算回合及独立存储，并关闭旧写入连接',async()=>{
+    const factory = new IDBFactory(), state = phoneGame();
+    recordPhone(state,'partner',{messageId:'old-sms',medium:'text',sender:'npc',text:'旧短信'},'evening',false);
+    state.npc.partner.onScene=false;
+    schedulePhone(state,{messageId:'next-sms',npcId:'partner',text:'次日取件',dueAt:'2027-01-01T08:00:00+08:00'},'evening');
+    const draft=createTurnDraft(state.saveId,state.revision,'unfinished','regular','整理文件');
+    const old=await openRaw(factory,10,(db,tx)=>{
+      seedV7(db,tx); seedImages(db);
+      tx.objectStore('saves').put(state); tx.objectStore('drafts').put(draft);
+    });
+    const before=await contents(old);
+    let closed=false;
+    old.onversionchange=()=>{closed=true; old.close();};
+    const repo=await SaveRepository.open(name,factory);
+    try {
+      expect(closed).toBe(true);
+      expect(await snapshot(factory)).toEqual({ ...before, oracleNotes: [] });
+      const loaded=await repo.loadGame(state.saveId);
+      expect(loaded.state.phone).toEqual(state.phone);
+      expect(loaded.draft).toEqual(draft);
+      expect(loaded.draft?.phonePending).toBeUndefined();
+    } finally {repo.close();}
+  });
   it('新建完整结构，已有完整 V8 可重新打开且保留全部记录', async () => {
     const fresh = new IDBFactory();
     (await SaveRepository.open(name, fresh)).close();

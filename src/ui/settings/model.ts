@@ -53,6 +53,7 @@ export const SettingsSchema = z.strictObject({
       return { ...memory, automaticMaintenance: memory.automaticMaintenance ?? true, summaries };
     }),
   runtime: z.strictObject({
+    phoneChat: z.boolean().optional(),
     useEntityStage: z.boolean().optional(),
     streamEntities: z.boolean().optional(),
     useVariableStage: z.boolean(),

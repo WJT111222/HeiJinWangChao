@@ -1,4 +1,6 @@
 import { oracleStore, createOracleStore, readSheet, writeSheet, rememberPaper, consumeOracleNote } from './oracleNotes';
+import { validatePendingChat } from '../../domain/phone';
+import { ChatExchange, freezeChat, restoreChat } from '../../domain/phoneChat';
 import { withWorldbookLibrary, restoreWorldview, worldviewDigest, missingWorldview, storySourceHash, type StoryWorldview } from '../worldbook/mainWorldview';
 import { HistoryRepository } from './history/repository';
 import { clearManualHistory, historyStores } from './history/model';
@@ -49,7 +51,8 @@ import type { BackupEntry } from './backup';
  * imports become available. Old V3 code cannot reopen and bypass instance CAS.
  * That V4 upgrade required no store, index or saved payload changes. */
 // V10 closes older writers before they encounter populated phone conversations in a V11 save.
-// V11 is reserved by the parallel phone chat migration. V12 separates local literary notes.
+// V11 closes V10 writers before private-chat drafts and undo snapshots are saved.
+// V12 separates local literary notes by save.
 export const saveDatabaseVersion = 12;
 
 declare const confirmationBrand: unique symbol;
@@ -111,7 +114,7 @@ export interface TurnCommitResult {
   replayed: boolean;
 }
 export interface TurnUndoResult extends TurnCommitResult { input: string }
-export interface TurnUndoRequest { saveId: string; expectedRevision: number; expectedDraft?: TurnDraft; operationId: string }
+export interface TurnUndoRequest { saveId: string; expectedRevision: number; expectedDraft?: TurnDraft; operationId: string; chatChoice?: 'keep'|'discard' }
 
 
 function readState(raw: unknown, saveId: string): GameState {
@@ -377,8 +380,11 @@ export class SaveRepository {
         const old = current.draft;
         const draft = old && TurnDraftSchema.parse({
           ...createTurnDraft(saveId, state.revision, old.turnId, old.turnKind, old.userInput, old.useVariableStage, old.useWorldStage, old.useEntityStage),
+          phonePending: old.phonePending,
+          phoneFreeze: old.phoneFreeze,
           draftRevision: old.draftRevision + 1,
         });
+        validatePendingChat(state, draft);
         const control = await readControl(tx,saveId) ?? newSaveControl(saveId);
         delete control.storyOrigin;
         control.epoch = `epoch-${crypto.randomUUID()}`;
@@ -423,6 +429,7 @@ export class SaveRepository {
       const next=setNpcImportance(state,checked.npcId,checked.identityKey,checked.choice);
       next.npcManagementRevision=(state.npcManagementRevision??0)+1;
       const nextDraft=draft?TurnDraftSchema.parse({...draft,draftRevision:draft.draftRevision+1}):undefined;
+      validatePendingChat(next, nextDraft);
       control.epoch=`epoch-${crypto.randomUUID()}`;delete control.lastUndo;
       control.lastNpcManagement={operationId:checked.operationId,request:signature,managementRevision:next.npcManagementRevision};
       await request(tx.objectStore('saves').put(GameStateSchema.parse(next)));
@@ -507,6 +514,9 @@ export class SaveRepository {
         const restored = await restoreSnapshot(tx, state, control!);
         const next = createTurnDraft(saveId, restored.state.revision, `turn-${crypto.randomUUID()}`, 'regular', '',
           draft?.useVariableStage ?? true, draft?.useWorldStage ?? true, draft?.useEntityStage ?? true);
+        const pending = restoreChat(restored.state, draft?.phonePending ?? [], input.chatChoice, restored.phonePending);
+        if (pending.length) next.phonePending = pending;
+        validatePendingChat(restored.state, next);
         // Retire receipts from the previous branch, including a predecessor receipt
         // whose next-draft ID is now obsolete. Keep the restored appliedCommands.
         const receipts = tx.objectStore('turnReceipts');
@@ -962,6 +972,28 @@ export class SaveRepository {
     if (keys.length) await withWorldbookLibrary(lib => lib.forgetWorldviewKeys(keys)).catch(() => {});
   }
 
+  /** Called under the same execution lock as Story. The IDB CAS also rejects a replaced save or stale reply. */
+  async appendPhoneExchange(state: GameState, basedOn: TurnDraft | undefined, instance: string | null, value: ChatExchange, signal: AbortSignal) {
+    const exchange = ChatExchange.parse(value);
+    return transaction(this.database, ['saves','drafts','saveControls'], 'readwrite', async tx => {
+      const current = await readStoredState(tx, state.saveId);
+      const store = tx.objectStore('drafts');
+      const raw = await request(store.get(state.saveId));
+      const draft = raw === undefined ? undefined : TurnDraftSchema.parse(raw);
+      requireData(await storedInstance(tx,state.saveId) === instance && current.revision === state.revision &&
+        current.npcManagementRevision === state.npcManagementRevision && fingerprint(draft) === fingerprint(basedOn),
+        'DRAFT_CONFLICT','存档或待结算聊天已变化，请重新读取');
+      requireData(current.turnNumber > 0 && (!draft || awaitingPlayerAction(current,draft)) &&
+        current.npc[exchange.reply.npcId]?.phoneContact?.status === 'known' &&
+        exchange.baseTurnId === current.journal.at(-1)?.turnId && exchange.at === current.worldClock,
+        'PHONE_TARGET','当前回合或号码不能发送消息');
+      const next = TurnDraftSchema.parse({ ...(draft ?? createTurnDraft(state.saveId,state.revision,'turn-'+crypto.randomUUID(),'regular','')),
+        draftRevision:(draft?.draftRevision ?? 0)+1, phonePending:[...(draft?.phonePending ?? []),exchange] });
+      await request(store.put(next));
+      return next;
+    }, signal);
+  }
+
   // 唯一允许绑定行动的入口：空待输入草稿，或正文失败/取消且尚无任何候选的已绑定草稿（重新绑定为全新草稿）。
   // 输入绑定后仍不可由saveDraft改写；不提升正式revision。
   async bindTurnAction(expected: TurnDraft, action: string, useVariableStage: boolean, useWorldStage: boolean, useEntityStage = expected.useEntityStage, expectedInstance?: string | null): Promise<TurnDraft> {
@@ -975,7 +1007,7 @@ export class SaveRepository {
         requireData(fingerprint(current) === fingerprint(snapshot), 'DRAFT_CONFLICT', '行动草稿已被其他操作更新');
         if (expectedInstance !== undefined) requireData(await storedInstance(tx,state.saveId) === expectedInstance,'DRAFT_CONFLICT',replacedMessage);
         requireData(awaitingPlayerAction(state, current) || rebindableAfterStoryStop(state, current), 'DRAFT_CONFLICT', '只能为未生成的待输入回合绑定行动');
-        const next = TurnDraftSchema.parse({ ...createTurnDraft(current.saveId, state.revision, current.turnId, 'regular', userInput, useVariableStage, useWorldStage, useEntityStage), draftRevision: current.draftRevision + 1 });
+        const next = TurnDraftSchema.parse({ ...createTurnDraft(current.saveId, state.revision, current.turnId, 'regular', userInput, useVariableStage, useWorldStage, useEntityStage), ...(current.phonePending?.length ? {phonePending:current.phonePending,phoneFreeze:freezeChat(current.phonePending)} : {}), draftRevision: current.draftRevision + 1 });
         const control = await readControl(tx, state.saveId) ?? newSaveControl(state.saveId);
         control.input = ''; control.memoryPaused = false; delete control.lastUndo; delete control.storyOrigin;
         await writeControl(tx, control);
@@ -1102,19 +1134,22 @@ export class SaveRepository {
     });
   }
 
-  async deleteDraft(saveId: string, expectedDraftRevision: number): Promise<void> {
+  async deleteDraft(saveId: string, expectedDraftRevision: number, expected?: TurnDraft, instance?: string | null): Promise<void> {
     IdSchema.parse(saveId); CountSchema.parse(expectedDraftRevision);
     return transaction(this.database, ['drafts','saveControls'], 'readwrite', async (tx) => {
       const store = tx.objectStore('drafts');
       const old = TurnDraftSchema.parse(await request(store.get(saveId)));
-      requireData(old.draftRevision === expectedDraftRevision, 'DRAFT_CONFLICT', '草稿版本冲突');
+      requireData(old.draftRevision === expectedDraftRevision && (!expected || fingerprint(expected) === fingerprint(old)) && (instance === undefined || await storedInstance(tx,saveId) === instance), 'DRAFT_CONFLICT', '草稿版本冲突');
       const control = await readControl(tx, saveId);
       if (control) {
         delete control.storyOrigin;
         control.epoch = `epoch-${crypto.randomUUID()}`;
         await writeControl(tx, control);
       }
-      await request(store.delete(saveId));
+      if (old.phonePending?.length || (expected && old.turnKind === 'regular')) {
+        const reset = createTurnDraft(saveId,old.baseSaveRevision,'turn-'+crypto.randomUUID(),'regular','',old.useVariableStage,old.useWorldStage,old.useEntityStage);
+        await request(store.put({ ...reset, draftRevision:old.draftRevision+1, phonePending:old.phonePending }));
+      } else await request(store.delete(saveId));
     });
   }
 }

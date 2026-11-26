@@ -346,6 +346,8 @@ export function SettingsPanel({
         {tab === '运行' && (
           <>
             <p>三个变量阶段全部开启时，每回合比旧版多一次模型请求。</p>
+            <label><input type="checkbox" checked={editing.runtime.phoneChat !== false} onChange={e => setEditing({ ...editing, runtime:{...editing.runtime,phoneChat:e.target.checked} })} />启用手机私聊</label>
+            <p className="muted">每条消息调用手机模型。回包格式无效时会重新请求，可能产生额外用量。</p>
             <TavernAssistant dirty={localDirty || aiDirty || summaryDirty}/>
             <div className="settings-fields">
               {(

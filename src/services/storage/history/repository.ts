@@ -2,6 +2,8 @@ import { oracleStore } from '../oracleNotes';
 import { z } from 'zod';
 import { DataError, IdSchema, requireData } from '../../../domain/common';
 import { fingerprint } from '../../../domain/commands';
+import { validatePendingChat } from '../../../domain/phone';
+import { freezeChat, restoreChat } from '../../../domain/phoneChat';
 import { createTurnDraft, TurnDraftSchema } from '../../../domain/drafts';
 import { GameStateSchema } from '../../../domain/state';
 import type { GameState } from '../../../domain/state';
@@ -23,7 +25,7 @@ export type HistorySelection = { kind: 'automatic' | 'manual'; id: string };
 declare const historyBrand: unique symbol;
 export interface HistoryConfirmation { readonly [historyBrand]: true }
 export interface HistoryPreview {
-  state: GameState; node: HistoryNode; confirmation: HistoryConfirmation; currentTurn: number; hasDraft: boolean;
+  state: GameState; node: HistoryNode; confirmation: HistoryConfirmation; currentTurn: number; hasDraft: boolean; hasPendingChat: boolean;
 }
 interface Current { state: unknown; draft: unknown; control: unknown; oracle: unknown }
 interface Selected { metadata?: unknown; record: unknown }
@@ -190,12 +192,13 @@ export class HistoryRepository {
     const confirmation = Object.freeze({}) as HistoryConfirmation;
     confirmations.set(confirmation, { owner: this, saveId, selection: { ...selection }, current: captured.saved, source: captured.selected });
     return { state, node, confirmation, currentTurn: captured.state.turnNumber,
+      hasPendingChat: Boolean(TurnDraftSchema.safeParse(captured.saved.draft).data?.phonePending?.length),
       hasDraft: Boolean(captured.saved.draft && !same((captured.saved.draft as { userInput?: string }).userInput, '')) };
   }
   release(confirmation: HistoryConfirmation) { confirmations.delete(confirmation); }
 
   /** Fresh explicit confirmation. Paid generation starts in the UI only AFTER this transaction commits. */
-  async restore(confirmation: HistoryConfirmation, action: string, useVariableStage: boolean, useWorldStage: boolean, useEntityStage = useVariableStage) {
+  async restore(confirmation: HistoryConfirmation, action: string, useVariableStage: boolean, useWorldStage: boolean, useEntityStage = useVariableStage, chatChoice?: 'keep'|'discard') {
     const checked = confirmations.get(confirmation);
     confirmations.delete(confirmation); // one-shot: double click or replay cannot replace twice
     requireData(checked?.owner === this, 'HISTORY_CONFIRMATION_INVALID', '历史确认已失效，请重新预览');
@@ -211,8 +214,11 @@ export class HistoryRepository {
           requireData(sameSource(await source(tx, saveId, selection), selected), 'HISTORY_CONFLICT', '历史节点已改变或被删除，请重新预览');
           const state = checkedState(observed.state, saveId), oldDraft = observed.draft === undefined ? undefined : TurnDraftSchema.parse(observed.draft);
           const nextState = GameStateSchema.parse({ ...restored, revision: Math.max(state.revision, restored.revision) + 1, updatedAt: new Date().toISOString() });
-          const draft = TurnDraftSchema.parse({ ...createTurnDraft(saveId, nextState.revision, `turn-${crypto.randomUUID()}`, 'regular', userInput,
+          const original = selection.kind === 'automatic' ? SnapshotSchema.parse(selected.record).phonePending ?? [] : [];
+          const pending = restoreChat(nextState, oldDraft?.phonePending ?? [], chatChoice, original);
+          const draft = TurnDraftSchema.parse({ ...(pending.length ? { phonePending:pending,phoneFreeze:freezeChat(pending) } : {}), ...createTurnDraft(saveId, nextState.revision, `turn-${crypto.randomUUID()}`, 'regular', userInput,
             useVariableStage, useWorldStage, useEntityStage), draftRevision: (oldDraft?.draftRevision ?? 0) + 1 });
+          validatePendingChat(nextState, draft);
           const control = { ...newSaveControl(saveId), instanceId: `instance-${crypto.randomUUID()}` };
           // Intentional new timeline root: no old automatic point or commit receipt survives.
           await request(tx.objectStore(oracleStore).delete(saveId));

@@ -1,3 +1,4 @@
+import { ChatPending, type ChatExchange } from '../../domain/phoneChat';
 import { HistorySummarySchema, historySummary } from './history/model';
 import { fingerprint } from '../../domain/commands';
 import { TurnDraftSchema } from '../../domain/drafts';
@@ -43,7 +44,7 @@ export interface UndoStatus {
 }
 export const SnapshotSchema = z.strictObject({
   version: z.literal(1), saveId: IdSchema, turnId: IdSchema, beforeTurnId: IdSchema,
-  input: z.string().max(100000), stateJSON: z.string(),
+  input: z.string().max(100000), stateJSON: z.string(), phonePending:ChatPending.optional(),
 });
 export function newSaveControl(saveId: string): SaveControl {
   return { saveId, epoch: `epoch-${crypto.randomUUID()}`, records: [], input: '', memoryPaused: false };
@@ -97,7 +98,7 @@ export async function recordUndo(tx: IDBTransaction, state: GameState, draft: Tu
     await writeControl(tx, control); return;
   }
   const snapshot = SnapshotSchema.parse({ version: 1, saveId: state.saveId, turnId: draft.turnId,
-    beforeTurnId: previousTurn, input: draft.userInput, stateJSON: JSON.stringify(state) });
+    beforeTurnId: previousTurn, input: draft.userInput, ...(draft.phonePending?.length ? {phonePending:draft.phonePending} : {}), stateJSON: JSON.stringify(state) });
   const bytes = new TextEncoder().encode(JSON.stringify(snapshot)).byteLength;
   if (bytes > undoPolicy.maxBytes) {
     await clearUndoRecords(tx, state.saveId); control.records = []; control.notice = 'budget';
@@ -113,7 +114,7 @@ export async function recordUndo(tx: IDBTransaction, state: GameState, draft: Tu
   }
   await writeControl(tx, control);
 }
-export async function restoreSnapshot(tx: IDBTransaction, state: GameState, control: SaveControl): Promise<{ state: GameState; input: string }> {
+export async function restoreSnapshot(tx: IDBTransaction, state: GameState, control: SaveControl): Promise<{ state: GameState; input: string; phonePending?: ChatExchange[] }> {
   const status = await inspectUndo(tx, state), head = control.records.at(-1);
   requireData(status.available > 0 && head, 'UNDO_UNAVAILABLE', '没有可靠的已提交回合恢复点');
   const record = SnapshotSchema.parse(await request(tx.objectStore('turnUndo').get([state.saveId, head!.turnId])));
@@ -135,7 +136,7 @@ export async function restoreSnapshot(tx: IDBTransaction, state: GameState, cont
   control.memoryPaused = true;
   control.input = record.input;
   delete control.notice;
-  return { state: restored, input: record.input };
+  return { state: restored, input: record.input, ...(record.phonePending?.length ? {phonePending:record.phonePending} : {}) };
 }
 
 /** Read-only UI comparison; never consumes an undo point or repairs storage. */

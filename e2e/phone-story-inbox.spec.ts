@@ -110,7 +110,8 @@ for (const mode of ['day', 'night'] as const) {
     await expect(phone.getByText('明天我去取原件。', { exact: true })).toBeVisible();
     await expect(phone.locator('.ph-out')).toContainText('已读');
     await expect(phone.locator('.ph-thread')).toContainText('场外来信 ·');
-    await expect(phone.getByRole('textbox')).toHaveCount(0);
+    await expect(phone.getByRole('textbox', {name:'私聊消息'})).toBeDisabled();
+    await expect(phone.getByRole('button', {name:'结束聊天',exact:true})).toBeDisabled();
     await capture('thread');
     await expect(tab.locator('[data-phone-entry]:visible .ph-badge')).toHaveText('2');
     await tab.close();

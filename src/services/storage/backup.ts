@@ -1,5 +1,6 @@
 import { parseImages } from '../images/library';
 import type { PortableImages } from '../images/library';
+import { validatePendingChat } from '../../domain/phone';
 import { z } from 'zod';
 import { DataError } from '../../domain/common';
 import { TurnDraftSchema } from '../../domain/drafts';
@@ -14,7 +15,7 @@ import { migrateSave } from './migrations';
  * 含游戏进度、未结算草稿和独立小剧场；不含 AI 密钥、渠道配置、全局设置、提示词排序、撤回快照与提交回执。
  */
 export const backupFormat = 'heijin-backup';
-export const backupVersion = 5;
+export const backupVersion = 6;
 
 export interface BackupEntry {
   summary: { title: string; turnNumber: number; revision: number; schemaVersion: number; updatedAt: string };
@@ -28,7 +29,7 @@ export interface BackupEntry {
 }
 export interface BackupFile {
   format: typeof backupFormat;
-  version: 1 | 2 | 3 | 4 | typeof backupVersion;
+  version: 1 | 2 | 3 | 4 | 5 | typeof backupVersion;
   app: string;
   exportedAt: string;
   saves: BackupEntry[];
@@ -96,35 +97,45 @@ async function sha256(text: string): Promise<string | undefined> {
   return 'sha256:' + Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-/** 草稿只有指向同一存档、且基于同一正式版本时才随备份恢复；否则跳过草稿，不影响存档。 */
+/** An obsolete candidate can be skipped. A draft containing player chat must stay with its save. */
 export function compatibleDraft(state: GameState, raw: unknown, exportLocalRecovery = false): { draft?: TurnDraft; dropped?: string } {
   if (raw === undefined || raw === null) return {};
+  function incompatible(reason: string, notice = '已跳过草稿。') {
+    if (raw && typeof raw === 'object') {
+      const pending = 'phonePending' in raw && raw.phonePending;
+      if ((Array.isArray(pending) ? pending.length : pending) || ('phoneFreeze' in raw && raw.phoneFreeze))
+        throw new DataError('PHONE_DRAFT_CONFLICT', `无法完整恢复待结算私聊：${reason}。`);
+    }
+    return { dropped: reason + '，' + notice };
+  }
   const parsed = TurnDraftSchema.safeParse(raw);
-  if (!parsed.success) return { dropped: '草稿结构无法通过校验，已跳过草稿。' };
-  if (parsed.data.saveId !== state.saveId) return { dropped: '草稿不属于这份存档，已跳过草稿。' };
-  if (parsed.data.baseSaveRevision !== state.revision) return { dropped: '草稿基于旧的回合，已过期，已跳过草稿。' };
+  if (!parsed.success) return incompatible('草稿结构无法通过校验');
+  if (parsed.data.saveId !== state.saveId) return incompatible('草稿不属于这份存档');
+  if (parsed.data.baseSaveRevision !== state.revision) return incompatible('草稿基于旧的回合，已过期');
+  validatePendingChat(state, parsed.data);
   if (parsed.data.legacyNotificationRecovery && !exportLocalRecovery)
-    return { dropped: '旧通知恢复授权只在原本机草稿有效，已跳过该未结算草稿，正式存档可导入。' };
+    return incompatible('旧通知恢复授权只在原本机草稿有效', '已跳过该未结算草稿，正式存档可导入。');
   return { draft: parsed.data };
 }
 
 export async function serializeBackup(entries: readonly BackupEntry[], app: string, now = new Date()): Promise<string> {
   if (!entries.length || entries.length > maxBackupEntries)
     throw new DataError('BACKUP_TOO_LARGE', `单个备份文件最多容纳 ${maxBackupEntries} 份存档。请分别导出，原存档保持完整。`);
-  // Historical node exports omit the collection. Keep their draft-free V1 format so
-  // importing a timeline snapshot cannot interpret the omission as an empty collection.
-  const withTheaters = entries.some(entry => entry.theaters !== undefined);
+  // A node without chat or side collections remains portable in the original format.
+  // V6 distinguishes an omitted collection from an explicitly exported empty one.
+  const needsLatestFormat = entries.some(entry => entry.theaters !== undefined || entry.images ||
+    entry.draft?.phonePending?.length || Object.values(entry.state.phone.threads).some(thread => thread.messages.some(message => message.source === 'chat')));
   const saves = entries.map(entry => ({ summary: entry.summary, state: entry.state,
     ...(entry.images ? {images:entry.images} : {}),
     ...(entry.draft ? { draft: entry.draft } : {}),
-    ...(withTheaters ? { theaters: parseTheaters(entry.theaters ?? [], entry.state.saveId) } : {}),
+    ...(entry.theaters !== undefined ? { theaters: parseTheaters(entry.theaters, entry.state.saveId) } : {}),
   }));
   const serializedSaves = JSON.stringify(saves);
   const exportTooLarge = () => new DataError('BACKUP_TOO_LARGE', '备份文件超过可导入的容量上限。请分别导出，原存档保持完整。');
   if (utf8ByteLength(serializedSaves, maxBackupBytes) > maxBackupBytes) throw exportTooLarge();
   const checksum = await sha256(serializedSaves);
   const file: BackupFile = {
-    format: backupFormat, version: withTheaters || entries.some(entry => entry.images) ? backupVersion : 1, app, exportedAt: now.toISOString(),
+    format: backupFormat, version: needsLatestFormat ? backupVersion : 1, app, exportedAt: now.toISOString(),
     saves, ...(checksum ? { checksum } : {}),
   };
   const text = JSON.stringify(file);
@@ -159,7 +170,7 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
   if (format.success && format.data.format === backupFormat && format.data.version > backupVersion)
     throw new DataError('BACKUP_FUTURE', '这份备份来自更新的游戏版本，请先更新游戏再导入；本机存档没有任何改动。');
   const envelope = EnvelopeSchema.safeParse(raw);
-  if (!envelope.success || ![1, 2, 3, 4, backupVersion].includes(envelope.data.version))
+  if (!envelope.success || ![1, 2, 3, 4, 5, backupVersion].includes(envelope.data.version))
     throw new DataError('BACKUP_INVALID', '这不是黑金王朝的备份文件。请选择导出时得到的 .heijin.json 文件。');
   const { saves, checksum } = envelope.data;
   let checksumStatus: BackupChecksumStatus = 'unverified';
@@ -174,7 +185,7 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
       const state = migrateSave(save.state);
       const { draft, dropped } = compatibleDraft(state, save.draft);
       let theaters: TheaterRecord[] | undefined;
-      if (envelope.data.version >= 2 || save.theaters !== undefined) {
+      if ((envelope.data.version >= 2 && envelope.data.version <= 5) || save.theaters !== undefined) {
         try { theaters = parseTheaters(save.theaters, state.saveId); }
         catch { return { ok: false, title, error: '小剧场数据无法校验，本份存档未导入。', code: 'THEATER_BACKUP' }; }
       }
@@ -187,6 +198,8 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
         ...(theaters ? { theaters } : {}) };
     } catch (error) {
       const code = error instanceof DataError ? error.code : 'CORRUPT_SAVE';
+      if (error instanceof DataError && code.startsWith('PHONE_'))
+        return { ok: false, title, code, error: error.message };
       const message = code === 'FUTURE_VERSION'
         ? '这份存档来自更新的游戏版本，请先更新游戏再导入。'
         : code === 'UNSUPPORTED_VERSION' ? '这份存档版本太旧，当前程序无法读取。' : '这份存档的内容已损坏，无法导入。';

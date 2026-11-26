@@ -47,6 +47,16 @@ export async function comparisonFixture(load, scenario = 'ordinary') {
   const draft = rerollStory(createTurnDraft(state.saveId, state.revision, 'compare-turn', mode, userInput), {
     turnKind: mode, narrative, summary: narrative, variableGuide,
   });
+  if (scenario === 'private-chat') {
+    const {freezeChat} = await load('domain/phoneChat');
+    const person = state.npc['npc-a'];
+    person.phoneContact = {status:'known'};
+    draft.phonePending = Array.from({length:12}, (_,i)=>({
+      id:'ef65cc37-a1dc-414a-842d-'+String(i).padStart(12,'0'), baseTurnId:state.journal.at(-1).turnId, at:state.worldClock,
+      text:'资料到了吗？编号 '+i, reply:i===11?{npcId:person.id,status:'later'}:{npcId:person.id,status:'replied',text:'已经登记。'}
+    }));
+    draft.phoneFreeze=freezeChat(draft.phonePending);
+  }
   return { state: GameStateSchema.parse(state), draft, scene };
 }
 export function fixedEntityCandidate(draft) {

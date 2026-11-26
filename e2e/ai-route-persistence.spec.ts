@@ -132,6 +132,8 @@ test('恢复后四路真实Mock请求使用各自渠道模型，默认模型及�
     const {readAiConfig}=await import(cp),{CredentialVault}=await import(vp),{runStageRequest}=await import(rp),{worldState,worldDraft}=await import(fp),{defaultSettings}=await import(sp),{AiClient}=await import(ap),{requestSnapshot}=await import(sn);
     const config=readAiConfig(localStorage),vault=new CredentialVault(sessionStorage,localStorage),settings=defaultSettings(),state=worldState(),before=JSON.stringify(state);
     settings.prompts.minNarrativeChars=1;settings.prompts.actionOptions=false;
+    const {loadMainWorldview}=await import('/src/services/worldbook/mainWorldview.ts' as string);
+    const worldview=await loadMainWorldview();
     for(const stage of ['story','entities','variables','world']) {
       const draft=worldDraft(true,'opening');
       if(stage==='entities') {
@@ -140,7 +142,7 @@ test('恢复后四路真实Mock请求使用各自渠道模型，默认模型及�
         draft.stageStatus.variables='pending';
         delete draft.variables;
       }
-      await runStageRequest({stage,mode:'opening',state,draft,settings,userInput:'观察'},config,vault,{stream:false});
+      await runStageRequest({stage,mode:'opening',state,draft,settings,worldview,userInput:'观察'},config,vault,{stream:false});
     }
     await new AiClient().generate(requestSnapshot(config,'memory',vault),[{role:'user',content:'验证Mock路由'}],{stream:false});
     return {unchanged:before===JSON.stringify(state),models:config.channels.map((c:{defaultModel:string})=>c.defaultModel)};
@@ -161,7 +163,7 @@ test('保存栏在长路由页面可触达且无横向溢出，窄屏也能保�
 test('删除单独指定用的渠道后该阶段改回跟随正文，其他渠道和选择不受影响',async({page})=>{
   const posts=await seed(page),settings=settingsOf(page);await openChannel(settings,'variables渠道');
   await settings.getByRole('button',{name:'删除渠道',exact:true}).click();
-  await expect(page.getByRole('dialog',{name:'删除「variables渠道」？',exact:true})).toContainText('它正被「主角与现场」使用');
+  await expect(page.getByRole('dialog',{name:'删除「variables渠道」？',exact:true})).toContainText('它正被「主角与现场、手机」使用');
   await page.getByRole('button',{name:'确认删除渠道',exact:true}).click();
   await backToList(settings);await following(page,'主角与现场');
   await selected(page,'场外与网络模型','world-model');await selected(page,'记忆维护模型','memory-model');
@@ -169,5 +171,20 @@ test('删除单独指定用的渠道后该阶段改回跟随正文，其他渠�
   await setFollow(page,'主角与现场',false);await selected(page,'主角与现场渠道','');
   await selected(page,'场外与网络模型','world-model');await selected(page,'记忆维护模型','memory-model');
   await expect(settings.getByRole('button',{name:/^编辑渠道：/})).toHaveCount(4);
+  expect(posts).toHaveLength(0);
+});
+
+test('手机私聊继承现场模型，独立选择保存后可恢复',async({page})=>{
+  const posts=await seed(page);
+  const group=settingsOf(page).getByRole('group',{name:'手机私聊模型来源'});
+  const inherited=group.getByRole('button',{name:'跟随主角与现场'});
+  await expect(inherited).toHaveAttribute('aria-pressed','true');
+  await expect(group.locator('..').locator('.ai-inherit')).toContainText('variables-model');
+  await group.getByRole('button',{name:'单独指定'}).click();
+  await choose(page,'手机私聊渠道','world');
+  await inherited.click();
+  await save(page);await close(page);await page.reload();await open(page);
+  await group.getByRole('button',{name:'单独指定'}).click();
+  await selected(page,'手机私聊渠道','world');
   expect(posts).toHaveLength(0);
 });

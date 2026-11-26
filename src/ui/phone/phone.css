@@ -324,4 +324,16 @@
 .ph-out p { text-align:start; border-radius:12px 12px 2px 12px; background:color-mix(in srgb,var(--gold) 30%,var(--os-card)) }
 .game-phone .ph-peer { flex:1; text-align:start; border:0; background:transparent; color:inherit }
 
+.ph-compose, .ph-pending-banner { display:grid; gap:8px; padding:12px 4px }
+.ph-compose { padding:8px 14px; border-top:1px solid var(--line); max-height:48%; overflow:auto }
+.ph-compose small { color:var(--muted) }
+.ph-input-row { display:flex; gap:8px }
+.ph-input-row input { width:0; min-width:0; flex:1; border:1px solid var(--line); border-radius:8px; padding:8px; color:var(--text); background:var(--os-card) }
+.ph-compose button,.ph-pending-banner button { justify-self:start }
+.ph-pending-banner { border:1px dashed var(--gold); border-radius:8px; padding:10px; margin-bottom:10px }
+.ph-pending-banner p { margin:0 }
+.ph-pending-label { color:var(--gold) }
+.ph-message.ph-pending p { border:1px dashed var(--gold); background:transparent }
+.ph-system { align-self:center; border-radius:5px; background:var(--os-card); padding:4px 10px }
+.ph-warning { color:var(--warning) }
 .ph-note time { margin-inline-start:6px; font-size:11px; color:var(--muted); white-space:nowrap }
