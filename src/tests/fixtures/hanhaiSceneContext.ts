@@ -1,6 +1,7 @@
+import { stagedFixture } from './stageScope';
 import { readFileSync } from 'node:fs';
 import { GameStateSchema } from '../../domain/state';
-import { TurnDraftSchema } from '../../domain/drafts';
+
 import { npc } from './game';
 import { worldDraft, worldResult, worldState } from './world';
 
@@ -22,7 +23,7 @@ export function hanhaiSceneContext() {
     npc: Object.fromEntries(people.map(([id, name]) => [id, { ...npc(id), name, locationId: 'hanhai_studio' }])),
   });
   const base = worldDraft(true, 'opening');
-  const draft = TurnDraftSchema.parse({ ...base, story: { ...base.story, narrative, summary: '合成现场：索赔仍待处理。' },
+  const draft = stagedFixture({ ...base, story: { ...base.story, narrative, summary: '合成现场：索赔仍待处理。' },
     variables: { ...base.variables, result: { commands: [{ type: 'SetWorldClock', commandId: 'clock', worldClock: at, evidence: '本幕结束时间' }], rejectedSuggestions: [], unresolved: [] } },
   });
   const actorRefs = [{ kind: 'protagonist', id: 'protagonist' }, ...people.map(([id]) => ({ kind: 'npc', id }))];

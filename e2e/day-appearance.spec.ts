@@ -70,7 +70,7 @@ test('日间下游戏内弹出内容换成纸色：浅色底、深色字；夜�
     expect(await backgroundLuminance(page, sheet)).toBeGreaterThan(0.75);
     expect(await textLuminance(page, `${sheet} .st-place h3`)).toBeLessThan(0.35);
     await page.keyboard.press('Escape'); await expect(page.locator(sheet)).toHaveCount(0);
-    await page.getByRole('button', { name: '三阶段工作流详情', exact: true }).click();
+    await page.getByRole('button', { name: '四阶段工作流详情', exact: true }).click();
     await expect(page.locator('.workflow-floating-drawer')).toBeVisible();
     expect(await backgroundLuminance(page, '.workflow-floating-drawer')).toBeGreaterThan(0.75);
     expect(await textLuminance(page, '.workflow-floating-drawer .modal-heading h2, .workflow-floating-drawer h2, .workflow-floating-drawer strong')).toBeLessThan(0.35);

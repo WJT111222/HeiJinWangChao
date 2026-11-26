@@ -78,7 +78,7 @@ describe('正文续写：草稿字段与资格', () => {
   it('失败、未超次数、版本一致时才可续写', () => {
     expect(canContinueStory(failedDraft(), 5)).toBe(true);
     expect(canContinueStory(failedDraft({ storyPartial: { text: partial, storyRevision: 0, continuations: STORY_CONTINUATION_LIMIT } }), 5)).toBe(false);
-    expect(canContinueStory(failedDraft({ stageStatus: { story: 'pending', variables: 'pending', world: 'pending' } }), 5)).toBe(false);
+    expect(canContinueStory(failedDraft({ stageStatus: { story: 'pending', entities: 'pending', variables: 'pending', world: 'pending' } }), 5)).toBe(false);
     expect(canContinueStory(failedDraft({ storyPartial: undefined }), 5)).toBe(false);
     expect(canContinueStory(undefined, 5)).toBe(false);
   });

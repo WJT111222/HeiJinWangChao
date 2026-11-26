@@ -39,7 +39,7 @@ async function seed(page: Page) {
     const settings = defaultSettings();
     settings.memory.immediateWindowSize = 1;
     settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
-    settings.runtime.useVariableStage = false; settings.runtime.useWorldStage = false;
+    settings.runtime.useEntityStage = false; settings.runtime.useVariableStage = false; settings.runtime.useWorldStage = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel(), config = defaultAiConfig();
     channel.baseUrl = 'https://memory.mock.invalid/v1'; config.channels = [channel];

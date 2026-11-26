@@ -135,7 +135,7 @@ test('只读离线预览的高级设置仍可读，不改变存档或发送模�
   const { root, before, posts } = await prepare(page, true);
   await tab(root, '提示词管理'); await root.getByRole('button', { name: /高级/ }).first().click();
   await root.getByRole('combobox', { name: /回合模式/ }).selectOption('regular');
-  await root.getByRole('button', { name: '生成三阶段组装预览（不联网）', exact: true }).click();
+  await root.getByRole('button', { name: '生成四阶段组装预览（不联网）', exact: true }).click();
   await expect(root.getByText('预览已组装；未发送 API 请求、未执行回合、未写入正式存档。', { exact: true })).toBeVisible({ timeout: 20_000 });
   await readable(root, testInfo, 'offline-preview'); await capture(page, testInfo, 'offline-preview');
   expect(await storedArchives(page)).toEqual(before); expect(posts()).toBe(0);
@@ -161,7 +161,7 @@ for (const width of [900, 901]) {
 test('运行偏好未保存时 Escape 允许继续编辑或明确放弃', async ({ page }) => {
   const { root: settings, posts } = await prepare(page, false);
   await settings.getByRole('button', { name: '运行', exact: true }).click();
-  const world = settings.getByRole('checkbox', { name: '动态世界', exact: true });
+  const world = settings.getByRole('checkbox', { name: '场外与网络', exact: true });
   const original = await world.isChecked();
   await world.setChecked(!original);
   await expect(settings.locator('[data-settings-category="运行"] .dirty')).toBeAttached();
@@ -181,7 +181,7 @@ test('运行偏好未保存时 Escape 允许继续编辑或明确放弃', async 
 test('未保存运行设置时离开存档需要确认，继续编辑及放弃不写入设置', async ({ page }) => {
   const { root, before, posts } = await prepare(page, true);
   await tab(root, '运行');
-  const world = root.getByRole('checkbox', { name: '动态世界', exact: true });
+  const world = root.getByRole('checkbox', { name: '场外与网络', exact: true });
   const original = await world.isChecked();
   const persisted = () => page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
   const originalSettings = await persisted();

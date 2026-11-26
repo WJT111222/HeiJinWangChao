@@ -9,7 +9,7 @@ export const PreviewBasisSchema = z.strictObject({
   kind: z.literal('text_variable_preview_basis'), version: z.literal(1),
   saveId: IdSchema, turnId: IdSchema, baseSaveRevision: CountSchema,
   draftRevision: CountSchema, storyRevision: CountSchema.min(1), executionRevision: CountSchema,
-  stageRequestRevisions: z.strictObject({ variables: CountSchema, world: CountSchema }),
+  stageRequestRevisions: z.strictObject({ entities: CountSchema, variables: CountSchema, world: CountSchema }),
   stateDigest: hash, draftDigest: hash,
 });
 export type TextVariablePreviewBasis = z.infer<typeof PreviewBasisSchema>;

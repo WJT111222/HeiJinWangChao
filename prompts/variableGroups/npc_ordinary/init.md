@@ -3,13 +3,13 @@
 
 新人物可在开局或普通回合首次出现时建档，先检索已有稳定ID、identityKey、别名及初始同伴；不重复建同一个人。set npc[id]使用完整原NpcSchema去掉id，普通人物必需kind=ordinary、identityKey、name、aliases/skills数组、onScene布尔、affinity[-100,100]、relationshipText、空memories/knownInformation；locationId若提供须真实存在。初始记忆先留空，再用push记录。
 已有字段：set npc[id].healthText/relationshipText为字符串，locationId为地点ID或null，onScene为布尔，lastInteractionAt为合法ISO游戏时间。没有在场审批；离场人物也可记录Story已经发生的变化，不能替World编造后台新行动。
-好感：唯一写法 set npc[id].affinityChange = {"to":变化后终值,"reason":"本回合具体剧情原因","relationshipText":"当前关系与态度"}，三项都不可省略，to在[-100,100]；前值由程序读取正式状态（同批连续更新按上一笔结果），不要填from，也不用set/add npc[id].affinity。关系不是恋爱等级，寒暄不自动涨分。联系人：set npc[id].contact={reason}。
+好感：唯一写法 set npc[id].affinityChange = {"to":变化后终值,"reason":"本回合具体剧情原因","relationshipText":"当前关系与态度"}，三项都不可省略，to在[-100,100]；前值由程序读取正式状态（同批连续更新按上一笔结果），不要填from，也不用set/add npc[id].affinity。关系不是恋爱等级，寒暄不自动涨分。交换可用电话：set npc[id].phoneContact={"status":"known"}。
 统一人物记忆遵守共享输出协议的“人物原始记忆内容质量”；普通和特殊人物标准相同，仅写本人的实际经历、获知或判断。push npc[id].memories与knownInformation使用{text,knowledgeKind,knowledgeSource,visibility}；前者为统一原始记忆，后者同时建立唯一原始记忆，勿为同一事实重复写两次，不填程序ID/回合/时间元数据。
 示例：
 <命令>
 set npc[lin].healthText = "擦伤已包扎"
 set npc[lin].affinityChange = {"to":35,"reason":"主角帮忙核对清单、替自己挡下加急费","relationshipText":"愿意协作"}
-set npc[lin].contact = {"reason":"交换电话号码"}
+set npc[lin].phoneContact = {"status":"known"}
 push npc[lin].memories = {"text":"工作室交付旧相机时，委托方临时提出加急费用。自己核对清单并请主角保留凭据、暂不承诺；主角出示书面确认后，对方同意暂缓收费、次日核算。费用仍未确定，这次合作让自己愿意继续协助核实，但不会把暂缓当成免除。","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}
 </命令>
 

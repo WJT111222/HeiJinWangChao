@@ -1,3 +1,4 @@
+import { stageFixtureReply } from './fixtures/variableReply';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { createTurnDraft, rerollStory, VariableResultSchema } from '../domain/drafts';
@@ -19,6 +20,7 @@ import { variableTextEnvelope } from './fixtures/variableReply';
 function setup(protocol: Protocol = 'openai') {
   const channel = newChannel(protocol); channel.defaultModel = 'story'; channel.compatibility.jsonMode = true;
   const config = defaultAiConfig(); config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'story' };
+  config.routes.entities = {mode:'independent',channelId:channel.id,modelId:'entities'};
   config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' };
   config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
   const entries = new Map<string, string>(), storage = { getItem: (key: string) => entries.get(key) ?? null,
@@ -81,7 +83,8 @@ it('真实协调器开局→变量四操作→World投影→原子结算→刷�
       worlds.push(record(JSON.parse(string(message.content).replace(/^<GAME_CONTEXT>\n|\n<\/GAME_CONTEXT>$/g, ''))));
       return response(JSON.stringify(worldResult()));
     }
-    return response(variableText(`set worldClock = "2026-10-18T08:${turn === 1 ? '10' : '20'}:00+08:00"\nset protagonist.skills = ["驾驶","急救"]\npush protagonist.skills = "烹饪"\nadd economy.cash = -3000\nset npc[scene].affinityChange = {"to":32,"reason":"一起用餐时聊开了工作上的误会","relationshipText":"合作的同事"}\npush npc[scene].memories = {"text":"一起用餐交流","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}\ndelete protagonist.skills[0]`));
+    if (stage !== 'entities' && stage !== 'variables') throw Error('unknown fixture stage');
+    return response(stageFixtureReply(stage,variableText(`set worldClock = "2026-10-18T08:${turn === 1 ? '10' : '20'}:00+08:00"\nset protagonist.skills = ["驾驶","急救"]\npush protagonist.skills = "烹饪"\nadd economy.cash = -3000\nset npc[scene].affinityChange = {"to":32,"reason":"一起用餐时聊开了工作上的误会","relationshipText":"合作的同事"}\npush npc[scene].memories = {"text":"一起用餐交流","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}\ndelete protagonist.skills[0]`)));
   });
   const runner = new TurnCoordinator(repo, client);
   try {
@@ -102,7 +105,7 @@ it('真实协调器开局→变量四操作→World投影→原子结算→刷�
       expect(JSON.stringify(worlds[turn - 1])).toContain('合作的同事');
       if (turn === 1) { if (!loaded.draft) throw Error('draft'); await repo.bindTurnAction(loaded.draft, '继续在现场交流', true, true); }
     }
-    expect(calls).toEqual(['story','variables','world','story','variables','world']);
+    expect(calls).toEqual(['story','entities','variables','world','story','entities','variables','world']);
     const loaded = await repo.loadGame(state.saveId); expect(loaded.state.journal).toHaveLength(2); expect(loaded.state.memories.short).toHaveLength(2);
     const undone = await repo.undoTurn({ saveId: state.saveId, expectedRevision: loaded.state.revision,
       expectedDraft: loaded.draft, operationId: 'observation-undo' });

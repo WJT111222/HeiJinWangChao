@@ -77,9 +77,9 @@ function balance(s: GameState, account: 'cash' | 'onlineBalance', change: number
 function ownedByProtagonist(s: GameState, ref: z.infer<typeof ActorRefSchema> | undefined) {
   requireData(ref?.kind === 'protagonist' && ref.id === s.protagonist.id, 'OWNERSHIP', '购买对象必须归主角持有');
 }
-function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedReceipts: ReadonlySet<string>) {
+function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedReceipts: ReadonlySet<string>, pendingSceneClock = false) {
   switch (c.type) {
-    case 'ApplyHaremChanges': applyHarem(s,c,turnId); break;
+    case 'ApplyHaremChanges': applyHarem(s,c,turnId,pendingSceneClock); break;
     case 'ApplyHaremBackground': applyHaremBackground(s,c,turnId); break;
     case 'InitializeOpeningState': initializeOpeningState(s, c.changes, (id) => newEntity(s, id)); break;
     case 'PurchaseItem':
@@ -219,7 +219,7 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
       org.protagonistKnown = [...(org.protagonistKnown ?? []), c.entry];
       break;
     }
-    default: applyVariableCommand(s, c, turnId, (id) => newEntity(s, id), (account, amount) => balance(s, account, -amount));
+    default: applyVariableCommand(s, c, turnId, (id) => newEntity(s, id), (account, amount) => balance(s, account, -amount), pendingSceneClock);
   }
 }
 
@@ -241,6 +241,23 @@ function applyFactionBinding(s: GameState, organizationId: string, binding: z.in
     ...(binding.position !== undefined ? { position: binding.position } : {}),
     ...(binding.bondText !== undefined ? { bondText: binding.bondText } : {}),
     ...(binding.departmentId === null ? {} : binding.departmentId !== undefined ? { departmentId: binding.departmentId } : departmentId ? { departmentId } : {}) };
+}
+
+/** Provisional entity state retains the formal revision. The scene supplies the upper time bound at settlement. */
+export function projectEntityChanges(state: GameState, turnId: string, commands: readonly DomainCommand[]) {
+  const projected = structuredClone(state);
+  const receipts = new Set<string>();
+  const family = commands.filter(command => command.type === 'ApplyHaremChanges');
+  requireData(family.length <= 1, 'HAREM_BATCH', '同阶段只能提交一组家庭变更');
+  for (const command of [...commands.filter(command => command.type !== 'ApplyHaremChanges'), ...family]) {
+    try {
+      apply(projected, structuredClone(command), turnId, receipts, true);
+    } catch (error) {
+      if (error instanceof DataError) throw new CommandDataError(error, commands.indexOf(command), command.type);
+      throw error;
+    }
+  }
+  return projected;
 }
 
 export function commitCommands(state: GameState, turnId: string, expectedRevision: number,

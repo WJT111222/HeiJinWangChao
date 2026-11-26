@@ -121,7 +121,7 @@ test('启用内置脚本：首次 Story、JSON/SSE、状态按钮、取消与刷
       names:['wave_context_reference','actual_content'], trace:{ calls:1, upstreamUsage:{ outputTokens:i ? 19:17 },complete:true } });
   }
   await page.goto('/#game/assistant-qa');
-  if (info.project.name === 'mobile') await page.getByRole('button',{ name:'三阶段工作流详情' }).click();
+  if (info.project.name === 'mobile') await page.getByRole('button',{ name:'四阶段工作流详情' }).click();
   await page.getByRole('button',{name:'浪潮·状态', exact:true}).click();
   const panel = page.getByRole('dialog', { name: '浪潮状态面板' });
   const heading = panel.getByRole('heading', { name: '浪潮 · 状态面板' });

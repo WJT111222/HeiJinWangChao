@@ -298,6 +298,7 @@ export async function createProfileSave(
         form.openingPreference,
         settings.runtime.useVariableStage,
         settings.runtime.useWorldStage,
+        settings.runtime.useEntityStage,
       ),
       null,
     );

@@ -11,7 +11,7 @@ export async function seedLegacyWriting(page: Page, draft: typeof preset.draft, 
     const {state,settings} = talentPromptInput('story','regular');
     settings.runtime.streamStory = false;
     settings.runtime.useWorldStage = false;
-    settings.runtime.useVariableStage = false;
+    settings.runtime.useEntityStage = false; settings.runtime.useVariableStage = false;
     settings.prompts.actionOptions = false;
     settings.prompts.minNarrativeChars = 5;
     localStorage.setItem(settingsKey, JSON.stringify(settings));

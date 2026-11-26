@@ -27,6 +27,7 @@ async function startOpening(page: Page, actionOptions: boolean) {
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = baseUrl; config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: 'story' };
+    config.routes.entities = { mode: 'independent', channelId: channel.id, modelId: 'entities' };
     config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' };
     config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
     saveAiConfig(localStorage, config);
@@ -71,13 +72,13 @@ for (const variant of variants) test('开局变量规划：' + variant.title, as
         + '\n\ndata: [DONE]\n\n' });
       return;
     }
-    const content = stage === 'variables'
+    const content = stage === 'entities' ? '<接触者>[]</接触者><thinking>没有人物变更。</thinking><说明></说明><命令></命令>' : stage === 'variables'
       ? `<thinking>检查本幕。</thinking><说明>仅询价。</说明><命令>\nset worldClock = "${openingGuideTimes.startAt}"\nset worldClock = "${openingGuideTimes.endAt}"\nset protagonist.emotionText = "踏实"\n</命令>`
       : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
     await route.fulfill({ json: { choices: [{ message: { content }, finish_reason: 'stop' }] } });
   });
   await startOpening(page, 'actions' in variant);
-  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(1);
+  await expect.poll(async () => (await stored(page)).state.turnNumber,{timeout:20_000}).toBe(1);
   await expect(page.getByText('主角走进资料室，核对今天的安排。他只询问费用，没有付款。', { exact: false }).first()).toBeVisible();
   const saved = await stored(page);
   if ('actions' in variant) {
@@ -85,22 +86,22 @@ for (const variant of variants) test('开局变量规划：' + variant.title, as
     expect(saved.state.journal).toHaveLength(1);
     expect(saved.state.journal[0].story.actionOptions).toEqual(variant.actions);
     expect(saved.state.openingTimePending).toBeFalsy();
-    expect(calls[1].context.STORY_RESULT).toMatchObject({ actionOptions: variant.actions });
+    expect(calls[2].context.STORY_RESULT).toMatchObject({ actionOptions: variant.actions });
   }
   expect(saved.state.worldClock).toBe(openingGuideTimes.endAt);
   expect(saved.state.protagonist.emotionText).toBe('踏实');
   expect(saved.state.journal[0].story.narrative).toBe(narrative);
-  expect(calls.map(call => call.stage)).toEqual(['story', 'variables', 'world']);
-  expect(calls[1].context.OPENING_TIME).toMatchObject({ status: 'pending' });
-  expect(calls[1].context.VARIABLE_GUIDE_NOTES).toBe(variant.guide);
-  expect(calls[2].context).not.toHaveProperty('VARIABLE_GUIDE_NOTES');
+  expect(calls.map(call => call.stage)).toEqual(['story', 'entities', 'variables', 'world']);
+  expect(calls[2].context.OPENING_TIME).toMatchObject({ status: 'pending' });
+  expect(calls[2].context.VARIABLE_GUIDE_NOTES).toBe(variant.guide);
+  expect(calls[3].context).not.toHaveProperty('VARIABLE_GUIDE_NOTES');
   if ('reference' in variant)
-    expect(calls[1].context.VARIABLE_GUIDE_REFERENCES).toEqual([{ group: 'npc', text: ordinaryGuideRaw }]);
-  else expect(calls[1].context).not.toHaveProperty('VARIABLE_GUIDE_REFERENCES');
-  expect(calls[2].context.TIME_WINDOW).toEqual({ from: openingGuideTimes.startAt, to: openingGuideTimes.endAt });
-  expect(calls[2].context).not.toHaveProperty('VARIABLE_GUIDE_REFERENCES');
+    expect(calls[2].context.VARIABLE_GUIDE_REFERENCES).toEqual([{ group: 'npc', text: ordinaryGuideRaw }]);
+  else expect(calls[2].context).not.toHaveProperty('VARIABLE_GUIDE_REFERENCES');
+  expect(calls[3].context.TIME_WINDOW).toEqual({ from: openingGuideTimes.startAt, to: openingGuideTimes.endAt });
+  expect(calls[3].context).not.toHaveProperty('VARIABLE_GUIDE_REFERENCES');
   await page.reload();
   await expect(page.locator('.game-layout')).toBeVisible();
   expect(await stored(page)).toEqual(saved);
-  expect(calls).toHaveLength(3);
+  expect(calls).toHaveLength(4);
 });

@@ -205,7 +205,7 @@ export function HistorySaves({ repository, saveId, settings, summary, onClose, o
             }}>取消</button>
             <button aria-label="确认覆盖并继续" disabled={busy || !input.trim()} className="history-danger history-overwrite" onClick={() => void run(async () => {
               try {
-                const result = await repository.history.restore(preview.confirmation, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage);
+                const result = await repository.history.restore(preview.confirmation, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage, settings.runtime.useEntityStage);
                 if (alive.current) onRestored(result);
               } catch (failure) {
                 // The one-shot authorization is consumed even on failure; require a fresh preview.

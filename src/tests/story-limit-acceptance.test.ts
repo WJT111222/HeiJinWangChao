@@ -1,3 +1,4 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, expect, it } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { AiClient } from '../services/ai/client';
@@ -5,10 +6,10 @@ import { stageResponses } from '../services/ai/stageResponses';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
 import { SaveRepository } from '../services/storage/saveRepository';
-import { createTurnDraft } from '../domain/drafts';
+
 import { canContinueStory, continuationBlock } from '../domain/storyContinuation';
 import { parseStoryEnvelope } from '../services/validation/aiOutputs';
-import { defaultSettings } from '../ui/settings/model';
+
 import { worldState } from '../tests/fixtures/world';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
 

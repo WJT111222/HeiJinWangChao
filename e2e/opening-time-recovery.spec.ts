@@ -25,7 +25,7 @@ async function prepare(page: Page, retained = false) {
       '/src/domain/drafts.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/workflows/turnCoordinator.ts'];
     const [{ SaveRepository }, { defaultSettings, settingsKey }, { newCreation, buildCreationState }, { createTurnDraft },
       { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }, { TurnCoordinator }] = await Promise.all(paths.map(path => import(path)));
-    const settings = defaultSettings();
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false;
     settings.prompts.minNarrativeChars = 1;
     settings.prompts.actionOptions = false;
     settings.runtime.streamStory = false;
@@ -44,7 +44,7 @@ async function prepare(page: Page, retained = false) {
     const state = buildCreationState({ ...newCreation(), saveId, person: { name: '林舟', age: '30', gender: '女性', appearance: '', personality: '' }, profession: '教师' }, settings);
     try {
       await repo.create(state);
-      const draft = createTurnDraft(saveId, 0, 'synthetic-opening', 'opening', '', retained, false);
+      const draft = createTurnDraft(saveId, 0, 'synthetic-opening', 'opening', '', retained, false, false);
       await repo.saveDraft(draft, null);
       if (retained) {
         const runner = new TurnCoordinator(repo);
@@ -132,7 +132,7 @@ test('关闭 Variables 排除其时钟，重新启用并主动继续时零请求
   await openStageSwitches(page);
   await page.locator('#workflow-runtime-switches input[data-stage="variables"]').uncheck();
   await closeWorkflowSheet(page);
-  await expect(recovery(page)).toContainText('重新启用变量管理，继续时重新校验并尝试复用已有候选');
+  await expect(recovery(page)).toContainText('重新启用主角与现场，继续时重新校验并尝试复用已有候选');
   expect(mock.calls).toEqual(['story', 'variables']);
   await recovery(page).getByRole('button', { name: '前往变量开关' }).click();
   await page.locator('#workflow-runtime-switches input[data-stage="variables"]').check();
@@ -154,13 +154,13 @@ test('关闭 Variables 排除其时钟，重新启用并主动继续时零请求
 test('缺少时钟且没有候选时，启用设置不发请求，主动补算只调用 Variables', async ({ page }) => {
   const mock = await prepare(page);
   await action(page).click();
-  await expect(recovery(page)).toContainText('启用变量管理后主动补算时间');
+  await expect(recovery(page)).toContainText('启用主角与现场后主动补算时间');
   const before = await stored(page);
   await recovery(page).getByRole('button', { name: '前往变量开关' }).click();
   await page.locator('#workflow-runtime-switches input[data-stage="variables"]').check();
   await closeWorkflowSheet(page);
   await expect(recovery(page)).toHaveCount(0);
-  await expect(action(page)).toHaveAccessibleName('继续生成变量');
+  await expect(action(page)).toHaveAccessibleName('继续生成主角与现场');
   expect(await stored(page)).toEqual(before);
   expect(mock.calls).toEqual(['story']);
   await action(page).click();

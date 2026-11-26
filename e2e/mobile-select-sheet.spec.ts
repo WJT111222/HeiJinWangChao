@@ -79,10 +79,14 @@ test('手机选择抽屉：选项多时可以用手指滑到底并选中最后�
 
   // 用真实触摸手势往上划，直到最后一项进入可见区域。
   const cdp = await page.context().newCDPSession(page);
-  const start = (await picker.getByRole('option').nth(2).boundingBox())!;
+  await picker.evaluate(element => Promise.allSettled(element.getAnimations().map(animation => animation.finished)));
+  const bounds = (await body.boundingBox())!;
+  const x = bounds.x + bounds.width / 2;
+  const y = bounds.y + bounds.height * 0.85;
+  const distance = bounds.height * 0.65;
   for (let round = 0; round < 12; round++) {
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: start.x + 40, y: start.y + 260 }] });
-    for (let i = 1; i <= 8; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: start.x + 40, y: start.y + 260 - i * 30 }] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+    for (let i = 1; i <= 8; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y - distance * i / 8 }] });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     if (await body.evaluate((el) => el.scrollTop + el.clientHeight >= el.scrollHeight - 2)) break;
   }

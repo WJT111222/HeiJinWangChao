@@ -241,7 +241,7 @@ describe('M8-P0A：场景数据约束与文学判断分离', () => {
       summary: '',
       variableGuide: [],
     });
-    expect(selectVariableDomains(state, draft).domains).toHaveLength(9);
+    expect(selectVariableDomains(state, draft).domains).toHaveLength(5);
   });
 });
 

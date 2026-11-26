@@ -485,7 +485,7 @@ to {transform:translateX(18%)}
 
 .app-shell-game .city-night .workflow strong .p:not(:where(.modal, .modal *)) {color:var(--dim)}
 
-.app-shell-game .city-night .rail:not(:where(.modal, .modal *)) {flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;min-width:0}
+.app-shell-game .city-night .rail:not(:where(.modal, .modal *)) {flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.35rem;min-width:0}
 
 .app-shell-game .city-night .rail li:not(:where(.modal, .modal *)) {list-style:none;min-width:0}
 
@@ -647,7 +647,7 @@ to {transform:translateX(250%)}
   .city-night .workflow-disclosure > summary strong { font-size: .8rem; font-weight: 500; white-space: nowrap; }
   .city-night .workflow-disclosure > summary strong::before, .city-night .workflow-disclosure > summary::after { content: none; }
   .city-night .workflow-toggle { font-size: .74rem; border: 1px solid var(--line-2); border-radius: 6px; padding: .2rem .6rem; flex: none; }
-  .city-night .rail { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); flex: 1; gap: .35rem; min-width: 0; }
+  .city-night .rail { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); flex: 1; gap: .35rem; min-width: 0; }
   .city-night .rail > span { min-width: 0; }
   .city-night .rail .bar-seg { display: block; }
   .city-night .rail .lbl { display: block; overflow: hidden; text-overflow: ellipsis; font-size: .66rem; margin-top: .3rem; white-space: nowrap; }

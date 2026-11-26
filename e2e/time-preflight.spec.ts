@@ -23,9 +23,9 @@ async function seed(page: Page, visitor = false, disabled = false, action = '睡
     await new Promise<void>((resolve, reject) => {
       const req = indexedDB.open('heijinwangchao'); req.onsuccess = () => { const db = req.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(state); tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); }; }; req.onerror = () => reject(req.error);
     });
-    const storage = await SaveRepository.open(); await storage.saveDraft(createTurnDraft(state.saveId, state.revision, 'sleep-turn', 'regular', action, !disabled, !disabled), null); storage.close();
+    const storage = await SaveRepository.open(); await storage.saveDraft(createTurnDraft(state.saveId, state.revision, 'sleep-turn', 'regular', action, !disabled, !disabled, false), null); storage.close();
     const settings = defaultSettings(); settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
-    settings.runtime.useVariableStage = !disabled; settings.runtime.useWorldStage = !disabled; localStorage.setItem(settingsKey, JSON.stringify(settings));
+    settings.runtime.useEntityStage = false; settings.runtime.useVariableStage = !disabled; settings.runtime.useWorldStage = !disabled; localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = 'https://time.mock.invalid/v1'; config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: 'story' };
     config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' }; config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
@@ -93,7 +93,7 @@ for (const interrupt of [false, true]) test(`长睡眠interrupt=${interrupt}：�
 test('变量失败与刷新恢复保留正文和候选，不提供主动Roll也不推进正式时间', async ({ page }) => {
   const api = await mock(page, true); api.control.failVariables = true; await seed(page, true); const before = (await load(page)).state;
   await page.getByRole('button', { name: '自动生成本回合', exact: true }).click();
-  await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toHaveText('三阶段 · 变量生成失败 · 查看详情');
+  await expect(page.getByRole('region', { name: '四阶段工作流' }).getByRole('status')).toHaveText('四阶段 · 主角与现场生成失败 · 查看详情');
   expect((await load(page)).draft.story).toBeTruthy();
   expect((await load(page)).state).toEqual(before); await page.reload(); await openGameTools(page); api.control.failVariables = false;
   // 高级单阶段补算保留未结算候选，以验证失败恢复和正式时间边界；正常自动恢复另有覆盖。
@@ -109,7 +109,7 @@ test('取消和迟到不推进时间；关闭阶段只保留正文草稿', async
   await page.getByRole('button', { name: '取消自动执行', exact: true }).click(); release(); api.control.hold = undefined;
   await expect(page.getByRole('button', { name: /自动生成本回合|继续未完成阶段/, exact: true })).toBeEnabled();
   await page.getByRole('button', { name: /自动生成本回合|继续未完成阶段/, exact: true }).click();
-  await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('阶段已关闭'); const saved = await load(page);
+  await expect(page.getByRole('region', { name: '四阶段工作流' }).getByRole('status')).toContainText('阶段已关闭'); const saved = await load(page);
   expect(saved.state).toEqual(before); expect(saved.draft.variables).toBeUndefined(); expect(saved.draft.world).toBeUndefined();
   expect(api.calls).toEqual(['story', 'story']); await page.getByLabel('你的行动', { exact: true }).fill('继续观察'); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
 });

@@ -250,7 +250,7 @@ test('旧设置缺外观字段：默认夜间，提示词/运行偏好保留且�
   await page.getByRole('button', { name: '设置', exact: true }).click(); const panel = page.getByRole('dialog', { name: '设置', exact: true });
   await panel.getByRole('button', { name: '运行', exact: true }).click();
   await expect(panel.getByLabel('请求超时（秒）', { exact: true })).toHaveValue('77');
-  await expect(panel.getByRole('checkbox', { name: '变量管理 · 流式传输', exact: true })).toBeChecked();
+  await expect(panel.getByRole('checkbox', { name: '主角与现场 · 流式传输', exact: true })).toBeChecked();
   if ((page.viewportSize()?.width ?? 0) <= 900) await panel.getByRole('button', { name: '返回设置', exact: true }).click();
   await panel.getByRole('button', { name: '提示词', exact: true }).click();
   await expect(panel.getByLabel('NoControl（防抢话）', { exact: true })).not.toBeChecked();

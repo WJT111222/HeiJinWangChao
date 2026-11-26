@@ -252,6 +252,11 @@
         "baseCommit": "4e14d924b75ffedcf95b876cda000ad90d0d8d78",
         "notes": "H0 后宫 Variables 单批事务、成员资格及家庭事实；原来源记录保留；场外计划、成员间关系与总体局势交由 World 推进。",
         "sha256": "10329eac059c7f74e176f90dc844d32f2df50a4c690766cfb14dbc63f0395bf3"
+      },
+      "threeStageVariables": {
+        "baseCommit": "f88480a8138f0f76586226512a08e7028346edfe",
+        "notes": "生成电话号码使用 phoneContact；兼容解析和重放保留。",
+        "sha256": "acc885943d44439d15b35c2d6824804786b341465081103960e68b943528e959"
       }
     },
     "variableGroups/npc_ordinary/update.md": {
@@ -306,6 +311,11 @@
         "baseCommit": "4e14d924b75ffedcf95b876cda000ad90d0d8d78",
         "notes": "H0 后宫 Variables 单批事务、成员资格及家庭事实；原来源记录保留；场外计划、成员间关系与总体局势交由 World 推进。",
         "sha256": "81ef99821493f0b8f4c86aa7ac41e5d75f25b5abf03b1aa8f9f18752602155d6"
+      },
+      "threeStageVariables": {
+        "baseCommit": "f88480a8138f0f76586226512a08e7028346edfe",
+        "notes": "生成电话号码使用 phoneContact；兼容解析和重放保留。",
+        "sha256": "f7060c8e766b9c7fcc35bea944ef7adaa9a1c9ffe659d5067b4228a5d5a84e8c"
       }
     },
     "variableGroups/npc_ordinary/offscreen.md": {
@@ -386,6 +396,11 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "c3a15471a55015ac10150a6e281c4260c05c55c02262ae621479e024fa2bd147"
+      },
+      "threeStageVariables": {
+        "baseCommit": "f88480a8138f0f76586226512a08e7028346edfe",
+        "notes": "生成电话号码使用 phoneContact；兼容解析和重放保留。",
+        "sha256": "53aab355e6c50a0227035cbb3962bc1cdd682e0293d40924dc2fc56888728930"
       }
     },
     "variableGroups/npc_special/update.md": {
@@ -440,6 +455,11 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "aa4692daa7d22f9177773704a82877e115e6d45e1a96b0ab8e2a0e0462bd7a92"
+      },
+      "threeStageVariables": {
+        "baseCommit": "f88480a8138f0f76586226512a08e7028346edfe",
+        "notes": "生成电话号码使用 phoneContact；兼容解析和重放保留。",
+        "sha256": "1a4bdf5a380c8c8c08eeac8207b94c96df03edcd9885dc08d0ec6d8de296fc1d"
       }
     },
     "variableGroups/npc_special/offscreen.md": {
@@ -718,6 +738,9 @@
         "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
         "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
         "sha256": "73e9f2d96a04f1fd75d82a88b2fe7d4e15e5959072f2e806baaa3f19271a2fd5"
+      },
+      "threeStageVariables": {
+        "sha256": "1acf8f87f5199fb21bbfb7b97a0129b6d398e1ad603f477e730cbae8b1bf03d6"
       }
     },
     "shared/08_world_output.md": {
@@ -863,6 +886,9 @@
         "baseCommit": "4e14d92",
         "notes": "World 可按白名单更新组织部门、成员及补齐的公开字段；主势力绑定与主角已知列表只读。原始来源及历次适配记录保留。",
         "sha256": "b9433d3cad9e51ac23f3305a8fc074acc92fa62ab7d8771a49079b7c7c2d4ce0"
+      },
+      "threeStageVariables": {
+        "sha256": "b827884472d6284db9995c0a5c334a557c8a40d9133d1bf56cb5093824327031"
       }
     },
     "stages/opening/variables.md": {
@@ -897,6 +923,9 @@
         "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
         "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
         "sha256": "0880d1cd44027f54eafd72b4cc6ddbe1f7568b26c27d12389fc3859fb28a2ef6"
+      },
+      "threeStageVariables": {
+        "sha256": "b2fe612bebef7695f97f921e56de486d0c894cfe4508351358a72b1bf2f72ca3"
       }
     },
     "stages/opening/world.md": {
@@ -960,6 +989,9 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "c622cb517ec456dd989e5dbe5975286845901bd6cd7d4428a11ef957ee21e864"
+      },
+      "threeStageVariables": {
+        "sha256": "e6278f9ce959129be871411df820d8ee8e168cba439f0e2d010d84c0a4541d83"
       }
     },
     "stages/regular/world.md": {
@@ -1793,6 +1825,34 @@
         "baseCommit": "55cdc6edf84dab533719dbcf6ef907b10058657a",
         "notes": "自定义开局城市的可选地域介绍补全：只写约 50–100 字介绍，不确认城市合法性，不预设人物、势力或剧情。",
         "sha256": "02396732d00f7ff1ba2e7124d2116afab2e3a6a213bcb5b50ba8c20c21a2c7e1"
+      }
+    },
+    "stages/opening/entities.md": {
+      "origin": "project",
+      "sourceSha256": "d711606b6a89d4b4f239b40d8cce412dd466a48a55be9dc2a48e323ae0d05ce5",
+      "treatment": "three-variable-stages"
+    },
+    "stages/regular/entities.md": {
+      "origin": "project",
+      "sourceSha256": "083b24e8d3aa917d2258fc2804138e8b7f2a3b9ded3c1daf7c6fff65b57fdb86",
+      "treatment": "three-variable-stages"
+    },
+    "shared/entity_output.md": {
+      "origin": "project",
+      "sourceSha256": "a3a28dcd80ea155d1fbcdc7e0439a57bef9d7d7e6cabd8894766c31f203551a5",
+      "treatment": "project-authored",
+      "threeStageVariables": {
+        "baseCommit": "f88480a8138f0f76586226512a08e7028346edfe",
+        "notes": "生成电话号码使用 phoneContact；兼容解析和重放保留。",
+        "sha256": "4a4a854b87c302604de97018f2180de93da980de7bd9204ebb3ff302b605fd3d"
+      }
+    },
+    "shared/history_output.md": {
+      "origin": "project",
+      "sourceSha256": "ee49bf9535aefb5a43ace743daca645d3933a8aeb41dcac363b7c25f65dea544",
+      "treatment": "project-authored",
+      "threeStageVariables": {
+        "sha256": "ee49bf9535aefb5a43ace743daca645d3933a8aeb41dcac363b7c25f65dea544"
       }
     }
   },

@@ -1,5 +1,6 @@
+import { stagedFixture } from './stageScope';
 import { GameStateSchema } from '../../domain/state';
-import { TurnDraftSchema } from '../../domain/drafts';
+
 import { defaultSettings } from '../../ui/settings/model';
 import { game, npc, event, task, gameTime } from './game';
 import { worldDraft } from './world';
@@ -54,7 +55,7 @@ export function recallV2Fixture(count = 200) {
   state.economy.debts.oldLoan = { id: 'oldLoan', creditor: '主角', principal: 50000, outstanding: 0, status: 'repaid',
     repaymentTerms: '已全额结清', collateralAssetIds: [], autoPaymentAuthorized: false, source: 'history-199收据' };
   const base = worldDraft();
-  const draft = TurnDraftSchema.parse({ ...base, saveId: state.saveId, baseSaveRevision: state.revision, userInput: '去找张三聊聊。',
+  const draft = stagedFixture({ ...base, saveId: state.saveId, baseSaveRevision: state.revision, userInput: '去找张三聊聊。',
     story: { ...base.story!, narrative: `${base.story!.narrative}随后主角与张三谈起船夫的去向和旧约。`,
       variableGuide: [{ group: 'npc', subjectHint: 'zhang', observedFact: '张三谈起过去的约定，尚未新增付款。' }] } });
   const settings = defaultSettings(); settings.memory.immediateWindowSize = 3;

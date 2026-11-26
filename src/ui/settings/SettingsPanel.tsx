@@ -343,15 +343,18 @@ export function SettingsPanel({
         )}
         {tab === '运行' && (
           <>
+            <p>三个变量阶段全部开启时，每回合比旧版多一次模型请求。</p>
             <TavernAssistant dirty={localDirty || aiDirty || summaryDirty}/>
             <div className="settings-fields">
               {(
                 [
-                  ['useVariableStage', '变量管理'],
-                  ['useWorldStage', '动态世界'],
+                  ['useEntityStage', '人物与实体'],
+                  ['useVariableStage', '主角与现场'],
+                  ['useWorldStage', '场外与网络'],
                   ['streamStory', '正文生成 · 流式传输'],
-                  ['streamVariables', '变量管理 · 流式传输'],
-                  ['streamWorld', '动态世界 · 流式传输'],
+                  ['streamEntities', '人物与实体 · 流式传输'],
+                  ['streamVariables', '主角与现场 · 流式传输'],
+                  ['streamWorld', '场外与网络 · 流式传输'],
                 ] as const
               ).map(([key, label]) => (
                 <label className="toggle" key={key}>
@@ -419,11 +422,11 @@ export function SettingsPanel({
                 </select>
               </label>
             </div>
-            <p className="muted">开启后，正文、变量和动态世界只要生成失败就会自动再试，包括模型输出没通过业务校验，不限于 500。网页允许自动中转时，直连已经返回的失败也会重试；真正走了本站中转仍失败的不会自动再试。次数不含第一次请求，最多 3 次，可能产生额外 API 费用。</p>
+            <p className="muted">开启后，正文或任一变量阶段生成失败就会自动再试，包括模型输出没通过业务校验，不限于 500。网页允许自动中转时，直连已经返回的失败也会重试；真正走了本站中转仍失败的不会自动再试。次数不含第一次请求，最多 3 次，可能产生额外 API 费用。</p>
             <p className="muted">取消、密钥或鉴权、渠道参数配置错误、明确额度不足、输出回显凭证、存档或事务冲突、权限与保存失败不会自动重试。关闭本项时，仍只对没有走本站中转的 500/502/503/504 自动再试一次。</p>
             <p className="muted">开启流式传输后可实时查看模型返回的内容。部分中转服务可能不支持流式传输；不会因流式不兼容自动重试。</p>
             <p className="muted">
-              三个阶段的流式传输分别控制。关闭正文流式传输后，等待完整响应并在校验保存后展示正文。切换只影响后续尝试，不修改进行中的请求或正式世界状态。
+              正文和三个变量阶段可分别设置流式传输。关闭正文流式传输后，等待完整响应并在校验保存后展示正文。切换只影响后续尝试，不修改进行中的请求或正式世界状态。
             </p>
           </>
         )}

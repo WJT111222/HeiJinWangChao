@@ -1,3 +1,4 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { actionTime } from './fixtures/world';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
@@ -8,9 +9,9 @@ import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import { newChannel, defaultAiConfig } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
-import { createTurnDraft, rerollStory, startStageAttempt } from '../domain/drafts';
+import { rerollStory, startStageAttempt } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
-import { defaultSettings } from '../ui/settings/model';
+
 import { requestInspections } from '../services/ai/inspection';
 import { worldState, worldDraft, worldResult, npcUpdate, proof } from './fixtures/world';
 import { gameTime, task, event } from './fixtures/game';
@@ -107,7 +108,7 @@ describe('世界阶段实际 Runtime → 候选，不提交正式状态', () => 
       expect(inspection.stage).toBe('world');
       expect(inspection.route.model).toBe('world-only');
       expect(inspection.scope?.modules.some((m) => m.id === 'stages.regular.world')).toBe(true);
-      expect(inspection.scope?.modules.filter((m) => m.id.endsWith('.offscreen'))).toHaveLength(9);
+      expect(inspection.scope?.modules.filter((m) => m.id.endsWith('.offscreen'))).toHaveLength(2);
       expect(JSON.stringify(inspection)).not.toContain('mock-world-secret');
       expect(transport).toHaveBeenCalledTimes(1);
     },
@@ -120,7 +121,7 @@ describe('世界阶段实际 Runtime → 候选，不提交正式状态', () => 
     const second = await stage.generate({ ...options, draft: first });
     expect(second.world?.validation).toBe('validated');
     expect(second.world?.candidateRevision).toBeGreaterThan(first.world!.candidateRevision);
-    expect(second.variables).toEqual(draft.variables);
+    expect(second.inactiveCandidates?.variables).toEqual(draft.variables);
     expect(second.story).toEqual(draft.story);
     expect(second.useVariableStage).toBe(false);
   });
@@ -140,8 +141,8 @@ describe('世界阶段实际 Runtime → 候选，不提交正式状态', () => 
       },
     ]);
     const saved = await runner(async () => wire(result)).generate({ ...options, draft: ready });
-    expect(saved.world?.validation).toBe('preview');
-    expect(saved.stageStatus.world).toBe('preview');
+    expect(saved.world?.validation).toBe('validated');
+    expect(saved.stageStatus.world).toBe('ready');
     expect(saved.world?.basedOnVariableRevision).toBeUndefined();
     expect(saved.story).toEqual(ready.story);
     expect(saved.variables).toBeUndefined();

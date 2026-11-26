@@ -1,3 +1,6 @@
+import { persistSceneFixture } from './fixtures/stageScope';
+import { defaultSettings } from '../ui/settings/model';
+import { createTurnDraft } from '../domain/drafts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { teahouse } from './fixtures/teahouse';
@@ -6,8 +9,8 @@ import { WorldStage } from '../workflows/worldStage';
 import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
-import { defaultSettings } from '../ui/settings/model';
-import { createTurnDraft, rerollStory, TurnDraftSchema } from '../domain/drafts';
+
+import { rerollStory, TurnDraftSchema } from '../domain/drafts';
 import { submission } from './fixtures/turn';
 import { stageResponses } from '../services/ai/stageResponses';
 import { parseWorld } from '../services/validation/aiOutputs';
@@ -20,7 +23,7 @@ async function setup() {
  await repo.create(a.state);
  const initial=createTurnDraft(a.state.saveId,0,a.draft.turnId,'opening','');
  await repo.saveDraft(initial,null);await repo.saveDraft(rerollStory(initial,a.draft.story!),0);
- const draft=await repo.saveDraft({...a.draft,draftRevision:2},1);
+ const draft=await persistSceneFixture(repo,a.draft);
  const values=new Map<string,string>(),store={getItem:(k:string)=>values.get(k)??null,setItem:(k:string,v:string)=>{values.set(k,v);},removeItem:(k:string)=>{values.delete(k);}};
  const config=defaultAiConfig(),channel={...newChannel(),defaultModel:'mock-world'};
  config.channels=[channel];config.routes.story={channelId:channel.id,modelId:'mock-world'};
@@ -91,7 +94,7 @@ describe('合成展览筹备样例经真实Runtime、候选、Commit与重载',(
  it('旧式双方已填写的合法候选继续通过，不需迁移存档或增加请求',async()=>{
   const a=await setup(),raw={...a.response,taskCommands:[{...a.response.taskCommands[0],task:{...a.response.taskCommands[0].task,linkedEventId:'event_fixture_exhibition'}}]};
   const result=parseWorld(JSON.stringify(raw),a.state,a.draft);
-  const candidate=await a.repo.saveDraft({...a.draft,draftRevision:a.draft.draftRevision+1,world:{storyRevision:1,candidateRevision:1,requestRevision:0,basedOnVariableRevision:1,validation:'validated',result},stageStatus:{...a.draft.stageStatus,world:'ready'}},a.draft.draftRevision);
+  const candidate=await a.repo.saveDraft({...a.draft,draftRevision:a.draft.draftRevision+1,world:{storyRevision:1,candidateRevision:1,requestRevision:0,basedOnEntityRevision:a.draft.entities?.candidateRevision,basedOnVariableRevision:1,validation:'validated',result},stageStatus:{...a.draft.stageStatus,world:'ready'}},a.draft.draftRevision);
   await a.repo.commitTurn(submission(candidate,''));expect(a.transport).not.toHaveBeenCalled();
  });
 });

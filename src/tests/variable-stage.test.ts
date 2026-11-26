@@ -1,3 +1,4 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { completeDraft, submission } from './fixtures/turn';
 import { variableReply, variableTextEnvelope } from './fixtures/variableReply';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,9 +10,9 @@ import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import { newChannel, defaultAiConfig } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
-import { createTurnDraft, rerollStory, TurnDraftSchema, startStageAttempt } from '../domain/drafts';
+import { rerollStory, TurnDraftSchema, startStageAttempt } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
-import { defaultSettings } from '../ui/settings/model';
+
 import { requestInspections } from '../services/ai/inspection';
 import { stageResponses } from '../services/ai/stageResponses';
 import { game, gameTime } from './fixtures/game';
@@ -244,7 +245,7 @@ describe('变量阶段真实请求到草稿保存', () => {
       expect(inspection.scope?.modules.some((m) => m.id === 'stages.opening.variables')).toBe(true);
       expect(
         inspection.scope?.modules.filter((m) => m.id.startsWith('variableGroups.')),
-      ).toHaveLength(9);
+      ).toHaveLength(3);
       expect(JSON.stringify(inspection.body)).toContain('turn-a');
       expect(JSON.stringify(inspection.body)).toContain('SpendFunds');
       expect(JSON.stringify(inspection)).not.toContain('mock-variable-key');

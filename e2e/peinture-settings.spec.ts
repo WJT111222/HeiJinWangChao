@@ -217,7 +217,7 @@ async function copyStoryReport(page: Page, mobileFailure = false) {
   if (mobileFailure) {
     const dialog = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: '重试与变更详情' }) });
     await dialog.getByRole('tab', { name: '模型原文' }).click();
-    await dialog.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
+    await dialog.getByText('查看四阶段模型完整原文与执行结果', { exact: true }).click();
     await dialog.locator('summary').filter({ hasText: /^正文模型原文/ }).click();
   } else {
     await openStageRaw(page, 'story');

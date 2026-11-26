@@ -16,12 +16,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "filenames:check": "node scripts/check-source-filenames.mjs",
-    "check": "npm run filenames:check && npm run lint && npm run test && npm run build",
+    "check": "npm run filenames:check && npm run lint && npm run prompts:budget && npm run test && npm run build",
     "test:e2e": "playwright test",
     "prompts:refresh": "node scripts/refresh-prompt-metadata.mjs",
     "prompts:check": "vitest run src/tests/prompts.test.ts src/tests/prompt-runtime.test.ts src/tests/prompt-inspector.test.ts",
     "catalog:refresh": "node scripts/refresh-command-catalog.mjs",
-    "catalog:check": "node scripts/refresh-command-catalog.mjs --check"
+    "catalog:check": "node scripts/refresh-command-catalog.mjs --check",
+    "prompts:budget": "node scripts/measure-variable-prompts.mjs"
   },
   "dependencies": {
     "jquery": "3.7.1",

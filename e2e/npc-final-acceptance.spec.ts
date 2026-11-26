@@ -1,3 +1,4 @@
+import { stageFixtureReply } from '../src/tests/fixtures/variableReply';
 import { test, expect } from './helpers/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { seedRoster, openNpcRoster, selectNpc, closeNpcRoster, rosterGame } from './helpers/npcRoster';
@@ -72,7 +73,7 @@ test('千人轻量名录与300回合：多视口实际布局、分页、关系�
   writeFileSync(`docs/assets/npc-v2-final/${info.project.name}-ui-metrics.json`, JSON.stringify({ note: 'Playwright end-to-end latency, includes automation waits and process communication; not JS execution time or real-device keyboard validation.', metrics }, null, 2));
 });
 
-test('真实React连续四轮：首次建档、改名升级、离场结案、重逢记忆、七字段休眠恢复，严格12次Mock', async ({ page }) => {
+test('真实React连续四轮：首次建档、改名升级、离场结案、重逢记忆、七字段休眠恢复，严格16次Mock', async ({ page }) => {
   test.setTimeout(90000);
   let round = 0; const calls: string[] = [];
   await page.route('https://summary.mock.invalid/**', async route => {
@@ -86,19 +87,20 @@ test('真实React连续四轮：首次建档、改名升级、离场结案、重
       const content = `<thinking>保持人物与世界连续。</thinking><正文>【旁白】${narrative}</正文><短期记忆>${narrative}</短期记忆><变量规划>[]</变量规划>`;
       await route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n` }); return;
     }
-    if (stage === 'variables') {
+    if (stage === 'entities' || stage === 'variables') {
       const set = (path: string, value: unknown) => `set ${path} = ${JSON.stringify(value)}`;
       const memory = `push npc[guest].memories = ${JSON.stringify({ text: `第${round + 1}轮合作亲历`, knowledgeKind: 'observed', knowledgeSource: '本人在场经历', visibility: 'npc_private' })}`;
       const lines = [set('worldClock', new Date(Date.parse(state.worldClock) + 60000).toISOString())];
       if (!round) lines.push(set('npc[guest]', { kind: 'ordinary', identityKey: 'guest-stable', name: '林遥', aliases: [], age: 28, gender: 'female', identity: '合作伙伴', skills: [], onScene: true, affinity: 25, relationshipText: '初步接触', locationId: 'chongqing', memories: [], knownInformation: [] }), memory);
       if (round === 1) lines.push(set('npc[guest].specialProfile', { detailedBackground: '在社区成长，学习协调合作。', activeGoals: ['核验资料'], habits: ['保留记录'], offscreenTaskIds: [], relationshipNetwork: [] }), set('npc[guest].privateProfile', fullPrivateProfile), set('npc[guest].name', '林知遥'), set('npc[guest].aliases', ['林遥']), set('npc[guest].identity', '协调员'), memory, set('npc[guest].onScene', false));
       if (round === 3) lines.push(set('npc[guest].onScene', true), set('npc[guest].affinityChange', { to: 40, reason: '合作核验后确认主角值得信赖', relationshipText: '经过合作更加信任' }), memory);
-      await route.fulfill({ json: { choices: [{ message: { content: `<thinking>记录当前事实。</thinking><说明></说明><命令>\n${lines.join('\n')}\n</命令>` }, finish_reason: 'stop' }] } }); return;
+      await route.fulfill({ json: { choices: [{ message: { content: stageFixtureReply(stage,`<thinking>记录当前事实。</thinking><说明></说明><命令>\n${lines.join('\n')}\n</命令>`) }, finish_reason: 'stop' }] } }); return;
     }
     expect(state.revision).toBe(context.BASE_SAVE_REVISION);
     const world = { worldCommands: [] as unknown[], taskCommands: [] as unknown[], eventCommands: [], visibleHooks: [], unresolved: [] };
     if (round === 1) {
-      expect(context.PROTECTED_SCENE.sceneNpcIds).not.toContain('guest');
+      expect(context.PROTECTED_SCENE.sceneNpcIds).toContain('guest');
+      expect(context.OFFSCREEN_STATE.taskNpcIds).toContain('guest');
       world.taskCommands.push({ type: 'SaveTask', commandId: 'new-work', evidence: '离场核验', task: { id: 'guest-duty', actorRef: { kind: 'npc', id: 'guest' }, goal: '核验工作资料', status: 'active', startAt: state.worldClock, dueAt: new Date(Date.parse(state.worldClock) + 3600000).toISOString(), prerequisites: [], blockers: [] } });
     }
     if (round === 2) {
@@ -124,5 +126,5 @@ test('真实React连续四轮：首次建档、改名升级、离场结案、重
   expect((await rosterGame(page)).state.npc.guest).toMatchObject({ privateProfile: fullPrivateProfile, importancePreference: 'special' });
   await closeNpcRoster(page); await page.reload(); await expect(page.locator('.game-layout')).toBeVisible();
   expect((await rosterGame(page)).state.npc.guest.memories).toEqual(final.state.npc.guest.memories);
-  expect(calls).toEqual(Array.from({ length: 4 }, () => ['story', 'variables', 'world']).flat());
+  expect(calls).toEqual(Array.from({ length: 4 }, () => ['story', 'entities', 'variables', 'world']).flat());
 });

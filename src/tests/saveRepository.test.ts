@@ -1,7 +1,8 @@
+import { sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SaveRepository } from '../services/storage/saveRepository';
-import { TurnDraftSchema, createTurnDraft, rerollStory, startStageAttempt } from '../domain/drafts';
+import { TurnDraftSchema, rerollStory, startStageAttempt } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import { game, purchase, story } from './fixtures/game';
 
@@ -198,7 +199,7 @@ describe('草稿、候选与失败恢复数据', () => {
     const result = { ...attempt, draftRevision: attempt.draftRevision + 1, world: worldCandidate(attempt),
       stageStatus: { ...attempt.stageStatus, world: 'ready' as const } };
     await repository.saveDraft(result, attempt.draftRevision);
-    expect(result.variables).toEqual(selected.variables); expect(result.storyRevision).toBe(selected.storyRevision);
+    expect(result.inactiveCandidates?.variables).toEqual(selected.variables); expect(result.storyRevision).toBe(selected.storyRevision);
     expect(result.useVariableStage).toBe(false); expect(selected.useVariableStage).toBe(true);
     expect(await repository.load('save-a')).toEqual(before);
   });
@@ -226,7 +227,7 @@ describe('草稿、候选与失败恢复数据', () => {
     draft = rerollStory(draft, story); await repository.saveDraft(draft, 0);
     draft = { ...draft, draftRevision: 2,
       variables: { storyRevision: 1, candidateRevision: 1, requestRevision: 0, validation: 'validated', result: { commands: [purchase()], rejectedSuggestions: [], unresolved: [] } },
-      stageStatus: { story: 'ready', variables: 'ready', world: 'failed' },
+      stageStatus: { story: 'ready', entities: 'skipped', variables: 'ready', world: 'failed' },
       failures: [{ stage: 'world', attempt: 3, storyRevision: 1, errorCode: 'TIMEOUT', retryable: true }],
     };
     await repository.saveDraft(draft, 1);
