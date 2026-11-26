@@ -1,0 +1,52 @@
+{
+  "repository": "https://github.com/starowo/starowo.github.io",
+  "commit": "53bd585da14248ba10baaede7fc7ed0cebe1eeeb",
+  "upstreamFiles": {
+    "regex_bind/index.js": "bc9fe020e629da3b7890c879c3525269e54ebb2d6dabb75dba1a576a2454e8ee",
+    "regex_bind/inject.js": "4858bcb57530e3ff6ef68f0c94a4d291e2914c766c274f888e9a2fdf8d0efb59",
+    "regex_bind/LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  "license": "GPL-3.0-only",
+  "attribution": "SPreset / SoliUmbra (starowo); Meowssiah / 小猫之神",
+  "preset": {
+    "file": "Meowssiah-2.1.7.json",
+    "sha256": "81c74429031e005fec1d0ea0a2cb7b4c35e3a055c3ce2ad4a7f3cf9c2fdf57f0",
+    "prompts": 56,
+    "regexRules": 8,
+    "processors": {
+      "FinalRequestProcessing": "ec15d7967d90be6ee19cab826367a61133de20f01e417e2a58c47927fb4096b4",
+      "OutputPreprocessing": "3c4ecabc4091cabf51a3ddc371eabe7c88f6f4beff98b166d74560812232d8fc",
+      "toolCallFormatter": "8c989dac21fa263c394ea8cfb7e68024c3728a43c0957d58c96290a427b9a54c"
+    },
+    "helpers": [
+      {
+        "name": "SPreset",
+        "id": "f0801c1a-3b0f-4e1c-82b6-f0f8990fbde6",
+        "sha256": "8298258224ebc3edaae17072b3bd93004f5cef05c479fa6012603dc049e3c632"
+      },
+      {
+        "name": "菜单",
+        "id": "3ee2a1fe-2cbb-4058-b3a0-5700867597d2",
+        "sha256": "b7a5b0350aebc955395437a4e4244fcd9cd55712c26d924e9fa40a2f338758bd"
+      }
+    ],
+    "spresetRegexes": 8,
+    "versionLabel": "3.0-Preview-01",
+    "versionId": 301,
+    "sections": {
+      "toolCallFormatter:87-92": "45156b4e6835ec197a6f85bb1dd3664258018b9445490a776bd34035272050c9"
+    }
+  },
+  "localFiles": {
+    "worker.mjs": "8ae3db5085f9393127a4ff9a89625a794123c2d0b6dee6507c62caaebaddd136",
+    "pipeline.mjs": "1a6927bbad75e48944d32c68d5dc3a6ffbbbe30863aebcf8fc346ba1f48be4d2",
+    "build.mjs": "24ca1000138d492a20f818a2901b07cca6aad0708cc6fc8893280eec78a77cda",
+    "../spreset/frame.mjs": "644182a6661b79ba9b5f781891abc189a151cd7b33ff7de2d1216d3edfe3be7b",
+    "../../src/presets/meowssiah/literature.json": "009b4f9da3e64e690185d7aa832d2fcbe0b6119dfa565781da225ccd78be6839"
+  },
+  "changes": [
+    "Fixed local request callback and single game_content terminal delivery; private port broker uses the Meowssiah worker name.",
+    "No ST global, external import, log upload, simulated history, or MVU."
+  ],
+  "build": "npm ci && npm run build; see experiments/meowssiah/build.mjs"
+}

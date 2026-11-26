@@ -60,7 +60,7 @@ export class UpstreamFrames {
   // Exact visible text observed before the first tool. null means its position or content disqualifies it.
   private leadingPadding: string | null = '';
   boundary = false;
-  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null) {}
+  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null, private contentField = 'content', private optionalTextFields: readonly string[] = []) {}
   private observeCompanionText(text: string, sharesToolFields = false) {
     if (!this.expectedContentTool || !text || this.leadingPadding === null) return;
     if (this.tools.size || sharesToolFields || /[^ \t\r\n]/u.test(text)) this.leadingPadding = null;
@@ -268,8 +268,9 @@ export class UpstreamFrames {
         const args = parse(tool.args);
         if (!objectArgs(args)) invalid();
         if (this.expectedContentTool !== undefined) {
-          if (tool.name !== this.expectedContentTool || Object.keys(record(args)).length !== 1) invalid();
-          const content = record(args).content;
+          if (tool.name !== this.expectedContentTool || Object.entries(record(args)).some(([key, value]) =>
+            key !== this.contentField && (!this.optionalTextFields.includes(key) || typeof value !== 'string'))) invalid();
+          const content = record(args)[this.contentField];
           if (typeof content !== 'string' || !content.trim()) invalid();
           const padding = this.leadingPadding;
           this.trace.matchesDelivery = (restored, leadingPadding) => {

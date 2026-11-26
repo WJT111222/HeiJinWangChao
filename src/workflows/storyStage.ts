@@ -1,5 +1,6 @@
+import { oracleId } from '../presets/meowssiah/definition';
 import type { LegacyContinuationConsent } from './legacyContinuation';
-import { selectedPrototype } from '../presets/spreset/definition';
+import { usesSpreset } from '../presets/spreset/definition';
 import { withWorldbookLibrary } from '../services/worldbook/mainWorldview';
 import { nativeDeliveryId } from '../presets/settings';
 import { StoryClock } from '../presets/tavern/timing';
@@ -33,7 +34,7 @@ import { StageGuard } from './stageGuard';
 import type { OrderPreferences } from '../prompts/order';
 
 type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft' | 'prepareWorldview'>
-  & Partial<Pick<SaveRepository,'saveRecoveredStory' | 'recentStoryActions'>>;
+  & Partial<Pick<SaveRepository,'saveRecoveredStory' | 'recentStoryActions' | 'readOracleNote'>>;
 export interface StoryProgress {
   phase: 'generating' | 'saving' | 'retrying';
   narrative: string;
@@ -168,12 +169,17 @@ export class StoryStage {
       try {
         current();
         progress();
+        const noteState = typeof presetSelection === 'object' && presetSelection?.definition.id === oracleId
+          ? await this.repository.readOracleNote?.(draft.saveId) : undefined;
+        if (noteState && noteState.instance !== lease.instance)
+          throw new DataError('DRAFT_CONFLICT', '场外小纸条所属的存档已经变化。');
+        const note = noteState?.note;
         const historyActions = presetSelection && presetSelection !== nativeDeliveryId && state.journal.length
           ? await this.repository.recentStoryActions?.(state, settings.memory.immediateWindowSize) : undefined;
         current();
         const response = await runStageRequest(
           {
-            stage: 'story', worldview:lease.worldview,
+            stage: 'story', worldview:lease.worldview, ...(note && { oracleNote: note.text }),
             mode: draft.turnKind,
             state,
             draft,
@@ -249,8 +255,8 @@ export class StoryStage {
         input.onProgress?.({ phase: 'saving', readingPhase: streaming ? 'body' : 'waiting', narrative: streaming ? story.narrative : '' });
         // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
         const saved = selection
-          ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal,lease,response.storyWriting)
-          : await this.repository.saveDraft(rerollStory(draft,story,response.storyWriting), draft.draftRevision, attempt.signal, draft, lease);
+          ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal,lease,response.storyWriting,note?.id)
+          : await this.repository.saveDraft(rerollStory(draft,story,response.storyWriting), draft.draftRevision, attempt.signal, draft, lease, note?.id);
         published = true;
         if (responseInspectionId) {
           try { stageResponses.update(responseInspectionId, { candidateSaved: true, draftSavedMs: clock?.elapsed() }, secrets); } catch { /* Already persisted. */ }
@@ -266,7 +272,7 @@ export class StoryStage {
         const keepLegacyPartial = !continuation && draft.storyPartial && !draft.storyPartial.writing;
         if (!saving && (!consent || consent.sent) && !recovery && !keepLegacyPartial && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled'
           && !isContinuationDeliveryUnknown(error)
-          && !(draft.story && (selectedPrototype(presetSelection) || error.details?.storyRule === 'narrative_empty'
+          && !(draft.story && (usesSpreset(presetSelection) || error.details?.storyRule === 'narrative_empty'
             || error.details?.fieldPath?.startsWith('tavern.upstream.')))) {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)

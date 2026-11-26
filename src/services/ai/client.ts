@@ -1,4 +1,4 @@
-import type { PrototypeSession } from '../../presets/spreset/session';
+import type { LiterarySession } from '../../presets/spreset/literarySession';
 import { fetchWithRelay, relayAttempt, relayMode, type ConfirmedTransmission } from './corsRelay';
 import { relayUpstreamHeader } from './relayTarget';
 import { nativeFetch } from '../../presets/tavern/fetch';
@@ -41,6 +41,8 @@ export interface RequestOptions {
   storyClock?: import('../../presets/tavern/timing').StoryClock;
   presetSampling?: Sampling;
   spresetPrototype?: boolean;
+  oracleStory?: boolean;
+  oracleComment?: boolean;
   tavernType?: GenerationType;
   /** Frozen reference records for checking the bundled script’s final tool declaration. */
   nativeDeliveryReference?: readonly AiMessage[];
@@ -311,9 +313,10 @@ export class AiClient {
   ): Promise<AiResponse> {
     const theater = snapshot.stage === 'theater';
     const prototype = import.meta.env.DEV && options.spresetPrototype && snapshot.stage === 'story';
-    let session: PrototypeSession | undefined;
+    const oracle = options.oracleStory && snapshot.stage === 'story';
+    let session: LiterarySession | undefined;
     // Theater keeps a single paid transport. A failed direct POST is not replayed through a relay.
-    const relay = theater || (prototype && !options.confirmedTransmission) ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
+    const relay = theater || ((prototype || oracle) && !options.confirmedTransmission) ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
     const allowOutputLimit = options.validateStoryOutputLimit === true || theater;
     const relayEnabled = relayMode() === 'auto';
     const started = performance.now();
@@ -347,7 +350,11 @@ export class AiClient {
             wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission);
         };
         const playerWorldbook = snapshot.stage === 'story' ? options.playerWorldbook : undefined;
-        if (import.meta.env.DEV && prototype) {
+        if (oracle) {
+          const { LiterarySession } = await import('../../presets/spreset/literarySession');
+          session = new LiterarySession(signal, { title: '神域文学处理器', path: '/literature/meowssiah/sandbox.html',
+            tool: 'soliumbra_reply', field: 'game_content', optionalTextFields: options.oracleComment ? ['think_nya', 'comment'] : ['think_nya'], result: JSON.stringify({ ok:true }) }, options.presetSampling);
+        } else if (import.meta.env.DEV && prototype) {
           const { PrototypeSession } = await import('../../presets/spreset/session');
           session = new PrototypeSession(signal);
         }

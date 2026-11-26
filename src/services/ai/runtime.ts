@@ -1,4 +1,5 @@
-import { selectedPrototype } from '../../presets/spreset/definition';
+import { oracleId } from '../../presets/meowssiah/definition';
+import { usesSpreset } from '../../presets/spreset/definition';
 import { parsePartialEntities } from '../validation/partialOutputs';
 import { canonicalJson } from '../../domain/worldbook/canonical';
 import { prepareStoryWorldbook, storyTriggerInput } from '../worldbook/storyWorldbook';
@@ -101,7 +102,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   captured.worldview ??= await loadMainWorldview();
   if (options.signal?.aborted) throw new AiError('cancelled');
   const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation, writing);
-  if (!presetSelection || captured.stage !== 'story' || selectedPrototype(presetSelection)) return run();
+  if (!presetSelection || captured.stage !== 'story' || usesSpreset(presetSelection)) return run();
   if (presetSelection === nativeDeliveryId) await ensureNativeDeliveryHost(options.signal);
   const recent = captured.state.journal.slice(-captured.settings.memory.immediateWindowSize);
   const chatLength = 1 + recent.reduce((sum, entry) => sum + 1 + Number(Boolean(captured.historyActions?.[entry.turnId])), 0);
@@ -120,8 +121,8 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     : await composePrompt({ ...captured, cotAllowed: snapshot.useCot }, presetSelection);
   // 续写：上下文与原请求完全相同（缓存前缀不变），末尾追加已写部分（assistant）与续写指令（user）。
   const continuation = requestedContinuation ? { partial: trimIncompleteTag(requestedContinuation.partial) } : undefined;
-  const spresetPrototype = captured.stage === 'story' && selectedPrototype(presetSelection);
-  const scripted = captured.stage === 'story' && !!presetSelection && !spresetPrototype;
+  const isolatedLiterature = captured.stage === 'story' && usesSpreset(presetSelection);
+  const scripted = captured.stage === 'story' && !!presetSelection && !isolatedLiterature;
   const composed = captured.stage === 'story' && prompt.foundation ? prompt.messages.filter(message => message !== prompt.foundation) : prompt.messages;
   const messages = continuation
     ? [...composed, { role: 'assistant' as const, content: continuation.partial },
@@ -187,7 +188,9 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const nativeDeliveryReference = presetSelection === nativeDeliveryId ? nativeReferenceRecords(messages) : undefined;
   const responseResult = await client.generate(snapshot, scripted ? await promptReady(messages, false) : messages, {
     ...options,
-    spresetPrototype,
+    oracleComment: prompt.preset?.oracleComment,
+    spresetPrototype: isolatedLiterature && prompt.preset?.id !== oracleId,
+    oracleStory: isolatedLiterature && prompt.preset?.id === oracleId,
     confirmedTransmission: requestedContinuation?.consent,
     tavernType: scripted ? type : undefined,
     playerWorldbook,
@@ -321,7 +324,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     const compatibilityError = prompt.preset && error instanceof AiError && error.details?.fieldPath?.startsWith('tavern.');
     const failure = (captured.stage === 'variables' || captured.stage === 'entities') ? variableFailure(error, step)
       : captured.stage === 'story' && !compatibilityError ? storyFailure(error, true) : error;
-    if (captured.stage === 'story' && selectedPrototype(presetSelection) && failure instanceof AiError) manualRetryOnly.add(failure);
+    if (captured.stage === 'story' && usesSpreset(presetSelection) && failure instanceof AiError) manualRetryOnly.add(failure);
     sealed = true;
     if (captured.stage === 'story' && failure && typeof failure === 'object') {
       // 兼容渠道会把推理写成开头的 <think>…</think>：与正式解析一致先去掉，推理不进入可续写的正文。
@@ -387,5 +390,5 @@ export async function previewTavernStory(input: ComposeInput & { stage: 'story' 
   const captured = checkedInput(input);
   captured.worldview = await loadMainWorldview();
   const { previewStoryMessages } = await import('../../prompts/preview');
-  return previewStoryMessages(captured, await composePrompt(captured, selected), type, true);
+  return previewStoryMessages(captured, await composePrompt(captured, selected), type, !usesSpreset(selected));
 }

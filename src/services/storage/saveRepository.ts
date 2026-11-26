@@ -238,8 +238,9 @@ async function checkStoryPublication(base: TurnDraft, next: TurnDraft, lease: St
   return storySourceHash(next);
 }
 
-async function publishStoryOrigin(tx: IDBTransaction, saveId: string, lease: StoryWorldview, sourceHash: string) {
+async function publishStoryOrigin(tx: IDBTransaction, saveId: string, lease: StoryWorldview, sourceHash: string, deliveredNoteId?: string) {
   const control = await checkStoryLease(tx, saveId, lease);
+  if (control.oracleNote?.once && control.oracleNote.id === deliveredNoteId) delete control.oracleNote;
   control.storyOrigin = { owner:lease.owner, generation:lease.generation, instance:lease.instance, worldviewHash:lease.worldviewHash, sourceHash };
   await writeControl(tx,control);
 }
@@ -973,10 +974,30 @@ export class SaveRepository {
     } finally { session.release(); }
   }
 
+  async readOracleNote(saveId: string) {
+    return transaction(this.database, ['saves','saveControls'], 'readonly', async tx => {
+      await readStoredState(tx, saveId);
+      const control = await readControl(tx, saveId);
+      return { instance: controlInstance(control), note: control?.oracleNote ?? null };
+    });
+  }
+  async writeOracleNote(saveId: string, expected: { instance: string | null; noteId?: string }, text: string, once: boolean) {
+    return transaction(this.database, ['saves','saveControls'], 'readwrite', async tx => {
+      await readStoredState(tx, saveId);
+      const control = await readControl(tx, saveId) ?? newSaveControl(saveId);
+      requireData(controlInstance(control) === expected.instance && control.oracleNote?.id === expected.noteId,
+        'REVISION_CONFLICT', '本档或纸条已变化，请重新打开控制台。');
+      if (text.trim()) control.oracleNote = { id: crypto.randomUUID(), text, once };
+      else delete control.oracleNote;
+      await writeControl(tx, control);
+      return { instance: controlInstance(control), note: control.oracleNote ?? null };
+    });
+  }
+
   // StoryStage holds the browser execution lock. This transaction only replaces the
   // selected draft after the full CAS and eligibility check, and never writes GameState.
   async saveRecoveredStory(basedOn: TurnDraft, story: NonNullable<TurnDraft['story']>,
-    selection: LegacyNotificationSelection, signal?: AbortSignal, lease?: StoryWorldview, writing?: TurnDraft['storyWriting']): Promise<TurnDraft> {
+    selection: LegacyNotificationSelection, signal?: AbortSignal, lease?: StoryWorldview, writing?: TurnDraft['storyWriting'], deliveredNoteId?: string): Promise<TurnDraft> {
     const base = TurnDraftSchema.parse(basedOn);
     const hash = lease && await checkStoryPublication(base,rerollStory(base,story,writing),lease);
     return transaction(this.database, ['saves','drafts','saveControls'], 'readwrite', async tx => {
@@ -989,7 +1010,7 @@ export class SaveRepository {
       validateRecoveredStory(state,current.story!,replacement.story!,recovery);
       validateDraftUpdate(current,replacement);
       const next = TurnDraftSchema.parse({ ...replacement, legacyNotificationRecovery:recovery });
-      if (lease && hash) await publishStoryOrigin(tx, base.saveId, lease, hash);
+      if (lease && hash) await publishStoryOrigin(tx, base.saveId, lease, hash, deliveredNoteId);
       await request(store.put(next));
       return next;
     },signal);
@@ -999,7 +1020,7 @@ export class SaveRepository {
    * basedOn：调用方据以构造 next 的草稿。提供时要求库中草稿与它逐项相同，
    * 不只看 draftRevision 数字，防止时间线被替换（如导入备份）后迟到的旧响应恰好对上版本号。
    */
-  async saveDraft(draft: TurnDraft, expectedDraftRevision: number | null, signal?: AbortSignal, basedOn?: TurnDraft, lease?: StoryWorldview): Promise<TurnDraft> {
+  async saveDraft(draft: TurnDraft, expectedDraftRevision: number | null, signal?: AbortSignal, basedOn?: TurnDraft, lease?: StoryWorldview, deliveredNoteId?: string): Promise<TurnDraft> {
     const next = TurnDraftSchema.parse(draft);
     const base = basedOn === undefined ? undefined : TurnDraftSchema.parse(basedOn);
     if (lease) requireData(lease.turnId === next.turnId && lease.baseRevision === next.baseSaveRevision,
@@ -1024,7 +1045,8 @@ export class SaveRepository {
         validateDraftUpdate(old, next);
       }
       if (lease) {
-        if (hash) await publishStoryOrigin(tx, next.saveId, lease, hash);
+        if (hash) await publishStoryOrigin(tx, next.saveId, lease, hash,
+          next.story && next.stageStatus.story === 'ready' && next.storyRevision !== base?.storyRevision ? deliveredNoteId : undefined);
         else {
           const control = await checkStoryLease(tx, next.saveId, lease);
           if (control.storyOrigin?.generation !== lease.generation || control.storyOrigin.worldviewHash !== lease.worldviewHash)
