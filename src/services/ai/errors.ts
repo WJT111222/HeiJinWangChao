@@ -88,6 +88,9 @@ const messages: Record<AiErrorCode, string> = {
 };
 export const aiErrorCodes = Object.keys(messages);
 const fieldMessages = new Map<string, string>([
+  ['tavern.writing_unknown', '旧版断点没有记录文学来源。请确认新续写使用的文学设置，或主动重新生成。已写内容保留。'],
+  ['tavern.confirmation_expired', '本次续写确认已失效。已写内容保留，请在当前存档重新确认文学设置，或主动重新生成正文。'],
+  ['tavern.writing_changed', '这段正文的文学设置与当前选择不同。请恢复原文学设置后续写，或主动重新生成。已写内容保留。'],
   ['tavern.refresh_required', '正文模式已在其他页面变更，请刷新后再生成。'],
   ['tavern.context_boundary', '正文资料与交付标记冲突，本次未发送。'],
   ['tavern.native_delivery.tools', '未能准备本次正文所需的工具。请关闭破甲模式或检查渠道后再生成。'],
@@ -95,6 +98,8 @@ const fieldMessages = new Map<string, string>([
   ['tavern.native_delivery.response', '渠道未返回可核对的正文工具结果，本次未保存。可关闭破甲模式后手动生成。'],
   ['tavern.initialization', '预设脚本初始化失败，可到运行设置查看实例状态。'],
   ['tavern.wrapper', '预设脚本处理响应时出错。'],
+  ['channel.confirmed_relay_unavailable', '当前渠道或设置不支持本次中转。断点已保留，请重新选择续写路径。'],
+  ['channel.continuation_delivery_unknown', '本次续写确认已失效。模型服务可能已受理请求并计费。已保留原断点；如需再次发送，请重新确认。'],
   ['channel.relay', '本站中转未能完成请求。请检查地址、端点与请求大小，再手动重试。'],
   ['channel.relay_unavailable', '网络请求失败：本站中转接口不可用，未能确认模型服务的响应。请检查站点的 Worker 配置。'],
   ['channel.model', '服务明确报告模型或推理接入点不存在，或当前账户无权使用。请核对模型 ID 和授权。'],
@@ -117,6 +122,9 @@ export class AiError extends Error {
     if (details?.storyRule) this.details = safeStoryDiagnostic(details);
     this.name = 'AiError';
   }
+}
+export function isContinuationDeliveryUnknown(error: unknown) {
+  return error instanceof AiError && error.details?.fieldPath === 'channel.continuation_delivery_unknown';
 }
 // 不返回供应商正文、URL、请求头、原始异常或 Zod 错误内容。
 export function safeAiError(error: unknown) {

@@ -55,6 +55,9 @@
     {
       "name": "篇幅与文风",
       "ids": [
+        "wave-length-800-1000",
+        "wave-length-dynamic-more",
+        "wave-length-dynamic-less",
         "wave-paragraph-length",
         "wave-style-light-novel",
         "wave-style-japanese-fantasy",
@@ -225,6 +228,15 @@
       "ids": [
         "wave-intimacy-gentle",
         "wave-intimacy-conquest"
+      ]
+    },
+    {
+      "name": "正文篇幅",
+      "rule": "atMostOne",
+      "ids": [
+        "wave-length-800-1000",
+        "wave-length-dynamic-more",
+        "wave-length-dynamic-less"
       ]
     }
   ]

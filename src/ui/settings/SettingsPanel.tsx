@@ -1,14 +1,14 @@
 import { SuggestionFeedback } from '../feedback/FeedbackForms';
 import { previewChime } from '../game/completionChime';
 import { captureStoryPreset } from '../../presets/library';
-import { TavernAssistant } from './TavernAssistant';
+import { listenForMode, TavernAssistant } from './TavernAssistant';
 import type { FeedbackLevel } from '../Feedback';
 import { Feedback,useDesktopFeedback } from '../Feedback';
 import { MemorySummarySettings } from './MemorySummarySettings';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import { VariableManager } from './VariableManager';
 import type { SaveRepository, VariableSnapshot } from '../../services/storage/saveRepository';
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, cloneElement, isValidElement } from 'react';
+import { lazy, Suspense, useCallback, useSyncExternalStore, useEffect, useLayoutEffect, useRef, useState, cloneElement, isValidElement } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { AiConnections } from './AiConnections';
 import { UnsavedAiChanges } from './UnsavedAiChanges';
@@ -33,6 +33,9 @@ const descriptions={'AI 连接':'渠道、密钥与模型路由','提示词':'�
 const tabs = ['AI 连接', '提示词', '记忆', '运行', '外观', '世界书', '提示词管理', '变量管理', '反馈建议'] as const;
 const chimes = [['background', '切到别处时', '默认。切到其他标签页或窗口时才提醒，看着游戏时不打扰'], ['always', '总是', '每次生成完成都提醒'], ['off', '关闭', '不播放提示音']] as const;
 const appearances = [['night', '夜间', '黑金配色，适合夜里或暗处'], ['day', '日间', '浅色纸页，适合白天或光线充足时'], ['system', '跟随系统', '随设备的深浅色自动切换']] as const;
+function literarySettingsActive() {
+  try { return Boolean(captureStoryPreset()); } catch { return false; }
+}
 export function SettingsPanel({
   settings,
   onSave,
@@ -97,8 +100,7 @@ export function SettingsPanel({
   const [notice, setNotice] = useState('');
   const [noticeLevel, setNoticeLevel] = useState<FeedbackLevel>('info');
   const [aiDirty, setAiDirty] = useState(false);
-  let presetOwnsWriting = false;
-  try { presetOwnsWriting = Boolean(captureStoryPreset()); } catch { /* Recovery remains available in runtime settings. */ }
+  const presetOwnsWriting = useSyncExternalStore(listenForMode, literarySettingsActive, () => false);
   const [variablesDirty,setVariablesDirty]=useState(false);
   const variablesDirtyChanged=useCallback((dirty:boolean)=>{setVariablesDirty(dirty);onVariablesDirtyChange?.(dirty);},[onVariablesDirtyChange]);
   const [worldbookDirty, setWorldbookDirty] = useState(false);
@@ -244,6 +246,7 @@ export function SettingsPanel({
           <Suspense fallback={<p>正在打开提示词管理中心…</p>}>
             <PromptInspector
               settings={editing}
+              presetOwnsWriting={presetOwnsWriting}
               repository={repository}
               activeSaveId={activeSaveId}
               onPromptChange={prompt}
@@ -260,7 +263,8 @@ export function SettingsPanel({
           editing={editingChannel} onEditingChange={changeChannelEditor} />}
         {tab === '提示词' && (
           <>
-            <p className="muted">{presetOwnsWriting ? '文风、人称和叙事偏好由预设接管；篇幅、行动选项和剧情难度继续由游戏控制。关闭预设后沿用原偏好。' : '这些叙事偏好和剧情难度用于下一次正文请求的提示词与输出校验。'}</p>
+            <p className="muted">{presetOwnsWriting ? '由当前文学预设接管：篇幅、人称和文风可在预设控制台调整。关闭预设后恢复原偏好。' : '这些叙事偏好和剧情难度用于下一次正文请求的提示词与输出校验。'}</p>
+            {presetOwnsWriting && <button type="button" onClick={() => window.dispatchEvent(new Event('heijin:open-preset-settings'))}>打开文学预设控制台</button>}
             <div className="settings-fields">
               <label>
                 叙事人称
@@ -277,7 +281,7 @@ export function SettingsPanel({
               </label>
               <fieldset className="style-fieldset" disabled={presetOwnsWriting} style={{border:0,padding:0,margin:0}}><StyleField value={editing.prompts.style} onChange={(value) => prompt('style', value)} /></fieldset>
               <DifficultyField value={storyDifficulty(editing.prompts)} onChange={(value) => prompt('difficulty', value)} />
-              <LengthField
+              <LengthField disabled={presetOwnsWriting}
                 min={editing.prompts.minNarrativeChars}
                 max={editing.prompts.maxNarrativeChars}
                 custom={customLength}
@@ -298,7 +302,7 @@ export function SettingsPanel({
                 <label className="toggle" key={key}>
                   <input
                     type="checkbox"
-                    disabled={presetOwnsWriting && key !== 'actionOptions'} checked={editing.prompts[key]}
+                    disabled={presetOwnsWriting && key === 'naturalProse'} checked={editing.prompts[key]}
                     onChange={(e) => prompt(key, e.target.checked)}
                   />
                   {label}
@@ -444,8 +448,8 @@ export function SettingsPanel({
  * 正文篇幅：低 / 中 / 高三档一键填好两个数字，「自定义」或手动改数字即为自定义。
  * 最低字数是程序硬性检查；建议上限只写进提示词，写多了照常通过。
  */
-function LengthField({ min, max, custom, minInput, onTier, onCustom, onMin, onMax }: {
-  min: number; max: number | undefined; custom: boolean; minInput: RefObject<HTMLInputElement | null>;
+function LengthField({ disabled, min, max, custom, minInput, onTier, onCustom, onMin, onMax }: {
+  disabled: boolean; min: number; max: number | undefined; custom: boolean; minInput: RefObject<HTMLInputElement | null>;
   onTier: (min: number, max: number) => void; onCustom: () => void; onMin: (value: number) => void; onMax: (value: number) => void;
 }) {
   const tier = custom ? 'custom' : Number.isNaN(min) || Number.isNaN(max) ? 'custom' : narrativeLengthTier({ minNarrativeChars: min, maxNarrativeChars: max });
@@ -454,7 +458,7 @@ function LengthField({ min, max, custom, minInput, onTier, onCustom, onMin, onMa
   const shown = (value: number) => Number.isNaN(value) ? '' : value;
   const inverted = !Number.isNaN(min) && !Number.isNaN(displayMax) && displayMax < min;
   return (
-    <div className="length-field" role="group" aria-labelledby="length-field-title">
+    <fieldset style={{border:0,margin:0,minWidth:0}} disabled={disabled} className="length-field" role="group" aria-labelledby="length-field-title">
       <span id="length-field-title" className="length-field-title">正文篇幅</span>
       <div className="length-field-body">
         <div className="length-tiers" role="radiogroup" aria-label="正文篇幅档位">
@@ -481,12 +485,12 @@ function LengthField({ min, max, custom, minInput, onTier, onCustom, onMin, onMa
             <input type="number" min="1" max="100000" value={shown(displayMax)} aria-invalid={inverted || undefined} onChange={(e) => onMax(e.target.valueAsNumber)} />
           </label>
         </div>
-        {inverted
+        {disabled ? <p className="field-hint">关闭文学预设后沿用此篇幅。</p> : inverted
           ? <p className="field-hint length-warn" role="alert">建议上限不能低于最低字数。</p>
           : <p className="field-hint">最低字数由程序硬性检查，不够会判失败并重写；建议上限只告诉模型写到这里收尾，写多了也照常通过。</p>}
-        {tier === 'high' && <p className="field-hint length-warn">高档每回合要写 8000 字以上：需要模型单次输出足够长（建议在「AI 连接」把最大输出调到 16k 以上），生成更慢、更耗额度；正文写到一半被截断时，可以用「续写正文」接着写。</p>}
+        {!disabled && tier === 'high' && <p className="field-hint length-warn">高档每回合要写 8000 字以上：需要模型单次输出足够长（建议在「AI 连接」把最大输出调到 16k 以上），生成更慢、更耗额度；正文写到一半被截断时，可以用「续写正文」接着写。</p>}
       </div>
-    </div>
+    </fieldset>
   );
 }
 

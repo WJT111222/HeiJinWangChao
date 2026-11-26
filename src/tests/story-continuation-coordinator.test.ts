@@ -45,6 +45,8 @@ function reply(stage: AiStage, text: string) {
 }
 
 let repo: SaveRepository, draft: TurnDraft;
+const expectedWriting = { source: 'native' as const, min: 5, max: 2000, perspective: setup().settings.prompts.perspective,
+    style: setup().settings.prompts.style, naturalProse: setup().settings.prompts.naturalProse };
 const runners: TurnCoordinator[] = [];
 function runner(fetcher: typeof fetch) {
   const value = new TurnCoordinator(repo, new AiClient(fetcher));
@@ -62,7 +64,7 @@ beforeEach(async () => {
   const base = createTurnDraft('save-a', 0, 'turn-a', 'opening', '');
   draft = TurnDraftSchema.parse({ ...base, stageStatus: { ...base.stageStatus, story: 'failed' },
     failures: [{ stage: 'story', attempt: 1, storyRevision: 0, errorCode: 'output_limit', retryable: false }],
-    storyPartial: { text: head, storyRevision: 0, continuations: 2 } });
+    storyPartial: { text: head, storyRevision: 0, continuations: 2, writing: expectedWriting } });
   draft = await repo.saveDraft(draft, null);
 });
 afterEach(() => {
@@ -88,7 +90,7 @@ describe('续写与自动重试', () => {
       expect(String(messages.at(-1)?.content)).toContain(`目前已写 ${partialNarrative(head).chars} 字，已达到最低 5 字`);
     }
     const saved = await current();
-    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 2 });
+    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 2, writing: expectedWriting });
     expect(saved.stageStatus.story).toBe('failed');
   });
 
@@ -122,7 +124,7 @@ describe('续写与自动重试', () => {
     expect(transport).not.toHaveBeenCalled();
     const saved = await current();
     // 服务器错误不属于「没写完」：保留原来的已写部分，只记下这次消耗。
-    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 3 });
+    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 3, writing: expectedWriting });
     expect(saved.stageStatus.story).toBe('failed');
   });
 });
@@ -142,7 +144,7 @@ describe('前导 <think> 的截断原文', () => {
     const coordinator = runner(async () => sse(['<think>内部推理：先想', '想人物动机。</think>\n', head], 'length'));
     await expect(coordinator.generate({ ...setup(), draft })).rejects.toThrow();
     const saved = await current();
-    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 0 });
+    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 0, writing: expectedWriting });
     expect(JSON.stringify(saved)).not.toContain('内部推理');
   });
   it('<think> 还没闭合就截断：没有正文可保存', async () => {
@@ -158,7 +160,7 @@ describe('前导 <think> 的截断原文', () => {
     const coordinator = runner(async () => sse(['<think>续写前的推理</think>', more], 'length'));
     await expect(coordinator.generate({ ...setup(), draft })).rejects.toThrow();
     const saved = await current();
-    expect(saved.storyPartial).toEqual({ text: `${head}${more}`, storyRevision: 0, continuations: 3 });
+    expect(saved.storyPartial).toEqual({ text: `${head}${more}`, storyRevision: 0, continuations: 3, writing: expectedWriting });
     expect(JSON.stringify(saved)).not.toContain('续写前的推理');
   });
 });
@@ -169,7 +171,7 @@ describe('正文已闭合但字数不足', () => {
   const chars = partialNarrative(closed).chars;
   async function closedDraft() {
     const latest = await current();
-    return repo.saveDraft({ ...latest, draftRevision: latest.draftRevision + 1, storyPartial: { text: closed, storyRevision: 0, continuations: 0 } }, latest.draftRevision, undefined, latest);
+    return repo.saveDraft({ ...latest, draftRevision: latest.draftRevision + 1, storyPartial: { text: closed, storyRevision: 0, continuations: 0, writing: expectedWriting } }, latest.draftRevision, undefined, latest);
   }
   it('最低字数高于已写字数：拒绝续写，不发出任何请求，已写部分不变', async () => {
     const saved = await closedDraft();

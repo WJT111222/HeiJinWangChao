@@ -614,6 +614,10 @@
         "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
         "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
         "sha256": "cbbfdc67f8547a110f850c9f19ae5302a12201b482d78a177c5053573ffe4adb"
+      },
+      "literaryOwnership": {
+        "sha256": "7356e2fac5d8c21a607e6603f44a33ef67e549b52bb266f8a12f9adbb02ed27d",
+        "change": "仅标记原生篇幅条款；共用标签、摘要、开局时间及事件协议原样保留。"
       }
     },
     "shared/07_command_output.md": {

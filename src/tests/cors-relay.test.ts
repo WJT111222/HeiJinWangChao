@@ -187,3 +187,34 @@ it.each(['cancelled', 'timeout'])('%s 与网络错误竞争时不补发', async 
   await done;
   expect(send).toHaveBeenCalledTimes(1);
 });
+
+it.each(['direct', 'relay'] as const)('旧断点等待最后一次授权核对后只发到选中的 %s 路径', async route => {
+  let startCheck!: () => void, authorize!: () => void;
+  const checking = new Promise<void>(done => { startCheck = done; });
+  const approval = new Promise<void>(done => { authorize = done; });
+  const send = vi.fn<typeof fetch>().mockRejectedValue(failed());
+  let sent = false;
+  const confirmedTransmission = {
+    route, get sent() { return sent; },
+    async dispatch(transmit: () => Promise<Response>) {
+      startCheck(); await approval; sent = true; return transmit();
+    },
+  };
+  const generate = new AiClient(send).generate(snapshot(), messages, { confirmedTransmission });
+  await checking;
+  expect(send).not.toHaveBeenCalled();
+  authorize();
+  await expect(generate).rejects.toMatchObject({ code: 'network', details: { fieldPath: 'channel.continuation_delivery_unknown' } });
+  const url = base + '/chat/completions';
+  expect(send.mock.calls.map(call => call[0])).toEqual([route === 'direct' ? url : origin + '/api/ai-relay?target=' + encodeURIComponent(url)]);
+});
+
+it('中转关闭时旧断点的中转授权不能降级到直连', async () => {
+  setRelayMode('off');
+  const dispatch = vi.fn(), send = vi.fn<typeof fetch>();
+  await expect(new AiClient(send).generate(snapshot(), messages, {
+    confirmedTransmission: { route: 'relay', sent: false, dispatch },
+  })).rejects.toMatchObject({ details: { fieldPath: 'channel.confirmed_relay_unavailable' } });
+  expect(dispatch).not.toHaveBeenCalled();
+  expect(send).not.toHaveBeenCalled();
+});

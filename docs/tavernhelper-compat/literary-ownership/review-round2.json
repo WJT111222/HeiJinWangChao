@@ -1,0 +1,217 @@
+{
+  "baseline": "f6ca1ca8e961652ea8cdb8a490e3e8d653cd0482",
+  "reviewHead": "628b1d3c2dd85752f8e8fec948081f8f4be2a640",
+  "method": "独立 Chromium 探针，拦截真实浏览器 POST，仅使用合成存档。turn 和 revision 来自 IndexedDB；包含用户文本的原始载荷未收录。",
+  "navigation": {
+    "before": {
+      "initialTurnRevision": {
+        "a": [
+          1,
+          1
+        ],
+        "b": [
+          1,
+          1
+        ]
+      },
+      "finalTurnRevision": {
+        "a": [
+          2,
+          2
+        ],
+        "b": [
+          1,
+          1
+        ]
+      },
+      "postCount": 1,
+      "confirmations": 1,
+      "partialsUnchanged": false
+    },
+    "after": {
+      "initialTurnRevision": {
+        "a": [
+          1,
+          1
+        ],
+        "b": [
+          1,
+          1
+        ]
+      },
+      "finalTurnRevision": {
+        "a": [
+          1,
+          1
+        ],
+        "b": [
+          1,
+          1
+        ]
+      },
+      "postCount": 0,
+      "confirmations": 0,
+      "partialsUnchanged": true
+    }
+  },
+  "otherTabEdit": {
+    "desktop": {
+      "before": {
+        "initialTurnRevision": {
+          "a": [
+            1,
+            1
+          ],
+          "b": [
+            1,
+            1
+          ]
+        },
+        "finalTurnRevision": {
+          "a": [
+            2,
+            2
+          ],
+          "b": [
+            1,
+            1
+          ]
+        },
+        "postCount": 1,
+        "confirmations": 1,
+        "partialsUnchanged": false
+      },
+      "after": {
+        "initialTurnRevision": {
+          "a": [
+            1,
+            1
+          ],
+          "b": [
+            1,
+            1
+          ]
+        },
+        "finalTurnRevision": {
+          "a": [
+            1,
+            1
+          ],
+          "b": [
+            1,
+            1
+          ]
+        },
+        "postCount": 0,
+        "confirmations": 1,
+        "partialsUnchanged": true
+      }
+    },
+    "mobile": {
+      "before": {
+        "initialTurnRevision": {
+          "a": [
+            1,
+            1
+          ],
+          "b": [
+            1,
+            1
+          ]
+        },
+        "finalTurnRevision": {
+          "a": [
+            2,
+            2
+          ],
+          "b": [
+            1,
+            1
+          ]
+        },
+        "postCount": 1,
+        "confirmations": 1,
+        "partialsUnchanged": false
+      },
+      "after": {
+        "initialTurnRevision": {
+          "a": [
+            1,
+            1
+          ],
+          "b": [
+            1,
+            1
+          ]
+        },
+        "finalTurnRevision": {
+          "a": [
+            1,
+            1
+          ],
+          "b": [
+            1,
+            1
+          ]
+        },
+        "postCount": 0,
+        "confirmations": 1,
+        "partialsUnchanged": true
+      }
+    }
+  },
+  "historyMarker": {
+    "desktop": {
+      "before": {
+        "wireSHA256": [
+          "a1a317720c022dd86dd2c8deef5e56c3932bd07f5d7246383ef7be530e13187a",
+          "a1a317720c022dd86dd2c8deef5e56c3932bd07f5d7246383ef7be530e13187a"
+        ],
+        "priorWriting": "0c1b84c5f36d3e8fb04d6ac354b592322af7a203563fb6acd8b7a8f99dd6d618",
+        "editedWriting": "a3989eddda08a4d24620912a211b0a31407d1d5a68c19b121f63e6e2dedf08e1",
+        "resumePosts": 0,
+        "result": "tavern.writing_changed"
+      },
+      "after": {
+        "wireSHA256": [
+          "a1a317720c022dd86dd2c8deef5e56c3932bd07f5d7246383ef7be530e13187a",
+          "a1a317720c022dd86dd2c8deef5e56c3932bd07f5d7246383ef7be530e13187a"
+        ],
+        "priorWriting": "7bad60d021ab954227251bd9177a022b0bae4e76df75136738acbf2172f801ed",
+        "editedWriting": "7bad60d021ab954227251bd9177a022b0bae4e76df75136738acbf2172f801ed",
+        "resumePosts": 1,
+        "result": "saved"
+      }
+    },
+    "mobile": {
+      "before": {
+        "wireSHA256": [
+          "a1a317720c022dd86dd2c8deef5e56c3932bd07f5d7246383ef7be530e13187a",
+          "a1a317720c022dd86dd2c8deef5e56c3932bd07f5d7246383ef7be530e13187a"
+        ],
+        "priorWriting": "0c1b84c5f36d3e8fb04d6ac354b592322af7a203563fb6acd8b7a8f99dd6d618",
+        "editedWriting": "a3989eddda08a4d24620912a211b0a31407d1d5a68c19b121f63e6e2dedf08e1",
+        "resumePosts": 0,
+        "result": "tavern.writing_changed"
+      },
+      "after": {
+        "wireSHA256": [
+          "a1a317720c022dd86dd2c8deef5e56c3932bd07f5d7246383ef7be530e13187a",
+          "a1a317720c022dd86dd2c8deef5e56c3932bd07f5d7246383ef7be530e13187a"
+        ],
+        "priorWriting": "7bad60d021ab954227251bd9177a022b0bae4e76df75136738acbf2172f801ed",
+        "editedWriting": "7bad60d021ab954227251bd9177a022b0bae4e76df75136738acbf2172f801ed",
+        "resumePosts": 1,
+        "result": "saved"
+      }
+    }
+  },
+  "referenceRawWireBytes": 99919,
+  "regressionFiles": [
+    "e2e/story-continuation-consent.spec.ts",
+    "e2e/story-legacy-writing.spec.ts",
+    "e2e/story-literary-ownership.spec.ts",
+    "src/tests/story-writing-repair.test.ts",
+    "src/tests/story-stage.test.ts"
+  ]
+}

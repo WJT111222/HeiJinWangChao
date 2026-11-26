@@ -370,7 +370,8 @@ describe('正式组装入口', () => {
     expect(adapted.messages.filter((m) => m.content === '合成前回合行动')).toEqual([
       { role: 'user', content: '合成前回合行动' },
     ]);
-    expect(adapted.messages.at(-1)).toEqual(native.messages.at(-1));
+    expect(adapted.messages.at(-1)?.role).toBe('user');
+    expect(adapted.messages.at(-1)?.content).toBe(native.messages.at(-1)?.content.replace(/<正文>纯文本不少于 [^；]+；/u, ''));
     expect(adapted.modules.some((m) => m.id.startsWith('writing.style'))).toBe(false);
     expect(second.messages.map((m) => m.content).join('')).toContain('独立档案乙');
     expect(adapted.messages.map((m) => m.content).join('')).not.toContain('独立档案乙');
@@ -442,6 +443,23 @@ describe('正式组装入口', () => {
     const b = await composePrompt(input);
     expect(b).toEqual(a);
     expect(wireRequest(snap, b.messages, false)).toEqual(wireRequest(snap, a.messages, false));
+  });
+  it.each(['opening', 'regular'] as const)('%s 文学归属决定实际出站篇幅与短正文候选', async mode => {
+    const { config, vault } = channelSetup();
+    const input = talentPromptInput('story', mode);
+    input.settings.prompts.minNarrativeChars = 4000;
+    input.settings.prompts.maxNarrativeChars = 5678;
+    const content = '<正文>' + recoveryNarrative + '</正文><短期记忆>' + recoverySummary + '</短期记忆><变量规划>[]</变量规划>';
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ choices: [{ message: { content }, finish_reason: 'stop' }] }));
+    const run = () => runStageRequest(input, config, vault, { stream: false }, new AiClient(fetcher));
+    await expect(run()).rejects.toMatchObject({ details: { storyRule: 'narrative_short' } });
+    savePresetSettings(selection());
+    expect((await run()).result).toMatchObject({ narrative: recoveryNarrative });
+    const wire = fetcher.mock.calls.map(call => JSON.parse(String(call[1]?.body)).messages as {content:string}[]);
+    expect(wire).toHaveLength(2);
+    expect(wire[0].at(-1)?.content).toContain('4000');
+    expect(JSON.stringify(wire[1])).not.toMatch(/4000～5678|不少于 4000|最低正文长度为4000|最低字数4000|minNarrativeChars/);
+    expect(wire[1].at(-1)?.content).toContain('<短期记忆>');
   });
   it('真实 Runtime 单次 Mock，保留渠道预算、严格解析和行动选项规则', async () => {
     savePresetSettings(selection());

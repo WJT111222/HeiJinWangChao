@@ -36,9 +36,16 @@ export function checkSelection(preset: LoadedPreset, edits: PackageOverride) {
   }
 }
 export function outputPreferences(edits: PackageOverride) {
-  const raw = edits.scriptVariables?.[controls.mainScript]?.[outputKey];
-  const value = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
-  return { mode: typeof value.mode === 'string' ? value.mode : 'auto', unescape: value.unescape === true };
+  return effectiveOutput(edits.scriptVariables?.[controls.mainScript]?.[outputKey]);
+}
+
+// Matches the built-in script's waveOutPrepare. The companion console only edits preferences.
+export function peintureWritingVariables(id: string, variables: Record<string, unknown>) {
+  return id === controls.mainScript ? effectiveOutput(variables[outputKey]) : null;
+}
+function effectiveOutput(raw: unknown) {
+  const value = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+  return { mode: typeof value.mode === 'string' && ['auto','native','text','off'].includes(value.mode) ? value.mode : 'auto', unescape: value.unescape === true };
 }
 export function editOutput(edits: PackageOverride, prefs: ReturnType<typeof outputPreferences>) {
   const next = structuredClone(edits);

@@ -1,0 +1,977 @@
+{
+  "reviewHead": "82e3a9f0cc5895659b56263faccb87ccf28b545a",
+  "implementation": "e8f91b2981e5e46ebb77b4d9c75e13234819be5d",
+  "environment": {
+    "node": "24.19.0",
+    "chromium": "154.0.8037.57",
+    "port": 5174,
+    "playwrightWorkersPerRun": 1,
+    "retries": 0,
+    "models": "loopback TLS mocks"
+  },
+  "scopes": {
+    "originalBefore": {
+      "expected": 4,
+      "unexpected": 8,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "originalAfter": {
+      "expected": 6,
+      "unexpected": 6,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "adjustedProbeSetup": {
+      "expected": 12,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "browserWorkerAndModel": {
+      "expected": 14,
+      "unexpected": 2,
+      "skipped": 0,
+      "flaky": 0
+    }
+  },
+  "originalHttpBefore": {
+    "dual-tls-desktop": {
+      "events": [
+        "OPTIONS",
+        "POST",
+        "POST",
+        "Worker POST",
+        "POST"
+      ],
+      "modelPostBytesSHA256": [
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1",
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1",
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1"
+      ],
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "draftRevision": [
+        3,
+        0
+      ],
+      "samePartial": false
+    },
+    "dual-tls-mobile": {
+      "events": [
+        "OPTIONS",
+        "POST",
+        "POST",
+        "Worker POST",
+        "POST"
+      ],
+      "modelPostBytesSHA256": [
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1",
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1",
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1"
+      ],
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "draftRevision": [
+        3,
+        0
+      ],
+      "samePartial": false
+    },
+    "preflight-desktop": {
+      "events": [
+        "OPTIONS",
+        "保存新节奏",
+        "Worker POST",
+        "POST"
+      ],
+      "modelPostBytesSHA256": [
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1"
+      ],
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "draftRevision": [
+        3,
+        0
+      ],
+      "samePartial": false
+    },
+    "preflight-mobile": {
+      "events": [
+        "OPTIONS",
+        "保存新节奏",
+        "Worker POST",
+        "POST"
+      ],
+      "modelPostBytesSHA256": [
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1"
+      ],
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "draftRevision": [
+        3,
+        0
+      ],
+      "samePartial": false
+    },
+    "preflight-off-desktop": {
+      "events": [
+        "OPTIONS",
+        "保存新节奏"
+      ],
+      "modelPostBytesSHA256": [],
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "draftRevision": [
+        3,
+        4
+      ],
+      "samePartial": true
+    },
+    "preflight-off-mobile": {
+      "events": [
+        "OPTIONS",
+        "保存新节奏"
+      ],
+      "modelPostBytesSHA256": [],
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "draftRevision": [
+        3,
+        4
+      ],
+      "samePartial": true
+    },
+    "upstream-200-desktop": {
+      "events": [
+        "OPTIONS",
+        "POST",
+        "Worker POST",
+        "POST"
+      ],
+      "modelPostBytesSHA256": [
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1",
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1"
+      ],
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "draftRevision": [
+        3,
+        0
+      ],
+      "samePartial": false
+    },
+    "upstream-200-mobile": {
+      "events": [
+        "OPTIONS",
+        "POST",
+        "Worker POST",
+        "POST"
+      ],
+      "modelPostBytesSHA256": [
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1",
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1"
+      ],
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "draftRevision": [
+        3,
+        0
+      ],
+      "samePartial": false
+    }
+  },
+  "originalHttpAfter": {
+    "dual-tls-desktop": {
+      "events": [
+        "OPTIONS",
+        "POST",
+        "POST"
+      ],
+      "modelPostBytesSHA256": [
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1",
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1"
+      ],
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "draftRevision": [
+        3,
+        3
+      ],
+      "samePartial": true
+    },
+    "dual-tls-mobile": {
+      "events": [
+        "OPTIONS",
+        "POST",
+        "POST"
+      ],
+      "modelPostBytesSHA256": [
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1",
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1"
+      ],
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "draftRevision": [
+        3,
+        3
+      ],
+      "samePartial": true
+    },
+    "preflight-desktop": {
+      "events": [
+        "OPTIONS",
+        "保存新节奏"
+      ],
+      "modelPostBytesSHA256": [],
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "draftRevision": [
+        3,
+        3
+      ],
+      "samePartial": true
+    },
+    "preflight-mobile": {
+      "events": [
+        "OPTIONS",
+        "保存新节奏"
+      ],
+      "modelPostBytesSHA256": [],
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "draftRevision": [
+        3,
+        3
+      ],
+      "samePartial": true
+    },
+    "preflight-off-desktop": {
+      "events": [
+        "OPTIONS",
+        "保存新节奏"
+      ],
+      "modelPostBytesSHA256": [],
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "draftRevision": [
+        3,
+        3
+      ],
+      "samePartial": true
+    },
+    "preflight-off-mobile": {
+      "events": [
+        "OPTIONS",
+        "保存新节奏"
+      ],
+      "modelPostBytesSHA256": [],
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "draftRevision": [
+        3,
+        3
+      ],
+      "samePartial": true
+    },
+    "upstream-200-desktop": {
+      "events": [
+        "OPTIONS",
+        "POST"
+      ],
+      "modelPostBytesSHA256": [
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1"
+      ],
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "draftRevision": [
+        3,
+        3
+      ],
+      "samePartial": true
+    },
+    "upstream-200-mobile": {
+      "events": [
+        "OPTIONS",
+        "POST"
+      ],
+      "modelPostBytesSHA256": [
+        "b8a9bd1eec57a21e252457c4e0c281fa02f7ec1bee613fbf411d986e990f22f1"
+      ],
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "draftRevision": [
+        3,
+        3
+      ],
+      "samePartial": true
+    }
+  },
+  "acceptance": [
+    {
+      "project": "desktop",
+      "case": "直连成功",
+      "status": "expected",
+      "browserDirect": 1,
+      "browserWorker": 0,
+      "workerUpstream": 0,
+      "modelPosts": 1,
+      "confirmations": 1,
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "sameDraftAfterInitialFailure": null,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 1,
+        "options": 1,
+        "turn": [
+          1,
+          2
+        ],
+        "revision": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "project": "desktop",
+      "case": "预检期间另一标签改变节奏",
+      "status": "expected",
+      "browserDirect": 1,
+      "browserWorker": 0,
+      "workerUpstream": 0,
+      "modelPosts": 0,
+      "confirmations": 1,
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 0,
+        "options": 1,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "project": "desktop",
+      "case": "直连受理后响应不允许跨域读取",
+      "status": "expected",
+      "browserDirect": 1,
+      "browserWorker": 0,
+      "workerUpstream": 0,
+      "modelPosts": 1,
+      "confirmations": 1,
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 1,
+        "options": 1,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "project": "desktop",
+      "case": "直连受理后断开连接",
+      "status": "unexpected",
+      "browserDirect": 1,
+      "browserWorker": 0,
+      "workerUpstream": 0,
+      "modelPosts": 2,
+      "confirmations": 1,
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 2,
+        "options": 1,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "project": "desktop",
+      "case": "玩家选择中转",
+      "status": "expected",
+      "browserDirect": 0,
+      "browserWorker": 1,
+      "workerUpstream": 1,
+      "modelPosts": 1,
+      "confirmations": 1,
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "sameDraftAfterInitialFailure": null,
+      "firstAttempt": {
+        "direct": 0,
+        "worker": 1,
+        "model": 1,
+        "options": 0,
+        "turn": [
+          1,
+          2
+        ],
+        "revision": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "project": "desktop",
+      "case": "中转上游已接收后连接中断",
+      "status": "expected",
+      "browserDirect": 0,
+      "browserWorker": 1,
+      "workerUpstream": 1,
+      "modelPosts": 1,
+      "confirmations": 1,
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 0,
+        "worker": 1,
+        "model": 1,
+        "options": 0,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "project": "desktop",
+      "case": "关闭中转时直连失败",
+      "status": "expected",
+      "browserDirect": 1,
+      "browserWorker": 0,
+      "workerUpstream": 0,
+      "modelPosts": 1,
+      "confirmations": 1,
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 1,
+        "options": 1,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "project": "desktop",
+      "case": "网络异常后重新确认选择中转",
+      "status": "expected",
+      "browserDirect": 1,
+      "browserWorker": 1,
+      "workerUpstream": 1,
+      "modelPosts": 2,
+      "confirmations": 2,
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 1,
+        "options": 1,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "project": "mobile",
+      "case": "直连成功",
+      "status": "expected",
+      "browserDirect": 1,
+      "browserWorker": 0,
+      "workerUpstream": 0,
+      "modelPosts": 1,
+      "confirmations": 1,
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "sameDraftAfterInitialFailure": null,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 1,
+        "options": 1,
+        "turn": [
+          1,
+          2
+        ],
+        "revision": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "project": "mobile",
+      "case": "预检期间另一标签改变节奏",
+      "status": "expected",
+      "browserDirect": 1,
+      "browserWorker": 0,
+      "workerUpstream": 0,
+      "modelPosts": 0,
+      "confirmations": 1,
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 0,
+        "options": 1,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "project": "mobile",
+      "case": "直连受理后响应不允许跨域读取",
+      "status": "expected",
+      "browserDirect": 1,
+      "browserWorker": 0,
+      "workerUpstream": 0,
+      "modelPosts": 1,
+      "confirmations": 1,
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 1,
+        "options": 1,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "project": "mobile",
+      "case": "直连受理后断开连接",
+      "status": "unexpected",
+      "browserDirect": 1,
+      "browserWorker": 0,
+      "workerUpstream": 0,
+      "modelPosts": 2,
+      "confirmations": 1,
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 2,
+        "options": 1,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "project": "mobile",
+      "case": "玩家选择中转",
+      "status": "expected",
+      "browserDirect": 0,
+      "browserWorker": 1,
+      "workerUpstream": 1,
+      "modelPosts": 1,
+      "confirmations": 1,
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "sameDraftAfterInitialFailure": null,
+      "firstAttempt": {
+        "direct": 0,
+        "worker": 1,
+        "model": 1,
+        "options": 0,
+        "turn": [
+          1,
+          2
+        ],
+        "revision": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "project": "mobile",
+      "case": "中转上游已接收后连接中断",
+      "status": "expected",
+      "browserDirect": 0,
+      "browserWorker": 1,
+      "workerUpstream": 1,
+      "modelPosts": 1,
+      "confirmations": 1,
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 0,
+        "worker": 1,
+        "model": 1,
+        "options": 0,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "project": "mobile",
+      "case": "关闭中转时直连失败",
+      "status": "expected",
+      "browserDirect": 1,
+      "browserWorker": 0,
+      "workerUpstream": 0,
+      "modelPosts": 1,
+      "confirmations": 1,
+      "turn": [
+        1,
+        1
+      ],
+      "revision": [
+        1,
+        1
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 1,
+        "options": 1,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "project": "mobile",
+      "case": "网络异常后重新确认选择中转",
+      "status": "expected",
+      "browserDirect": 1,
+      "browserWorker": 1,
+      "workerUpstream": 1,
+      "modelPosts": 2,
+      "confirmations": 2,
+      "turn": [
+        1,
+        2
+      ],
+      "revision": [
+        1,
+        2
+      ],
+      "sameDraftAfterInitialFailure": true,
+      "firstAttempt": {
+        "direct": 1,
+        "worker": 0,
+        "model": 1,
+        "options": 1,
+        "turn": [
+          1,
+          1
+        ],
+        "revision": [
+          1,
+          1
+        ]
+      }
+    }
+  ],
+  "chromiumControl": {
+    "nativeFetchGameAndRelayAbsent": {
+      "method": "POST",
+      "browserFetch": 1,
+      "onReusedHttp1Connection": 2,
+      "onFreshSocketWhenPreflightServerClosesConnection": 1,
+      "netLogEvent": "HTTP_TRANSACTION_RESTART_AFTER_ERROR",
+      "netError": -100
+    },
+    "xhrOnReusedHttp1Connection": 2
+  },
+  "regressions": {
+    "storyAndConsent": {
+      "expected": 50,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "releaseSmoke": {
+      "expected": 44,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "earlierSix": {
+      "expected": 6,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "earlierEleven": {
+      "expected": 11,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "npmCheck": "passed",
+    "vitest": 5481,
+    "targetedVitest": 259,
+    "prompts": 93
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "baseline": "f6ca1ca8e961652ea8cdb8a490e3e8d653cd0482",
+  "mode": "native",
+  "wire": {
+    "tools": [],
+    "continuation": false
+  },
+  "draft": {
+    "saveId": "save-a",
+    "turnId": "review-train",
+    "baseSaveRevision": 1,
+    "draftRevision": 2,
+    "storyRevision": 0,
+    "turnKind": "regular",
+    "userInput": "查阅同一家濒临破产、债务复杂并卷入地下纠纷的物流企业公开资料，提出可行路径；暂不签约、不投资、不任职、不公开发声、不押注。",
+    "useVariableStage": false,
+    "useWorldStage": false,
+    "executionRevision": 0,
+    "requestedStages": [],
+    "stageRequestRevisions": {
+      "variables": 0,
+      "world": 0
+    },
+    "stageStatus": {
+      "story": "failed",
+      "variables": "skipped",
+      "world": "skipped"
+    },
+    "failures": [
+      {
+        "stage": "story",
+        "attempt": 1,
+        "storyRevision": 0,
+        "errorCode": "invalid_output",
+        "retryable": false
+      }
+    ],
+    "storyPartial": {
+      "text": "<正文>合成车站里，车门已经打开。",
+      "storyRevision": 0,
+      "continuations": 0
+    }
+  }
+}
