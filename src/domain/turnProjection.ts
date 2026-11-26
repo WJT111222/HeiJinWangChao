@@ -71,7 +71,7 @@ export function projectTurnCandidates(state: GameState, draft: TurnDraft, worldC
   const variables = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
   const prepared = validated || draft.entities ? prepareVariableProjection(state,draft,variables)
     : { commands:variableCommandsForTurn(state,draft,variables), acknowledgedReceipts:undefined, entities:undefined };
-  if (prepared.entities) assertWorldEntityDependencies(prepared.entities, worldCommands);
+  if (prepared.entities) assertWorldEntityDependencies(prepared.entities, worldCommands, state.tasks);
   const projected = commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision,
     [...prepared.commands, ...worldCommands], state.updatedAt, validated ? storySceneAuthority(state,draft,variables) : undefined,
     prepared.acknowledgedReceipts);

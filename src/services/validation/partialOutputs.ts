@@ -62,7 +62,7 @@ export async function parsePartialWorld(text: string, state: GameState, draft: T
   if (!parsed.success) throw worldValidationError(parsed.error, {}, raw);
   if (draft.entities) {
     const effective = effectiveEntityCandidate(state, draft, draft.variables?.result.commands ?? []);
-    assertWorldEntityDependencies(effective, worldGroups.flatMap(group => parsed.data[group]));
+    assertWorldEntityDependencies(effective, worldGroups.flatMap(group => parsed.data[group]), state.tasks);
   }
   const existingLocations = new Set(Object.keys(state.locations));
   for (const command of draft.entities?.result.commands ?? [])

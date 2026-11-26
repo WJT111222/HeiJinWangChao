@@ -114,8 +114,26 @@ describe('三段依赖与权限', () => {
     }]}}};
     const errand = {...worldResult(),taskCommands:[{...world.taskCommands[0],task:{...task(),actorRef:{kind:'npc',id:'scene'}}}]};
     await expect(parsePartialWorld(JSON.stringify(errand),state,departure)).rejects.toMatchObject({code:'ENTITY_DEPENDENCY'});
+    state.tasks['prior-duty'] = {...task('prior-duty'),actorRef:{kind:'npc',id:'scene'}};
+    const handoff = {...errand,taskCommands:[{...errand.taskCommands[0],task:{...task(),actorRef:{kind:'npc',id:'npc-a'},
+      handoff:{fromTaskId:'prior-duty',at:state.worldClock,reason:'工作交接'}}}]};
+    await expect(parsePartialWorld(JSON.stringify(handoff),state,departure)).rejects.toMatchObject({code:'ENTITY_DEPENDENCY'});
     expect(ready.entities?.result.commands).toHaveLength(1);
     expect(state.npc[id]).toBeUndefined();
+  });
+  it('入场更新被隔离后，依赖这名参与者的现场事件阻止整轮结算', async () => {
+    const {state,draft} = turn();
+    const id = 'npc-a';
+    const arrival = {type:'UpdateNpc' as const,commandId:'arrival',npcId:id,evidence:'到场',expectedRevision:state.revision,
+      changes:{onScene:true,locationId:state.protagonist.locationId,lastInteractionAt:'2026-10-18T12:00:00+08:00'}};
+    const entities = {storyRevision:1,requestRevision:0,candidateRevision:1,validation:'structural',
+      contactedNpcIds:[id],result:{commands:[arrival],rejectedSuggestions:[],unresolved:[]}};
+    const ready = TurnDraftSchema.parse({...draft,entities,stageStatus:{...draft.stageStatus,entities:'ready'}});
+    const meeting = {...event('meeting'),actorRefs:[{kind:'npc' as const,id}],sourceTurnIds:[draft.turnId]};
+    state.events.meeting = meeting;
+    expect(() => effectiveEntityCandidate(state,ready,[{type:'SaveEvent',commandId:'scene-meeting',evidence:'会面',event:meeting}]))
+      .toThrowError(expect.objectContaining({code:'ENTITY_DEPENDENCY'}));
+    expect(ready.entities?.result.commands).toEqual([arrival]);
   });
   it('同一接触者离场可开始任务，档案和记忆仍归人物阶段',async()=>{
     const {state,draft}=turn(), person='scene';

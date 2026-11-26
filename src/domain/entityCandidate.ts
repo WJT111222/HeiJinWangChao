@@ -1,4 +1,6 @@
 import { worldTaskNpcAllowed } from './npc/worldAccess';
+import { eventInteractionCommands } from './events/interactions';
+import { validateSceneEventUpdate } from './events/scenePermission';
 import { structuredRefs } from './commandRefs';
 import { maintainSceneTransition, SceneLocationError } from './sceneTransitions';
 import type { SkippedUpdate } from './updateSettlement';
@@ -97,20 +99,51 @@ function sourceIndex(command: DomainCommand, index: number, skipped: readonly Sk
   return original;
 }
 
-function assertTaskActors(lost: ReadonlySet<string>, commands: readonly unknown[]) {
+function assertTaskActors(lost: ReadonlySet<string>, commands: readonly unknown[], tasks?: GameState['tasks']) {
   if (!lost.size) return;
   for (const command of commands) {
     if (!command || typeof command !== 'object' || !('type' in command) || command.type !== 'SaveTask' ||
         !('task' in command) || !command.task || typeof command.task !== 'object' || !('actorRef' in command.task)) continue;
+    if (tasks && 'handoff' in command.task) {
+      const handoff = command.task.handoff;
+      if (handoff && typeof handoff === 'object' && 'fromTaskId' in handoff && typeof handoff.fromTaskId === 'string') {
+        const sourceActor = tasks[handoff.fromTaskId]?.actorRef;
+        if (sourceActor?.kind === 'npc' && lost.has(sourceActor.id)) throw new EntityDependencyError();
+      }
+    }
     const actor = command.task.actorRef;
     if (actor && typeof actor === 'object' && 'kind' in actor && actor.kind === 'npc' &&
         'id' in actor && typeof actor.id === 'string' && lost.has(actor.id)) throw new EntityDependencyError();
   }
 }
 
-export function assertWorldEntityDependencies(effective: ReturnType<typeof effectiveEntityCandidate>, commands: readonly unknown[]) {
+function checkSceneEventDependencies(
+  state: GameState, draft: TurnDraft, original: GameState, effective: GameState,
+  scene: readonly DomainCommand[], lost: ReadonlySet<string>,
+) {
+  if (!lost.size) return;
+  const events = scene.filter(command => command.type === 'SaveEvent').map(command => command.event);
+  const affected = events.filter(event => (state.events[event.id] ?? event).actorRefs.some(ref =>
+    ref.kind === 'npc' && lost.has(ref.id) && !state.npc[ref.id]?.onScene));
+  if (!affected.length) return;
+  // The same Story entry receipt can authorize an existing scene event independently of an NPC.
+  const records = { ...state.events, ...Object.fromEntries(events.map(event => [event.id, event])) };
+  for (const command of eventInteractionCommands(state, draft, records))
+    if (command.type === 'SaveEvent') records[command.event.id] = command.event;
+  for (const event of affected) {
+    try { validateSceneEventUpdate(state, { ...original, events:records }, event, draft.turnId, draft.story); }
+    catch (error) { if (error instanceof DataError) continue; throw error; }
+    try { validateSceneEventUpdate(state, { ...effective, events:records }, event, draft.turnId, draft.story); }
+    catch (error) {
+      if (error instanceof DataError && error.code === 'SCENE_PERMISSION') throw new EntityDependencyError();
+      throw error;
+    }
+  }
+}
+
+export function assertWorldEntityDependencies(effective: ReturnType<typeof effectiveEntityCandidate>, commands: readonly unknown[], tasks: GameState['tasks']) {
   assertEntityDependencies(effective.removedIds, commands);
-  assertTaskActors(effective.lostWorldActors, commands);
+  assertTaskActors(effective.lostWorldActors, commands, tasks);
 }
 
 function assertEntityDependencies(removedIds: ReadonlySet<string>, commands: readonly unknown[]) {
@@ -180,6 +213,7 @@ export function effectiveEntityCandidate(state: GameState, draft: TurnDraft, sce
           if (person.onScene && !projection.npc[person.id]?.onScene) lostSceneActors.add(person.id);
         }
         assertTaskActors(lostSceneActors, scene);
+        checkSceneEventDependencies(state, draft, prior, projection, scene, lostSceneActors);
       }
       break;
     }
