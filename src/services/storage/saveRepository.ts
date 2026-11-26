@@ -1,3 +1,4 @@
+import { oracleStore, createOracleStore, readSheet, writeSheet, rememberPaper, consumeOracleNote } from './oracleNotes';
 import { withWorldbookLibrary, restoreWorldview, worldviewDigest, missingWorldview, storySourceHash, type StoryWorldview } from '../worldbook/mainWorldview';
 import { HistoryRepository } from './history/repository';
 import { clearManualHistory, historyStores } from './history/model';
@@ -48,7 +49,8 @@ import type { BackupEntry } from './backup';
  * imports become available. Old V3 code cannot reopen and bypass instance CAS.
  * That V4 upgrade required no store, index or saved payload changes. */
 // V10 closes older writers before they encounter populated phone conversations in a V11 save.
-export const saveDatabaseVersion = 10;
+// V11 is reserved by the parallel phone chat migration. V12 separates local literary notes.
+export const saveDatabaseVersion = 12;
 
 declare const confirmationBrand: unique symbol;
 /**
@@ -83,10 +85,11 @@ interface LocalSnapshot {
   turnReceipts: RawSaveRecord[];
   turnUndo: RawSaveRecord[];
   saveControls: RawSaveRecord[];
+  oracleNotes: RawSaveRecord[];
   theaters: RawSaveRecord[];
   imageVersions: RawSaveRecord[];
 }
-const snapshotStores = ['saves', 'drafts', 'turnReceipts', 'turnUndo', 'saveControls', 'theaters','imageVersions'] as const;
+const snapshotStores = ['saves', 'drafts', 'turnReceipts', 'turnUndo', 'saveControls', oracleStore, 'theaters','imageVersions'] as const;
 const confirmations = new WeakMap<BackupImportConfirmation, { repository: SaveRepository; saveId: string; incoming: string; images?: PortableImages; snapshot: LocalSnapshot }>();
 const emptySnapshot = (snapshot: LocalSnapshot) => snapshotStores.every((name) => snapshot[name].length === 0);
 /** 备份条目的确定性内容指纹：规范化后的正式存档与兼容草稿（同步计算，可在事务外比较）。 */
@@ -156,6 +159,7 @@ async function readSnapshot(tx: IDBTransaction, key: IDBValidKey): Promise<Local
     turnReceipts: await rawRecords(tx.objectStore('turnReceipts').index('saveId'), key),
     turnUndo: await rawRecords(tx.objectStore('turnUndo').index('saveId'), key),
     saveControls: await rawRecords(tx.objectStore('saveControls'), key),
+    oracleNotes: await rawRecords(tx.objectStore(oracleStore), key),
     imageVersions: await rawRecords(tx.objectStore('imageVersions'),key),
     theaters: await rawRecords(tx.objectStore('theaterIndex').index('saveId'), key),
   };
@@ -202,9 +206,12 @@ async function deleteRecords(tx: IDBTransaction, key: IDBValidKey): Promise<void
   const keys = await request(receipts.index('saveId').getAllKeys(key));
   for (const receiptKey of keys) await request(receipts.delete(receiptKey));
   await clearUndoRecords(tx, key);
+  await request(tx.objectStore(oracleStore).delete(key));
   await request(tx.objectStore('saveControls').delete(key));
   await request(tx.objectStore('saves').delete(key));
 }
+
+type OracleEditBasis = { saveId: string; instance: string | null; epoch: string; version: string | null };
 
 export interface VariableSnapshot {
   state: GameState;
@@ -240,7 +247,7 @@ async function checkStoryPublication(base: TurnDraft, next: TurnDraft, lease: St
 
 async function publishStoryOrigin(tx: IDBTransaction, saveId: string, lease: StoryWorldview, sourceHash: string, deliveredNoteId?: string) {
   const control = await checkStoryLease(tx, saveId, lease);
-  if (control.oracleNote?.once && control.oracleNote.id === deliveredNoteId) delete control.oracleNote;
+  if (deliveredNoteId) await consumeOracleNote(tx, saveId, deliveredNoteId);
   control.storyOrigin = { owner:lease.owner, generation:lease.generation, instance:lease.instance, worldviewHash:lease.worldviewHash, sourceHash };
   await writeControl(tx,control);
 }
@@ -249,19 +256,21 @@ export class SaveRepository {
   readonly history: HistoryRepository;
   readonly images: ImageLibrary;
   readonly theaters: TheaterRepository;
-  private constructor(private readonly database: IDBDatabase) {
+  private constructor(private readonly database: IDBDatabase, readonly upgradedFrom?: number) {
     this.images = new ImageLibrary(database);
     this.history = new HistoryRepository(database);
     this.theaters = new TheaterRepository(database, readState);
   }
 
-  static open(name = 'heijinwangchao', factory: IDBFactory = globalThis.indexedDB): Promise<SaveRepository> {
+  static open(name = 'heijinwangchao', factory: IDBFactory = globalThis.indexedDB, onSuperseded?: () => void): Promise<SaveRepository> {
     if (!factory) return Promise.reject(new DataError('STORAGE_UNAVAILABLE', '当前环境不支持 IndexedDB'));
     return new Promise((resolve, reject) => {
       // IndexedDB 结构版本独立于每个存档的 schemaVersion。
       const operation = factory.open(name, saveDatabaseVersion);
       let schemaError: DataError | undefined;
+      let upgradedFrom: number | undefined;
       operation.onupgradeneeded = event => {
+        upgradedFrom = event.oldVersion || undefined;
         const db = operation.result;
         const tx = operation.transaction!;
         try {
@@ -280,6 +289,7 @@ export class SaveRepository {
         if (!db.objectStoreNames.contains('turnUndo'))
           db.createObjectStore('turnUndo', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
         if (!db.objectStoreNames.contains('saveControls')) db.createObjectStore('saveControls', { keyPath: 'saveId' });
+        if (!db.objectStoreNames.contains(oracleStore)) createOracleStore(db, tx);
         if (!db.objectStoreNames.contains('turnReceipts'))
           db.createObjectStore('turnReceipts', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
       };
@@ -289,10 +299,10 @@ export class SaveRepository {
       operation.onsuccess = () => {
         const db = operation.result;
         if (blocked) { db.close(); return; }
-        db.onversionchange = () => db.close();
+        db.onversionchange = () => { db.close(); onSuperseded?.(); };
         try {
           checkImageStores(db);
-          resolve(new SaveRepository(db));
+          resolve(new SaveRepository(db, upgradedFrom));
         } catch (error) {
           db.close();
           reject(error);
@@ -653,7 +663,7 @@ export class SaveRepository {
     const backupDraft = compatibleDraft(backup, entry.draft).draft;
     const theaters = entry.theaters === undefined ? undefined : parseTheaters(entry.theaters, backup.saveId);
     const images=entry.images===undefined?undefined:parseImages(entry.images,backup);
-    const { snapshot, theaterDifference, imageDifference } = await transaction(this.database, [...timelineStores, ...theaterStores,...imageStores], 'readonly', async tx => {
+    const { snapshot, theaterDifference, imageDifference } = await transaction(this.database, [...timelineStores, oracleStore, ...theaterStores,...imageStores], 'readonly', async tx => {
       const snapshot = await readSnapshot(tx, backup.saveId);
       const theaterDifference = theaters !== undefined && fingerprint(await exportTheaters(tx, backup.saveId)) !== fingerprint(
         [...theaters].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
@@ -724,7 +734,7 @@ export class SaveRepository {
     const session = reserveStageSession(state.saveId);
     try {
       const result = await withBrowserLock(state.saveId, async () => {
-        const imported = await transaction(this.database, [...timelineStores, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async (tx) => {
+        const imported = await transaction(this.database, [...timelineStores, oracleStore, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async (tx) => {
           session.check();
           const current = await readSnapshot(tx, state.saveId);
           requireData(sameSnapshot(current, confirmed.snapshot), 'IMPORT_CONFLICT',
@@ -763,7 +773,7 @@ export class SaveRepository {
   // Recheck within the write transaction: never delete a record that has become readable.
   async deleteUnreadable(storageKey: IDBValidKey): Promise<void> {
     requireData(storageKey !== undefined && storageKey !== null, 'INVALID_KEY', '未选择存档记录');
-    await transaction(this.database, [...timelineStores, ...historyStores, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async tx => {
+    await transaction(this.database, [...timelineStores, oracleStore, ...historyStores, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async tx => {
       const records = await rawRecords(tx.objectStore('saves'), storageKey);
       requireData(records.length === 1, 'NOT_FOUND', '此存档已不存在，请刷新列表。');
       requireData(listRecord(storageKey, records[0].value).status === 'unreadable', 'SAVE_READABLE', '此存档现在可以读取，请刷新列表后重新选择。');
@@ -936,7 +946,7 @@ export class SaveRepository {
     // Deletion may interrupt an active stage. Cleanup only the immutable keys observed
     // before deletion, even if another tab immediately recreates the same save.
     const keys = await withWorldbookLibrary(lib => lib.worldviewKeys(saveId, this.database.name)).catch(() => []);
-    await transaction(this.database, [...timelineStores, ...historyStores, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async (tx) => {
+    await transaction(this.database, [...timelineStores, oracleStore, ...historyStores, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async (tx) => {
       const current = await readStoredState(tx, saveId);
       requireData(await storedInstance(tx, saveId) === expectedInstance, 'REVISION_CONFLICT', replacedMessage);
       requireData(current.revision === expectedRevision && (current.npcManagementRevision ?? 0) === expectedManagementRevision,
@@ -974,24 +984,46 @@ export class SaveRepository {
     } finally { session.release(); }
   }
 
+  private async oracleSnapshot(tx: IDBTransaction, saveId: string) {
+    readState(await request(tx.objectStore('saves').get(saveId)), saveId);
+    let control = await readControl(tx, saveId);
+    if (!control) {
+      control = newSaveControl(saveId);
+      await writeControl(tx, control);
+    }
+    return { ...await readSheet(tx, saveId), instance: controlInstance(control), epoch: control.epoch };
+  }
+
   async readOracleNote(saveId: string) {
-    return transaction(this.database, ['saves','saveControls'], 'readonly', async tx => {
-      await readStoredState(tx, saveId);
-      const control = await readControl(tx, saveId);
-      return { instance: controlInstance(control), note: control?.oracleNote ?? null };
+    return transaction(this.database, ['saves', 'saveControls', oracleStore], 'readwrite', tx => this.oracleSnapshot(tx, saveId));
+  }
+
+  private async editOracleNote(saveId: string, expected: OracleEditBasis, edit: (current: Awaited<ReturnType<typeof readSheet>>) => void) {
+    return transaction(this.database, ['saves', 'saveControls', oracleStore], 'readwrite', async tx => {
+      const { instance, epoch, ...sheet } = await this.oracleSnapshot(tx, saveId);
+      requireData(sheet.saveId === expected.saveId && instance === expected.instance && epoch === expected.epoch && sheet.version === expected.version,
+        'REVISION_CONFLICT', '存档、纸条或历史已变化，请重新打开控制台后编辑。');
+      edit(sheet);
+      return { ...await writeSheet(tx, sheet), instance, epoch };
     });
   }
-  async writeOracleNote(saveId: string, expected: { instance: string | null; noteId?: string }, text: string, once: boolean) {
-    return transaction(this.database, ['saves','saveControls'], 'readwrite', async tx => {
-      await readStoredState(tx, saveId);
-      const control = await readControl(tx, saveId) ?? newSaveControl(saveId);
-      requireData(controlInstance(control) === expected.instance && control.oracleNote?.id === expected.noteId,
-        'REVISION_CONFLICT', '本档或纸条已变化，请重新打开控制台。');
-      if (text.trim()) control.oracleNote = { id: crypto.randomUUID(), text, once };
-      else delete control.oracleNote;
-      await writeControl(tx, control);
-      return { instance: controlInstance(control), note: control.oracleNote ?? null };
+
+  async writeOracleNote(saveId: string, expected: OracleEditBasis, text: string, once: boolean) {
+    return this.editOracleNote(saveId, expected, sheet => {
+      sheet.note = text.trim() ? { id: crypto.randomUUID(), text, once } : null;
+      sheet.history = rememberPaper(sheet.history, text);
     });
+  }
+
+  async clearOracleNote(saveId: string, expected: OracleEditBasis, editorText: string) {
+    return this.editOracleNote(saveId, expected, sheet => {
+      sheet.note = null;
+      sheet.history = rememberPaper(sheet.history, editorText);
+    });
+  }
+
+  async clearOracleHistory(saveId: string, expected: OracleEditBasis) {
+    return this.editOracleNote(saveId, expected, sheet => { sheet.history = []; });
   }
 
   // StoryStage holds the browser execution lock. This transaction only replaces the
@@ -1000,7 +1032,7 @@ export class SaveRepository {
     selection: LegacyNotificationSelection, signal?: AbortSignal, lease?: StoryWorldview, writing?: TurnDraft['storyWriting'], deliveredNoteId?: string): Promise<TurnDraft> {
     const base = TurnDraftSchema.parse(basedOn);
     const hash = lease && await checkStoryPublication(base,rerollStory(base,story,writing),lease);
-    return transaction(this.database, ['saves','drafts','saveControls'], 'readwrite', async tx => {
+    return transaction(this.database, ['saves','drafts','saveControls', oracleStore], 'readwrite', async tx => {
       const state = await readStoredState(tx,base.saveId);
       const store = tx.objectStore('drafts');
       const current = TurnDraftSchema.parse(await request(store.get(base.saveId)));
@@ -1028,7 +1060,7 @@ export class SaveRepository {
     const publish = lease && base && (next.storyRevision !== base.storyRevision ||
       next.failures.length > base.failures.length && next.failures.at(-1)?.stage === 'story');
     const hash = publish ? await checkStoryPublication(base,next,lease) : undefined;
-    return transaction(this.database, ['saves', 'drafts', 'saveControls'], 'readwrite', async (tx) => {
+    return transaction(this.database, ['saves', 'drafts', 'saveControls', oracleStore], 'readwrite', async (tx) => {
       const current = await readStoredState(tx, next.saveId);
       requireData(current.revision === next.baseSaveRevision, 'REVISION_CONFLICT', '草稿依赖的正式版本已失效');
       const store = tx.objectStore('drafts');

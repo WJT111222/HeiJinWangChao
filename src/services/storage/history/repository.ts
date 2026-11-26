@@ -1,3 +1,4 @@
+import { oracleStore } from '../oracleNotes';
 import { z } from 'zod';
 import { DataError, IdSchema, requireData } from '../../../domain/common';
 import { fingerprint } from '../../../domain/commands';
@@ -16,7 +17,7 @@ import { maxHistoryBytes, PayloadSchema } from './codec';
 import type { HistoryPayload } from './codec';
 import { utf8ByteLength } from '../backup';
 
-const stores = [...timelineStores, ...historyStores];
+const stores = [...timelineStores, oracleStore, ...historyStores];
 const nameSchema = z.string().trim().min(1).max(100);
 export type HistorySelection = { kind: 'automatic' | 'manual'; id: string };
 declare const historyBrand: unique symbol;
@@ -24,7 +25,7 @@ export interface HistoryConfirmation { readonly [historyBrand]: true }
 export interface HistoryPreview {
   state: GameState; node: HistoryNode; confirmation: HistoryConfirmation; currentTurn: number; hasDraft: boolean;
 }
-interface Current { state: unknown; draft: unknown; control: unknown }
+interface Current { state: unknown; draft: unknown; control: unknown; oracle: unknown }
 interface Selected { metadata?: unknown; record: unknown }
 interface Confirmation { owner: HistoryRepository; saveId: string; selection: HistorySelection; current: Current; source: Selected }
 const confirmations = new WeakMap<HistoryConfirmation, Confirmation>();
@@ -38,7 +39,7 @@ function sameSource(a: Selected, b: Selected) {
   return x.length === y.length && x.every((value, i) => value === y[i]);
 }
 async function current(tx: IDBTransaction, saveId: string): Promise<Current> {
-  return { state: await request(tx.objectStore('saves').get(saveId)),
+  return { oracle: await request(tx.objectStore(oracleStore).get(saveId)), state: await request(tx.objectStore('saves').get(saveId)),
     draft: await request(tx.objectStore('drafts').get(saveId)), control: await request(tx.objectStore('saveControls').get(saveId)) };
 }
 function checkedState(raw: unknown, saveId: string) {
@@ -127,7 +128,7 @@ export class HistoryRepository {
   async create(saveId: string, name: string): Promise<ManualHistory> {
     const checkedName = nameSchema.parse(name), session = reserveStageSession(saveId);
     try { return await withBrowserLock(saveId, async () => {
-      const captured = await transaction(this.database, ['saves', 'drafts', 'saveControls'], 'readonly', tx => current(tx, saveId));
+      const captured = await transaction(this.database, ['saves', 'drafts', 'saveControls', oracleStore], 'readonly', tx => current(tx, saveId));
       const state = checkedState(captured.state, saveId); settled(state);
       const payload = await historyCodec({ kind: 'encode', state });
       const now = new Date().toISOString();
@@ -214,6 +215,7 @@ export class HistoryRepository {
             useVariableStage, useWorldStage, useEntityStage), draftRevision: (oldDraft?.draftRevision ?? 0) + 1 });
           const control = { ...newSaveControl(saveId), instanceId: `instance-${crypto.randomUUID()}` };
           // Intentional new timeline root: no old automatic point or commit receipt survives.
+          await request(tx.objectStore(oracleStore).delete(saveId));
           await clearUndoRecords(tx, saveId);
           const receipts = tx.objectStore('turnReceipts');
           for (const key of await request(receipts.index('saveId').getAllKeys(saveId))) await request(receipts.delete(key));

@@ -19,7 +19,6 @@ const ControlSchema = z.strictObject({
   saveId: IdSchema, epoch: IdSchema,
   records: z.array(DescriptorSchema).max(undoPolicy.maxTurns),
   input: z.string().max(100000), memoryPaused: z.boolean(),
-  oracleNote: z.strictObject({ id: z.uuid(), text: z.string().max(100000), once: z.boolean() }).optional(),
   notice: z.enum(['budget', 'quota', 'legacy_write']).optional(),
   lastNpcManagement: z.strictObject({operationId:IdSchema,request:z.string(),managementRevision:CountSchema}).optional(),
   lastUndo: z.strictObject({ operationId: IdSchema, revision: CountSchema, draftTurnId: IdSchema }).optional(),

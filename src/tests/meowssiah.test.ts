@@ -114,7 +114,7 @@ describe('小纸条与候选共用存储事务', () => {
       await expect(repo.writeOracleNote(state.saveId, empty, '冲突', true)).rejects.toThrow();
       const next = await repo.writeOracleNote(
         state.saveId,
-        { instance: first.instance, noteId: first.note!.id },
+        first,
         '另一次',
         true,
       );
