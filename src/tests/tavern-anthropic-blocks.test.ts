@@ -75,3 +75,13 @@ it('通用多工具按原块索引分别拼接，第二个无参调用仍保留'
   expect(calls.filter(call => call.index === 0).map(call => call.function.arguments).join('')).toBe(input.partial_json);
   expect(calls.filter(call => call.index === 1).map(call => call.function.arguments).join('')).toBe('{}');
 });
+
+it.each([true, false])('交错块按实际 text_delta 的到达位置证明空白（工具前=%s）', async before => {
+  const padding = delta(9, { type: 'text_delta', text: ' \t' });
+  const { trace } = await read([
+    start(9, { type: 'text', text: '' }), ...(before ? [padding] : []),
+    start(2, tool), delta(2, input), ...(before ? [] : [padding]), stop(2), stop(9),
+  ], 'tool_use', 'deliver');
+  expect(trace.matchesDelivery?.('交班', ' \t')).toBe(before);
+  expect(trace.matchesDelivery?.('交班', '\t ')).toBe(false);
+});

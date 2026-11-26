@@ -69,7 +69,7 @@ export class PrototypeSession {
     const args = upstream.call?.args as { content: string } | undefined;
     // Only the original frames can attest to padding before this completed call.
     let text = upstream.text;
-    if (args && text && matchesDelivery?.(text + args.content)) text = '';
+    if (args && text && matchesDelivery?.(args.content, text)) text = '';
     const finished = await this.run('finish', { text, call: upstream.call });
     if (!finished || typeof finished !== 'object' || !('output' in finished) || typeof finished.output !== 'string')
       throw new AiError('invalid_output');

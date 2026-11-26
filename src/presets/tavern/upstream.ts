@@ -4,7 +4,7 @@ import { isOpenAiCompatible, type Protocol } from '../../services/ai/configurati
 import { AiError, safeAiError } from '../../services/ai/errors';
 import { attachFailureDiagnostic, classifyUpstreamPayload } from '../../services/ai/failureDiagnostic';
 import { array, nativeReasoning, record, usageFrom, type Usage } from '../../services/ai/protocols';
-import { responseContent, responseDiagnostics } from '../../services/ai/responseContent';
+import { anthropicBlockText, geminiPartText, responseContent, responseDiagnostics } from '../../services/ai/responseContent';
 import { readSse } from '../../services/ai/sse';
 
 import { identifyBody, safeMime } from './responseFormat';
@@ -22,8 +22,8 @@ export interface UpstreamTrace {
   wrapperBodyRead?: boolean;
   cancelled?: boolean;
   restored?: boolean;
-  /** Request-local check for the native adapter. Never export a tool argument in diagnostics. */
-  matchesDelivery?: (restored: string) => boolean;
+  /** Match a wrapper's restored output, or verify the body and its separate prefix for C2. */
+  matchesDelivery?: (restored: string, leadingPadding?: string) => boolean;
   rawFinish?: string;
   calls: number;
   bytes: number;
@@ -57,9 +57,15 @@ export class UpstreamFrames {
   private snapshots = new Map<string, { name: string; args: unknown }>();
   private anonymousGeminiCalls = new Set<string>();
   private hasText = false;
-  private preToolPaddingLength = 0;
+  // Exact visible text observed before the first tool. null means its position or content disqualifies it.
+  private leadingPadding: string | null = '';
   boundary = false;
   constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null) {}
+  private observeCompanionText(text: string, sharesToolFields = false) {
+    if (!this.expectedContentTool || !text || this.leadingPadding === null) return;
+    if (this.tools.size || sharesToolFields || /[^ \t\r\n]/u.test(text)) this.leadingPadding = null;
+    else this.leadingPadding += text;
+  }
   private track(index: number, id: unknown, name: unknown, args: unknown) {
     if (!Number.isSafeInteger(index) || index < 0) invalid();
     if ((id != null && (typeof id !== 'string' || !id.trim())) || (name != null && typeof name !== 'string')
@@ -153,8 +159,6 @@ export class UpstreamFrames {
       : streaming ? record(d.message).role : d.role;
     if (role !== undefined && role !== (p === 'gemini' ? 'model' : 'assistant')) invalid();
     const text = responseContent(d, p, streaming), reasoning = nativeReasoning(d, p, streaming);
-    if (this.expectedContentTool && streaming && !this.tools.size && !this.hasText && text && !/[^ \t\r\n]/u.test(text))
-      this.preToolPaddingLength += text.length;
     if (text.trim()) {
       this.hasText = true;
       this.trace.clock.progress('firstContentMs');
@@ -163,6 +167,8 @@ export class UpstreamFrames {
     const calls = [];
     if (isOpenAiCompatible(p)) {
       if (msg.function_call != null || (msg.tool_calls != null && !Array.isArray(msg.tool_calls))) invalid();
+      // content and tool_calls are sibling fields, including when they share a single SSE delta.
+      this.observeCompanionText(text, array(msg.tool_calls).length > 0);
       const indexes = new Set<number>();
       for (const [i, item] of array(msg.tool_calls).entries()) {
         const tool = record(item), fn = record(tool.function);
@@ -179,6 +185,7 @@ export class UpstreamFrames {
       const anonymousThisFrame: string[] = [];
       for (const part of array(record(choice.content).parts)) {
         const call = record(part).functionCall;
+        this.observeCompanionText(geminiPartText(part), call !== undefined);
         if (call === undefined) continue;
         const functionCall = record(call);
         const { id, name } = functionCall;
@@ -209,11 +216,13 @@ export class UpstreamFrames {
       for (const identity of anonymousThisFrame) this.anonymousGeminiCalls.add(identity);
     } else if (streaming) {
       const call = this.anthropicBlockEvent(d);
+      this.observeCompanionText(text);
       if (call) calls.push(call);
       if (d.type === 'message_stop') { this.boundary = true; this.trace.boundary = 'message_stop'; }
     } else {
       for (const item of array(d.content)) {
         const block = record(item);
+        this.observeCompanionText(anthropicBlockText(block));
         if (block.type === 'tool_use') calls.push(this.startAnthropicTool(block, false));
       }
     }
@@ -262,11 +271,12 @@ export class UpstreamFrames {
           if (tool.name !== this.expectedContentTool || Object.keys(record(args)).length !== 1) invalid();
           const content = record(args).content;
           if (typeof content !== 'string' || !content.trim()) invalid();
-          const padding = this.preToolPaddingLength;
-          this.trace.matchesDelivery = restored => restored === content || restored === splitLeadingThink(content).content ||
-            // A wrapper can already have forwarded whitespace-only SSE deltas before seeing the tool.
-            (padding > 0 && restored.length === padding + content.length && restored.endsWith(content) &&
-              !/[^ \t\r\n]/u.test(restored.slice(0, padding)));
+          const padding = this.leadingPadding;
+          this.trace.matchesDelivery = (restored, leadingPadding) => {
+            if (leadingPadding !== undefined) return !!padding && leadingPadding === padding && restored === content;
+            return restored === content || restored === splitLeadingThink(content).content ||
+              (!!padding && restored === padding + content);
+          };
         }
         ids.add(tool.id);
       }

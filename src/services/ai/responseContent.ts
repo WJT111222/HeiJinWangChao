@@ -35,6 +35,16 @@ export function rawResponseObservation(value: unknown, protocol: Protocol, strea
   return { text: parts.join(''), order: !streaming ? 'unknown' : parts.filter(Boolean).length > 1 ? 'same-event' : 'events' };
 }
 
+export function geminiPartText(part: unknown): string {
+  const block = record(part);
+  return block.thought === true ? '' : string(block.text);
+}
+
+export function anthropicBlockText(part: unknown): string {
+  const block = record(part);
+  return block.type === 'text' ? string(block.text) : '';
+}
+
 /** Read-only text observation before finish/error validation or <think> extraction.
  * Never used as accepted output, never repairs or normalizes an envelope. */
 export function responseContent(value: unknown, protocol: Protocol, streaming = false): string {
@@ -46,9 +56,8 @@ export function responseContent(value: unknown, protocol: Protocol, streaming = 
       .filter(part => record(part).type === 'text').map(part => string(record(part).text)).join('');
   }
   if (protocol === 'gemini') return array(record(record(array(data.candidates)[0]).content).parts)
-    .filter(part => record(part).thought !== true).map(part => string(record(part).text)).join('');
-  if (!streaming) return array(data.content).filter(part => record(part).type === 'text')
-    .map(part => string(record(part).text)).join('');
+    .map(geminiPartText).join('');
+  if (!streaming) return array(data.content).map(anthropicBlockText).join('');
   if (data.type === 'content_block_start' && record(data.content_block).type === 'text')
     return string(record(data.content_block).text);
   return data.type === 'content_block_delta' && record(data.delta).type === 'text_delta'
