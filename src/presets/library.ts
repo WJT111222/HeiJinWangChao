@@ -1,13 +1,26 @@
+import { peintureWritingVariables } from './peintureSettings';
+import { literaryEntry } from './messages';
+import { scriptOrder } from './scriptOrder';
+import { sameWritingSource, type StoryWriting } from '../domain/storyWriting';
+import { canonicalJson, sha256Hex } from '../domain/worldbook/canonical';
+import { narrativeRange, type Settings } from '../ui/settings/model';
 import controls from './resources/peinture-controls.json';
 import peinture from './resources/peinture-manifest.json';
-import { loadPreset, type PresetDefinition, type PackageOverride } from './package';
+import { loadPreset, type PresetDefinition, type PackageOverride, type LoadedPreset } from './package';
 import { nativeDeliveryId, readPresetSettings, storyMode } from './settings';
 
-const registry = new Map([
+interface PresetRegistration {
+  definition: typeof peinture;
+  read: () => Promise<string>;
+  // Return null for UI-only scripts. Other presets can consume their full settings by default.
+  scriptInputs?: (id: string, variables: Record<string, unknown>) => unknown;
+  readsPresetVariables?: boolean;
+}
+const registry = new Map<string, PresetRegistration>([
   [
     peinture.id,
     {
-      definition: peinture,
+      definition: peinture, scriptInputs: peintureWritingVariables, readsPresetVariables: false,
       read: async () => (await import('./resources/peinture-1118.json?raw')).default,
     },
   ],
@@ -17,10 +30,80 @@ export type PresetSelection = { definition: PresetDefinition; overrides?: Packag
 
 /** Capture preferences before awaiting either repository reads or a lazy package load. */
 export function captureStoryPreset(): PresetSelection {
-  const selected = captureAssistantSelection();
-  return selected === nativeDeliveryId ? null : selected;
+  return literaryPreset(captureAssistantSelection());
 }
 export type AssistantSelection = PresetSelection | typeof nativeDeliveryId;
+export function literaryPreset(selection: AssistantSelection | undefined): PresetSelection {
+  return selection === nativeDeliveryId ? null : selection ?? null;
+}
+
+// Only for proving an exact match for a checkpoint written by the first PR implementation.
+export function legacyWritingDigest(preset: NonNullable<PresetSelection>): Promise<string> {
+  const edits = preset.overrides;
+  return sha256Hex(canonicalJson({ entries: edits?.entries ?? {}, scripts: edits?.scripts ?? {},
+    variables: edits?.variables ?? {}, scriptVariables: edits?.scriptVariables ?? {} }));
+}
+
+/** A v1 digest proves an exact edit record. The shipped defaults give us one more verifiable witness. */
+export async function canResumeWriting(previous: StoryWriting, current: StoryWriting, selected: AssistantSelection | undefined): Promise<boolean> {
+  if (previous.source !== 'preset' || previous.configurationVersion === 3)
+    return sameWritingSource(previous, current);
+  const preset = literaryPreset(selected);
+  if (!preset || current.source !== 'preset' || previous.id !== current.id || previous.version !== current.version) return false;
+  const defaults = { definition: preset.definition };
+  // The original edit record, or the shipped defaults with a provably equivalent current projection.
+  const oldDigest = previous.configurationVersion === 2
+    ? async (selection: NonNullable<PresetSelection>) => sha256Hex(configurationText(await resolveStoryPreset(selection), selection, true))
+    : legacyWritingDigest;
+  if (previous.configuration === await oldDigest(preset)) return true;
+  return previous.configuration === await oldDigest(defaults)
+    && current.configuration === await sha256Hex(configurationText(await resolveStoryPreset(defaults), defaults));
+}
+
+function configurationText(loaded: LoadedPreset, preset: NonNullable<PresetSelection>, versionTwo = false) {
+  const active = loaded.entries.filter(entry => entry.enabled);
+  const entries = versionTwo ? active.map(entry => ({
+    id: entry.identifier, role: entry.role, marker: entry.marker, text: entry.content,
+    position: entry.injection_position, ...(entry.injection_position === 1 && { depth: entry.injection_depth, order: entry.injection_order }),
+  })) : active.map(literaryEntry);
+  const registration = registry.get(preset.definition.id)!;
+  const scripts = scriptOrder(loaded.scripts).filter(script => script.enabled).flatMap(script => {
+    const data = preset.overrides?.scriptVariables?.[script.id] ?? script.data;
+    const variables = registration.scriptInputs ? registration.scriptInputs(script.id, data) : data;
+    return variables === null ? [] : [{ id: script.id, module: script.module, content: script.content, variables }];
+  });
+  return canonicalJson({ entries, scripts,
+    variables: registration.readsPresetVariables === false ? undefined : preset.overrides?.variables ?? {} });
+}
+
+function nativeWriting(prompts: Settings['prompts']): StoryWriting {
+  return { source: 'native', ...narrativeRange(prompts), perspective: prompts.perspective,
+    style: prompts.style, naturalProse: prompts.naturalProse };
+}
+
+export async function captureStoryWriting(selection: AssistantSelection | undefined, prompts: Settings['prompts']): Promise<StoryWriting> {
+  return (await writingWitness(selection, prompts)).writing;
+}
+
+/** Prepare immutable package bytes once. Final comparison runs synchronously in the dispatch stack. */
+export async function writingWitness(selection: AssistantSelection | undefined, prompts: Settings['prompts']) {
+  const selected = literaryPreset(selection);
+  if (!selected) {
+    const expected = nativeWriting(prompts);
+    return { writing: expected, matches: (live: AssistantSelection, now: Settings['prompts']) =>
+      !literaryPreset(live) && canonicalJson(nativeWriting(now)) === canonicalJson(expected) };
+  }
+  const loaded = await resolveStoryPreset(selected);
+  const expected = configurationText(loaded, selected);
+  const { id, version } = selected.definition;
+  const writing: StoryWriting = { source: 'preset', id, version, configurationVersion: 3, configuration: await sha256Hex(expected) };
+  return { writing, matches: (live: AssistantSelection) => {
+    const next = literaryPreset(live);
+    return !!next && next.definition.id === id && next.definition.version === version
+      && expected === configurationText(loadPreset(loaded.raw, next.definition, next.overrides), next);
+  } };
+}
+
 export function captureAssistantSelection(): AssistantSelection {
   if (new URLSearchParams(globalThis.location?.search).get('safe') === '1') return null;
   const settings = readPresetSettings();

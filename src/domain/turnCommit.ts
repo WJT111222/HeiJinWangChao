@@ -1,4 +1,5 @@
 import { commandsForPhase } from './stageCommands';
+import { hasVisibleNarrative } from './storyContent';
 import { validateStageSettlement } from './events/stages';
 import { historicalPerspective } from './timePreflight';
 import { z } from 'zod';
@@ -45,7 +46,7 @@ export function completeTurnDraft(draft: TurnDraft) {
   const ready = (stage: 'entities' | 'variables' | 'world') => current.stageStatus[stage] === 'ready' && current[stage]?.validation === (stage === 'entities' ? 'structural' : 'validated');
   const complete = (stage: 'entities' | 'variables' | 'world', enabled: boolean) => ready(stage)
     || (!enabled && current.stageStatus[stage] === 'skipped' && !current[stage]);
-  return Boolean(current.story && current.stageStatus.story === 'ready'
+  return Boolean(current.story && hasVisibleNarrative(current.story.narrative) && current.stageStatus.story === 'ready'
     && complete('entities', current.useEntityStage) && complete('variables', current.useVariableStage) && complete('world', current.useWorldStage)
     && (!current.world || (!current.useVariableStage || ready('variables')) && current.world.basedOnVariableRevision === current.variables?.candidateRevision));
 }

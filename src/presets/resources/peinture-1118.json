@@ -804,12 +804,12 @@
     {
       "identifier": "wave-length-800-1000",
       "name": "默认字数",
-      "enabled": false,
+      "enabled": true,
       "injection_position": 0,
       "injection_depth": 4,
       "injection_order": 100,
       "role": "system",
-      "content": "",
+      "content": "{{setvar::wave_fixed_target::本轮正文目标：800至1000字。}}\n{{setvar::wave_cfg_length::<response_length>\n当前篇幅：固定字数。以本轮正文目标为准。给出区间时以中段为落点，下限是最低交稿量；给出单值时围绕该值安排。只计正文叙述和对白，扣除规划、时间栏、独立心声、附页、标签、空白与重复译文。\n先把目标分给本场确实需要的几处展开，规划只用一行写清各处的大致字数，使它们的和落进目标。起笔直接演第一处；到中段让人物应对前面造成的变化，留足篇幅写出结果及其影响。目标加长，相应增加有效交锋、实际过程和后果的篇幅。慢推进可以在同一现场写足不同人物的应对，快推进可以接写后续事件。\n主要行动一有结果，先看正文还差多少。偏短就在尚未展开的要处写出具体经过，再交回下一步选择。不能用一段提要、重复感叹、同义改写或字数声明补差额；不凭空增加 User 的决定。\n</response_length>}}",
       "system_prompt": false,
       "marker": false,
       "forbid_overrides": false
@@ -822,7 +822,7 @@
       "injection_depth": 4,
       "injection_order": 100,
       "role": "system",
-      "content": "",
+      "content": "{{setvar::wave_fixed_target::}}\n{{setvar::wave_cfg_length::<response_length>\n当前篇幅：动态字数·多。\n浪潮，篇幅随本轮事件、在场人物和可展开的内容伸缩，不设固定字数、段数或上下限。同样的场景与推进档位下，采用充分展开的写法：重要行动写出怎样完成，有分量的交流让双方实际说开，结果写到怎样影响人物与处境，不把这些压成几句提要。输入短不代表场面简单，不因玩家只给一句话就缩成短答；可写内容确已交代充分时自然收住。\n多出来的文字用于有效的行动、对白、现场细节与后果，不靠复述、重复感受、面部微动作或无关支线填充。事件范围仍由推进档位和玩家权限决定，不能为写长把已经能够前进的事拖住。\n篇幅只计 content 内的故事叙述与对白；规划、时间栏、独立心声块、附页、标签、空白和重复译文不计。字数是正文交付目标，不是 token 上限。不得用“已写够”的声明替代正文。\n</response_length>}}",
       "system_prompt": false,
       "marker": false,
       "forbid_overrides": false
@@ -835,7 +835,7 @@
       "injection_depth": 4,
       "injection_order": 100,
       "role": "system",
-      "content": "",
+      "content": "{{setvar::wave_fixed_target::}}\n{{setvar::wave_cfg_length::<response_length>\n当前篇幅：动态字数·少。\n浪潮，篇幅随本轮事件需要伸缩，不设固定字数、段数或上下限。同样的场景与推进档位下，采用精练写法：留下决定走向的行动、关键对白、必要因果和结果，其余经过概括带过；信息已经清楚便收束，不逐项铺开细节。复杂的事仍交代完整，不因求短省略结果或改变人物立场。\n精练只减少展开量，不减少该发生的进展，也不把半件事留到下一轮。\n篇幅只计 content 内的故事叙述与对白；规划、时间栏、独立心声块、附页、标签、空白和重复译文不计。字数是正文交付目标，不是 token 上限。不得用“已写够”的声明替代正文。\n</response_length>}}",
       "system_prompt": false,
       "marker": false,
       "forbid_overrides": false
@@ -2081,7 +2081,7 @@
       "name": "🔮 思维链与正文",
       "enabled": true,
       "role": "system",
-      "content": "依据以下已启用的写作安排承接当前行动。公开创作安排如需呈现，写入游戏既有的 thinking 块。\n{{getvar::wave_mode_omniscient}}\n{{getvar::wave_mode_dialogue_only}}\n{{getvar::wave_plan_context}}\n{{getvar::wave_cfg_restatement}}\n{{getvar::wave_check_restatement}}\n{{getvar::wave_plan_viewpoint}}\n{{getvar::wave_cfg_pov}}\n{{getvar::wave_check_pov}}\n{{getvar::wave_cfg_speech}}\n{{getvar::wave_check_speech}}\n{{getvar::wave_cfg_dialogue}}\n{{getvar::wave_check_dialogue}}\n{{getvar::wave_cfg_mind}}\n{{getvar::wave_check_mind}}\n{{getvar::wave_plan_character}}\n{{getvar::wave_rule_motivation}}\n{{getvar::wave_portrait_features}}\n{{getvar::wave_rule_independent_regard}}\n{{getvar::wave_check_independent_regard}}\n{{getvar::wave_rule_knowledge}}\n{{getvar::wave_check_knowledge}}\n{{getvar::wave_rule_affect}}\n{{getvar::wave_check_affect}}\n{{getvar::wave_rule_direct_terms}}\n{{getvar::wave_check_direct_terms}}\n{{getvar::wave_cfg_intimacy}}\n{{getvar::wave_check_intimacy}}\n{{getvar::wave_cfg_custom_intimacy}}\n{{getvar::wave_check_custom_intimacy}}\n{{getvar::wave_rule_body_chest}}\n{{getvar::wave_rule_body_hip}}\n{{getvar::wave_rule_body_leg}}\n{{getvar::wave_rule_body_foot}}\n{{getvar::wave_rule_body_stocking}}\n{{getvar::wave_check_body}}\n{{getvar::wave_rule_body_physics}}\n{{getvar::wave_check_body_physics}}\n{{getvar::wave_rule_ntr}}\n{{getvar::wave_check_ntr}}\n{{getvar::wave_rule_ntl}}\n{{getvar::wave_check_ntl}}\n{{getvar::wave_rule_age}}\n{{getvar::wave_check_age}}\n{{getvar::wave_rule_age_light}}\n{{getvar::wave_check_age_light}}\n{{getvar::wave_rule_age_young}}\n{{getvar::wave_check_age_young}}\n{{getvar::wave_rule_age_mature}}\n{{getvar::wave_check_age_mature}}\n{{getvar::wave_rule_grooming}}\n{{getvar::wave_check_grooming}}\n{{getvar::wave_rule_appearance}}\n{{getvar::wave_check_appearance}}\n{{getvar::wave_rule_demeanor}}\n{{getvar::wave_check_demeanor}}\n{{getvar::wave_rule_situated}}\n{{getvar::wave_check_situated}}\n{{getvar::wave_rule_character_default}}\n{{getvar::wave_check_character_default}}\n{{getvar::wave_rule_own_response}}\n{{getvar::wave_check_own_response}}\n{{getvar::wave_rule_canon}}\n{{getvar::wave_check_canon}}\n{{getvar::wave_rule_facts}}\n{{getvar::wave_check_facts}}\n{{getvar::wave_plan_turn}}\n{{getvar::wave_cfg_fortune}}\n{{getvar::wave_check_fortune}}\n{{getvar::wave_rule_revolution}}\n{{getvar::wave_check_revolution}}\n{{getvar::wave_cfg_pace}}\n{{getvar::wave_check_pace}}\n{{getvar::wave_paragraph_rule}}\n{{getvar::wave_cfg_ending}}\n{{getvar::wave_check_ending}}\n{{getvar::wave_plan_style}}\n{{getvar::wave_cfg_style}}\n{{getvar::wave_check_style}}\n{{getvar::wave_rule_lived_language}}\n{{getvar::wave_check_lived_language}}\n{{getvar::wave_rule_diction}}\n{{getvar::wave_check_diction}}\n{{getvar::wave_cfg_lang}}\n{{getvar::wave_check_lang}}\n{{getvar::wave_rule_lang_purity}}\n{{getvar::wave_check_lang_purity}}\n{{getvar::wave_rule_custom_seam}}\n{{getvar::wave_check_custom_seam}}\n{{getvar::wave_plan_check}}\n{{getvar::wave_rule_prose}}\n{{getvar::wave_rule_custom_ban}}\n{{getvar::wave_rule_portrait}}\n{{getvar::wave_check_portrait}}\n{{getvar::wave_rule_adjective}}\n{{getvar::wave_check_adjective}}\n{{getvar::wave_rule_metaphor}}\n{{getvar::wave_check_metaphor}}\n{{getvar::wave_rule_body_plain}}\n{{getvar::wave_check_body_plain}}",
+      "content": "依据以下已启用的写作安排承接当前行动。公开创作安排如需呈现，写入游戏既有的 thinking 块。\n{{getvar::wave_mode_omniscient}}\n{{getvar::wave_mode_dialogue_only}}\n{{getvar::wave_plan_context}}\n{{getvar::wave_cfg_restatement}}\n{{getvar::wave_check_restatement}}\n{{getvar::wave_plan_viewpoint}}\n{{getvar::wave_cfg_pov}}\n{{getvar::wave_check_pov}}\n{{getvar::wave_cfg_speech}}\n{{getvar::wave_check_speech}}\n{{getvar::wave_cfg_dialogue}}\n{{getvar::wave_check_dialogue}}\n{{getvar::wave_cfg_mind}}\n{{getvar::wave_check_mind}}\n{{getvar::wave_plan_character}}\n{{getvar::wave_rule_motivation}}\n{{getvar::wave_portrait_features}}\n{{getvar::wave_rule_independent_regard}}\n{{getvar::wave_check_independent_regard}}\n{{getvar::wave_rule_knowledge}}\n{{getvar::wave_check_knowledge}}\n{{getvar::wave_rule_affect}}\n{{getvar::wave_check_affect}}\n{{getvar::wave_rule_direct_terms}}\n{{getvar::wave_check_direct_terms}}\n{{getvar::wave_cfg_intimacy}}\n{{getvar::wave_check_intimacy}}\n{{getvar::wave_cfg_custom_intimacy}}\n{{getvar::wave_check_custom_intimacy}}\n{{getvar::wave_rule_body_chest}}\n{{getvar::wave_rule_body_hip}}\n{{getvar::wave_rule_body_leg}}\n{{getvar::wave_rule_body_foot}}\n{{getvar::wave_rule_body_stocking}}\n{{getvar::wave_check_body}}\n{{getvar::wave_rule_body_physics}}\n{{getvar::wave_check_body_physics}}\n{{getvar::wave_rule_ntr}}\n{{getvar::wave_check_ntr}}\n{{getvar::wave_rule_ntl}}\n{{getvar::wave_check_ntl}}\n{{getvar::wave_rule_age}}\n{{getvar::wave_check_age}}\n{{getvar::wave_rule_age_light}}\n{{getvar::wave_check_age_light}}\n{{getvar::wave_rule_age_young}}\n{{getvar::wave_check_age_young}}\n{{getvar::wave_rule_age_mature}}\n{{getvar::wave_check_age_mature}}\n{{getvar::wave_rule_grooming}}\n{{getvar::wave_check_grooming}}\n{{getvar::wave_rule_appearance}}\n{{getvar::wave_check_appearance}}\n{{getvar::wave_rule_demeanor}}\n{{getvar::wave_check_demeanor}}\n{{getvar::wave_rule_situated}}\n{{getvar::wave_check_situated}}\n{{getvar::wave_rule_character_default}}\n{{getvar::wave_check_character_default}}\n{{getvar::wave_rule_own_response}}\n{{getvar::wave_check_own_response}}\n{{getvar::wave_rule_canon}}\n{{getvar::wave_check_canon}}\n{{getvar::wave_rule_facts}}\n{{getvar::wave_check_facts}}\n{{getvar::wave_plan_turn}}\n{{getvar::wave_cfg_fortune}}\n{{getvar::wave_check_fortune}}\n{{getvar::wave_rule_revolution}}\n{{getvar::wave_check_revolution}}\n{{getvar::wave_cfg_pace}}\n{{getvar::wave_check_pace}}\n{{getvar::wave_paragraph_rule}}\n{{getvar::wave_cfg_ending}}\n{{getvar::wave_check_ending}}\n{{getvar::wave_plan_style}}\n{{getvar::wave_cfg_style}}\n{{getvar::wave_check_style}}\n{{getvar::wave_rule_lived_language}}\n{{getvar::wave_check_lived_language}}\n{{getvar::wave_rule_diction}}\n{{getvar::wave_check_diction}}\n{{getvar::wave_cfg_lang}}\n{{getvar::wave_check_lang}}\n{{getvar::wave_rule_lang_purity}}\n{{getvar::wave_check_lang_purity}}\n{{getvar::wave_rule_custom_seam}}\n{{getvar::wave_check_custom_seam}}\n{{getvar::wave_plan_check}}\n{{getvar::wave_rule_prose}}\n{{getvar::wave_rule_custom_ban}}\n{{getvar::wave_rule_portrait}}\n{{getvar::wave_check_portrait}}\n{{getvar::wave_rule_adjective}}\n{{getvar::wave_check_adjective}}\n{{getvar::wave_rule_metaphor}}\n{{getvar::wave_check_metaphor}}\n{{getvar::wave_rule_body_plain}}\n{{getvar::wave_check_body_plain}}\n{{getvar::wave_cfg_length}}\n{{getvar::wave_fixed_target}}",
       "system_prompt": true,
       "marker": false,
       "forbid_overrides": true,
@@ -2391,7 +2391,7 @@
         },
         {
           "identifier": "wave-length-800-1000",
-          "enabled": false
+          "enabled": true
         },
         {
           "identifier": "wave-length-dynamic-more",

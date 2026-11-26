@@ -1,4 +1,6 @@
+import { hasVisibleNarrative } from './storyContent';
 import { DeferredEventIdsSchema, UpdateSettlementSchema } from './updateSettlement';
+import { StoryWritingSchema, type StoryWriting } from './storyWriting';
 import { z } from 'zod';
 import { CountSchema, IdSchema, TextSchema, requireData } from './common';
 import { STORY_CONTINUATION_LIMIT, STORY_PARTIAL_MAX_CHARS } from './storyContinuation';
@@ -54,7 +56,9 @@ const draftSchema = z.strictObject({
     storyRevision: CountSchema, errorCode: TextSchema, retryable: z.boolean(),
   })),
   // 正文被截断时已收到的原始输出（已隐藏凭证），供玩家点「续写正文」从断点接着写。可选字段：旧草稿没有它照常可用。
+  storyWriting: StoryWritingSchema.optional(),
   storyPartial: z.strictObject({
+    writing: StoryWritingSchema.optional(),
     text: z.string().min(1).max(STORY_PARTIAL_MAX_CHARS),
     storyRevision: CountSchema,
     continuations: z.number().int().min(0).max(STORY_CONTINUATION_LIMIT),
@@ -68,6 +72,7 @@ const draftSchema = z.strictObject({
     check(!draft.story, '已有完整正文时不能保留截断正文');
     check(draft.storyPartial.storyRevision === draft.storyRevision, '截断正文引用旧正文版本');
   }
+  if (draft.storyWriting) check(draft.story, '文学归属需要对应的正文候选');
   if (draft.story) check(draft.story.turnKind === draft.turnKind, '正文回合类型不符');
   check(draft.stageStatus.story !== 'ready' || draft.story, '正文未完成');
   for (const stage of candidateStages) {
@@ -116,11 +121,11 @@ export function createTurnDraft(saveId: string, baseSaveRevision: number, turnId
   });
 }
 
-export function rerollStory(draft: TurnDraft, story: z.infer<typeof StorySchema>): TurnDraft {
+export function rerollStory(draft: TurnDraft, story: z.infer<typeof StorySchema>, writing?: StoryWriting): TurnDraft {
   const next = { ...draft };
   delete next.legacyNotificationRecovery;
   return TurnDraftSchema.parse({ ...next, draftRevision: draft.draftRevision + 1, storyRevision: draft.storyRevision + 1,
-    story, entities: undefined, variables: undefined, world: undefined, storyPartial: undefined,
+    story, storyWriting: writing, entities: undefined, variables: undefined, world: undefined, storyPartial: undefined,
     stageStatus: { story: 'ready', entities: draft.useEntityStage ? 'pending' : 'skipped', variables: draft.useVariableStage ? 'pending' : 'skipped', world: draft.useWorldStage ? 'pending' : 'skipped' },
   });
 }
@@ -186,10 +191,12 @@ export function validateDraftUpdate(old: TurnDraft, next: TurnDraft) {
   for (const key of ['useEntityStage', 'useVariableStage', 'useWorldStage', 'requestedStages', 'stageRequestRevisions'] as const) {
     requireData(fingerprint(old[key]) === fingerprint(next[key]), 'DRAFT_CONTEXT', '同次执行尝试的运行配置不可悄然改变');
   }
+  if (next.story && next.storyRevision !== old.storyRevision)
+    requireData(hasVisibleNarrative(next.story.narrative), 'STORY_NOT_READY', '正文没有可见内容');
   requireData(next.storyRevision === old.storyRevision || next.storyRevision === old.storyRevision + 1, 'STORY_CONFLICT', '正文版本不连续');
   if (next.storyRevision === old.storyRevision) {
-    requireData(fingerprint(next.story) === fingerprint(old.story), 'STORY_CONFLICT', '正文变化必须创建新版本');
-    for (const stage of candidateStages) {
+    requireData(fingerprint(next.story) === fingerprint(old.story) && fingerprint(next.storyWriting) === fingerprint(old.storyWriting), 'STORY_CONFLICT', '正文变化必须创建新版本');
+    for (const stage of ['variables', 'world'] as const) {
       if (fingerprint(old[stage]) === fingerprint(next[stage])) continue;
       const enabled = next[stageSwitch[stage]];
       // 清除依赖失效的世界候选允许；写回结果必须属于本次显式请求的阶段。

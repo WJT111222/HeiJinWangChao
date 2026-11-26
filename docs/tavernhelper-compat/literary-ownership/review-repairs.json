@@ -1,0 +1,717 @@
+{
+  "reviewedHead": "19d62de2cc01b6f6cb0e173201a6d9a854c46889",
+  "releaseBase": "f6ca1ca8e961652ea8cdb8a490e3e8d653cd0482",
+  "repairCode": "a9f9975be949d9b22caae06037cc334d10968da5",
+  "environment": {
+    "node": "24.19.0",
+    "chromium": "154.0.8037.57",
+    "mobile": "Pixel 7 emulation",
+    "workers": 1,
+    "retries": 0,
+    "model": "mock"
+  },
+  "runs": {
+    "broad": {
+      "startTime": "2026-11-26T02:41:09.783Z",
+      "duration": 922099.4670000001,
+      "expected": 171,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "afterMobileWorkflowFixtureFix": {
+      "startTime": "2026-11-26T02:56:50.903Z",
+      "duration": 46710.439,
+      "expected": 14,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "unchangedPassingIdentities": 158
+  },
+  "before": {
+    "invisible-head-preset": {
+      "result": {
+        "saved": true,
+        "source": "preset",
+        "original": false,
+        "chars": 1
+      },
+      "calls": [
+        {
+          "tools": [
+            "wave_context_reference",
+            "actual_content"
+          ],
+          "continuation": false
+        }
+      ],
+      "post": {
+        "advanced": 1,
+        "journalBodyCodePoints": [
+          8203
+        ]
+      }
+    },
+    "legacy": {
+      "old": {
+        "code": "invalid_output",
+        "name": "AiError",
+        "rule": "tag_unclosed",
+        "message": "正文生成失败：结构标签未闭合。 标签：<正文>。 本次正文未保存。"
+      },
+      "oldTools": [
+        {
+          "tools": [
+            "wave_context_reference",
+            "actual_content"
+          ],
+          "continuation": false
+        }
+      ],
+      "oldHadSource": false,
+      "upgradedPartialPreserved": true,
+      "withPreset": {
+        "code": "configuration",
+        "name": "AiError",
+        "field": "tavern.writing_changed",
+        "message": "这段正文的文学设置与当前选择不同。请恢复原文学设置后续写，或主动重新生成。已写内容保留。 字段：tavern.writing_changed。"
+      },
+      "withNative": {
+        "saved": true,
+        "source": "native",
+        "original": true,
+        "chars": 442
+      },
+      "calls": [
+        {
+          "tools": [],
+          "continuation": true
+        }
+      ]
+    },
+    "round-trip": {
+      "delta": {
+        "entriesIdentical": true,
+        "original": "03ee833b18e322661c8aa3e41c96d54f806ed0868d2e98725f9feee41fc82729",
+        "restored": "e6ed672b0ff4ae8627565c1c01914b12848ede063cd1efdb131ee5c7a6d38c9d",
+        "keys": [
+          "wave-length-800-1000",
+          "wave-length-dynamic-more"
+        ]
+      },
+      "first": {
+        "code": "invalid_output",
+        "name": "AiError",
+        "rule": "tag_unclosed",
+        "message": "正文生成失败：结构标签未闭合。 标签：<正文>。 本次正文未保存。"
+      },
+      "second": {
+        "code": "configuration",
+        "name": "AiError",
+        "field": "tavern.writing_changed",
+        "message": "这段正文的文学设置与当前选择不同。请恢复原文学设置后续写，或主动重新生成。已写内容保留。 字段：tavern.writing_changed。"
+      },
+      "calls": [
+        {
+          "tools": [
+            "wave_context_reference",
+            "actual_content"
+          ],
+          "continuation": false
+        }
+      ],
+      "partialPreserved": true,
+      "stateRevisionSame": true
+    },
+    "manual-invalid-base": {
+      "first": {
+        "saved": true,
+        "original": false,
+        "chars": 425
+      },
+      "second": {
+        "code": "invalid_output",
+        "name": "AiError",
+        "rule": "tag_missing",
+        "message": "正文生成失败：缺少必需的结构标签。 标签：<正文>。 本次正文未保存。"
+      },
+      "calls": [
+        {
+          "tools": [
+            "wave_context_reference",
+            "actual_content"
+          ],
+          "continuation": false
+        },
+        {
+          "tools": [
+            "wave_context_reference",
+            "actual_content"
+          ],
+          "continuation": false
+        }
+      ],
+      "status": "failed",
+      "previousStoryPreserved": true,
+      "commit": {
+        "committed": false,
+        "code": "TURN_INCOMPLETE",
+        "revisionUnchanged": true
+      }
+    },
+    "manual-invalid-head": {
+      "first": {
+        "saved": true,
+        "source": "preset",
+        "original": false,
+        "chars": 425
+      },
+      "second": {
+        "code": "invalid_output",
+        "name": "AiError",
+        "rule": "tag_missing",
+        "message": "正文生成失败：缺少必需的结构标签。 标签：<正文>。 本次正文未保存。"
+      },
+      "calls": [
+        {
+          "tools": [
+            "wave_context_reference",
+            "actual_content"
+          ],
+          "continuation": false
+        },
+        {
+          "tools": [
+            "wave_context_reference",
+            "actual_content"
+          ],
+          "continuation": false
+        }
+      ],
+      "status": "failed",
+      "previousStoryPreserved": true,
+      "commit": {
+        "committed": false,
+        "code": "TURN_INCOMPLETE",
+        "revisionUnchanged": true
+      }
+    }
+  },
+  "after": {
+    "independentProbes": {
+      "invisible-head-native": {
+        "result": {
+          "code": "invalid_output",
+          "name": "AiError",
+          "rule": "narrative_empty",
+          "message": "正文生成失败：正文没有可见内容。 标签：<正文>。 本次正文未保存。"
+        },
+        "calls": [
+          {
+            "tools": [],
+            "continuation": false
+          }
+        ],
+        "post": {
+          "advanced": 0
+        }
+      },
+      "invisible-head-standalone": {
+        "result": {
+          "code": "invalid_output",
+          "name": "AiError",
+          "rule": "narrative_empty",
+          "message": "正文生成失败：正文没有可见内容。 标签：<正文>。 本次正文未保存。"
+        },
+        "calls": [
+          {
+            "tools": [
+              "wave_context_reference",
+              "actual_content"
+            ],
+            "continuation": false
+          }
+        ],
+        "post": {
+          "advanced": 0
+        }
+      },
+      "invisible-head-preset": {
+        "result": {
+          "code": "invalid_output",
+          "name": "AiError",
+          "rule": "narrative_empty",
+          "message": "正文生成失败：正文没有可见内容。 标签：<正文>。 本次正文未保存。"
+        },
+        "calls": [
+          {
+            "tools": [
+              "wave_context_reference",
+              "actual_content"
+            ],
+            "continuation": false
+          }
+        ],
+        "post": {
+          "advanced": 0
+        }
+      },
+      "legacy": {
+        "old": {
+          "code": "invalid_output",
+          "name": "AiError",
+          "rule": "tag_unclosed",
+          "message": "正文生成失败：结构标签未闭合。 标签：<正文>。 本次正文未保存。"
+        },
+        "oldTools": [
+          {
+            "tools": [
+              "wave_context_reference",
+              "actual_content"
+            ],
+            "continuation": false
+          }
+        ],
+        "oldHadSource": false,
+        "upgradedPartialPreserved": true,
+        "withPreset": {
+          "code": "configuration",
+          "name": "AiError",
+          "field": "tavern.writing_unknown",
+          "message": "旧版断点没有记录文学来源。请确认新续写使用的文学设置，或主动重新生成。已写内容保留。 字段：tavern.writing_unknown。"
+        },
+        "withNative": {
+          "code": "configuration",
+          "name": "AiError",
+          "field": "tavern.writing_unknown",
+          "message": "旧版断点没有记录文学来源。请确认新续写使用的文学设置，或主动重新生成。已写内容保留。 字段：tavern.writing_unknown。"
+        },
+        "calls": []
+      },
+      "round-trip": {
+        "delta": {
+          "entriesIdentical": true,
+          "original": "0c1b84c5f36d3e8fb04d6ac354b592322af7a203563fb6acd8b7a8f99dd6d618",
+          "restored": "0c1b84c5f36d3e8fb04d6ac354b592322af7a203563fb6acd8b7a8f99dd6d618",
+          "keys": [
+            "wave-length-800-1000",
+            "wave-length-dynamic-more"
+          ]
+        },
+        "first": {
+          "code": "invalid_output",
+          "name": "AiError",
+          "rule": "tag_unclosed",
+          "message": "正文生成失败：结构标签未闭合。 标签：<正文>。 本次正文未保存。"
+        },
+        "second": {
+          "saved": true,
+          "source": "preset",
+          "original": true,
+          "chars": 442
+        },
+        "calls": [
+          {
+            "tools": [
+              "wave_context_reference",
+              "actual_content"
+            ],
+            "continuation": false
+          },
+          {
+            "tools": [],
+            "continuation": true
+          }
+        ],
+        "partialPreserved": false,
+        "stateRevisionSame": true
+      },
+      "visible-controls": {
+        "calls": 2,
+        "results": [
+          {
+            "narrative": "行",
+            "writing": "preset",
+            "status": "ready"
+          },
+          {
+            "narrative": "她与👩‍👧一起到站。",
+            "writing": "preset",
+            "status": "ready"
+          }
+        ]
+      }
+    },
+    "upgrades": [
+      {
+        "project": "desktop",
+        "case": "V10 native 断点：确认 native 续写后保留未知前缀并完成结算",
+        "result": "passed"
+      },
+      {
+        "project": "desktop",
+        "case": "V10 native 断点：确认 preset 续写后保留未知前缀并完成结算",
+        "result": "passed"
+      },
+      {
+        "project": "desktop",
+        "case": "V10 preset 断点：确认 native 续写后保留未知前缀并完成结算",
+        "result": "passed"
+      },
+      {
+        "project": "desktop",
+        "case": "V10 preset 断点：确认 preset 续写后保留未知前缀并完成结算",
+        "result": "passed"
+      },
+      {
+        "project": "mobile",
+        "case": "V10 native 断点：确认 native 续写后保留未知前缀并完成结算",
+        "result": "passed"
+      },
+      {
+        "project": "mobile",
+        "case": "V10 native 断点：确认 preset 续写后保留未知前缀并完成结算",
+        "result": "passed"
+      },
+      {
+        "project": "mobile",
+        "case": "V10 preset 断点：确认 native 续写后保留未知前缀并完成结算",
+        "result": "passed"
+      },
+      {
+        "project": "mobile",
+        "case": "V10 preset 断点：确认 preset 续写后保留未知前缀并完成结算",
+        "result": "passed"
+      }
+    ],
+    "wire": [
+      {
+        "project": "desktop",
+        "mode": "原生",
+        "upstreamCalls": 6,
+        "commonWireFields": {
+          "nativeRange": true,
+          "nativePerspective": true,
+          "nativeStyle": true,
+          "presetRange": false,
+          "gameProtocol": true,
+          "tools": [],
+          "model": "mock-literature",
+          "maxOutput": 8192,
+          "matchedExcerpts": [
+            "4000～5678 字",
+            "本文叙事始终以主角的“我”为第一人称镜头",
+            "剧情风格：冷硬黑色"
+          ]
+        },
+        "rows": [
+          {
+            "code": "invalid_output",
+            "rule": "narrative_short",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          },
+          {
+            "code": "output_limit",
+            "preserved": true
+          },
+          {
+            "code": "content_filter",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "tag_missing",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          }
+        ],
+        "revisionUnchanged": true,
+        "committed": null
+      },
+      {
+        "project": "desktop",
+        "mode": "独立防截断",
+        "upstreamCalls": 6,
+        "commonWireFields": {
+          "nativeRange": true,
+          "nativePerspective": true,
+          "nativeStyle": true,
+          "presetRange": false,
+          "gameProtocol": true,
+          "tools": [
+            "wave_context_reference",
+            "actual_content"
+          ],
+          "model": "mock-literature",
+          "maxOutput": 8192,
+          "matchedExcerpts": [
+            "4000～5678 字",
+            "本文叙事始终以主角的“我”为第一人称镜头",
+            "剧情风格：冷硬黑色"
+          ]
+        },
+        "rows": [
+          {
+            "code": "invalid_output",
+            "rule": "narrative_short",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          },
+          {
+            "code": "output_limit",
+            "preserved": true
+          },
+          {
+            "code": "content_filter",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "tag_missing",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          }
+        ],
+        "revisionUnchanged": true,
+        "committed": null
+      },
+      {
+        "project": "desktop",
+        "mode": "文学预设",
+        "upstreamCalls": 6,
+        "commonWireFields": {
+          "nativeRange": false,
+          "nativePerspective": false,
+          "nativeStyle": false,
+          "presetRange": true,
+          "gameProtocol": true,
+          "tools": [
+            "wave_context_reference",
+            "actual_content"
+          ],
+          "model": "mock-literature",
+          "maxOutput": 8192,
+          "matchedExcerpts": [
+            "800至1000字"
+          ]
+        },
+        "rows": [
+          {
+            "saved": "林舟核对笔记，留在车站等车。",
+            "source": "preset"
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          },
+          {
+            "code": "output_limit",
+            "preserved": true
+          },
+          {
+            "code": "content_filter",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "tag_missing",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          }
+        ],
+        "revisionUnchanged": true,
+        "committed": {
+          "narrative": "林舟核对笔记，留在车站等车。",
+          "advanced": 1,
+          "replayed": false
+        }
+      },
+      {
+        "project": "mobile",
+        "mode": "原生",
+        "upstreamCalls": 6,
+        "commonWireFields": {
+          "nativeRange": true,
+          "nativePerspective": true,
+          "nativeStyle": true,
+          "presetRange": false,
+          "gameProtocol": true,
+          "tools": [],
+          "model": "mock-literature",
+          "maxOutput": 8192,
+          "matchedExcerpts": [
+            "4000～5678 字",
+            "本文叙事始终以主角的“我”为第一人称镜头",
+            "剧情风格：冷硬黑色"
+          ]
+        },
+        "rows": [
+          {
+            "code": "invalid_output",
+            "rule": "narrative_short",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          },
+          {
+            "code": "output_limit",
+            "preserved": true
+          },
+          {
+            "code": "content_filter",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "tag_missing",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          }
+        ],
+        "revisionUnchanged": true,
+        "committed": null
+      },
+      {
+        "project": "mobile",
+        "mode": "独立防截断",
+        "upstreamCalls": 6,
+        "commonWireFields": {
+          "nativeRange": true,
+          "nativePerspective": true,
+          "nativeStyle": true,
+          "presetRange": false,
+          "gameProtocol": true,
+          "tools": [
+            "wave_context_reference",
+            "actual_content"
+          ],
+          "model": "mock-literature",
+          "maxOutput": 8192,
+          "matchedExcerpts": [
+            "4000～5678 字",
+            "本文叙事始终以主角的“我”为第一人称镜头",
+            "剧情风格：冷硬黑色"
+          ]
+        },
+        "rows": [
+          {
+            "code": "invalid_output",
+            "rule": "narrative_short",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          },
+          {
+            "code": "output_limit",
+            "preserved": true
+          },
+          {
+            "code": "content_filter",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "tag_missing",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          }
+        ],
+        "revisionUnchanged": true,
+        "committed": null
+      },
+      {
+        "project": "mobile",
+        "mode": "文学预设",
+        "upstreamCalls": 6,
+        "commonWireFields": {
+          "nativeRange": false,
+          "nativePerspective": false,
+          "nativeStyle": false,
+          "presetRange": true,
+          "gameProtocol": true,
+          "tools": [
+            "wave_context_reference",
+            "actual_content"
+          ],
+          "model": "mock-literature",
+          "maxOutput": 8192,
+          "matchedExcerpts": [
+            "800至1000字"
+          ]
+        },
+        "rows": [
+          {
+            "saved": "林舟核对笔记，留在车站等车。",
+            "source": "preset"
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          },
+          {
+            "code": "output_limit",
+            "preserved": true
+          },
+          {
+            "code": "content_filter",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "tag_missing",
+            "preserved": true
+          },
+          {
+            "code": "invalid_output",
+            "rule": "narrative_empty",
+            "preserved": true
+          }
+        ],
+        "revisionUnchanged": true,
+        "committed": {
+          "narrative": "林舟核对笔记，留在车站等车。",
+          "advanced": 1,
+          "replayed": false
+        }
+      }
+    ]
+  }
+}

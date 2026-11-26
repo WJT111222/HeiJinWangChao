@@ -830,7 +830,7 @@ export class SaveRepository {
   // StoryStage holds the browser execution lock. This transaction only replaces the
   // selected draft after the full CAS and eligibility check, and never writes GameState.
   async saveRecoveredStory(basedOn: TurnDraft, story: NonNullable<TurnDraft['story']>,
-    selection: LegacyNotificationSelection, signal?: AbortSignal): Promise<TurnDraft> {
+    selection: LegacyNotificationSelection, signal?: AbortSignal, writing?: TurnDraft['storyWriting']): Promise<TurnDraft> {
     const base = TurnDraftSchema.parse(basedOn);
     return transaction(this.database, ['saves','drafts'], 'readwrite', async tx => {
       const state = await readStoredState(tx,base.saveId);
@@ -838,7 +838,7 @@ export class SaveRepository {
       const current = TurnDraftSchema.parse(await request(store.get(base.saveId)));
       requireData(fingerprint(current) === fingerprint(base), 'DRAFT_CONFLICT', '草稿已被其他操作更新');
       const recovery = authorizeLegacyNotificationRecovery(state,current,selection);
-      const replacement = rerollStory(current,story);
+      const replacement = rerollStory(current,story,writing);
       validateRecoveredStory(state,current.story!,replacement.story!,recovery);
       validateDraftUpdate(current,replacement);
       const next = TurnDraftSchema.parse({ ...replacement, legacyNotificationRecovery:recovery });

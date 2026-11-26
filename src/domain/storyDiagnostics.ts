@@ -5,7 +5,7 @@ export const storyRuleNames = {
   structure_unrecognized: '正文输出结构无法识别，可检查本页临时模型原文',
   tag_missing: '缺少必需的结构标签', tag_unclosed: '结构标签未闭合', tag_order: '结构标签顺序错误',
   tag_nested: '区块内出现重复或嵌套的保留标签', tag_unexpected: '出现当前设置不允许的结构标签',
-  planning_empty: '正文规划区块为空', narrative_short: '正文长度不足', summary_empty: '<短期记忆> 内容为空',
+  planning_empty: '正文规划区块为空', narrative_empty: '正文没有可见内容', narrative_short: '正文长度不足', summary_empty: '<短期记忆> 内容为空',
   guide_json: '<变量规划> 不是合法 JSON，解析失败', story_schema: '正文字段未通过 Schema 校验',
   guide_reference_limit: '需保留的普通变量参考超过容量限制',
   actions_count: '行动选项数量不符合要求',

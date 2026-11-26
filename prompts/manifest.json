@@ -243,7 +243,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 3351,
+      "characters": 3433,
       "version": "1.0.0-world-freedom-story-tags",
       "messageRole": "system",
       "activation": "always",
@@ -253,7 +253,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "cbbfdc67f8547a110f850c9f19ae5302a12201b482d78a177c5053573ffe4adb",
+      "contentSha256": "7356e2fac5d8c21a607e6603f44a33ef67e549b52bb266f8a12f9adbb02ed27d",
       "placeholders": [
         "minNarrativeChars"
       ]

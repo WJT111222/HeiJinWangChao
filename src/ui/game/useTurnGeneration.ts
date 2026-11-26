@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import type { LegacyContinuationConsent } from '../../workflows/legacyContinuation';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { TurnDraft } from '../../domain/drafts';
 import { readAiConfig } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
@@ -11,7 +12,7 @@ import type { Settings } from '../settings/model';
 import type { RuntimeLogReporter } from './runtimeLog';
 import { generateAndSettleTurn } from '../../workflows/automaticTurn';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
-import { AiError } from '../../services/ai/errors';
+import { AiError, isContinuationDeliveryUnknown } from '../../services/ai/errors';
 import { readFailureDiagnostic } from '../../services/ai/failureDiagnostic';
 import { chimeForFailure, chimeForTurn, chimeIfWanted, primeChime } from './completionChime';
 
@@ -43,16 +44,18 @@ export function useTurnGeneration(
   const latestSettings = useRef(settings);
   latestSettings.current = settings;
   const chimeMode = () => latestSettings.current.notifications.completionChime;
-  useEffect(
-    () => () => {
+  const mounted = useRef(false);
+  useLayoutEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
       token.current++;
       runner.dispose();
       clearTimeout(timer.current);
-    },
-    [runner],
-  );
-  async function generate(expected = draft) {
-    if (!expected || active.current) return;
+    };
+  }, [runner]);
+  async function generate(expected = draft, consent?: LegacyContinuationConsent) {
+    if (!mounted.current || !expected || active.current) return;
     active.current = true;
     // 开始生成多由玩家点击触发：此时启用声音，之后异步完成才能出声；关闭提示音时不初始化音频。
     primeChime(chimeMode());
@@ -69,7 +72,7 @@ export function useTurnGeneration(
     let reported: unknown;
     try {
       const result = await generateAndSettleTurn(runner, repository, {
-        draft: expected,
+        draft: expected, consent,
         settings,
         companionProfile,
         config: readAiConfig(localStorage),
@@ -126,6 +129,7 @@ export function useTurnGeneration(
           `${stage ? { story: '正文生成', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', commit: '正式结算' }[stage] + '：' : ''}${storyError(failure)}`,
         );
         chimeIfWanted(chimeMode(), chimeForFailure(failure));
+        if (consent && (!consent.sent || isContinuationDeliveryUnknown(failure))) return storyError(failure);
       }
     } finally {
       if (token.current === id) {

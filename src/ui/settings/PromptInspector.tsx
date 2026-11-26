@@ -1,3 +1,4 @@
+import { nativeLiteraryModule, storyModuleText } from '../../prompts/literaryStory';
 import { narrativeRange } from './model';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { promptManifest } from '../../prompts/manifest';
@@ -69,7 +70,8 @@ const switchFields = ['noControl', 'naturalProse', 'actionOptions', 'realWorld']
 type SwitchField = (typeof switchFields)[number];
 type PromptSettings = Settings['prompts'];
 /* 状态只看 manifest 和当前写作偏好，不依赖「高级」里选的阶段与模式。 */
-function moduleState(item: PromptModule, prompts: PromptSettings): { kind: 'switch'; field: SwitchField } | { kind: 'always' | 'ondemand' | 'never' | 'current' | 'unused'; label: string } {
+function moduleState(item: PromptModule, prompts: PromptSettings, presetOwnsWriting: boolean): { kind: 'switch'; field: SwitchField } | { kind: 'always' | 'ondemand' | 'never' | 'current' | 'unused'; label: string } {
+  if (presetOwnsWriting && nativeLiteraryModule(item.id)) return { kind: 'unused', label: '由当前文学预设接管' };
   if (item.toggle) {
     const [field, value] = item.toggle.split(':');
     if ((switchFields as readonly string[]).includes(field)) return { kind: 'switch', field: field as SwitchField };
@@ -125,13 +127,14 @@ function configuration() {
   }
 }
 export function PromptInspector({
-  settings,
+  settings, presetOwnsWriting = false,
   repository,
   activeSaveId,
   onPromptChange,
   onTheaterPromptChange,
 }: {
   settings: Settings;
+  presetOwnsWriting?: boolean;
   repository?: SaveRepository;
   activeSaveId?: string;
   onTheaterPromptChange?: (value?: string) => void;
@@ -224,7 +227,8 @@ export function PromptInspector({
     readPromptResource(moduleId)
       .then((text) => {
         if (!disposed) {
-          setSource(text);
+          const selected = promptManifest.modules.find(item => item.id === moduleId);
+          setSource(selected ? storyModuleText(selected, text, presetOwnsWriting) ?? text : text);
           setSourceModuleId(moduleId);
         }
       })
@@ -234,7 +238,7 @@ export function PromptInspector({
     return () => {
       disposed = true;
     };
-  }, [moduleId]);
+  }, [moduleId, presetOwnsWriting]);
   function invalidate() {
     generation.current++;
     setPreviews({});
@@ -347,7 +351,7 @@ export function PromptInspector({
     setPage('read');
   }
   function control(item: PromptModule) {
-    const state = moduleState(item, settings.prompts);
+    const state = moduleState(item, settings.prompts, presetOwnsWriting);
     if (state.kind === 'switch') {
       const checked = settings.prompts[state.field];
       return (
@@ -364,7 +368,7 @@ export function PromptInspector({
     return <span className={`pm-state ${state.kind}`}>{state.label}</span>;
   }
   const effectiveOn = (item: PromptModule) => {
-    const state = moduleState(item, settings.prompts);
+    const state = moduleState(item, settings.prompts, presetOwnsWriting);
     return state.kind === 'switch' ? settings.prompts[state.field] : state.kind !== 'never' && state.kind !== 'unused';
   };
   const meta = (item: PromptModule) =>
@@ -375,7 +379,7 @@ export function PromptInspector({
     ]
       .filter(Boolean)
       .join(' · ');
-  const currentState = module ? moduleState(module, settings.prompts) : undefined;
+  const currentState = module ? moduleState(module, settings.prompts, presetOwnsWriting) : undefined;
   const variableFormats = variable
     ? (['json', 'text'] as const).filter((format) => {
         const target = variableModule(variable.domain, variable.part, format);
@@ -537,7 +541,7 @@ export function PromptInspector({
             )}
             <p className="pm-when">
               <b>什么时候用</b>
-              <span>{usage(module)}</span>
+              <span>{presetOwnsWriting && nativeLiteraryModule(module.id) ? '原生写作要求已停用，当前使用预设控制台中的文学选项。' : usage(module)}</span>
             </p>
             {currentState?.kind === 'switch' && (
               <label className="pm-when pm-toggle">

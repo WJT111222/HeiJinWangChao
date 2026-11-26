@@ -40,7 +40,7 @@ describe('逐回合事实摘要：100～200汉字质量目标，不机械截断�
   });
   it.each(['opening', 'regular'] as const)('%s 的共享正文协议包含同次请求目标，六套主提示词保持独立', async (mode) => {
     const prompt = await composePrompt({ stage: 'story', mode, state: game(), settings, userInput: '' });
-    const protocol = (await readPromptResource('shared.06_story_output')).replace('{{minNarrativeChars}}', '1');
+    const protocol = (await readPromptResource('shared.06_story_output')).replace(/<!--\/?native-length-->/gu, '').replace('{{minNarrativeChars}}', '1');
     expect(prompt.messages).toContainEqual({ role: 'system', content: protocol });
     expect(protocol.replace(/\s/g, '')).toContain('目标约100～200汉字');
     expect(protocol).toContain('同一次正文生成请求');

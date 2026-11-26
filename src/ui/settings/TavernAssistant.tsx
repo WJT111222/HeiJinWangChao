@@ -22,7 +22,7 @@ export function ScriptButtons() {
 function storedMode() {
   try { return storyMode(readPresetSettings()) ?? ''; } catch { return undefined; }
 }
-function listenForMode(change: () => void) {
+export function listenForMode(change: () => void) {
   const listener = (event: StorageEvent) => {
     if (event.storageArea === localStorage && (event.key === presetSettingsKey || event.key === null)) change();
   };
