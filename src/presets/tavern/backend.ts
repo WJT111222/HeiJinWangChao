@@ -32,7 +32,6 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
         const wire = tavernWire(snapshot, await request.json(), nativeReference, playerWorldbook);
         actual.throwIfAborted();
         trace.requestedStream = wire.stream;
-        trace.calls++;
         const response = await send(wire, actual);
         return await normalizeUpstream(response, snapshot.channel.protocol, wire.stream, actual, trace,
           nativeReference === undefined ? undefined : nativeOutputTool);

@@ -2,7 +2,7 @@ import type { AiMessage } from '../services/ai/protocols';
 import { isCustomCityId, normalizeOpeningCity, openingCities, openingCityIdentity } from '../domain/openingCity';
 import { contextMessage, worldWeekday, type ComposeInput } from '../prompts/context';
 import type { sharedContext } from '../prompts/sharedContext';
-import type { StoryMaterials } from './messages';
+import type { StoryMaterials, MaterialSlot } from './messages';
 
 export function storyMaterials(
   input: ComposeInput,
@@ -69,6 +69,6 @@ export function storyMaterials(
         companion: creation?.companion,
       }),
       worldInfoAfter: long.length ? contextMessage({ long }) : '',
-    },
+    } satisfies Record<MaterialSlot, string>,
   };
 }

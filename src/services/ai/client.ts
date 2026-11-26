@@ -35,6 +35,8 @@ import type { RawResponseObservation, ResponseDiagnostics } from './responseCont
 import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, classifyUpstreamPayload, diagnosticSecrets, failurePhase } from './failureDiagnostic';
 
 export interface RequestOptions {
+  /** One-use dispatch gate for an explicitly confirmed, uncredited Story fragment. */
+  dispatch?: (send: () => Promise<Response>, signal: AbortSignal) => Promise<Response>;
   storyClock?: import('../../presets/tavern/timing').StoryClock;
   presetSampling?: Sampling;
   tavernType?: GenerationType;
@@ -329,8 +331,12 @@ export class AiClient {
           diagnostics = wire.diagnostics;
           try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
           catch { /* Inspection cannot affect transport. */ }
-          return this.response(wire.url, wire.init, requestSignal, relay, snapshot, observe,
-            wire.presetSamplingInspection !== undefined, trace);
+          const transmit = () => {
+            if (trace) trace.calls++;
+            return this.response(wire.url, wire.init, requestSignal, relay, snapshot, observe,
+              wire.presetSamplingInspection !== undefined, trace);
+          };
+          return options.dispatch ? options.dispatch(transmit, requestSignal) : transmit();
         };
         const playerWorldbook = snapshot.stage === 'story' ? options.playerWorldbook : undefined;
         const response = trace && cleanup && options.tavernType

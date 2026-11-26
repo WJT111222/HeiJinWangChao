@@ -1,3 +1,4 @@
+import { seedLegacyWriting } from './helpers/legacy-writing';
 import { expect, test } from './helpers/test';
 import native from './fixtures/story-writing/v10-native.json' with { type: 'json' };
 import preset from './fixtures/story-writing/v10-preset.json' with { type: 'json' };
@@ -19,33 +20,7 @@ for (const fixture of [native, preset]) {
           : '车门轻轻关上。</正文><短期记忆>候车后上车。</短期记忆><变量规划>[]</变量规划>';
         await route.fulfill({json:{choices:[{message:{content},finish_reason:firstContinuation ? 'length' : 'stop'}]}});
       });
-      await page.goto('/');
-      const initial = await page.evaluate(async ({draft, selection}) => {
-        const paths = ['/src/services/storage/saveRepository.ts','/src/tests/fixtures/talentPrompt.ts','/src/ui/settings/model.ts',
-          '/src/services/ai/configuration.ts','/src/services/ai/credentials.ts','/src/presets/settings.ts'];
-        const [{SaveRepository},{talentPromptInput},{settingsKey},{defaultAiConfig,newChannel,saveAiConfig},{CredentialVault},{savePresetSettings}]
-          = await Promise.all(paths.map(p => import(p)));
-        const {state,settings} = talentPromptInput('story','regular');
-        settings.runtime.streamStory = false;
-        settings.runtime.useWorldStage = false;
-        settings.runtime.useVariableStage = false;
-        settings.prompts.actionOptions = false;
-        settings.prompts.minNarrativeChars = 5;
-        localStorage.setItem(settingsKey, JSON.stringify(settings));
-        savePresetSettings({enabled:selection === 'preset',selected:'peinture-1118',packages:{}});
-        const channel = newChannel('openai'), config = defaultAiConfig();
-        channel.baseUrl = 'https://legacy.mock.invalid/v1';
-        channel.defaultModel = 'legacy-fixture';
-        config.channels = [channel]; config.routes.story = {channelId:channel.id,modelId:''};
-        saveAiConfig(localStorage, config);
-        new CredentialVault(sessionStorage,localStorage).set(channel.id,'fixture-only');
-        const repo = await SaveRepository.open();
-        try {
-          const pack = {state,draft};
-          await repo.importBackup(pack,(await repo.compareBackup(pack)).confirmation);
-          return {draft:await repo.loadDraft(state.saveId),turn:state.turnNumber};
-        } finally { repo.close(); }
-      }, {draft:fixture.draft,selection});
+      const initial = await seedLegacyWriting(page, fixture.draft, selection);
       expect(initial.draft.storyPartial).toEqual(fixture.draft.storyPartial);
       await page.goto('/#game/save-a');
       await page.reload();

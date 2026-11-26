@@ -1,4 +1,4 @@
-import type { StoryWriting } from '../domain/storyWriting';
+import type { LegacyContinuationConsent } from './legacyContinuation';
 import { nativeDeliveryId } from '../presets/settings';
 import { StoryClock } from '../presets/tavern/timing';
 import { awaitAssistant, assistantStarting, captureAssistantPreferences } from '../presets/tavern/hostState';
@@ -52,7 +52,7 @@ interface StoryInput {
   onFailureSaved?: (draft: TurnDraft) => void;
   /** 从草稿里保存的截断原文接着写（玩家点「续写正文」）。 */
   continuation?: boolean;
-  confirmedWriting?: StoryWriting;
+  consent?: LegacyContinuationConsent;
   legacyNotificationSelection?: LegacyNotificationSelection;
 }
 
@@ -90,7 +90,9 @@ export class StoryStage {
     }
     const selection = input.legacyNotificationSelection && structuredClone(input.legacyNotificationSelection);
     const continuation = Boolean(input.continuation);
-    const confirmedWriting = input.confirmedWriting && structuredClone(input.confirmedWriting);
+    const { consent } = input;
+    consent?.claim(expected);
+    const confirmedWriting = consent?.writing;
     const captureInputs = () => {
       const config = AiConfigSchema.parse(input.config);
       return {
@@ -178,7 +180,7 @@ export class StoryStage {
             stream: streaming, storyClock: clock,
             presetSelection, frozenStoryChannel,
             signal: attempt.signal,
-            ...(continuation ? { continuation: { partial, confirmedWriting } } : {}),
+            ...(continuation ? { continuation: { partial, consent } } : {}),
             onDelta: (delta) => {
               current();
               narrative = pushDelta(delta);
@@ -251,7 +253,7 @@ export class StoryStage {
           ...(!saving && clock ? { validationEndMs: clock.elapsed() } : {}), normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
         // An unsuccessful explicit rewrite of an uncredited V10 fragment must leave its only copy intact.
         const keepLegacyPartial = !continuation && draft.storyPartial && !draft.storyPartial.writing;
-        if (!recovery && !keepLegacyPartial && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled'
+        if ((!consent || consent.sent) && !recovery && !keepLegacyPartial && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled'
           && !(draft.story && error.details?.storyRule === 'narrative_empty')) {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)

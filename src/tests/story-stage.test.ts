@@ -815,19 +815,46 @@ it('旧断点未确认或配置变化时零请求；确认后保存候选并标�
   const stage = runner(transport);
   const input = {...fixture,draft:old,continuation:true};
   await expect(stage.generate(input)).rejects.toMatchObject({details:{fieldPath:'tavern.writing_unknown'}});
-  const { captureStoryWriting } = await import('../presets/library');
-  const confirmedWriting = await captureStoryWriting(null,fixture.settings.prompts);
+  const { prepareLegacyContinuation } = await import('../workflows/legacyContinuation');
+  const offer = () => prepareLegacyContinuation(old,repo,() => fixture.settings.prompts,() => true);
+  const consent = (await offer()).confirm();
   fixture.settings.prompts.minNarrativeChars += 1;
-  await expect(stage.generate({...input,confirmedWriting})).rejects.toMatchObject({details:{fieldPath:'tavern.writing_changed'}});
+  await expect(stage.generate({...input,consent})).rejects.toMatchObject({details:{fieldPath:'tavern.writing_changed'}});
   expect(transport).not.toHaveBeenCalled();
   expect(await repo.loadDraft(old.saveId)).toEqual(old);
   expect(await repo.load(old.saveId)).toEqual(before);
   fixture.settings.prompts.minNarrativeChars -= 1;
   fixture.settings.runtime.streamStory = false;
   transport.mockResolvedValueOnce(Response.json({choices:[{message:{content:output().split('<正文>')[1]},finish_reason:'stop'}]}));
-  const completed = await stage.generate({...input,confirmedWriting});
+  const approved = (await offer()).confirm();
+  const completed = await stage.generate({...input,consent:approved});
   expect(completed.story?.narrative).toBe(old.storyPartial!.text.slice('<正文>'.length) + narrative);
-  expect((await repo.loadDraft(old.saveId))?.storyWriting).toEqual({...confirmedWriting,prefixSource:'unknown'});
+  expect((await repo.loadDraft(old.saveId))?.storyWriting).toEqual({...approved.writing,prefixSource:'unknown'});
   expect(transport).toHaveBeenCalledTimes(1);
   expect(await repo.load(old.saveId)).toEqual(before);
+});
+
+it('旧断点确认仅可领取一次，草稿、页面或设置失效时不能开始传输', async () => {
+  const fixture = setup();
+  const old = await repo.saveDraft({...draft, draftRevision:draft.draftRevision+1,
+    stageStatus:{...draft.stageStatus,story:'failed'},storyPartial:{text:'<正文>合成站台。',storyRevision:draft.storyRevision,continuations:0}},
+    draft.draftRevision);
+  const {prepareLegacyContinuation} = await import('../workflows/legacyContinuation');
+  let active = true;
+  const offer = await prepareLegacyContinuation(old,repo,()=>fixture.settings.prompts,()=>active);
+  const permit = offer.confirm();
+  expect(()=>offer.confirm()).toThrow();
+  for (const changes of [{saveId:'other'},{turnId:'other'},{baseSaveRevision:10},{storyRevision:10},{draftRevision:10},
+    {storyPartial:{...old.storyPartial,text:'<正文>另一段。'}}]) {
+    expect(()=>permit.check({...old,...changes} as typeof old)).toThrow();
+  }
+  permit.claim(old);
+  expect(()=>permit.claim(old)).toThrow();
+  const send = vi.fn(async()=>Response.json({}));
+  active = false;
+  await expect(permit.dispatch(send,new AbortController().signal)).rejects.toMatchObject({details:{fieldPath:'tavern.confirmation_expired'}});
+  active = true;
+  await expect(permit.dispatch(send,new AbortController().signal)).rejects.toMatchObject({details:{fieldPath:'tavern.confirmation_expired'}});
+  expect(send).not.toHaveBeenCalled();
+  expect(await repo.loadDraft(old.saveId)).toEqual(old);
 });

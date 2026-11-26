@@ -70,3 +70,32 @@ it('有效文学指纹覆盖启用的有序内容及脚本配置；默认、显�
   expect(await canResumeWriting({...initial,version:'other'},initial,selected)).toBe(false);
   expect(await canResumeWriting({...initial,id:'other'},initial,selected)).toBe(false);
 });
+
+it('v2 摘要需要当前配置或发行默认值作为见证，重新保存使用 v3', async () => {
+  const previous = {source:'preset' as const,id:selected.definition.id,version:selected.definition.version,
+    configurationVersion:2 as const,configuration:'0c1b84c5f36d3e8fb04d6ac354b592322af7a203563fb6acd8b7a8f99dd6d618'};
+  const loaded = await resolveStoryPreset(selected);
+  const overrides = emptyOverride(loaded);
+  overrides.entries.chatHistory = {content:'旧版本会计入的占位文本'};
+  overrides.entries.worldInfoAfter = {content:'实际由长期记忆替换'};
+  const edited = {...selected,overrides}, current = await captureStoryWriting(edited,settings.prompts);
+  expect(current).toMatchObject({configurationVersion:3});
+  expect(await canResumeWriting(previous,current,edited)).toBe(true);
+  expect(await canResumeWriting({...previous,configuration:'0'.repeat(64)},current,edited)).toBe(false);
+  const different = {...selected,overrides:toggleEntry(loaded,overrides,'wave-pace-fast',true)};
+  expect(await canResumeWriting(previous,await captureStoryWriting(different,settings.prompts),different)).toBe(false);
+});
+
+it('有效字段投影保留角色和绝对插入语义，历史槽不读取位置、角色或文本', async () => {
+  const { literaryEntry } = await import('../presets/messages');
+  const loaded = await resolveStoryPreset(selected);
+  const history = loaded.entries.find(row=>row.identifier==='chatHistory')!;
+  const material = loaded.entries.find(row=>row.identifier==='worldInfoBefore')!;
+  expect(literaryEntry({...history,role:'assistant',content:'任意占位',injection_position:1})).toEqual(literaryEntry(history));
+  expect(literaryEntry({...material,content:'被替换'})).toEqual(literaryEntry(material));
+  expect(literaryEntry({...material,role:'user'})).not.toEqual(literaryEntry({...material,role:'system'}));
+  const absolute = {...material,injection_position:1 as const};
+  expect(literaryEntry({...absolute,injection_depth:12})).not.toEqual(literaryEntry({...absolute,injection_depth:13}));
+  expect(literaryEntry({...absolute,injection_order:7})).not.toEqual(literaryEntry({...absolute,injection_order:9}));
+  expect(literaryEntry(absolute)).not.toEqual(literaryEntry({...material,injection_position:0}));
+});

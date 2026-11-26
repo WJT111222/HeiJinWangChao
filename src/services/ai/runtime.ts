@@ -9,6 +9,7 @@ import { nativeDeliveryId } from '../../presets/settings';
 import { captureStoryWriting, canResumeWriting, type AssistantSelection } from '../../presets/library';
 import { parsePartialVariables, parsePartialWorld } from '../validation/partialOutputs';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
+import type { LegacyContinuationConsent } from '../../workflows/legacyContinuation';
 import type { StoryWriting } from '../../domain/storyWriting';
 import { DataError } from '../../domain/common';
 import { historicalPerspective } from '../../domain/timePreflight';
@@ -37,7 +38,7 @@ import type { StoryFailureText } from '../../domain/storyContinuation';
 import { splitLeadingThink } from './compat';
 
 /** 正文续写：已写出的截断原文（已隐藏凭证）。只用于正文阶段。 */
-export interface StageRequestOptions extends Omit<RequestOptions, 'tavernType' | 'playerWorldbook'> { frozenStoryChannel?: RequestSnapshot; presetSelection?: AssistantSelection; continuation?: { partial: string; confirmedWriting?: StoryWriting } }
+export interface StageRequestOptions extends Omit<RequestOptions, 'tavernType' | 'playerWorldbook'> { frozenStoryChannel?: RequestSnapshot; presetSelection?: AssistantSelection; continuation?: { partial: string; consent?: LegacyContinuationConsent } }
 /**
  * 正文请求失败时收到的内容（去掉前导 <think> 推理；续写时为与已写部分拼接后的全文），供上层保存为可续写的截断正文。
  * 以失败对象为键，不进入错误消息或诊断展示。
@@ -78,9 +79,9 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   if (requestedContinuation && captured.draft?.storyPartial && writing) {
     const previous = captured.draft.storyPartial.writing;
     if (!previous) {
-      if (!requestedContinuation.confirmedWriting)
+      if (!requestedContinuation.consent?.writing)
         throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_unknown' });
-      if (canonicalJson(requestedContinuation.confirmedWriting) !== canonicalJson(writing))
+      if (canonicalJson(requestedContinuation.consent?.writing) !== canonicalJson(writing))
         throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_changed' });
       writing = { ...writing, prefixSource: 'unknown' };
     } else {
@@ -188,6 +189,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const nativeDeliveryReference = presetSelection === nativeDeliveryId ? nativeReferenceRecords(messages) : undefined;
   const responseResult = await client.generate(snapshot, scripted ? await promptReady(messages, false) : messages, {
     ...options,
+    dispatch: requestedContinuation?.consent?.dispatch,
     tavernType: scripted ? type : undefined,
     playerWorldbook,
     presetSampling: prompt.preset?.sampling,

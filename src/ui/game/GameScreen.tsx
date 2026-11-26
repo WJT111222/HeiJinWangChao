@@ -1,5 +1,5 @@
-import { captureStoryWriting } from '../../presets/library';
-import { captureAssistantPreferences } from '../../presets/tavern/hostState';
+import { prepareLegacyContinuation } from '../../workflows/legacyContinuation';
+import { readDocument } from '../../services/local/documents';
 import { continuationMinimum } from '../../domain/storyWriting';
 import { FeedbackCorrelation, linkMemoryFeedback } from '../../services/feedback/report';
 import { assistantView, bindTavernPage, enterTavernChat } from '../../presets/tavern/hostState';
@@ -190,6 +190,18 @@ export function GameScreen({
   const [diagnosticsOpen,setDiagnosticsOpen]=useState(false);
   const [legacyRecoveryDialog,setLegacyRecoveryDialog] = useState<string>();
   const legacyRecoveryOptions = useMemo(() => legacyNotificationRecoveryOptions(state,draft),[state,draft]);
+  const [confirmationError, setConfirmationError] = useState<{ draft: TurnDraft; message: string }>();
+  const confirmation = useRef<symbol | undefined>(undefined);
+  useLayoutEffect(() => {
+    const revoke = () => { confirmation.current = undefined; };
+    window.addEventListener('hashchange', revoke);
+    window.addEventListener('pagehide', revoke);
+    return () => {
+      revoke();
+      window.removeEventListener('hashchange', revoke);
+      window.removeEventListener('pagehide', revoke);
+    };
+  }, [instance, state.saveId, state.revision, draft]);
   const recoveryDraftKey = draft && `${draft.saveId}:${draft.turnId}:${draft.draftRevision}`;
   // 玩家关掉的错误横幅：只记住当时那组错误，出现新的错误时会重新显示。
   const [dismissedError, setDismissedError] = useState('');
@@ -226,7 +238,7 @@ export function GameScreen({
     [],
   );
   const {
-    generate,
+    generate: generateStory,
     cancel,
     progress: manualProgress,
     error,
@@ -464,6 +476,7 @@ export function GameScreen({
   }
   // 「放弃这段」：只清掉没写完的正文，不调用 AI，也不撤回上一回合；原行动留在输入框里。
   async function discardPartial() {
+    confirmation.current = undefined;
     if (!draft?.storyPartial || busy || submitLock.current) return;
     submitLock.current = true;
     const token = submitToken.current;
@@ -670,16 +683,33 @@ export function GameScreen({
           onClick: () => void world.generate(),
         },
   };
+  function generate(...args: Parameters<typeof generateStory>) {
+    confirmation.current = undefined;
+    return generateStory(...args);
+  }
   async function continueWorkflow() {
     if (!draft || busy) return;
     if (storyContinuable && !draft.storyPartial?.writing) {
+      if (confirmation.current) return;
+      const operation = Symbol('legacy continuation');
+      confirmation.current = operation;
+      setConfirmationError(undefined);
+      const route = location.hash;
+      const active = () => confirmation.current === operation && location.hash === route;
       try {
-        const selected = captureAssistantPreferences(false);
-        const writing = await captureStoryWriting(selected, settings.prompts);
+        const offer = await prepareLegacyContinuation(draft, repository,
+          () => (readDocument(localStorage, settingsKey, SettingsSchema) ?? settings).prompts, active);
+        if (!active()) return;
+        const writing = offer.writing;
         const label = writing.source === 'native' ? '王朝原生文学设置' : `${writing.id}（${writing.version}）`;
         if (!window.confirm(`旧版断点没有记录文学来源。保留已写内容，使用${label}续写？仅新续写部分使用此来源。取消可继续阅读、复制或重新生成。`)) return;
-        await automatic.generate(draft, writing);
-      } catch { setSubmitError('当前文学设置无法读取。已写内容仍可阅读或复制。'); }
+        const failure = await automatic.generate(draft, offer.confirm());
+        if (active() && failure) setConfirmationError({draft, message:failure});
+      } catch (error) {
+        if (active()) setConfirmationError({draft, message:storyError(error)});
+      } finally {
+        if (active()) confirmation.current = undefined;
+      }
       return;
     }
     await automatic.generate(draft);
@@ -928,7 +958,7 @@ export function GameScreen({
                 : partialBlock === 'closed_short'
                   ? `正文已结束但只有 ${partialCount?.chars ?? 0} 字，低于最低 ${partialMinimum} 字，续写无法补足 · 可复制已写内容，按「发送」重新生成`
                   : !draft?.storyPartial?.writing
-                    ? '旧版断点的文学来源未知。点「续写正文」确认新续写的来源，也可保留行动并重新生成正文。'
+                    ? (confirmationError && confirmationError.draft === draft ? confirmationError.message : undefined) ?? '旧版断点的文学来源未知。点「续写正文」确认新续写的来源，也可保留行动并重新生成正文。'
                   : partialCount?.closed
                     ? '正文已写完，只差结尾的记录标签 · 点「续写正文」补齐，或按「发送」重新生成'
                     : '正文未写完 · 点「续写正文」从断点接着写，或按「发送」重新生成'}</span>
