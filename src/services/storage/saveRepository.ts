@@ -1,6 +1,7 @@
+import { BookCache, bookStore } from './bookCache';
 import { oracleStore, createOracleStore, readSheet, writeSheet, rememberPaper, consumeOracleNote } from './oracleNotes';
 import { validatePendingChat } from '../../domain/phone';
-import { ChatExchange, freezeChat, restoreChat } from '../../domain/phoneChat';
+import { PhoneOperation, isPrivate, freezeChat, restoreChat } from '../../domain/phoneChat';
 import { withWorldbookLibrary, restoreWorldview, worldviewDigest, missingWorldview, storySourceHash, type StoryWorldview } from '../worldbook/mainWorldview';
 import { HistoryRepository } from './history/repository';
 import { clearManualHistory, historyStores } from './history/model';
@@ -53,7 +54,8 @@ import type { BackupEntry } from './backup';
 // V10 closes older writers before they encounter populated phone conversations in a V11 save.
 // V11 closes V10 writers before private-chat drafts and undo snapshots are saved.
 // V12 separates local literary notes by save.
-export const saveDatabaseVersion = 12;
+// V13 isolates older writers before group operations enter drafts and undo snapshots.
+export const saveDatabaseVersion = 13;
 
 declare const confirmationBrand: unique symbol;
 /**
@@ -210,6 +212,7 @@ async function deleteRecords(tx: IDBTransaction, key: IDBValidKey): Promise<void
   for (const receiptKey of keys) await request(receipts.delete(receiptKey));
   await clearUndoRecords(tx, key);
   await request(tx.objectStore(oracleStore).delete(key));
+  await request(tx.objectStore(bookStore).delete(IDBKeyRange.bound([key],[key,[]])));
   await request(tx.objectStore('saveControls').delete(key));
   await request(tx.objectStore('saves').delete(key));
 }
@@ -257,9 +260,11 @@ async function publishStoryOrigin(tx: IDBTransaction, saveId: string, lease: Sto
 
 export class SaveRepository {
   readonly history: HistoryRepository;
+  readonly books: BookCache;
   readonly images: ImageLibrary;
   readonly theaters: TheaterRepository;
   private constructor(private readonly database: IDBDatabase, readonly upgradedFrom?: number) {
+    this.books = new BookCache(database);
     this.images = new ImageLibrary(database);
     this.history = new HistoryRepository(database);
     this.theaters = new TheaterRepository(database, readState);
@@ -292,6 +297,7 @@ export class SaveRepository {
         if (!db.objectStoreNames.contains('turnUndo'))
           db.createObjectStore('turnUndo', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
         if (!db.objectStoreNames.contains('saveControls')) db.createObjectStore('saveControls', { keyPath: 'saveId' });
+        if (!db.objectStoreNames.contains(bookStore)) db.createObjectStore(bookStore);
         if (!db.objectStoreNames.contains(oracleStore)) createOracleStore(db, tx);
         if (!db.objectStoreNames.contains('turnReceipts'))
           db.createObjectStore('turnReceipts', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
@@ -744,7 +750,7 @@ export class SaveRepository {
     const session = reserveStageSession(state.saveId);
     try {
       const result = await withBrowserLock(state.saveId, async () => {
-        const imported = await transaction(this.database, [...timelineStores, oracleStore, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async (tx) => {
+        const imported = await transaction(this.database, [...timelineStores, oracleStore, bookStore, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async (tx) => {
           session.check();
           const current = await readSnapshot(tx, state.saveId);
           requireData(sameSnapshot(current, confirmed.snapshot), 'IMPORT_CONFLICT',
@@ -783,7 +789,7 @@ export class SaveRepository {
   // Recheck within the write transaction: never delete a record that has become readable.
   async deleteUnreadable(storageKey: IDBValidKey): Promise<void> {
     requireData(storageKey !== undefined && storageKey !== null, 'INVALID_KEY', '未选择存档记录');
-    await transaction(this.database, [...timelineStores, oracleStore, ...historyStores, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async tx => {
+    await transaction(this.database, [...timelineStores, oracleStore, bookStore, ...historyStores, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async tx => {
       const records = await rawRecords(tx.objectStore('saves'), storageKey);
       requireData(records.length === 1, 'NOT_FOUND', '此存档已不存在，请刷新列表。');
       requireData(listRecord(storageKey, records[0].value).status === 'unreadable', 'SAVE_READABLE', '此存档现在可以读取，请刷新列表后重新选择。');
@@ -956,7 +962,7 @@ export class SaveRepository {
     // Deletion may interrupt an active stage. Cleanup only the immutable keys observed
     // before deletion, even if another tab immediately recreates the same save.
     const keys = await withWorldbookLibrary(lib => lib.worldviewKeys(saveId, this.database.name)).catch(() => []);
-    await transaction(this.database, [...timelineStores, oracleStore, ...historyStores, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async (tx) => {
+    await transaction(this.database, [...timelineStores, oracleStore, bookStore, ...historyStores, ...theaterStores, theaterVersionStore,...imageStores], 'readwrite', async (tx) => {
       const current = await readStoredState(tx, saveId);
       requireData(await storedInstance(tx, saveId) === expectedInstance, 'REVISION_CONFLICT', replacedMessage);
       requireData(current.revision === expectedRevision && (current.npcManagementRevision ?? 0) === expectedManagementRevision,
@@ -973,8 +979,8 @@ export class SaveRepository {
   }
 
   /** Called under the same execution lock as Story. The IDB CAS also rejects a replaced save or stale reply. */
-  async appendPhoneExchange(state: GameState, basedOn: TurnDraft | undefined, instance: string | null, value: ChatExchange, signal: AbortSignal) {
-    const exchange = ChatExchange.parse(value);
+  async appendPhoneExchange(state: GameState, basedOn: TurnDraft | undefined, instance: string | null, value: PhoneOperation, signal: AbortSignal) {
+    const exchange = PhoneOperation.parse(value);
     return transaction(this.database, ['saves','drafts','saveControls'], 'readwrite', async tx => {
       const current = await readStoredState(tx, state.saveId);
       const store = tx.objectStore('drafts');
@@ -983,12 +989,15 @@ export class SaveRepository {
       requireData(await storedInstance(tx,state.saveId) === instance && current.revision === state.revision &&
         current.npcManagementRevision === state.npcManagementRevision && fingerprint(draft) === fingerprint(basedOn),
         'DRAFT_CONFLICT','存档或待结算聊天已变化，请重新读取');
+      const contacts = isPrivate(exchange) ? [exchange.reply.npcId]
+        : 'invitees' in exchange.action ? exchange.action.invitees : [];
       requireData(current.turnNumber > 0 && (!draft || awaitingPlayerAction(current,draft)) &&
-        current.npc[exchange.reply.npcId]?.phoneContact?.status === 'known' &&
+        contacts.every(id => current.npc[id]?.phoneContact?.status === 'known') &&
         exchange.baseTurnId === current.journal.at(-1)?.turnId && exchange.at === current.worldClock,
         'PHONE_TARGET','当前回合或号码不能发送消息');
       const next = TurnDraftSchema.parse({ ...(draft ?? createTurnDraft(state.saveId,state.revision,'turn-'+crypto.randomUUID(),'regular','')),
         draftRevision:(draft?.draftRevision ?? 0)+1, phonePending:[...(draft?.phonePending ?? []),exchange] });
+      validatePendingChat(current,next);
       await request(store.put(next));
       return next;
     }, signal);

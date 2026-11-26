@@ -337,3 +337,29 @@
 .ph-system { align-self:center; border-radius:5px; background:var(--os-card); padding:4px 10px }
 .ph-warning { color:var(--warning) }
 .ph-note time { margin-inline-start:6px; font-size:11px; color:var(--muted); white-space:nowrap }
+
+.ph-invite label { display:flex; align-items:center; gap:.6rem; min-height:44px; }
+.ph-invite input:not([type=checkbox]) { min-width:0; flex:1; }
+.ph-members,.ph-feed { padding:.8rem; }
+.ph-members,.ph-feed small { color:var(--muted); }
+.ph-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.6rem; align-items:start; }
+.ph-cards button { min-width:0; overflow:hidden; border:1px solid var(--line); border-radius:.7rem; padding:0; text-align:left; background:var(--os-card); }
+.ph-cards span,.ph-cards small,.ph-feed li small { display:block; padding:.35rem .5rem; }
+.ph-cover { display:grid; align-items:end; min-height:5rem; margin:0; padding:.7rem; font:600 1.1rem var(--font-title); color:white; }
+.ph-feed article .ph-cover { min-height:8rem; }
+.ph-post-body,.ph-comment p { white-space:pre-wrap; overflow-wrap:anywhere; }
+.ph-comment { border-inline-start:1px solid var(--line); padding:.45rem .65rem; margin:.4rem 0; }
+.ph-feed button,.ph-invite button { min-height:44px; }
+.ph-feed button[aria-pressed=true] { color:var(--gold); }
+.ph-skeleton { height:85px; background:linear-gradient(100deg,var(--os-card) 25%,var(--surface) 45%,var(--os-card) 65%); background-size:200% 100%; animation:ph-shimmer 1.3s linear infinite; }
+@keyframes ph-shimmer { to { background-position:-200% 0; } }
+@media(prefers-reduced-motion:reduce) { .ph-skeleton { animation:none; } }
+.ph-invite[open] { position:fixed; inset:auto; margin:0; box-sizing:border-box; max-width:100vw; max-height:min(75dvh,540px); overflow-y:auto; padding:1rem max(1rem,env(safe-area-inset-right)) max(1rem,env(safe-area-inset-bottom)); background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:18px 18px 0 0; }
+.ph-invite::backdrop { background:rgba(0,0,0,.3); }
+
+.ph-byline { display:flex; align-items:center; gap:.5rem; }
+.ph-byline button { margin-inline-start:auto; }
+.ph-feed .ph-related, .ph-tags { color:var(--gold); }
+.ph-post-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; }
+.ph-post-actions > span { flex:1 1 100%; padding:.5rem .75rem; border:1px solid var(--line); border-radius:1rem; color:var(--muted); }
+.ph-invite .ph-warning { border-inline-start:3px solid currentColor; padding-inline-start:.65rem; }

@@ -116,6 +116,9 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   for (const command of orderWorldCommands(commands)) {
     try {
       switch (command.type) {
+        case 'SeedTopic':
+          requireWorld(!historicalPerspective(state,draft),'permission','actor_permission','type');
+          break;
         case 'SchedulePhoneMessage':
           requireWorld(!historicalPerspective(state,draft) && causal.npc[command.npcId] && !causal.npc[command.npcId].onScene,
             'permission','actor_permission','npcId');

@@ -19,10 +19,13 @@ function compactCatalog(stage: CatalogStage, historical: boolean, allowLetters: 
   type Schema = ReturnType<typeof factorRepeatedSchemas<(typeof inline.schema.oneOf)[number]>>;
   const schema = structuredClone(generatedSchemas[stage === 'world' && !historical ? 'regularWorld' : stage]) as unknown as Schema;
   if (!allowLetters && stage === 'world') {
-    const index = inline.commandTypes.indexOf('SchedulePhoneMessage');
-    inline.commandTypes.splice(index, 1);
-    schema.oneOf.splice(index, 1);
-    const available = worldTypes.filter(type => type !== 'SchedulePhoneMessage' && (historical || type !== 'RecordHistory'));
+    for (const type of ['SchedulePhoneMessage','SeedTopic'] as const) {
+      const index=inline.commandTypes.indexOf(type);
+      inline.commandTypes.splice(index,1);
+      schema.oneOf.splice(index,1);
+    }
+    inline.worldStateRules=inline.worldStateRules?.filter(rule=>!rule.startsWith('SeedTopic'));
+    const available = worldTypes.filter(type => !['SchedulePhoneMessage','SeedTopic'].includes(type) && (historical || type !== 'RecordHistory'));
     if (typeof inline.stagePermissions === 'object') inline.stagePermissions.worldCommands = available;
     if (inline.outputFields) inline.outputFields.worldCommands.commandTypes = available;
   }
@@ -167,6 +170,7 @@ export function inlineCommandCatalog(stage: CatalogStage, historical = true) {
               [field, z.toJSONSchema(WorldResultSchema.shape[field], { target: 'draft-7', unrepresentable: 'any' })])),
           },
           worldStateRules: [
+            'SeedTopic 每回合可写零到五条，每条含 title、summary、related、expiresAt，可选 eventId。多数为城市日常。只依公开消息，传播有延迟、可失真，主角无名时不点名。关联主事件时只填写已向社会公开的标题与概要，主角私下知情不等于公开。传闻不构成正式事件，不在这里写帖子或评论。',
             'CreateNpc按World专用Schema使用合法初值，亲属/认识关系不是affinityConfirmed；后续RecordNpcMemory分开输出，不能在创建对象内塞记忆。CreateLocation.parentId是实际地理从属，不是玩家所在国家或默认根；海外地点不硬挂china，未知父级可省略，不虚构ID。',
             '任务—事件允许单侧关联：task.linkedEventId或event.linkedTaskIds填一侧即可，程序补齐反向ID；两侧都填须一致，一个任务只能关联一个事件。引用须已存在或本批创建，不能通过补齐改写既有终态。复用已有实体ID，不重复创建或无声丢弃冲突关联。',
             ...(historical ? [

@@ -1,6 +1,6 @@
 import { fingerprint } from '../domain/commands';
 import { requireData } from '../domain/common';
-import { ChatReply } from '../domain/phoneChat';
+import { ChatReply, isPrivate } from '../domain/phoneChat';
 import type { GameState } from '../domain/state';
 import { awaitingPlayerAction } from '../domain/turnCommit';
 import type { TurnDraft } from '../domain/drafts';
@@ -18,6 +18,33 @@ import { storyDifficulty } from '../ui/settings/storyDifficulty';
 import { StageGuard } from './stageGuard';
 import { planRetry, waitForRetry } from './stageRetry';
 
+export function phonePersona(state: GameState, npcId: string) {
+  const npc = state.npc[npcId];
+  return {
+    id: npc.id,
+    name: npc.name,
+    identity: npc.identity,
+    aliases: npc.aliases,
+    age: npc.age,
+    gender: npc.gender,
+    temperament: npc.temperament,
+    background: npc.background,
+    addressing: npc.addressing,
+    relationship: npc.relationshipText,
+    affinity: npc.affinity,
+    health: npc.healthText,
+    location: npc.locationId && state.locations[npc.locationId]?.name,
+    knowledge: npc.knownInformation,
+    memories: npc.memories.filter((m) => m.visibility !== 'internal').slice(-recentCount),
+    summaries: state.memories.npcSummaries[npcId]?.filter(
+      (m) => m.visibility !== 'internal' && m.npcProvenance?.sourceVisibility !== 'internal',
+    ),
+    ...(npc.kind === 'special'
+      ? { experience: npc.detailedBackground, habits: npc.habits, goals: npc.activeGoals }
+      : {}),
+  };
+}
+
 export async function privateChatMessages(
   state: GameState,
   draft: TurnDraft | undefined,
@@ -25,8 +52,7 @@ export async function privateChatMessages(
   text: string,
   settings: Settings,
 ): Promise<AiMessage[]> {
-  const npc = state.npc[npcId],
-    difficulty = storyDifficulty(settings.prompts);
+  const difficulty = storyDifficulty(settings.prompts);
   const history = [
     ...(state.phone.threads[npcId]?.messages ?? []).map((m) => ({
       sender: m.sender,
@@ -35,6 +61,7 @@ export async function privateChatMessages(
       status: m.chatOutcome ?? m.status,
     })),
     ...(draft?.phonePending ?? [])
+      .filter(isPrivate)
       .filter((row) => row.reply.npcId === npcId)
       .flatMap((row) => [
         { sender: 'protagonist', text: row.text, at: row.at, status: row.reply.status },
@@ -59,29 +86,7 @@ export async function privateChatMessages(
     {
       role: 'user',
       content: JSON.stringify({
-        npc: {
-          id: npc.id,
-          name: npc.name,
-          identity: npc.identity,
-          aliases: npc.aliases,
-          age: npc.age,
-          gender: npc.gender,
-          temperament: npc.temperament,
-          background: npc.background,
-          addressing: npc.addressing,
-          relationship: npc.relationshipText,
-          affinity: npc.affinity,
-          health: npc.healthText,
-          location: npc.locationId && state.locations[npc.locationId]?.name,
-          knowledge: npc.knownInformation,
-          memories: npc.memories.filter((m) => m.visibility !== 'internal').slice(-recentCount),
-          summaries: state.memories.npcSummaries[npcId]?.filter(
-            (m) => m.visibility !== 'internal' && m.npcProvenance?.sourceVisibility !== 'internal',
-          ),
-          ...(npc.kind === 'special'
-            ? { experience: npc.detailedBackground, habits: npc.habits, goals: npc.activeGoals }
-            : {}),
-        },
+        npc: phonePersona(state, npcId),
         playerName: state.protagonist.name,
         worldClock: state.worldClock,
         ...recentPhoneHistory(history),

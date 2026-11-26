@@ -148,7 +148,9 @@ it('冻结清单防篡改，备份保留草稿，放弃后原样解冻并可再�
   const frozen = await repo.bindTurnAction(start.draft, '聊天之后出门', true, true, true, start.instance);
   expect(frozen.phoneFreeze).toEqual(freezeChat(start.draft.phonePending!));
   const revised = structuredClone(frozen);
-  revised.phonePending![0].text = '擅改';
+  const row = revised.phonePending![0];
+  if (!('reply' in row)) throw Error('expected private chat');
+  row.text = '擅改';
   expect(TurnDraftSchema.safeParse(revised).success).toBe(false);
   await expect(sendPrivateChat(repo, new StageGuard(), { ...start, draft: frozen })).rejects.toMatchObject({
     code: 'PHONE_TARGET',

@@ -93,6 +93,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
   const { stage, settings, draft } = input;
   const { variableGuideRaw, variableGuideRawTruncated, variableGuideReferences, ...story } = draft?.story ?? {};
   const original = input.state;
+  const frozenChat = draft?.phoneFreeze ? draft.phonePending : undefined;
   const candidateStage = stage === 'variables' || stage === 'world';
   const selected = candidateStage && original.openingTimePending && draft
     ? openingTimeSelection(original, draft, stage === 'variables' ? [] : undefined) : undefined;
@@ -108,7 +109,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
     const preflight = input.mode === 'regular' ? timePreflight(state, input.userInput) : undefined;
     return {
       ...sharedContext(state, settings.memory.immediateWindowSize, input.userInput, input.mode === 'regular'),
-      ...phoneContext(state, 'story', input.userInput, draft?.phoneFreeze ? draft.phonePending?.map(row => row.reply.npcId) : undefined),
+      ...phoneContext(state, 'story', input.userInput, frozenChat),
       ...frozenChatContext(state,draft,'story'),
       CREATION_PROFILE:
         input.mode === 'opening'
@@ -163,7 +164,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
       PLAYER_ACTION: draft!.userInput,
       ...frozenChatContext(state,draft,stage),
-      ...(stage === 'entities' ? phoneContext(state, 'entities', draft!.userInput + '\n' + draft!.story!.narrative,draft?.phoneFreeze ? draft.phonePending?.map(row => row.reply.npcId) : undefined) : {}),
+      ...(stage === 'entities' ? phoneContext(state, 'entities', draft!.userInput + '\n' + draft!.story!.narrative,frozenChat) : {}),
       SELECTED_VARIABLE_DOMAINS: input.domains ?? [],
       ...sharedContext(selected ? { ...entities, worldClock: selected.endAt } : entities,
         settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {

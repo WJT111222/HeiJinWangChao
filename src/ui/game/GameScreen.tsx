@@ -84,6 +84,7 @@ import type { StageAction, WorkflowStage, WorkflowTab, WorkflowView } from './Wo
 import type { MemoryFailureObservation } from '../../services/ai/memoryObservation';
 import { MemoryIssueDetails } from './MemoryResponses';
 import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
+import { isPrivate } from '../../domain/phoneChat';
 import { usePrivateChat } from '../phone/usePrivateChat';
 import { GamePhone, PhoneEntry } from '../phone/GamePhone';
 import { usePhoneReminders } from '../phone/usePhoneReminders';
@@ -173,7 +174,7 @@ export function GameScreen({
     if (desktopSettings && onCloseSettings) onCloseSettings(action);
     else outsideTheater(action);
   }
-  const phone = usePhoneReminders(state);
+  const phone = usePhoneReminders(state,instance??null);
   const phoneOpen = panel === '手机' && !desktopSettings;
   const phoneButton = (mobile: boolean) => <PhoneEntry mobile={mobile} count={phone.unreadCount} open={phoneOpen}
     onClick={() => outsideSettings(() => setPanel(phoneOpen ? undefined : '手机'))}/>;
@@ -1169,7 +1170,7 @@ export function GameScreen({
         {compactSidebars && phoneButton(true)}
         <button data-settings-open aria-current={renderSettings?'page':undefined} onClick={onOpenSettings}><span className="mobile-seal" aria-hidden="true">设</span>设置</button>
       </nav>
-      {phoneOpen && <GamePhone key={JSON.stringify([state.saveId,state.createdAt,instance])} state={state} view={view} mobile={compactSidebars} data={phone} pending={draft?.phonePending ?? []}
+      {phoneOpen && <GamePhone key={JSON.stringify([state.saveId,state.createdAt,instance])} state={state} view={view} mobile={compactSidebars} instance={instance ?? null} data={phone} pending={draft?.phonePending ?? []}
         controls={{
           chat: privateChat,
           frozen: Boolean(draft && !awaitingAction) || !state.turnNumber,
@@ -1179,9 +1180,17 @@ export function GameScreen({
           canEnd: Boolean(awaitingAction && !busy && draft?.phonePending?.length),
           end: () => {
             if (!awaitingAction || busy || !draft?.phonePending?.length) return;
-            const names = [...new Set(draft.phonePending.map(row => state.npc[row.reply.npcId].name))];
+            const names = new Set<string>();
+            const groupNames = new Map(Object.values(state.phone.groups ?? {}).map(group => [group.id, group.name]));
+            for (const row of draft.phonePending) {
+              if (isPrivate(row)) names.add(state.npc[row.reply.npcId].name);
+              else {
+                if (row.action.type === 'create') groupNames.set(row.groupId, row.action.name);
+                names.add(groupNames.get(row.groupId)!);
+              }
+            }
             setPanel(undefined);
-            void send('用手机和' + names.join('、') + '聊了一会儿');
+            void send('用手机和' + [...names].join('、') + '聊了一会儿');
           },
         }}
         close={action => {

@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
-import type { ChatExchange } from '../../domain/phoneChat';
+import { isPrivate, type PhoneOperation, type ChatExchange } from '../../domain/phoneChat';
+import { groupLabel, type GroupThread } from '../../domain/phoneGroup';
 import { chatMessages } from '../../domain/phone';
 import type { GameState } from '../../domain/state';
 import type { PlayerView } from '../panels/playerView';
@@ -10,12 +11,16 @@ export function PhoneChats({
   state,
   view,
   unread,
+  groupThreads,
+  openGroup,
   pending,
   open,
 }: {
   state: GameState;
   view: PlayerView;
-  pending: ChatExchange[];
+  groupThreads: Record<string, GroupThread>;
+  openGroup: (id: string) => void;
+  pending: PhoneOperation[];
   unread: { npcId: string }[];
   open: (id: string) => void;
 }) {
@@ -29,18 +34,56 @@ export function PhoneChats({
       },
     ]),
   );
-  pending.forEach((row, index) =>
-    latestByPeer.set(row.reply.npcId, {
-      latest: chatMessages(row, row.baseTurnId).at(-1)!,
-      pendingIndex: index,
-    }),
+  pending.forEach(
+    (row, index) =>
+      isPrivate(row) &&
+      latestByPeer.set(row.reply.npcId, {
+        latest: chatMessages(row, row.baseTurnId).at(-1)!,
+        pendingIndex: index,
+      }),
   );
-  const rows = [...latestByPeer]
-    .map(([id, row]) => ({ id, ...row }))
-    .sort((a, b) => Date.parse(b.latest.at) - Date.parse(a.latest.at) || b.pendingIndex - a.pendingIndex);
+  const rows = [
+    ...[...latestByPeer].map(([id, row]) => ({
+      kind: 'direct' as const,
+      id,
+      ...row,
+      at: row.latest.at,
+    })),
+    ...Object.values(groupThreads).map((group) => {
+      const last = group.history.at(-1)!;
+      const outcome = last.outcomes.at(-1);
+      const preview =
+        outcome?.status === 'replied'
+          ? state.npc[outcome.npcId].name + '：' + outcome.text
+          : groupLabel(last.action);
+      return {
+        kind: 'group' as const,
+        id: group.id,
+        group,
+        preview,
+        at: last.at,
+        pendingIndex: pending.findIndex((r) => r.id === last.id),
+      };
+    }),
+  ].sort((a, b) => Date.parse(b.at) - Date.parse(a.at) || b.pendingIndex - a.pendingIndex);
   return rows.length ? (
     <div className="ph-chats">
-      {rows.map(({ id, latest, pendingIndex }) => {
+      {rows.map((row) => {
+        if (row.kind === 'group')
+          return (
+            <button key={'group-' + row.id} className="ph-chat-row" onClick={() => openGroup(row.id)}>
+              <span className="ph-avatar">群</span>
+              <span className="ph-chat-body">
+                <b>{row.group.name}</b> <small>{row.group.category}群</small>
+                <span className="ph-preview">
+                  {row.pendingIndex >= 0 && <b className="ph-pending-label">[待结算] </b>}
+                  {row.preview}
+                </span>
+              </span>
+              <time>{phoneDateTime(row.at)}</time>
+            </button>
+          );
+        const { id, latest, pendingIndex } = row;
         const p = state.npc[id];
         const label = Object.entries(groups).find(([, people]) =>
           people.some((person) => person.id === id),
@@ -98,7 +141,9 @@ export function PhoneThread({
         <Fragment key={m.id}>
           <div
             className={
-              'ph-message ' + (pending ? 'ph-pending ' : '') + (m.sender === 'protagonist' ? 'ph-out' : '')
+              'ph-message ' +
+              (pending ? 'ph-pending ' : '') +
+              (m.sender === 'protagonist' ? 'ph-out' : '')
             }
           >
             <p>{m.text}</p>
@@ -106,7 +151,8 @@ export function PhoneThread({
               {m.source === 'offscreen' ? '场外来信 · ' : m.medium === 'call' ? '通话 · ' : ''}
               {pending ? '待结算' : phoneDateTime(m.at)}
               {m.status
-                ? ' · ' + (m.chatOutcome === 'unread' ? '未读' : m.chatOutcome ? '已读' : receipts[m.status])
+                ? ' · ' +
+                  (m.chatOutcome === 'unread' ? '未读' : m.chatOutcome ? '已读' : receipts[m.status])
                 : ''}
             </small>
           </div>

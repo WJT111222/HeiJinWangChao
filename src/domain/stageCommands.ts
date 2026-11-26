@@ -5,7 +5,7 @@ type CommandType = DomainCommand['type'];
 export const offscreenGroups = {
   worldCommands: [
     'CreateNpc', 'UpdateNpc', 'RecordNpcMemory', 'CreateLocation', 'CreateOrganization',
-    'UpdateOrganization', 'RecordOrgRelation', 'RecordHistory', 'SchedulePhoneMessage', 'ApplyHaremBackground',
+    'UpdateOrganization', 'RecordOrgRelation', 'RecordHistory', 'SchedulePhoneMessage', 'SeedTopic', 'ApplyHaremBackground',
   ],
   taskCommands: ['SaveTask'],
   eventCommands: ['SaveEvent', 'DeleteEvent'],
@@ -27,7 +27,7 @@ export const stageCommands = {
 
 export function allowedOffscreenCommand(group: keyof typeof offscreenGroups, type: CommandType, mode:'opening'|'regular') {
   const allowed: readonly CommandType[] = offscreenGroups[group];
-  return allowed.includes(type) && (type !== 'SchedulePhoneMessage' || mode === 'regular');
+  return allowed.includes(type) && (!['SchedulePhoneMessage','SeedTopic'].includes(type) || mode === 'regular');
 }
 
 export type VariablePhase = keyof typeof stageCommands;
@@ -35,7 +35,7 @@ export type VariablePhase = keyof typeof stageCommands;
 export function commandsForPhase(phase: VariablePhase, mode: 'opening' | 'regular', historical = false) {
   const registered: readonly CommandType[] = stageCommands[phase];
   return registered.filter(type =>
-    (type !== 'SchedulePhoneMessage' || mode === 'regular') &&
+    (!['SchedulePhoneMessage','SeedTopic'].includes(type) || mode === 'regular') &&
     (type !== 'InitializeOpeningState' || mode === 'opening') &&
     (type !== 'RecordHistory' || historical));
 }

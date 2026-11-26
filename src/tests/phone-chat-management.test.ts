@@ -80,7 +80,7 @@ it.each([false, true])('变量与人物管理后重载、备份和结算，冻�
     const ready = await completeDraft(restored, { variables: await elapsedVariables(restored, '在窗边等候', 60) });
     const first = await restored.commitTurn(submission(ready, ''));
     expect(first.draft.phonePending).toBeUndefined();
-    expect(first.state.phone.threads['npc-a'].messages.map(m => m.text)).toEqual([before.phonePending![0].text, receipt.text]);
+    expect(first.state.phone.threads['npc-a'].messages.map(m => m.text)).toEqual([(before.phonePending![0] as ChatExchange).text, receipt.text]);
     expect(first.state.phone.threads.scene.messages[0]).toMatchObject({ id: before.phonePending![1].id, chatOutcome: 'later' });
     expect((await restored.commitTurn(submission(ready, ''))).replayed).toBe(true);
     expect((await restored.load(saveId)).phone).toEqual(first.state.phone);
@@ -92,6 +92,7 @@ it.each(['人物引用', '基准回合', '消息时间', '冻结校验值'])('�
   const frozen = await repo.bindTurnAction(pending, '稍候', true, true, true);
   const snapshot = await repo.loadVariableSnapshot(saveId);
   const row = frozen.phonePending![0];
+  if (!('reply' in row)) throw Error('expected private chat');
   if (conflict === '人物引用') row.reply = { ...receipt, npcId: 'missing' };
   if (conflict === '基准回合') row.baseTurnId = 'different-turn';
   if (conflict === '消息时间') row.at = '2031-01-01T00:00:00Z';
@@ -163,7 +164,9 @@ it('恢复历史节点只去重完全相同的聊天，遇到同 ID 不同回执
   const before = await repo.undoTurn({ saveId, expectedRevision: committed.state.revision, expectedDraft: committed.draft, operationId: 'review-undo' });
   const selection = { kind: 'manual' as const, id: node.id };
   const copied = structuredClone(before.draft);
-  copied.phonePending![0].reply = { npcId: 'npc-a', status: 'unread' };
+  const copiedRow = copied.phonePending![0];
+  if (!('reply' in copiedRow)) throw Error('expected private chat');
+  copiedRow.reply = { npcId: 'npc-a', status: 'unread' };
   await seedStoredDraft(copied);
   const conflict = await repo.history.preview(saveId, selection);
   const raw = await repo.exportRaw(saveId);

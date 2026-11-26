@@ -1,3 +1,4 @@
+import { TopicInput, seedTopic } from './phoneTopic';
 import { HaremBackgroundCommandSchema, HaremCommandSchema } from './harem/schema';
 import { applyHarem, applyHaremBackground } from './harem/apply';
 import type { SceneIntervention } from './events/narration';
@@ -50,6 +51,7 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema, faction: FactionBindingSchema.optional() }),
   z.strictObject({ ...base, type: z.literal('RecordOrgKnowledge'), organizationId: IdSchema, entry: ProtagonistOrgKnowledgeSchema }),
   z.strictObject({ ...base, type: z.literal('RecordPhoneMessage'), npcId: IdSchema, ...StoryPhoneInput.shape }),
+  z.strictObject({ ...base, type: z.literal('SeedTopic'), ...TopicInput.shape }),
   z.strictObject({ ...base, type: z.literal('SchedulePhoneMessage'), ...ScheduledPhoneInput.shape }),
   z.strictObject({ ...base, type: z.literal('RegisterContact'), npcId: IdSchema, reason: TextSchema }),
   // Parse historical drafts/receipts, but never authorize a fresh deletion.
@@ -150,6 +152,7 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
       s.npc[c.npc.id] = NpcSchema.parse(c.npc.kind === 'special'
         ? { ...c.npc, memories: [...c.npc.memories, ...(c.npc.longTermMemories ?? [])], longTermMemories: [] } : c.npc); break;
     case 'RecordPhoneMessage': recordPhone(s, c.npcId, c, turnId, pendingSceneClock); break;
+    case 'SeedTopic': seedTopic(s,c,turnId); break;
     case 'SchedulePhoneMessage': schedulePhone(s, c, turnId); break;
     case 'RegisterContact':
       requireData(s.npc[c.npcId], 'NOT_FOUND', '联系人不存在');
@@ -330,7 +333,8 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   const world = parsed.slice(commands.length).filter(c => ordinary.has(c));
   // 排期须看到场外提示词使用的现场状态。仍在本次私有投影内，后续命令照原顺序校验和记账。
   if (world.some(c => c.type === 'SchedulePhoneMessage')) maintainSceneTransition(state, current, scene);
-  world.forEach(execute);
+  world.filter(c=>c.type!=='SeedTopic').forEach(execute);
+  world.filter(c=>c.type==='SeedTopic').forEach(execute);
   [...household, ...background, ...fresh.filter(cleanup)].forEach(execute);
   linkMortgages(current, fresh);
   validateTaskTransitions(state, current, fresh.flatMap((c) => c.type === 'SaveTask' ? [c.task] : []));

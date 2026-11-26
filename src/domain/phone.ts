@@ -1,3 +1,7 @@
+import { GroupThread, appendGroup, groupIds } from './phoneGroup';
+import { Topic, topicLimit } from './phoneTopic';
+import { isPrivate, type PhoneOperation } from './phoneChat';
+import { canonicalJson } from './worldbook/canonical';
 import type { TurnDraft } from './drafts';
 import type { ChatExchange } from './phoneChat';
 import { z } from 'zod';
@@ -46,7 +50,8 @@ export const PhoneSchema = z.strictObject({
   version: z.literal(1),
   threads: z.record(IdSchema, Thread),
   scheduled: ScheduledPhoneInput.extend({ sourceTurnId: IdSchema }).array(),
-  topics: z.array(z.never()),
+  topics: Topic.array(),
+  groups: z.record(z.uuid(),GroupThread).optional(),
 });
 export const emptyPhone = (): z.infer<typeof PhoneSchema> => ({
   version: 1,
@@ -61,6 +66,22 @@ export function validPhone(state: Pick<GameState, 'phone' | 'npc'>) {
     if (ids.has(id)) return false;
     ids.add(id);
     return true;
+  }
+  const groups: Record<string,GroupThread> = {};
+  try {
+    for (const [id, group] of Object.entries(state.phone.groups ?? {})) {
+      for (const operation of group.history) {
+        if (operation.groupId !== id || !groupIds(operation).every(unique)) return false;
+        appendGroup(groups,operation,operation.turnId,state.npc);
+      }
+      if (canonicalJson(groups[id]) !== canonicalJson(group)) return false;
+    }
+  } catch { return false; }
+  const counts = new Map<string,number>();
+  for(const topic of state.phone.topics){
+    const count=(counts.get(topic.turnId)??0)+1;
+    if(count>topicLimit || Date.parse(topic.at)>=Date.parse(topic.expiresAt) || !unique(topic.id)) return false;
+    counts.set(topic.turnId,count);
   }
   return (
     Object.entries(state.phone.threads).every(
@@ -101,14 +122,18 @@ export function chatMessages(row: ChatExchange, turnId: string): PhoneMessage[] 
     ? [outgoing, { ...shared, id:row.id + ':reply', sender:'npc', text:row.reply.text }] : [outgoing];
 }
 // Project the frozen transcript before model commands. Only commitTurn persists this private copy.
-export function chatBase(state: GameState, rows: readonly ChatExchange[], turnId: string): GameState {
+export function chatBase(state: GameState, rows: readonly PhoneOperation[], turnId: string): GameState {
   if (!rows.length) return state;
   const next = { ...state, phone: structuredClone(state.phone) };
   for (const row of rows) {
-    const peer = row.reply.npcId;
-    requireData(Object.hasOwn(state.npc, peer), 'PHONE_CONFLICT', '待结算私聊引用的人物不存在');
     requireData(row.baseTurnId === state.journal.at(-1)?.turnId && Date.parse(row.at) === Date.parse(state.worldClock),
       'PHONE_TIMELINE', '待结算私聊的基准回合或游戏时间与存档不符');
+    if (!isPrivate(row)) {
+      appendGroup(next.phone.groups ??= {},row,turnId,state.npc);
+      continue;
+    }
+    const peer = row.reply.npcId;
+    requireData(Object.hasOwn(state.npc, peer), 'PHONE_CONFLICT', '待结算私聊引用的人物不存在');
     for (const message of chatMessages(row, turnId)) append(next, peer, message);
   }
   requireData(validPhone(next), 'PHONE_CONFLICT', '私聊消息 ID 或会话引用冲突');

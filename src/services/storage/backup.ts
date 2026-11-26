@@ -15,7 +15,7 @@ import { migrateSave } from './migrations';
  * 含游戏进度、未结算草稿和独立小剧场；不含 AI 密钥、渠道配置、全局设置、提示词排序、撤回快照与提交回执。
  */
 export const backupFormat = 'heijin-backup';
-export const backupVersion = 6;
+export const backupVersion = 7;
 
 export interface BackupEntry {
   summary: { title: string; turnNumber: number; revision: number; schemaVersion: number; updatedAt: string };
@@ -29,7 +29,7 @@ export interface BackupEntry {
 }
 export interface BackupFile {
   format: typeof backupFormat;
-  version: 1 | 2 | 3 | 4 | 5 | typeof backupVersion;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | typeof backupVersion;
   app: string;
   exportedAt: string;
   saves: BackupEntry[];
@@ -123,7 +123,12 @@ export async function serializeBackup(entries: readonly BackupEntry[], app: stri
     throw new DataError('BACKUP_TOO_LARGE', `单个备份文件最多容纳 ${maxBackupEntries} 份存档。请分别导出，原存档保持完整。`);
   // A node without chat or side collections remains portable in the original format.
   // V6 distinguishes an omitted collection from an explicitly exported empty one.
-  const needsLatestFormat = entries.some(entry => entry.theaters !== undefined || entry.images ||
+  const hasGroupsOrTopics = entries.some(({ state, draft }) =>
+    state.phone.topics.length || state.phone.groups !== undefined ||
+    draft?.phonePending?.some(operation => 'kind' in operation) ||
+    [draft?.world, draft?.inactiveCandidates?.world].some(candidate =>
+      candidate?.result.worldCommands.some(command => command.type === 'SeedTopic')));
+  const needsCollectionFormat = entries.some(entry => entry.theaters !== undefined || entry.images ||
     entry.draft?.phonePending?.length || Object.values(entry.state.phone.threads).some(thread => thread.messages.some(message => message.source === 'chat')));
   const saves = entries.map(entry => ({ summary: entry.summary, state: entry.state,
     ...(entry.images ? {images:entry.images} : {}),
@@ -135,7 +140,7 @@ export async function serializeBackup(entries: readonly BackupEntry[], app: stri
   if (utf8ByteLength(serializedSaves, maxBackupBytes) > maxBackupBytes) throw exportTooLarge();
   const checksum = await sha256(serializedSaves);
   const file: BackupFile = {
-    format: backupFormat, version: needsLatestFormat ? backupVersion : 1, app, exportedAt: now.toISOString(),
+    format: backupFormat, version: hasGroupsOrTopics ? backupVersion : needsCollectionFormat ? 6 : 1, app, exportedAt: now.toISOString(),
     saves, ...(checksum ? { checksum } : {}),
   };
   const text = JSON.stringify(file);
@@ -170,7 +175,7 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
   if (format.success && format.data.format === backupFormat && format.data.version > backupVersion)
     throw new DataError('BACKUP_FUTURE', '这份备份来自更新的游戏版本，请先更新游戏再导入；本机存档没有任何改动。');
   const envelope = EnvelopeSchema.safeParse(raw);
-  if (!envelope.success || ![1, 2, 3, 4, 5, backupVersion].includes(envelope.data.version))
+  if (!envelope.success || ![1, 2, 3, 4, 5, 6, backupVersion].includes(envelope.data.version))
     throw new DataError('BACKUP_INVALID', '这不是黑金王朝的备份文件。请选择导出时得到的 .heijin.json 文件。');
   const { saves, checksum } = envelope.data;
   let checksumStatus: BackupChecksumStatus = 'unverified';
