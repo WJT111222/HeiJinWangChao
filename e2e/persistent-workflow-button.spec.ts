@@ -15,9 +15,9 @@ async function seed(page: Page, mode: Mode) {
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'mock' }; saveAiConfig(localStorage, config);
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-key');
     const draft = await completeDraft(repo);
-    const done = await repo.commitTurn({ draft, nextAction: '', useVariableStage: true, useWorldStage: true });
+    const done = await repo.commitTurn({ draft, nextAction: '', useEntityStage:false, useVariableStage: true, useWorldStage: true });
     if (mode !== 'settled') {
-      const bound = await repo.bindTurnAction(done.draft, '去码头找老周', true, true);
+      const bound = await repo.bindTurnAction(done.draft, '去码头找老周', true, true, false);
       const next = mode === 'storyFailed'
         ? { ...bound, stageStatus: { ...bound.stageStatus, story: 'failed' }, failures: [{ stage: 'story', attempt: 1, storyRevision: 0, errorCode: 'authorization', retryable: false }] }
         : { ...bound, story: { ...draft.story, turnKind: 'regular' }, storyRevision: 1, stageStatus: { ...bound.stageStatus, story: 'ready' } };

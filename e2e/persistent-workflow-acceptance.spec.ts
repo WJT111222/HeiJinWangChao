@@ -28,8 +28,8 @@ async function setup(page: Page, mode: 'variables' | 'world' | 'failed') {
     const repo = await SaveRepository.open();
     try {
       await repo.create(worldState());
-      await repo.commitTurn({ draft: await completeDraft(repo), nextAction: '', useVariableStage: true, useWorldStage: true });
-      const bound = await repo.bindTurnAction(await repo.loadDraft('save-a'), '继续观察街道', true, true);
+      await repo.commitTurn({ draft: await completeDraft(repo), nextAction: '', useEntityStage:false, useVariableStage: true, useWorldStage: true });
+      const bound = await repo.bindTurnAction(await repo.loadDraft('save-a'), '继续观察街道', true, true, false);
       const variables = await elapsedVariables(repo, '观察街道经过十分钟', 600);
       if (mode === 'failed') {
         await repo.saveDraft(TurnDraftSchema.parse({ ...bound, draftRevision: bound.draftRevision + 1,
