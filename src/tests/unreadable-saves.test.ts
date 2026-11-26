@@ -1,4 +1,4 @@
-import { createImageStores } from '../services/images/library';
+import { checkImageStores } from '../services/images/library';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTheaterStores, createTheaterVersionStore } from '../services/storage/theaters';
@@ -197,7 +197,7 @@ describe('targeted unreadable deletion stays atomic', () => {
         open.result.createObjectStore('saveControls', { keyPath: 'saveId' });
         for (const name of ['historyMetadata', 'historyPayloads'])
           open.result.createObjectStore(name, { keyPath: ['saveId', 'id'] }).createIndex('saveId', 'saveId');
-        createImageStores(open.result);
+        checkImageStores(open.result, open.transaction!);
         createTheaterStores(open.result);
         createTheaterVersionStore(open.transaction!);
       };

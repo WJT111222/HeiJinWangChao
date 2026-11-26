@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CredentialVault } from '../ai/credentials';
+import { request, transaction } from '../storage/idb';
 
 export const backendNames = { openai: 'OpenAI 兼容', novelai: 'NovelAI', comfy: 'ComfyUI', sd: 'SD WebUI' };
 export type Backend = keyof typeof backendNames;
@@ -90,23 +91,159 @@ const schema = z.object({
 });
 export type ImageConfig = z.infer<typeof schema>;
 export const configKey = 'heijin.images.config.v1';
-export function config(): ImageConfig {
+const autoRules = schema.shape.auto.keyof().options;
+type StopCounters = Partial<Record<'enabled' | keyof ImageConfig['auto'], number>>;
+const storedConfig = schema.extend({
+  revision: z.number().int().nonnegative().default(0),
+  // A waiting tab may resume after both the disable and the next enable were saved.
+  stops: z.partialRecord(z.enum(['enabled', ...autoRules]), z.number().int().nonnegative()).catch({}),
+});
+export type ConfigSnapshot = { value: ImageConfig; stops: StopCounters; revision: number };
+function configSnapshot(): ConfigSnapshot {
   try {
-    return schema.parse(JSON.parse(localStorage.getItem(configKey) ?? 'null'));
+    const { revision, stops, ...value } = storedConfig.parse(
+      JSON.parse(localStorage.getItem(configKey) ?? 'null'),
+    );
+    return { value, stops, revision };
   } catch {
-    return structuredClone(defaults);
+    return { value: structuredClone(defaults), stops: {}, revision: 0 };
   }
 }
-export function saveConfig(value: ImageConfig) {
-  localStorage.setItem(configKey, JSON.stringify(schema.parse(value)));
+export const config = () => configSnapshot().value;
+
+// localStorage is the synchronous display cache. Different renderer processes may still have
+// different cached values after taking a Web Lock. Commit against the record in a single IDB transaction.
+const preferencesStore = 'preferences';
+async function withPreferences<T>(mode: IDBTransactionMode, work: (store: IDBObjectStore) => Promise<T>) {
+  const open = indexedDB.open('heijin.image-preferences', 1);
+  open.onupgradeneeded = () => open.result.createObjectStore(preferencesStore);
+  const db = await request(open);
+  db.onversionchange = () => db.close();
+  try {
+    return await transaction(db, [preferencesStore], mode, (tx) => work(tx.objectStore(preferencesStore)));
+  } finally {
+    db.close();
+  }
+}
+function readRecord(store: IDBObjectStore): Promise<ConfigSnapshot | undefined> {
+  return request(store.get(configKey));
+}
+export function savedConfig(): Promise<ConfigSnapshot> {
+  return withPreferences('readonly', async (store) => (await readRecord(store)) ?? configSnapshot());
+}
+function cacheConfig(snapshot: ConfigSnapshot) {
+  const encoded = JSON.stringify({ ...snapshot.value, stops: snapshot.stops, revision: snapshot.revision });
+  if (encoded === localStorage.getItem(configKey)) return false;
+  localStorage.setItem(configKey, encoded);
+  return true;
+}
+async function refreshCache(fallback?: ConfigSnapshot) {
+  const changed = await withPreferences('readwrite', async (store) => {
+    const record = (await readRecord(store)) ?? fallback;
+    return record && cacheConfig(record);
+  });
+  if (changed) window.dispatchEvent(new Event(configKey));
+}
+let initialized: IDBFactory | undefined;
+function refreshCacheOnEntry() {
+  const factory = globalThis.indexedDB;
+  if (!factory || initialized === factory) return;
+  initialized = factory;
+  void refreshCache().catch(() => {
+    initialized = undefined;
+  });
+}
+
+// Arrays are one editable field (their order and deletions are meaningful).
+export function reconcileConfig(
+  base: ImageConfig,
+  local: ImageConfig,
+  saved: ImageConfig,
+  resolve?: { path: string; take: 'local' | 'saved' },
+) {
+  const nextBase = structuredClone(saved),
+    draft = structuredClone(saved),
+    conflicts: { path: string; local: unknown; saved: unknown }[] = [];
+  type Fields = Record<string, unknown>;
+  const same = (a: unknown, b: unknown) =>
+    Array.isArray(a) ? JSON.stringify(a) === JSON.stringify(b) : Object.is(a, b);
+  function visit(
+    before: Fields,
+    edits: Fields,
+    latest: Fields,
+    baseline: Fields,
+    output: Fields,
+    prefix: string,
+  ) {
+    for (const key of Object.keys(before)) {
+      const original = before[key],
+        mine = edits[key],
+        theirs = latest[key],
+        path = prefix + key;
+      if (original !== null && typeof original === 'object' && !Array.isArray(original)) {
+        visit(
+          original as Fields,
+          mine as Fields,
+          theirs as Fields,
+          baseline[key] as Fields,
+          output[key] as Fields,
+          path + '.',
+        );
+        continue;
+      }
+      if (same(mine, original) || same(mine, theirs)) continue;
+      if (!same(theirs, original)) {
+        if (resolve?.path === path) {
+          if (resolve.take === 'saved') continue;
+        } else {
+          conflicts.push({ path, local: mine, saved: theirs });
+          baseline[key] = original;
+        }
+      }
+      output[key] = mine;
+    }
+  }
+  visit(base, local, saved, nextBase, draft, '');
+  return { base: nextBase, draft, saved, conflicts };
+}
+export async function saveConfig(base: ImageConfig, draft: ImageConfig) {
+  let previous: ConfigSnapshot | undefined;
+  const result = await withPreferences('readwrite', async (store) => {
+    const current = (await readRecord(store)) ?? configSnapshot();
+    const merged = reconcileConfig(base, draft, current.value);
+    const conflict = merged.conflicts.length > 0;
+    let snapshot = current;
+    if (!conflict) {
+      const value = schema.parse(merged.draft),
+        stops = { ...current.stops };
+      if (JSON.stringify(value) !== JSON.stringify(current.value)) {
+        if (current.value.enabled && !value.enabled) stops.enabled = (stops.enabled ?? 0) + 1;
+        for (const key of autoRules)
+          if (current.value.auto[key] && !value.auto[key]) stops[key] = (stops[key] ?? 0) + 1;
+        snapshot = { value, stops, revision: current.revision + 1 };
+        await request(store.put(snapshot, configKey));
+      }
+    }
+    // If publishing fails (e.g. quota), the transaction helper aborts the write.
+    if (cacheConfig(snapshot)) previous = current;
+    return { snapshot, conflict };
+  }).catch(async (error) => {
+    // The cache was written, but IDB failed at commit. Keep the last durable value visible.
+    if (previous) await refreshCache(previous);
+    throw error;
+  });
   window.dispatchEvent(new Event(configKey));
+  if (result.conflict) throw new Error('其他页面已修改同一设置，请选择要保留的版本。');
+  return result.snapshot.value;
 }
 export function subscribeConfig(fn: () => void) {
   const changed = (e: StorageEvent) => {
+    if (e.storageArea && e.storageArea !== localStorage) return;
     if (!e.key || e.key === configKey) fn();
   };
   window.addEventListener('storage', changed);
   window.addEventListener(configKey, fn);
+  refreshCacheOnEntry();
   return () => {
     window.removeEventListener('storage', changed);
     window.removeEventListener(configKey, fn);

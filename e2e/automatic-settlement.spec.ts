@@ -405,7 +405,7 @@ test('文生图等待不阻断正式结算，跨标签重复通知和关闭开�
   });
   await page.evaluate(async()=>{
     const path='/src/services/images/config.ts',{config,saveConfig}=await import(path),c=config();
-    c.enabled=true;c.auto.story=true;c.connections.openai.base=location.origin;c.connections.openai.path='mock-settlement-image';saveConfig(c);
+    c.enabled=true;c.auto.story=true;c.connections.openai.base=location.origin;c.connections.openai.path='mock-settlement-image';await saveConfig(config(),c);
   });
   try{
     await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
@@ -418,7 +418,7 @@ test('文生图等待不阻断正式结算，跨标签重复通知和关闭开�
       const repo=await SaveRepository.open(),loaded=await repo.loadGame('save-a');
       try{
         afterSettlement(repo.images,{...loaded.state,journal:[]},loaded.state,loaded.instance);
-        saveConfig({...config(),enabled:false});
+        await saveConfig(config(),{...config(),enabled:false});
       }finally{repo.close();}
     });
     await expect.poll(()=>page.evaluate(async()=>{

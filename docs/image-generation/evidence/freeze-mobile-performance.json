@@ -1,0 +1,56 @@
+{
+  "project": "mobile",
+  "turns": 300,
+  "pictures": 308,
+  "sourceSize": "960×540",
+  "disabled": {
+    "reads": 0,
+    "bulk": 0,
+    "liveUrls": 0,
+    "mounted": 0,
+    "entries": 300
+  },
+  "initial": {
+    "reads": 1,
+    "bulk": 0,
+    "liveUrls": 1,
+    "mounted": 1,
+    "entries": 300
+  },
+  "scrolled": {
+    "reads": 7,
+    "bulk": 0,
+    "liveUrls": 7,
+    "mounted": 1,
+    "entries": 300
+  },
+  "off": {
+    "reads": 7,
+    "bulk": 0,
+    "liveUrls": 0,
+    "mounted": 0,
+    "entries": 300
+  },
+  "textFrames": {
+    "frames": 48,
+    "distance": 4320,
+    "medianMs": 17,
+    "p95Ms": 17,
+    "over50Ms": 1
+  },
+  "imageFrames": {
+    "frames": 48,
+    "distance": 4320,
+    "medianMs": 17,
+    "p95Ms": 17,
+    "over50Ms": 2
+  },
+  "timeToThumbnailsMs": 292,
+  "scrollThumbnailWaitMs": [
+    65,
+    86,
+    75,
+    39,
+    57
+  ]
+}

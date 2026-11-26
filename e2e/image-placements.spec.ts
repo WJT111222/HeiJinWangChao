@@ -181,7 +181,7 @@ async function seed(page: Page, mobile: boolean, turns = 1) {
       const settings = defaultSettings();
       settings.display.appearance = mobile ? 'day' : 'night';
       localStorage.setItem(settingsKey, JSON.stringify(settings));
-      saveConfig({ ...config(), enabled: turns === 1 });
+      await saveConfig(config(), { ...config(), enabled: turns === 1 });
     },
     { mobile, turns },
   );
@@ -365,7 +365,7 @@ test('长正文与三百张插画按视口读取并释放缩略图', async ({ pa
     const path = '/src/services/images/config.ts',
       { config, saveConfig } = await import(path);
     const start = performance.now();
-    saveConfig({ ...config(), enabled: true });
+    await saveConfig(config(), { ...config(), enabled: true });
     while (
       ![...document.querySelectorAll<HTMLImageElement>('.thumb-story img')].some(
         (img) => img.complete && img.naturalWidth,
@@ -402,7 +402,7 @@ test('长正文与三百张插画按视口读取并释放缩略图', async ({ pa
   await page.evaluate(async () => {
     const path = '/src/services/images/config.ts',
       { config, saveConfig } = await import(path);
-    saveConfig({ ...config(), enabled: false });
+    await saveConfig(config(), { ...config(), enabled: false });
   });
   await expect(page.locator('.picture-thumb')).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.pictureUrls.size)).toBe(0);
@@ -508,7 +508,7 @@ test('手动重绘居家照后上传、切换、删除及家庭预览均复用�
       c = config();
     c.connections.openai.base = location.origin;
     c.connections.openai.path = 'household-image-fixture';
-    saveConfig(c);
+    await saveConfig(config(), c);
   });
   const hh = await openArchive(page, '后宫');
   await hh.locator('.household-card [data-person-id="family-0"]').click();

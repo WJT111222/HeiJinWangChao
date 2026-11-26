@@ -110,7 +110,7 @@ test('人物档案上传、独立槽位、锚点和 NPC 入口', async ({ page }
   await page.evaluate(async () => {
     const cp = '/src/services/images/config.ts',
       { config, saveConfig } = await import(cp);
-    saveConfig({ ...config(), enabled: true });
+    await saveConfig(config(), { ...config(), enabled: true });
   });
   if (mobile) await page.locator('[data-mobile-tab="hero"]').click();
   await page.getByRole('button', { name: '人物档案', exact: true }).click();

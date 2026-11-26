@@ -155,10 +155,12 @@ export function App() {
         if (disposed) repo.close();
         else setRepository(repo);
       })
-      .catch(() => {
+      .catch(failure => {
         if (!disposed) {
-          setError(openFailure);
-          setListError(openFailure);
+          const message = failure instanceof DataError && ['STORAGE_BLOCKED', 'STORAGE_SCHEMA'].includes(failure.code)
+            ? failure.message : openFailure;
+          setError(message);
+          setListError(message);
           setLoading(false);
         }
       });

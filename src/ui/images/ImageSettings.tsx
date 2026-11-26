@@ -9,6 +9,7 @@ import {
   endpoint,
   imageVault,
   saveConfig,
+  reconcileConfig,
   subscribeConfig,
   templates,
 } from '../../services/images/config';
@@ -18,6 +19,11 @@ import { 常用文生图尺寸选项, 自动场景竖屏尺寸选项, 自动场�
 import { Dialog } from '../Dialog';
 import { Gallery } from './ImageGallery';
 import { ImageScope, useImages } from './ImageScope';
+
+function conflictPreview(value: unknown) {
+  const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
+  return text.length > 160 ? text.slice(0, 160) + '…' : text || '（空）';
+}
 
 function KeyField({ kind, base }: { kind: Backend | 'text'; base: string }) {
   let id = '';
@@ -140,30 +146,53 @@ const modelChoices: Record<Backend, string[]> = {
   sd: [],
 };
 export function ImageSettings({ repository }: { repository?: SaveRepository }) {
-  const [c, set] = useState(config),
+  const [editor, setEditor] = useState(() => {
+      const initial = config();
+      return reconcileConfig(initial, initial, initial);
+    }),
     [notice, setNotice] = useState(''),
     [gallery, setGallery] = useState(false);
   const [presetName, setPresetName] = useState('');
-  useEffect(() => subscribeConfig(() => set((current) => ({ ...current, enabled: config().enabled }))), []);
+  const [pendingEnabled, setPendingEnabled] = useState<boolean>();
+  const c = editor.draft;
+  useEffect(() => {
+    const sync = () => {
+      const latest = config();
+      setEditor((prev) => reconcileConfig(prev.base, prev.draft, latest));
+    };
+    const unsubscribe = subscribeConfig(sync);
+    sync();
+    return unsubscribe;
+  }, []);
+  function set(next: ImageConfig) {
+    setEditor((prev) => {
+      const edited = c === prev.draft ? next : reconcileConfig(c, next, prev.draft).draft;
+      return reconcileConfig(prev.base, edited, prev.saved);
+    });
+    setNotice('');
+  }
   const active = useImages(),
     b = c.backend,
     p = c.connections[b];
   const setP = (patch: Partial<typeof p>) =>
     set({ ...c, connections: { ...c.connections, [b]: { ...p, ...patch } } });
-  function persist(next: ImageConfig) {
+  async function persist(base: ImageConfig, next: ImageConfig) {
     try {
-      saveConfig(next);
-      set(next);
+      await saveConfig(base, next);
       setNotice('设置已保存');
-    } catch {
-      setNotice('配置格式或存储空间无效，请检查输入');
+    } catch (error) {
+      const latest = config();
+      setEditor((prev) => reconcileConfig(prev.base, prev.draft, latest));
+      setNotice(
+        error instanceof Error && error.name !== 'ZodError' ? error.message : '配置格式无效，请检查输入',
+      );
     }
   }
   function save() {
     try {
       if (p.base) endpoint(p.base, p.path || paths[b]);
       if (c.textBase) endpoint(c.textBase, 'chat/completions');
-      persist(c);
+      void persist(editor.base, c);
     } catch (e) {
       setNotice(e instanceof Error ? e.message : '地址无效');
     }
@@ -173,8 +202,15 @@ export function ImageSettings({ repository }: { repository?: SaveRepository }) {
       <label className="image-check">
         <input
           type="checkbox"
-          checked={c.enabled}
-          onChange={(e) => persist({ ...config(), enabled: e.target.checked })}
+          checked={pendingEnabled ?? c.enabled}
+          disabled={pendingEnabled !== undefined}
+          onChange={(e) => {
+            const enabled = e.target.checked;
+            setPendingEnabled(enabled);
+            void persist(editor.saved, { ...editor.saved, enabled }).finally(() =>
+              setPendingEnabled(undefined),
+            );
+          }}
         />
         启用文生图
       </label>
@@ -421,7 +457,35 @@ export function ImageSettings({ repository }: { repository?: SaveRepository }) {
             />
             普通存档备份包含图片（取消可导出轻量备份）
           </label>
-          <button onClick={save}>保存文生图设置</button>
+          {editor.conflicts.length > 0 && (
+            <div role="alert">
+              <p>其他页面也修改了以下设置。请逐项选择要保留的值，再保存设置。</p>
+              {editor.conflicts.map(({ path, local, saved }) => (
+                <fieldset key={path}>
+                  <legend>{path}</legend>
+                  <button
+                    onClick={() =>
+                      setEditor(reconcileConfig(editor.base, c, editor.saved, { path, take: 'local' }))
+                    }
+                  >
+                    保留本页的冲突值
+                  </button>
+                  <small style={{ overflowWrap: 'anywhere' }}>{conflictPreview(local)}</small>
+                  <button
+                    onClick={() =>
+                      setEditor(reconcileConfig(editor.base, c, editor.saved, { path, take: 'saved' }))
+                    }
+                  >
+                    采用其他页面的冲突值
+                  </button>
+                  <small style={{ overflowWrap: 'anywhere' }}>{conflictPreview(saved)}</small>
+                </fieldset>
+              ))}
+            </div>
+          )}
+          <button disabled={editor.conflicts.length > 0} onClick={save}>
+            保存文生图设置
+          </button>
         </>
       )}
       {notice && <p role="status">{notice}</p>}

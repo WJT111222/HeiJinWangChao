@@ -4,7 +4,7 @@ import { deflateRawSync } from 'node:zlib';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { parseBackup, serializeBackup } from '../services/storage/backup';
 import { buildRequest, convertText, generateImage, probe } from '../services/images/protocol';
-import { defaults, credentialId, imageVault } from '../services/images/config';
+import { config, defaults, credentialId, imageVault } from '../services/images/config';
 import { targetFor, validTarget } from '../services/images/model';
 import { decode, rasterMime, unpack } from '../services/images/raster';
 import { 归一化单段词组转化器输出 } from '../services/images/promptTokens';
@@ -22,6 +22,7 @@ function storage() {
   };
 }
 beforeEach(() => {
+  vi.stubGlobal('indexedDB', new IDBFactory());
   vi.stubGlobal('localStorage', storage());
   vi.stubGlobal('sessionStorage', storage());
 });
@@ -262,6 +263,91 @@ describe('存档附属资源', () => {
 });
 
 describe('任务费用与队列状态（Mock）', () => {
+  it.each(['ordinary', 'special', 'item', 'story'] as const)(
+    '%s 等待期间错过关停与重启通知，取得执行锁时仍停止旧任务',
+    async (rule) => {
+      const { saveConfig } = await import('../services/images/config');
+      const { afterSettlement } = await import('../services/images/queue');
+      vi.stubGlobal('window', new EventTarget());
+      // A suspended tab receives no events until after the global queue is released.
+      vi.spyOn(window, 'dispatchEvent').mockReturnValue(true);
+      const send = vi.fn();
+      vi.stubGlobal('fetch', send);
+      const before = game(),
+        state = structuredClone(before),
+        repo = await SaveRepository.open(rule, new IDBFactory());
+      try {
+        state.revision = state.turnNumber = 1;
+        state.journal = [{ revision: 1, turnId: 'new-turn', story, relatedActorRefs: [] }];
+        state.npc['npc-a'] = npc();
+        state.npc.important = {
+          ...npc('important'),
+          kind: 'special',
+          detailedBackground: '',
+          activeGoals: [],
+          habits: [],
+          offscreenTaskIds: [],
+          longTermMemories: [],
+        };
+        state.items.ring = {
+          id: 'ring',
+          name: '银戒指',
+          category: 'accessory',
+          quantity: 1,
+          conditionText: '完好',
+          ownerRef: { kind: 'protagonist', id: 'hero' },
+        };
+        await repo.importBackup({ state }, (await repo.compareBackup({ state })).confirmation);
+        const { instance } = await repo.loadGame(state.saveId);
+        const base = config(),
+          on = { ...base, enabled: true, auto: { ...base.auto, [rule]: true } };
+        await saveConfig(base, on);
+        const phase = async () => (await repo.images.read(state.saveId)).jobs.map((j) => j.phase);
+        await navigator.locks.request('heijin.image-generation.v1', async () => {
+          afterSettlement(repo.images, before, state, instance);
+          await vi.waitFor(async () => expect(await phase()).toEqual(['等待']));
+          const off = { ...on, auto: { ...on.auto, [rule]: false } };
+          await saveConfig(on, off);
+          await saveConfig(off, on);
+        });
+        await vi.waitFor(async () => expect(await phase()).toEqual(['取消']));
+        expect(send).not.toHaveBeenCalled();
+      } finally {
+        repo.close();
+      }
+    },
+  );
+  it('跨进程显示缓存仍旧时以事务记录为准，缓存写满则回滚并可重试', async () => {
+    const { configKey, savedConfig, saveConfig } = await import('../services/images/config');
+    vi.stubGlobal('window', new EventTarget());
+    const base = config();
+    await saveConfig(base, { ...base, style: '已提交' });
+    localStorage.setItem(configKey, JSON.stringify(base));
+    await saveConfig(base, { ...base, positive: '另一个字段' });
+    const current = (await savedConfig()).value;
+    expect(current).toMatchObject({ style: '已提交', positive: '另一个字段' });
+    vi.spyOn(localStorage, 'setItem').mockImplementationOnce(() => {
+      throw new DOMException('quota', 'QuotaExceededError');
+    });
+    const next = { ...current, negative: '重试' };
+    await expect(saveConfig(current, next)).rejects.toMatchObject({ name: 'QuotaExceededError' });
+    expect((await savedConfig()).value).toEqual(current);
+    await saveConfig(current, next);
+    expect(config()).toEqual(next);
+  });
+  it('同字段的过期写入在事务内被拒绝，保留已提交的值', async () => {
+    const { saveConfig } = await import('../services/images/config');
+    vi.stubGlobal('window', new EventTarget());
+    const base = config();
+    await saveConfig(base, { ...base, style: '甲' });
+    await expect(saveConfig(base, { ...base, style: '乙', positive: '尚未保存' })).rejects.toThrow(
+      '同一设置',
+    );
+    expect(config()).toMatchObject({ style: '甲', positive: '' });
+    const latest = config();
+    await saveConfig(latest, { ...latest, positive: '保留画风再保存' });
+    expect(config().style).toBe('甲');
+  });
   it.each(['player', 'npc', 'place', 'item', 'vehicle'] as const)(
     '%s 仅向图片后端提供目标资料',
     async (kind) => {
@@ -271,7 +357,7 @@ describe('任务费用与队列状态（Mock）', () => {
       const c = structuredClone(defaults);
       c.enabled = true;
       c.connections.openai.base = 'https://image.example/v1';
-      saveConfig(c);
+      await saveConfig(config(), c);
       const s = game();
       s.npc['npc-a'] = { ...npc(), background: '无关隐私标记' };
       s.items.ring = {
@@ -323,7 +409,7 @@ describe('任务费用与队列状态（Mock）', () => {
     c.textBase = 'https://text.example';
     c.textModel = 'tokenizer';
     c.connections.openai.base = 'https://image.example/v1';
-    saveConfig(c);
+    await saveConfig(config(), c);
     const send = vi.fn(async (url: string, options: RequestInit) => {
       if (url.startsWith(c.textBase)) {
         expect(JSON.parse(String(options.body)).model).toBe('tokenizer');
@@ -355,7 +441,7 @@ describe('任务费用与队列状态（Mock）', () => {
     const c = structuredClone(defaults);
     c.enabled = true;
     c.connections.openai.base = 'https://image.example';
-    saveConfig(c);
+    await saveConfig(config(), c);
     const s = game();
     s.npc['npc-a'] = { ...npc(), appearance: '晚年的外貌标记' };
     s.revision = s.turnNumber = 2;
@@ -393,7 +479,7 @@ describe('任务费用与队列状态（Mock）', () => {
     c.enabled = c.convert = true;
     c.textBase = 'https://text.example';
     c.textModel = 'tokenizer';
-    saveConfig(c);
+    await saveConfig(config(), c);
     const s = game(),
       repo = await SaveRepository.open('fee', new IDBFactory()),
       f = vi.fn().mockResolvedValue(new Response('secret-provider-body', { status: 429 }));
@@ -409,7 +495,7 @@ describe('任务费用与队列状态（Mock）', () => {
       localStorage.removeItem('heijin.images.next-request');
       c.convert = false;
       c.connections.openai.base = 'https://image.example/v1';
-      saveConfig(c);
+      await saveConfig(config(), c);
       f.mockRejectedValue(new DOMException('expired', 'TimeoutError'));
       await enqueue(repo.images, s, targetFor(s, 'player', 'hero')!, 'avatar');
       expect((await repo.images.read(s.saveId)).jobs.find((j) => j.message.includes('超时'))?.phase).toBe(

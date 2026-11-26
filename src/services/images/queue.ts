@@ -1,12 +1,14 @@
 import type { GameState } from '../../domain/state';
-import { config, subscribeConfig } from './config';
-import type { ImageConfig } from './config';
+import { config, savedConfig, subscribeConfig } from './config';
+import type { ConfigSnapshot, ImageConfig } from './config';
 import { terminal } from './library';
 import type { ImageLibrary, Job } from './library';
 import { person, sameSubject, slots, targetFor, validTarget } from './model';
 import type { Kind, Scope, Slot, Target } from './model';
 import { convertText, delay, generateImage } from './protocol';
 import { 合并并去重提示词单元, 归一化单段词组转化器输出 } from './promptTokens';
+
+type AutoRule = keyof ImageConfig['auto'];
 
 const prefix = 'heijin.image-job.',
   globalLock = 'heijin.image-generation.v1',
@@ -33,20 +35,28 @@ export async function recover(lib: ImageLibrary, scope: Scope) {
 function template(t: Target) {
   return person(t.kind) ? 'person' : t.kind === 'vehicle' ? 'item' : (t.kind as 'item' | 'place' | 'story');
 }
-async function run(lib: ImageLibrary, job: Job, c: ImageConfig, controller: AbortController, extra: string) {
+async function run(
+  lib: ImageLibrary,
+  job: Job,
+  c: ImageConfig,
+  controller: AbortController,
+  extra: string,
+  allowed: (latest: ConfigSnapshot) => boolean,
+) {
   const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(600000)]);
-  const assertEnabled = () => {
+  const assertEnabled = async () => {
+    const latest = await savedConfig();
     signal.throwIfAborted();
-    if (!config().enabled) throw new DOMException('', 'AbortError');
+    if (!allowed(latest)) throw new DOMException('', 'AbortError');
   };
   // The global Web Lock serializes provider submissions and the persisted RPM reservation across tabs.
   async function reserve() {
     const remaining = Math.min(10000, Number(localStorage.getItem(rateKey)) - Date.now());
     if (remaining > 0) await delay(remaining, signal);
-    assertEnabled();
+    await assertEnabled();
     localStorage.setItem(rateKey, String(Date.now() + 10000));
   }
-  assertEnabled();
+  await assertEnabled();
   const { s, c: collection } = await lib.phase(job, c.convert ? '提示词转换' : '图片生成');
   const entry = job.target.kind === 'story' ? s.journal.find((j) => j.turnId === job.target.id) : undefined;
   const atTurn = entry ? await lib.storyState(s, entry.turnId).catch(() => undefined) : s;
@@ -83,7 +93,7 @@ async function run(lib: ImageLibrary, job: Job, c: ImageConfig, controller: Abor
   if (c.convert) {
     await reserve();
     await lib.phase(job, '提示词转换');
-    assertEnabled();
+    await assertEnabled();
     prompt = await convertText(
       c,
       c.templates[job.slot === 'home' ? 'home' : template(job.target)] +
@@ -99,10 +109,10 @@ async function run(lib: ImageLibrary, job: Job, c: ImageConfig, controller: Abor
   if (!prompt.trim()) throw new Error('转化器未返回有效词组');
   await reserve();
   await lib.phase(job, '图片生成');
-  assertEnabled();
+  await assertEnabled();
   const positive = 合并并去重提示词单元(prompt, c.positive, c.style).join(', ');
   const bytes = await generateImage(c, positive, c.negative, signal);
-  assertEnabled();
+  await assertEnabled();
   await lib.phase(job, '图片保存');
   await lib.save(job.scope, job.target, job.slot, bytes, signal, job);
 }
@@ -111,20 +121,16 @@ export async function enqueue(
   scope: Scope,
   t: Target,
   slot: Slot,
-  automatic = false,
+  rule: AutoRule | false = false,
   extra = '',
 ) {
-  const c = config();
-  if (!c.enabled) throw new Error('文生图已关闭');
   if (!navigator.locks) throw new Error('当前环境不支持跨标签任务锁，请使用安全上下文');
-  const id = automatic ? JSON.stringify([t.turnId, t.kind, t.id, slot]) : crypto.randomUUID();
+  const id = rule ? JSON.stringify([t.turnId, t.kind, t.id, slot]) : crypto.randomUUID();
   const name = lockName(scope.saveId, id);
   if (active.has(name)) return;
   const controller = new AbortController();
   active.set(name, { saveId: scope.saveId, controller });
-  const unsubscribe = subscribeConfig(() => {
-    if (!config().enabled) controller.abort();
-  });
+  let unsubscribe: (() => void) | undefined;
   const cancel = (e: StorageEvent) => {
     if (e.key === cancelKey && e.newValue) {
       try {
@@ -142,18 +148,39 @@ export async function enqueue(
     scope: { saveId: scope.saveId, createdAt: scope.createdAt, instance: scope.instance },
     target: t,
     slot,
-    automatic,
+    automatic: Boolean(rule),
     phase: '等待',
     time: Date.now(),
     message: '',
   };
   try {
+    const { value: c, stops } = await savedConfig();
+    if (controller.signal.aborted) return;
+    if (!c.enabled) throw new Error('文生图已关闭');
+    if (rule && !c.auto[rule]) return;
+    let started = false;
+    const allowed = (latest: ConfigSnapshot) => {
+      if (!latest.value.enabled || latest.stops.enabled !== stops.enabled) return false;
+      return started || !rule || (latest.value.auto[rule] && latest.stops[rule] === stops[rule]);
+    };
+    unsubscribe = subscribeConfig(() => {
+      void savedConfig().then(
+        (latest) => {
+          if (!allowed(latest)) controller.abort();
+        },
+        () => controller.abort(),
+      );
+    });
     await navigator.locks.request(name, { ifAvailable: true }, async (lock) => {
       if (!lock || controller.signal.aborted || !(await lib.enqueue(job))) return;
       try {
-        await navigator.locks.request(globalLock, { signal: controller.signal }, () =>
-          run(lib, job, c, controller, extra),
-        );
+        await navigator.locks.request(globalLock, { signal: controller.signal }, async () => {
+          const latest = await savedConfig();
+          controller.signal.throwIfAborted();
+          if (!allowed(latest)) throw new DOMException('', 'AbortError');
+          started = true;
+          return run(lib, job, c, controller, extra, allowed);
+        });
       } catch (error) {
         const aborted =
           controller.signal.aborted || (error instanceof DOMException && error.name === 'AbortError');
@@ -171,7 +198,7 @@ export async function enqueue(
     });
   } finally {
     active.delete(name);
-    unsubscribe();
+    unsubscribe?.();
     window.removeEventListener('storage', cancel);
   }
 }
@@ -187,24 +214,25 @@ export function afterSettlement(lib: ImageLibrary, before: GameState, s: GameSta
   )
     return;
   const scope = { saveId: s.saveId, createdAt: s.createdAt, instance };
-  function add(kind: Kind, id: string, slot: Slot) {
+  function add(kind: Kind, id: string, slot: Slot, rule: AutoRule) {
     const target = targetFor(s, kind, id);
     if (target)
-      void enqueue(lib, scope, target, slot, true).catch(() => {
+      void enqueue(lib, scope, target, slot, rule).catch(() => {
         /* Storage unavailable. Main turn is already durable. */
       });
   }
-  if (c.auto.story) add('story', entry.turnId, 'illustration');
+  if (c.auto.story) add('story', entry.turnId, 'illustration', 'story');
   if (c.auto.ordinary || c.auto.special)
-    for (const p of Object.values(s.npc))
-      if (!before.npc[p.id] && c.auto[p.kind === 'special' ? 'special' : 'ordinary'])
-        add('npc', p.id, 'avatar');
+    for (const p of Object.values(s.npc)) {
+      const rule = p.kind === 'special' ? 'special' : 'ordinary';
+      if (!before.npc[p.id] && c.auto[rule]) add('npc', p.id, 'avatar', rule);
+    }
   if (c.auto.item) {
     for (const p of Object.values(s.items))
       if (p.ownerRef?.kind === 'protagonist' && before.items[p.id]?.ownerRef?.kind !== 'protagonist')
-        add('item', p.id, 'object');
+        add('item', p.id, 'object', 'item');
     for (const v of Object.values(s.economy.vehicles))
       if (v.ownerRef.kind === 'protagonist' && before.economy.vehicles[v.id]?.ownerRef.kind !== 'protagonist')
-        add('vehicle', v.id, 'object');
+        add('vehicle', v.id, 'object', 'item');
   }
 }

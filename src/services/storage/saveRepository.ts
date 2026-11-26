@@ -31,7 +31,7 @@ import { unreadableSaveSummary } from './saveManagement';
 import type { RawSaveExport, RawSaveRecord, SaveSummary } from './saveManagement';
 import { advanceTheaterVersion, clearTheaters, createTheaterStores, createTheaterVersionStore, exportTheaters,
   notifyTheaterChange, putTheater, TheaterRepository, theaterStores, theaterVersionStore } from './theaters';
-import { notifyImages, imageTimelineChange, ImageLibrary, imageStores, createImageStores, clearImages, exportImages, parseImages, restoreImages } from '../images/library';
+import { notifyImages, imageTimelineChange, ImageLibrary, imageStores, checkImageStores, clearImages, exportImages, parseImages, restoreImages } from '../images/library';
 import type { PortableImages } from '../images/library';
 import { parseTheaters } from '../../domain/theater/record';
 import type { TheaterRecord } from '../../domain/theater/record';
@@ -236,9 +236,17 @@ export class SaveRepository {
     return new Promise((resolve, reject) => {
       // IndexedDB 结构版本独立于每个存档的 schemaVersion。
       const operation = factory.open(name, saveDatabaseVersion);
+      let schemaError: DataError | undefined;
       operation.onupgradeneeded = () => {
         const db = operation.result;
-        if(!db.objectStoreNames.contains('imageCollections')) createImageStores(db);
+        const tx = operation.transaction!;
+        try {
+          checkImageStores(db, tx);
+        } catch (error) {
+          if (error instanceof DataError) schemaError = error;
+          try { tx.abort(); } catch { /* The upgrade was already aborted. */ }
+          return;
+        }
         if (!db.objectStoreNames.contains('theaterIndex')) createTheaterStores(db);
         if (!db.objectStoreNames.contains(theaterVersionStore)) createTheaterVersionStore(operation.transaction!);
         for (const name of historyStores) if (!db.objectStoreNames.contains(name))
@@ -251,15 +259,20 @@ export class SaveRepository {
         if (!db.objectStoreNames.contains('turnReceipts'))
           db.createObjectStore('turnReceipts', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
       };
-      operation.onerror = () => reject(operation.error);
+      operation.onerror = () => reject(schemaError ?? operation.error);
       let blocked = false;
       operation.onblocked = () => { blocked = true; reject(new DataError('STORAGE_BLOCKED', '数据库升级被其他页面阻塞，请关闭旧版游戏标签后重试。原存档未修改。')); };
       operation.onsuccess = () => {
         const db = operation.result;
-        if(!db.objectStoreNames.contains('imageCollections')) createImageStores(db);
         if (blocked) { db.close(); return; }
         db.onversionchange = () => db.close();
-        resolve(new SaveRepository(db));
+        try {
+          checkImageStores(db);
+          resolve(new SaveRepository(db));
+        } catch (error) {
+          db.close();
+          reject(error);
+        }
       };
     });
   }
