@@ -19,16 +19,13 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://**/*', route => route.fulfill({ status: 503, body: 'offline mock' }));
 });
 
-async function finishNotices(page: Page, keyboard = false) {
+async function finishNotices(page: Page, inGame = false) {
   await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
   await expect(announcement(page)).toBeVisible();
-  const close = announcement(page).getByRole('button', { name: '关闭王朝公告' });
-  if (keyboard) {
-    // Avoid opening the underlying weather popover when the game regains pointer events.
-    await page.mouse.move(0, 0);
-    await close.focus();
-    await close.press('Enter');
-  } else await close.click();
+  await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
+  await expect(announcement(page)).toHaveCount(0);
+  await expect(disclaimer(page)).toHaveCount(0);
+  if (inGame) await page.getByRole('textbox', { name: '你的行动' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 }
 
@@ -191,16 +188,19 @@ test('直接打开存档仍显示两步公告，关闭与从游戏设置查看�
   await page.goto(`/#game/${before.saveId}`);
   await page.reload();
   await expect(disclaimer(page)).toBeVisible();
-  await finishNotices(page, true);
   await expect(page.getByTestId('story-reader')).toBeVisible();
+  await finishNotices(page, true);
   await page.getByRole('button', { name: '设置', exact: true }).click();
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await settings.getByRole('button', { name: '王朝公告', exact: true }).click();
   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
-  // Focus the close control before keyboard activation; an asynchronously hovered weather popover yields to archive focus.
-  await page.mouse.move(0, 0);
+  await expect(announcement(page)).toHaveCount(0);
   const closeSettings = settings.getByRole('button', { name: '关闭资料界面' });
-  await closeSettings.focus(); await closeSettings.press('Enter');
+  await closeSettings.focus();
+  await closeSettings.press('Enter');
+  await expect(settings).toHaveCount(0);
+  // Returning focus to the game can open its nonmodal weather details.
+  await page.getByRole('textbox', { name: '你的行动' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   const after = await page.evaluate(async (saveId) => {
     const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path);
