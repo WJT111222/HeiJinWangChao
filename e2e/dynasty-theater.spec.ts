@@ -311,6 +311,11 @@ test('备份标记跟随小剧场，另一标签的存档馆即时刷新，V2 �
     const library = await context.newPage();
     await library.goto('/');
     await openLibrary(library);
+    if (isMobile) {
+      const ticket = library.locator('.mh-ticket-wrap').filter({ hasText: '剧场验收存档' });
+      await library.getByRole('button', { name: '第 1 张', exact: true }).click();
+      await expect(ticket).toHaveAttribute('aria-current', 'true');
+    }
     const badge = library.locator(isMobile ? '.mh-backup' : '.save-card .backup-line').first();
     const download = async () => {
       const event = library.waitForEvent('download');
