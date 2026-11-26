@@ -1,4 +1,4 @@
-import { entityCreationProjection } from '../domain/entityCandidate';
+import { checkEntityCommands } from '../domain/entityCandidate';
 import { historyCatalogReason } from './historyCatalog';
 import { storyEventIndex } from '../domain/events/narration';
 import { stageResults } from '../domain/events/stages';
@@ -142,7 +142,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
     };
   }
   if (stage === 'variables' || stage === 'entities') {
-    const entities = stage === 'variables' && draft?.entities ? entityCreationProjection(state, draft.entities.result.commands) : state;
+    const entities = stage === 'variables' && draft?.entities ? checkEntityCommands(state, draft, draft.entities.contactedNpcIds, draft.entities.result.commands) : state;
     return {
       TURN_CONTEXT: {
         turnId: draft!.turnId,

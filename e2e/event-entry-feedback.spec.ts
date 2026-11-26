@@ -17,7 +17,7 @@ async function seed(page:Page) {
   await page.goto('/#game/save-a');await page.reload();await openGameTools(page);
 }
 const stored=(page:Page)=>page.evaluate(async()=>{const p='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(p),r=await SaveRepository.open();try{return await r.loadGame('save-a');}finally{r.close();}});
-const settled=(page:Page)=>expect(page.getByRole('region',{name:'三阶段工作流'}).getByRole('status')).toContainText('本回合已结算');
+const settled=(page:Page)=>expect(page.getByRole('region',{name:'四阶段工作流'}).getByRole('status')).toContainText('本回合已结算');
 const scene='林舟与现场人物在办公室发生争执。';
 const cue='值班室来电，请你说明情况。';
 const refusal='林舟明确拒绝继续约谈，但调查仍可由原单位继续。';

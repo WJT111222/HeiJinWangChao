@@ -868,7 +868,7 @@
         "sha256": "b9433d3cad9e51ac23f3305a8fc074acc92fa62ab7d8771a49079b7c7c2d4ce0"
       },
       "threeStageVariables": {
-        "sha256": "59caac1d8441dd926bb957427657def14ff5e8c7d785b26c37d1bc9cc07f8677"
+        "sha256": "b827884472d6284db9995c0a5c334a557c8a40d9133d1bf56cb5093824327031"
       }
     },
     "stages/opening/variables.md": {
@@ -1827,10 +1827,10 @@
     },
     "shared/history_output.md": {
       "origin": "project",
-      "sourceSha256": "b4921bf070e82f5fd49b303b391d3ce29d5f963e5070b449faae0983e815b59e",
+      "sourceSha256": "ee49bf9535aefb5a43ace743daca645d3933a8aeb41dcac363b7c25f65dea544",
       "treatment": "project-authored",
       "threeStageVariables": {
-        "sha256": "b4921bf070e82f5fd49b303b391d3ce29d5f963e5070b449faae0983e815b59e"
+        "sha256": "ee49bf9535aefb5a43ace743daca645d3933a8aeb41dcac363b7c25f65dea544"
       }
     }
   },

@@ -134,7 +134,7 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   await openProfile(page);
   await expect(page.getByRole('dialog', { name: '人物档案', exact: true }).locator('.detail').filter({ hasText: '主武器' })).toContainText('无');
   await page.keyboard.press('Escape');
-  const workflow = await page.getByRole('region', { name: '三阶段工作流' }).boundingBox();
+  const workflow = await page.getByRole('region', { name: '四阶段工作流' }).boundingBox();
   const input = await page.getByLabel('你的行动').boundingBox();
   expect(workflow!.y).toBeLessThan(input!.y);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

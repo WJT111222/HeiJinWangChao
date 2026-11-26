@@ -1,3 +1,4 @@
+import { stagedFixture,persistSceneFixture } from './fixtures/stageScope';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { createProfileSave, newCreation } from '../ui/creation/model';
@@ -64,15 +65,15 @@ async function run(a: Awaited<ReturnType<typeof fixture>>, ...lines: string[]) {
 }
 
 async function readyDraft(a: Awaited<ReturnType<typeof fixture>>, result: Awaited<ReturnType<typeof parseTextVariables>>) {
-  const variables = await a.repo.saveDraft(TurnDraftSchema.parse({
+  const variables = await persistSceneFixture(a.repo,stagedFixture({
     ...a.draft, draftRevision: a.draft.draftRevision + 1,
     variables: { storyRevision: a.draft.storyRevision, candidateRevision: 1, requestRevision: 0,
       validation: 'validated', result }, stageStatus: { ...a.draft.stageStatus, variables: 'ready' },
-  }), a.draft.draftRevision);
+  }));
   const complete = await a.repo.saveDraft(TurnDraftSchema.parse({
     ...variables, draftRevision: variables.draftRevision + 1,
     world: { storyRevision: variables.storyRevision, candidateRevision: 1, requestRevision: 0,
-      basedOnVariableRevision: 1, validation: 'validated',
+      basedOnEntityRevision:variables.entities?.candidateRevision,basedOnVariableRevision: 1, validation: 'validated',
       result: { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] } },
     stageStatus: { ...variables.stageStatus, world: 'ready' },
   }), variables.draftRevision);
@@ -139,13 +140,13 @@ describe('真实创角同伴的开局资格与命令定位', () => {
       removeItem: (key: string) => { values.delete(key); } };
     const vault = new CredentialVault(storage, storage); vault.set(channel.id, 'mock-only-credential');
     const fetcher = vi.fn<typeof fetch>(async () => Response.json({ choices: [{ finish_reason: 'stop',
-      message: { content: response(initialize, privateLine, interaction) } }] }));
-    const stage = new VariableStage(a.repo, new AiClient(fetcher));
+      message: { content: '<接触者>["companion"]</接触者>'+response(privateLine, interaction) } }] }));
+    const stage = new VariableStage(a.repo, new AiClient(fetcher), undefined, 'entities');
     try {
       const saved = await stage.generate({ draft: a.draft, settings: a.settings, config, vault });
       expect(fetcher).toHaveBeenCalledTimes(1);
-      expect(saved.stageStatus.variables).toBe('ready');
-      expect(saved.variables?.result.settlement?.skipped).toMatchObject([{ commandIndex: 1, category: 'person' }]);
+      expect(saved.stageStatus.entities).toBe('ready');
+      expect(saved.entities?.result.settlement?.skipped).toMatchObject([{ commandIndex: 0, category: 'person' }]);
       expect(saved.story).toEqual(a.draft.story);
       expect(saved.failures).toEqual(a.draft.failures);
       expect(JSON.stringify(saved)).not.toContain(privateMarker);
@@ -160,7 +161,7 @@ describe('真实创角同伴的开局资格与命令定位', () => {
     const plan = unwrap(await compileVariableCommands(ast.value, a.state, a.context));
     const complete = await readyDraft(a, { commands: [...plan.commands], rejectedSuggestions: [], unresolved: [] });
     const before = await a.repo.loadGame(a.state.saveId);
-    const applied = vi.spyOn(domainCommands, 'commitCommands');
+    const applied = vi.spyOn(domainCommands, 'projectEntityChanges');
     await expect(a.repo.commitTurn(submission(complete, ''))).rejects.toMatchObject({ code: 'data_integrity' });
     expect(applied.mock.results.some(result => result.type === 'throw'
       && result.value instanceof CommandDataError && result.value.code === 'NPC_KIND')).toBe(true);
@@ -265,7 +266,7 @@ it.each(['opening', 'regular'] as const)('%s正式 Variables 提示词包含有�
   const draft = completed ? rerollStory(completed.draft, {
     turnKind: 'regular', narrative: '两人继续讨论工作。', summary: '讨论工作。', variableGuide: [],
   }) : a.draft;
-  const composed = await composePrompt({ stage: 'variables', mode, state, draft,
+  const composed = await composePrompt({ stage: 'entities', mode, state, draft,
     settings: a.settings, userInput: '', domains: selectVariableDomains(state, draft).domains });
   const sent = composed.messages.map(message => message.content).join('\n');
   expect(sent.includes('先登记结构化性别，再更新专属资料'), '先登记结构化性别，再更新专属资料').toBe(true);

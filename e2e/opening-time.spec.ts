@@ -76,7 +76,7 @@ async function mock(page: Page, startAt: string, endAt: string) {
   });
   return { calls, plan };
 }
-const workflow = (page: Page) => page.getByRole('region', { name: '三阶段工作流', exact: true });
+const workflow = (page: Page) => page.getByRole('region', { name: '四阶段工作流', exact: true });
 const ready = async (page: Page) => {
   // 创角先异步持久化，再懒加载游戏；界面打开前不能假定已有存档可查询。
   await expect(page.locator('.game-layout')).toBeVisible();

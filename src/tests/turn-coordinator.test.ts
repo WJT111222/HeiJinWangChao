@@ -475,7 +475,7 @@ describe('会话互斥、取消、版本与配置快照', () => {
       }),
     ).rejects.toMatchObject({ code: 'DRAFT_CONFLICT' });
     expect((await changed)?.story?.narrative).toBe('其他标签选定的新正文');
-    expect(transport).toHaveBeenCalledTimes(2);
+    expect(transport).toHaveBeenCalledTimes(3);
     expect((await currentDraft()).variables).toBeUndefined();
   });
   it('上游刚保存时取消阻止下游，成功保存的正文保持可恢复', async () => {

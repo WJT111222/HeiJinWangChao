@@ -33,6 +33,11 @@ export type DraftStage = z.infer<typeof StageSchema>;
 export const candidateStages = StageSchema.options;
 export const stageSwitch = { entities: 'useEntityStage', variables: 'useVariableStage', world: 'useWorldStage' } as const;
 const candidateStatus = z.enum(['pending', 'preview', 'ready', 'failed', 'skipped']);
+const candidateFields = {
+  entities: z.strictObject({ ...candidateBase, validation: z.literal('structural'), contactedNpcIds: z.array(IdSchema), result: VariableResultSchema }).optional(),
+  variables: z.strictObject({ ...candidateBase, basedOnEntityRevision: CountSchema.optional(), result: VariableResultSchema }).optional(),
+  world: z.strictObject({ ...candidateBase, basedOnEntityRevision: CountSchema.optional(), basedOnVariableRevision: CountSchema.optional(), result: WorldResultSchema }).optional(),
+};
 const draftSchema = z.strictObject({
   saveId: IdSchema, turnId: IdSchema, baseSaveRevision: CountSchema, draftRevision: CountSchema,
   storyRevision: CountSchema, turnKind: z.enum(['opening', 'regular']), userInput: z.string(),
@@ -42,9 +47,8 @@ const draftSchema = z.strictObject({
   requestedStages: RequestedStagesSchema.default([]),
   stageRequestRevisions: z.strictObject({ entities: CountSchema, variables: CountSchema, world: CountSchema })
     .default({ entities: 0, variables: 0, world: 0 }),
-  entities: z.strictObject({ ...candidateBase, validation: z.literal('structural'), contactedNpcIds: z.array(IdSchema), result: VariableResultSchema }).optional(),
-  variables: z.strictObject({ ...candidateBase, basedOnEntityRevision: CountSchema.optional(), result: VariableResultSchema }).optional(),
-  world: z.strictObject({ ...candidateBase, basedOnEntityRevision: CountSchema.optional(), basedOnVariableRevision: CountSchema.optional(), result: WorldResultSchema }).optional(),
+  ...candidateFields,
+  inactiveCandidates: z.strictObject(candidateFields).optional(),
   stageStatus: z.strictObject({
     story: z.enum(['pending', 'ready', 'failed']),
     entities: candidateStatus, variables: candidateStatus,
@@ -82,6 +86,12 @@ const draftSchema = z.strictObject({
     check(enabled ? draft.stageStatus[stage] !== 'skipped' : draft.stageStatus[stage] === 'skipped' && !candidate, '运行开关与阶段状态不符');
     if (draft.requestedStages.includes(stage)) check(enabled, '补算阶段必须启用');
     check(draft.stageRequestRevisions[stage] <= draft.executionRevision, '阶段请求版本超前');
+    const cached = draft.inactiveCandidates?.[stage];
+    if (cached) {
+      check(!candidate && draft.story && cached.storyRevision === draft.storyRevision, '缓存引用过期正文或与当前候选重复');
+      check(cached.requestRevision === draft.stageRequestRevisions[stage], '缓存引用过期阶段请求');
+      check(cached.validation === (stage === 'entities' ? 'structural' : 'validated'), '仅成功的候选可以缓存');
+    }
     if (candidate) {
       check(draft.story && candidate.storyRevision === draft.storyRevision, '候选引用旧正文');
       check(candidate.requestRevision === draft.stageRequestRevisions[stage], '候选引用过期阶段请求');
@@ -125,7 +135,7 @@ export function rerollStory(draft: TurnDraft, story: z.infer<typeof StorySchema>
   const next = { ...draft };
   delete next.legacyNotificationRecovery;
   return TurnDraftSchema.parse({ ...next, draftRevision: draft.draftRevision + 1, storyRevision: draft.storyRevision + 1,
-    story, storyWriting: writing, entities: undefined, variables: undefined, world: undefined, storyPartial: undefined,
+    story, storyWriting: writing, inactiveCandidates: undefined, entities: undefined, variables: undefined, world: undefined, storyPartial: undefined,
     stageStatus: { story: 'ready', entities: draft.useEntityStage ? 'pending' : 'skipped', variables: draft.useVariableStage ? 'pending' : 'skipped', world: draft.useWorldStage ? 'pending' : 'skipped' },
   });
 }
@@ -146,18 +156,42 @@ function resetStageCandidates(current: TurnDraft, config: StageConfig, requested
   const next = structuredClone(current);
   next.draftRevision++;
   if (current.story) next.executionRevision++;
-  let reset = false;
+  const cache = next.inactiveCandidates ?? {};
+  let redo = false;
   for (const stage of candidateStages) {
     const key = stageSwitch[stage];
     const enabled = config[key] ?? current[key];
-    reset ||= requested.includes(stage) || enabled !== current[key];
     next[key] = enabled;
-    if (reset) {
+    redo ||= requested.includes(stage);
+    if (redo) {
       delete next[stage];
+      delete cache[stage];
       next.stageStatus[stage] = enabled ? 'pending' : 'skipped';
       next.stageRequestRevisions[stage] = next.executionRevision;
+      continue;
+    }
+    const candidate = next[stage] ?? cache[stage];
+    const dependsOnEntities = stage !== 'entities';
+    const needsScene = stage === 'world' && next.useVariableStage;
+    const entityRevision = candidate && 'basedOnEntityRevision' in candidate ? candidate.basedOnEntityRevision : undefined;
+    const sceneRevision = candidate && 'basedOnVariableRevision' in candidate ? candidate.basedOnVariableRevision : undefined;
+    const matches = candidate && (!dependsOnEntities || (
+      (!next.useEntityStage || Boolean(next.entities)) && entityRevision === next.entities?.candidateRevision
+    )) && (stage !== 'world' || (
+      (!needsScene || next.variables?.validation === 'validated') && sceneRevision === next.variables?.candidateRevision
+    ));
+    if (enabled && matches) {
+      Object.assign(next, { [stage]: candidate });
+      delete cache[stage];
+      next.stageStatus[stage] = candidate.validation === 'preview' ? 'preview' : 'ready';
+    } else {
+      if (candidate && candidate.validation !== 'preview') Object.assign(cache, { [stage]: candidate });
+      delete next[stage];
+      next.stageStatus[stage] = enabled ? (current[key] && !candidate ? current.stageStatus[stage] : 'pending') : 'skipped';
     }
   }
+  if (Object.keys(cache).length) next.inactiveCandidates = cache;
+  else delete next.inactiveCandidates;
   next.requestedStages = requested.length ? requested : candidateStages.filter(stage =>
     Boolean(next.story && next[stageSwitch[stage]] && !next[stage]));
   return TurnDraftSchema.parse(next);
@@ -196,7 +230,8 @@ export function validateDraftUpdate(old: TurnDraft, next: TurnDraft) {
   requireData(next.storyRevision === old.storyRevision || next.storyRevision === old.storyRevision + 1, 'STORY_CONFLICT', '正文版本不连续');
   if (next.storyRevision === old.storyRevision) {
     requireData(fingerprint(next.story) === fingerprint(old.story) && fingerprint(next.storyWriting) === fingerprint(old.storyWriting), 'STORY_CONFLICT', '正文变化必须创建新版本');
-    for (const stage of ['variables', 'world'] as const) {
+    requireData(fingerprint(old.inactiveCandidates) === fingerprint(next.inactiveCandidates), 'STALE_CANDIDATE', '缓存只能通过阶段设置或显式重做更新');
+    for (const stage of candidateStages) {
       if (fingerprint(old[stage]) === fingerprint(next[stage])) continue;
       const enabled = next[stageSwitch[stage]];
       // 清除依赖失效的世界候选允许；写回结果必须属于本次显式请求的阶段。
@@ -217,5 +252,5 @@ export function validateDraftUpdate(old: TurnDraft, next: TurnDraft) {
     }
     if (old.world && next.world && fingerprint(old.world) !== fingerprint(next.world)) requireData(
       next.world.candidateRevision > old.world.candidateRevision, 'CANDIDATE_CONFLICT', '世界候选版本必须递增');
-  } else requireData(!next.entities && !next.variables && !next.world, 'STALE_CANDIDATE', '重新 Roll 必须丢弃旧候选');
+  } else requireData(!next.inactiveCandidates && !next.entities && !next.variables && !next.world, 'STALE_CANDIDATE', '重新 Roll 必须丢弃旧候选');
 }

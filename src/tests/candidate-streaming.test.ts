@@ -30,14 +30,14 @@ function setup(protocol: Protocol = 'deepseek') {
   const vault = new CredentialVault(storage, storage); vault.set(channel.id, 'mock-streaming-secret');
   return { config, vault, storage, settings: defaultSettings() };
 }
-async function repository(mode: 'opening' | 'regular' = 'regular') {
+async function repository(mode: 'opening' | 'regular' = 'regular', useScene = true) {
   const repo = await SaveRepository.open('candidate-streaming', new IDBFactory());
   await repo.create(worldState());
   if (mode === 'regular') {
     const committed = await repo.commitTurn({ draft: await completeDraft(repo), nextAction: '', useVariableStage: true, useWorldStage: true });
     await repo.deleteDraft('save-a', committed.draft.draftRevision);
   }
-  const state = await repo.load('save-a'), initial = createTurnDraft('save-a', state.revision, 'stream-turn', mode, '');
+  const state = await repo.load('save-a'), initial = createTurnDraft('save-a', state.revision, 'stream-turn', mode, '', useScene);
   await repo.saveDraft(initial, null);
   const draft = await repo.saveDraft(rerollStory(initial, { turnKind: mode, narrative: worldNarrative, summary: '用餐', variableGuide: [] }), 0);
   return { repo, draft };
@@ -112,7 +112,7 @@ for (const protocol of ['deepseek', 'openai', 'gemini', 'anthropic'] as const) {
   it.each(['variables', 'world'] as const)(`${protocol} %s same accepted candidate for nonstream, SSE and full JSON fallback`, async stage => {
     const results: unknown[] = [];
     for (const fallback of [false, true, 'nonstream'] as const) {
-      const a = setup(protocol), { repo, draft } = await repository('opening');
+      const a = setup(protocol), { repo, draft } = await repository('opening', stage !== 'world'); a.settings.runtime.useVariableStage = stage !== 'world';
       a.settings.runtime.streamVariables = fallback !== 'nonstream'; a.settings.runtime.streamWorld = fallback !== 'nonstream';
       const text = stage === 'variables' ? variableText : worldText;
       const fetcher = vi.fn<typeof fetch>(async (url, init) => { expect(wantsStream(url, init)).toBe(fallback !== 'nonstream'); return fallback ? Response.json(json(protocol, text)) : stream(protocol, text); });
@@ -153,7 +153,7 @@ it('a running automatic attempt snapshots both stream flags even if settings cha
 });
 
 it.each(['variables', 'world'] as const)('%s manual flag is snapshotted before asynchronous repository reads', async stage => {
-  const a = setup(), { repo, draft } = await repository();
+  const a = setup(), { repo, draft } = await repository('regular', stage !== 'world'); a.settings.runtime.useVariableStage = stage !== 'world';
   a.settings.runtime.streamVariables = true; a.settings.runtime.streamWorld = true;
   const fetcher = vi.fn<typeof fetch>(async (url, init) => { expect(wantsStream(url, init)).toBe(true); return stream('deepseek', stage === 'variables' ? variableText : worldText); });
   try {
@@ -164,7 +164,7 @@ it.each(['variables', 'world'] as const)('%s manual flag is snapshotted before a
 });
 
 it.each(['variables', 'world'] as const)('%s streaming cancellation and late JSON cannot replace the next explicit request/candidate', async stage => {
-  const a = setup(), { repo, draft } = await repository(); a.settings.runtime.streamVariables = true; a.settings.runtime.streamWorld = true;
+  const a = setup(), { repo, draft } = await repository('regular', stage !== 'world'); a.settings.runtime.useVariableStage = stage !== 'world'; a.settings.runtime.streamVariables = true; a.settings.runtime.streamWorld = true;
   let release!: (response: Response) => void;
   const fetcher = vi.fn<typeof fetch>(() => new Promise<Response>(resolve => { release = resolve; }));
   const runner = stage === 'variables' ? new VariableStage(repo, new AiClient(fetcher)) : new WorldStage(repo, new AiClient(fetcher));
@@ -184,7 +184,7 @@ it.each(['variables', 'world'] as const)('%s streaming cancellation and late JSO
 });
 
 it.each(['variables', 'world'] as const)('%s without Web Locks cannot send even with streaming enabled', async stage => {
-  const a = setup(), { repo, draft } = await repository(); a.settings.runtime.streamVariables = true; a.settings.runtime.streamWorld = true;
+  const a = setup(), { repo, draft } = await repository('regular', stage !== 'world'); a.settings.runtime.useVariableStage = stage !== 'world'; a.settings.runtime.streamVariables = true; a.settings.runtime.streamWorld = true;
   const fetcher = vi.fn<typeof fetch>(async () => stream('deepseek', 'should not be sent'));
   vi.stubGlobal('window', {}); vi.stubGlobal('navigator', {});
   try {

@@ -71,8 +71,6 @@ export class VariableStage {
         throw new DataError('DRAFT_CONFLICT', '草稿或正式状态已改变');
       if (!current.story || current.stageStatus.story !== 'ready')
         throw new AiError('configuration');
-      if (stage === 'variables' && settings.runtime.useEntityStage && !current.entities)
-        throw new AiError('candidate_conflict');
       // 配置/凭证不完整时不清空已有候选。真实请求仍由 runtime 生成其不可变快照。
       step = 'context';
       requestSnapshot(config, stage, input.vault);
@@ -81,6 +79,8 @@ export class VariableStage {
         useEntityStage: settings.runtime.useEntityStage, useVariableStage: settings.runtime.useVariableStage,
         useWorldStage: settings.runtime.useWorldStage,
       });
+      if (stage === 'variables' && started.useEntityStage && !started.entities)
+        throw new AiError('candidate_conflict');
       step = 'draft_start';
       const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal, current);
       attempt.check();
@@ -88,7 +88,7 @@ export class VariableStage {
       let responseInspectionId: string | undefined;
       try {
         input.onProgress?.('generating');
-        const selection = selectVariableDomains(state, draft);
+        const selection = selectVariableDomains(state, draft, stage);
         step = 'request';
         const response = await runStageRequest(
           {

@@ -132,10 +132,10 @@ describe('离场权限与正式World请求上下文一致',()=>{
   const prompt=await composePrompt(input), text=JSON.stringify(prompt.messages);
   expect(text).toContain('单侧关联');expect(text).toContain('Variables投影');
  });
- it('World重复写入本轮离场字段时以Variables为准并忽略（#186），仍不能操控主角',()=>{
+ it('World不可修改已离场接触者的档案，仍不能操控主角',()=>{
   const a=teahouse();
   const update={type:'UpdateNpc',commandId:'repeat-leave',npcId:'npc_fixture_lin',expectedRevision:0,changes:{onScene:false},evidence:'离场'};
-  expect(apply(a,{...a.response,worldCommands:[...a.response.worldCommands,update]})).toEqual(apply(a));
+  expect(()=>apply(a,{...a.response,worldCommands:[...a.response.worldCommands,update]})).toThrow(expect.objectContaining({code:'permission'}));
   expect(()=>apply(a,{...a.response,worldCommands:[{type:'UpdateProtagonist',commandId:'move',changes:{locationId:'loc_fixture_city'},evidence:'移动'}]})).toThrow();
  });
 });

@@ -218,7 +218,7 @@ test('阈值以下设置保存和刷新不请求，正式提交触发后不阻�
   await expect.poll(() => calls.filter((call) => call === 'memory').length).toBe(1);
   // 维护网络尚未完成，下一正式回合的三阶段生成仍能完成。
   await expect.poll(() => calls.filter((call) => call !== 'memory')).toEqual(['story', 'variables', 'world']);
-  await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
+  await expect(page.getByRole('region', { name: '四阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
   await page.getByLabel('你的行动', { exact: true }).fill('继续等待');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
   // 旧候选由发送结算为31；新生成回合自动结算为32，且等待新行动，不再自动生成。

@@ -1,3 +1,4 @@
+import { stageFixtureReply } from './fixtures/variableReply';
 import { issue194 } from './fixtures/issue194';
 import { runStageRequest } from '../services/ai/runtime';
 import { variableTextEnvelope } from './fixtures/variableReply';
@@ -74,17 +75,7 @@ function transport(reply:(context:Record<string,unknown>)=>string, world:(contex
       const variableGuide = typeof custom?.guide === 'string' ? custom.guide : JSON.stringify(custom?.guide ?? guides);
       return envelope(`<thinking>创作提纲：保持当前事实连续。</thinking><正文>${custom?.narrative??"主角在社区与同事会面，收到报酬，购买手机并交给同事。"}</正文><短期记忆>在社区完成会面和交付。</短期记忆><变量规划>${variableGuide}</变量规划>`,true);
     }
-    if (stage === 'entities' || stage === 'variables') {
-      const text = reply(context);
-      const lines = /<命令>([\s\S]*?)<\/命令>/.exec(text)?.[1].split('\n') ?? [];
-      const belongsToEntities = (line: string) => /^(?:set|push|delete|add) (?:npc\[|locations\[|organizations\[[^\]]+\] =|harem\.)/.test(line.trim());
-      const entityLines = lines.filter(belongsToEntities);
-      if (stage === 'entities') {
-        const contacts = [...new Set(entityLines.flatMap(line => /npc\[([^\]]+)\]/.exec(line)?.slice(1,2) ?? []))];
-        return envelope('<接触者>'+JSON.stringify(contacts)+'</接触者>'+block(entityLines.join('\n')));
-      }
-      return envelope(entityLines.length ? block(lines.filter(line=>!belongsToEntities(line)).join('\n')) : text);
-    }
+    if (stage === 'entities' || stage === 'variables') return envelope(stageFixtureReply(stage,reply(context)));
     return envelope(JSON.stringify(world(context)));
   });
   return {fetcher,calls};

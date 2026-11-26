@@ -155,10 +155,12 @@ describe('共享现场权限的正反边界', () => {
   });
 });
 
-it('直接伪造候选也不能把新事件冒充既有现场事件', () => {
+it('新现场事件须属于当前回合，不能冒用既有事件来源', () => {
   const a = fixture([hero]), result = candidate(a), command = result.commands[0];
   if (command.type !== 'SaveEvent') throw Error('fixture command');
   command.event.id = 'new-incident';
+  expect(() => parseVariables(JSON.stringify(result), a.state, a.draft)).not.toThrow();
+  command.event.sourceTurnIds = ['other-turn',a.draft.turnId];
   expect(() => parseVariables(JSON.stringify(result), a.state, a.draft)).toThrow();
 });
 

@@ -1,3 +1,4 @@
+import { stagedFixture } from './fixtures/stageScope';
 import { expect,it } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { composePrompt } from '../prompts/composer';
@@ -6,7 +7,7 @@ import { parseTextVariables,parseWorld } from '../services/validation/aiOutputs'
 import { SaveRepository } from '../services/storage/saveRepository';
 import { setNpcImportance } from '../domain/npc/profiles';
 import { GameStateSchema } from '../domain/state';
-import { createTurnDraft,rerollStory,TurnDraftSchema } from '../domain/drafts';
+import { createTurnDraft,rerollStory } from '../domain/drafts';
 import { defaultSettings } from '../ui/settings/model';
 import { npcContextFixture } from './fixtures/npcContextTiers';
 import { sentContext } from './fixtures/contextAssertions';
@@ -109,7 +110,7 @@ it('在场普通互动、特殊离场执行任务、再接触：真实文本→�
   expect(first.state.tasks.work.actorRef).toEqual({kind:'npc',id:'npc-a'});expect(first.state.npc.scene.memories).toHaveLength(1);
   const second=rerollStory(first.draft,{turnKind:'regular',narrative:'【旁白】离场同事重新回来交流工作进展。',summary:'同事回来',variableGuide:[]});
   const update=await parseTextVariables(body('set npc[npc-a].onScene = true\npush npc[npc-a].memories = {"text":"回到现场交流进展","knowledgeKind":"observed","knowledgeSource":"亲历","visibility":"npc_private"}'),first.state,second);
-  const candidate=TurnDraftSchema.parse({...second,variables:{candidateRevision:1,storyRevision:second.storyRevision,validation:'validated',result:update},stageStatus:{...second.stageStatus,variables:'ready'}});
+  const candidate=stagedFixture({...second,variables:{candidateRevision:1,storyRevision:second.storyRevision,validation:'validated',result:update},stageStatus:{...second.stageStatus,variables:'ready'}});
   const c=sentContext((await composePrompt({state:first.state,draft:candidate,stage:'world',mode:'regular',settings:defaultSettings(),userInput:''})).messages);expect(record(record(c.NPC_CONTEXT).groups).sceneSpecial).toContain('npc-a');expect(record(c.PROTECTED_SCENE).sceneNpcIds).toContain('npc-a');
   const saved=await repo.commitTurn(submission(await completeDraft(repo,{variables:update,world:worldResult()}),''));expect(await repo.load('save-a')).toEqual(saved.state);expect(saved.state.npc['npc-a'].identityKey).toBe(state.npc['npc-a'].identityKey);expect(saved.state.npc.scene.memories[0].sourceTurnIds).toEqual([ready.turnId]);
   expect(GameStateSchema.safeParse(saved.state).success).toBe(true);

@@ -2,7 +2,7 @@ import { createServer } from 'vite';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import { log, warn } from 'node:console';
-import { comparisonFixture, fixedSceneCandidate } from './variable-comparison-fixture.mjs';
+import { comparisonFixture, fixedEntityCandidate, fixedSceneCandidate } from './variable-comparison-fixture.mjs';
 
 const server = await createServer({logLevel:'error', root: resolve(process.argv[2] || '.'), server: { middlewareMode: true }, appType: 'custom' });
 let exceeded = false;
@@ -16,8 +16,9 @@ try {
     const { state, draft, scene } = await comparisonFixture(load, scenario);
     const stages = 'useEntityStage' in draft ? ['entities', 'variables', 'world'] : ['variables', 'world'];
     for (const stage of stages) {
+      if (stage === 'variables') fixedEntityCandidate(draft);
       if (stage === 'world') fixedSceneCandidate(draft, scene);
-      const { domains } = stage === 'world' ? selectWorldDomains(projectTurn(state, draft), draft) : selectVariableDomains(state, draft);
+      const { domains } = stage === 'world' ? selectWorldDomains(projectTurn(state, draft), draft) : selectVariableDomains(state, draft, stage);
       const { messages, context, modules } = await composePrompt({ stage, mode: 'regular', state, draft, settings, userInput: draft.userInput, domains });
       const special = modules.flatMap((record, index) => {
         const category = promptManifest.modules.find(module => module.id === record.id).category;

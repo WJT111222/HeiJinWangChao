@@ -10,7 +10,7 @@ import { record, array, string } from '../src/services/ai/protocols';
 // 电脑端流程测试：只在 desktop 项目运行。三阶段、存档、校验等逻辑两端共用，手机界面由 mobile-* 专项覆盖。
 test.skip(({ isMobile }) => isMobile, '电脑端流程测试，手机界面由 mobile-* 专项覆盖');
 
-type Stage = 'story' | 'variables' | 'world';
+type Stage = 'story' | 'entities' | 'variables' | 'world';
 async function prepare(page: Page, configured = true, stages = { variables: true, world: true }) {
   await page.goto('/');
   await page.evaluate(async ({ configured, stages }) => {
@@ -23,7 +23,7 @@ async function prepare(page: Page, configured = true, stages = { variables: true
     if (configured) {
       const channel = newChannel(), config = defaultAiConfig(); channel.baseUrl = 'https://action.mock.invalid/v1';
       config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'story' };
-      config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' };
+      config.routes.entities = {mode:'independent',channelId:channel.id,modelId:'entities'}; config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' };
       config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
       saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-action-key');
     }
@@ -74,7 +74,7 @@ async function mock(page: Page) {
     const openingGuide = pending ? [{ group: 'time', subjectHint: 'time:opening', observedFact: JSON.stringify({ startAt: '2015-07-08T14:00:00+08:00', endAt: '2015-07-08T14:01:00+08:00' }), textEvidence: anchor }] : [];
     const text = plan.failure === stage && !plan.status ? '{invalid-json' : stage === 'story'
       ? `<thinking>本轮创作提纲：保持连续，按当前行动呈现事实。</thinking><正文>${anchor}第${number}幕。主角在街边观察周围，街道上人来人往。</正文><短期记忆>${plan.badSummary ? '' : `主角第${number}次在街边观察环境。`}</短期记忆><变量规划>${JSON.stringify(openingGuide)}</变量规划>`
-      : (stage === 'variables' ? variableReply : JSON.stringify)(stage === 'variables' ? { commands: [{ type: 'SetWorldClock', commandId: 'clock', worldClock: ctx.OPENING_TIME ? string(record(ctx.OPENING_TIME).endAt) : new Date(Date.parse(string(state.worldClock)) + 60000).toISOString(), evidence: '主角在街边观察周围，街道上人来人往。' }], rejectedSuggestions: [], unresolved: [] }
+      : stage === 'entities' ? variableReply({commands:[]}) : (stage === 'variables' ? variableReply : JSON.stringify)(stage === 'variables' ? { commands: [{ type: 'SetWorldClock', commandId: 'clock', worldClock: ctx.OPENING_TIME ? string(record(ctx.OPENING_TIME).endAt) : new Date(Date.parse(string(state.worldClock)) + 60000).toISOString(), evidence: '主角在街边观察周围，街道上人来人往。' }], rejectedSuggestions: [], unresolved: [] }
         : { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [{ text: '尚未公开的内部线索' }], unresolved: [] });
     await route.fulfill({ status: plan.failure === stage ? plan.status ?? 200 : 200,
       contentType: stage === 'story' ? 'text/event-stream' : 'application/json',
@@ -84,7 +84,7 @@ async function mock(page: Page) {
   });
   return { calls, plan };
 }
-const workflow = (page: Page) => page.getByRole('region', { name: '三阶段工作流', exact: true });
+const workflow = (page: Page) => page.getByRole('region', { name: '四阶段工作流', exact: true });
 async function ready(page: Page) {
   await expect(workflow(page).getByRole('status')).toContainText('本回合已结算');
 }
@@ -92,9 +92,9 @@ async function ready(page: Page) {
 test('一次创角确认自动执行开局三阶段，StrictMode和重复点击不重复请求', async ({ page }) => {
   await prepare(page); const server = await mock(page); await creation(page);
   await confirm(page); await ready(page);
-  expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'world']);
+  expect(server.calls.map((call) => call.stage)).toEqual(['story', 'entities', 'variables', 'world']);
   const result = await stored(page); expect(result.state.turnNumber).toBe(1); expect(result.state.revision).toBe(1);
-  expect(result.state.journal).toHaveLength(1); expect(result.draft.userInput).toBe(''); expect(result.draft.stageStatus).toEqual({ story: 'pending', variables: 'pending', world: 'pending' });
+  expect(result.state.journal).toHaveLength(1); expect(result.draft.userInput).toBe(''); expect(result.draft.stageStatus).toEqual({ story:'pending',entities:'pending',variables:'pending', world: 'pending' });
   expect(server.calls[0].context.CREATION_PROFILE).toBeTruthy();
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
   await expect(page.getByRole('button', { name: '生成变量候选', exact: true })).toBeHidden();
@@ -120,7 +120,7 @@ test('缺少AI配置零请求，设置后不自动补发，只在明确开始时
   await page.getByRole('button', { name: '关闭资料界面', exact: true }).click(); expect(server.calls).toHaveLength(0);
   expect(await stored(page)).toEqual(before);
   await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await ready(page);
-  expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'world']);
+  expect(server.calls.map((call) => call.stage)).toEqual(['story', 'entities', 'variables', 'world']);
 });
 
 test('发送行动只结算一次并自动串联下一轮，刷新及再次读档不补发', async ({ page }) => {
@@ -131,7 +131,7 @@ test('发送行动只结算一次并自动串联下一轮，刷新及再次读�
   const after = await stored(page); expect(after.state.revision).toBe(2); expect(after.state.journal).toHaveLength(2);
   expect(after.state.memories.short).toHaveLength(2); expect(after.draft.userInput).toBe('');
   expect(after.state.economy).toEqual(before.state.economy); expect(after.state.npc).toEqual(before.state.npc);
-  expect(server.calls.map((call) => call.stage)).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
+  expect(server.calls.map((call) => call.stage)).toEqual(['story', 'entities', 'variables', 'world', 'story', 'entities', 'variables', 'world']);
   expect(server.calls[0].context.CREATION_PROFILE).toBeTruthy(); expect(server.calls[3].context.CREATION_PROFILE).toBeUndefined();
   expect(server.calls[3].context.PLAYER_ACTION).toBe('在街边继续观察');
   await page.reload(); await ready(page); expect(await stored(page)).toEqual(after); expect(server.calls).toHaveLength(6);
@@ -142,7 +142,7 @@ for (const stage of ['variables', 'world'] as const) {
     await prepare(page); const server = await mock(page); server.plan.failure = stage;
     await creation(page); await confirm(page); await openWorkflow(page); await expect(workflow(page).getByRole('alert')).toBeVisible();
     const failed = await stored(page); expect(failed.state.revision).toBe(0); expect(failed.draft.story).toBeTruthy();
-    expect(server.calls.map((call) => call.stage)).toEqual(stage === 'variables' ? ['story', 'variables'] : ['story', 'variables', 'world']);
+    expect(server.calls.map((call) => call.stage)).toEqual(stage === 'variables' ? ['story', 'entities', 'variables'] : ['story', 'entities', 'variables', 'world']);
     await page.getByLabel('你的行动', { exact: true }).fill('下一步行动'); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
     await workflowTrigger(page).click(); await workflowTrigger(page).click();
     expect(server.calls).toHaveLength(stage === 'variables' ? 2 : 3);
@@ -150,7 +150,7 @@ for (const stage of ['variables', 'world'] as const) {
     expect(await stored(page)).toEqual(failed); server.plan.failure = undefined;
     await page.getByRole('button', { name: '继续未完成阶段', exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
     await ready(page); const after = await stored(page); expect(after.state.revision).toBe(1); expect(after.state.journal[0].story).toEqual(failed.draft.story); expect(after.draft.userInput).toBe('');
-    expect(server.calls.map((call) => call.stage)).toEqual(stage === 'variables' ? ['story', 'variables', 'variables', 'world'] : ['story', 'variables', 'world', 'world']);
+    expect(server.calls.map((call) => call.stage)).toEqual(stage === 'variables' ? ['story', 'entities', 'variables', 'variables', 'world'] : ['story', 'entities', 'variables', 'world', 'world']);
   });
 }
 
@@ -259,7 +259,7 @@ for (const disabled of ['world', 'variables'] as const) {
     await prepare(page, true, { variables: disabled !== 'variables', world: disabled !== 'world' });
     const server = await mock(page); await creation(page); await confirm(page);
     await expect(workflowSummary(page).getByRole('status')).toContainText(disabled === 'world' ? '本回合已结算' : '预览');
-    const before = await stored(page), initial = disabled === 'world' ? ['story', 'variables'] : ['story', 'world'];
+    const before = await stored(page), initial = disabled === 'world' ? ['story', 'entities', 'variables'] : ['story', 'world'];
     expect(server.calls.map((call) => call.stage)).toEqual(initial);
     await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
     if (disabled === 'world') {
@@ -301,7 +301,7 @@ for (const disabled of ['world', 'variables'] as const) {
     await expect(page.getByTestId('story-reader')).toContainText('第2幕'); await ready(page);
     const committed = await stored(page); expect(committed.state.revision).toBe(2); expect(committed.state.journal).toHaveLength(2);
     expect(committed.draft.userInput).toBe('');
-    expect(server.calls.map((call) => call.stage)).toEqual([...completedCalls, 'story', 'variables', 'world']);
+    expect(server.calls.map((call) => call.stage)).toEqual([...completedCalls, 'story', 'entities', 'variables', 'world']);
   });
 }
 
@@ -310,9 +310,9 @@ test('单行状态跟随三个实际请求，展开收起不重发且自动结�
   let held = gate(); server.plan.hold = 'story'; server.plan.gate = held.pending;
   await creation(page); await confirm(page);
   const details = page.locator('.workflow-disclosure'), summary = workflowSummary(page);
-  for (const [index, stage] of (['story', 'variables', 'world'] as const).entries()) {
-    await expect(summary).toContainText(`${{ story: '正文', variables: '变量', world: '动态世界' }[stage]}生成中 · ${index + 1}/3`);
-    await expect.poll(() => server.calls.map(call => call.stage)).toEqual(['story', 'variables', 'world'].slice(0, index + 1));
+  for (const [index, stage] of (['story', 'entities', 'variables', 'world'] as const).entries()) {
+    await expect(summary).toContainText(`${{ story:'正文',entities:'人物与实体',variables:'主角与现场',world:'场外与网络' }[stage]}生成中 · ${index + 1}/4`);
+    await expect.poll(() => server.calls.map(call => call.stage)).toEqual(['story', 'entities', 'variables', 'world'].slice(0, index + 1));
     await expect(details).not.toHaveAttribute('open');
     await expect(workflow(page).getByRole('button', { name: '取消自动执行' })).toBeHidden();
     const before = await stored(page);
@@ -321,10 +321,10 @@ test('单行状态跟随三个实际请求，展开收起不重发且自动结�
     await openBoundInput(page);
     await expect(page.locator('.bound-input .prose')).toBeVisible();
     await workflowTrigger(page).click();
-    expect(server.calls.map(call => call.stage)).toEqual(['story', 'variables', 'world'].slice(0, index + 1));
+    expect(server.calls.map(call => call.stage)).toEqual(['story', 'entities', 'variables', 'world'].slice(0, index + 1));
     expect(await stored(page)).toEqual(before);
     const release = held.release;
-    held = gate(); server.plan.hold = (['variables', 'world'] as const)[index]; server.plan.gate = held.pending;
+    held = gate(); server.plan.hold = (['entities','variables','world'] as const)[index]; server.plan.gate = held.pending;
     release();
   }
   await ready(page); await expect(details).not.toHaveAttribute('open');

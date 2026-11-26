@@ -1,17 +1,16 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { variableReply } from './fixtures/variableReply';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import type { GameState } from '../domain/state';
 import type { TurnDraft } from '../domain/drafts';
 import type { DomainCommand } from '../domain/commands';
-import { createTurnDraft } from '../domain/drafts';
 import { timePreflight } from '../domain/timePreflight';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { record, array, string } from '../services/ai/protocols';
-import { defaultSettings } from '../ui/settings/model';
 import { StoryStage } from '../workflows/storyStage';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
 import { parseVariables } from '../services/validation/aiOutputs';
@@ -118,10 +117,8 @@ describe('真实三阶段、正式事务及恢复中的时间预检', () => {
     input.settings.runtime.useVariableStage = flags.variables; input.settings.runtime.useWorldStage = flags.world;
     const result = await coordinator(repo, async (_url, init) => { const { model } = context(init); calls.push(model); return model === 'story' ? wireStory() : jsonWire(model === 'variables' ? variableResult(state, draft) : worldResult()); }).generate({ draft, ...input });
     expect(calls).toEqual(['story', ...(flags.variables ? ['variables'] : []), ...(flags.world ? ['world'] : [])]);
-    if (flags.world && !flags.variables) {
-      expect(result.draft.world?.validation).toBe('preview');
-      await expect(repo.commitTurn(submission(result.draft))).rejects.toThrow(); expect(await repo.load(state.saveId)).toEqual(state);
-    } else {
+    if(flags.world) expect(result.draft.world?.validation).toBe('validated');
+    {
       const saved = await repo.commitTurn(submission(result.draft));
       expect(saved.state.worldClock).toBe(flags.variables ? timeStory().variableGuide[0].observedFact : state.worldClock);
       expect(saved.state.events).toEqual(state.events); expect(saved.state.economy).toEqual(state.economy);

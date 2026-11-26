@@ -198,12 +198,17 @@ function addSceneDependencies(state: GameState, units: UpdateUnit<VariableStatem
 
 export async function parsePartialEntities(text: string, state: GameState, draft: TurnDraft) {
   const { text: body, contactedNpcIds } = entityEnvelope(text);
-  const result = await parsePartialVariables(body, state, draft, contactedNpcIds);
+  const result = await parseVariableBatch(body, state, draft, contactedNpcIds);
   if (result.settlement) for (const update of result.settlement.skipped) update.group = 'entities';
   return { ...result, contactedNpcIds };
 }
 
-export async function parsePartialVariables(text: string, state: GameState, draft: TurnDraft, contacts?: string[]) {
+export function parsePartialVariables(text: string, state: GameState, draft: TurnDraft) {
+  return parseVariableBatch(text, state, draft, 'scene');
+}
+
+export async function parseVariableBatch(text: string, state: GameState, draft: TurnDraft, phase: 'combined' | 'scene' | readonly string[]) {
+  const contacts = typeof phase === 'string' ? undefined : [...phase];
   const envelope = commandEnvelope(text);
   if (!envelope) throw new AiError('variable_text_syntax', undefined, { variableStep: 'envelope', fieldPath: 'text.block_structure' });
   const statements = variableStatements(envelope.text);
@@ -238,7 +243,7 @@ export async function parsePartialVariables(text: string, state: GameState, draf
     const basis = units.filter(unit => clocks.includes(unit) || selected.includes(unit));
     const ast = basis.map(unit => unit.input.ast!);
     const validation = contacts ? validateEntityStatements(ast, state, draft, contacts) :
-      validateVariableStatements(ast, state, draft, envelope.hasDescription, true);
+      validateVariableStatements(ast, state, draft, envelope.hasDescription, phase === 'scene');
     return validation
       .catch(error => {
         if (!(error instanceof AiError)) throw error;

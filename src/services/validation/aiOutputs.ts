@@ -75,7 +75,8 @@ export async function validateEntityStatements(ast: readonly ParsedVariableComma
   if (!plan.ok) throw textExecutionError(plan.error, 'mapping');
   // System opening clocks belong to the scene/Story path, never to this candidate.
   const commands = plan.value.commands.filter((_, index) => plan.value.origins[index] !== null);
-  checkEntityCommands(state, draft, contactedNpcIds, commands);
+  try { checkEntityCommands(state, draft, contactedNpcIds, commands); }
+  catch (error) { throw variableFailure(error, 'simulation'); }
   return VariableResultSchema.parse({ commands, rejectedSuggestions: [], unresolved: [] });
 }
 

@@ -13,7 +13,7 @@ const organizationDomains = {
 export function selectWorldDomains(state: GameState, draft: TurnDraft) {
   const kinds = new Set(Object.values(state.organizations).map(org => organizationDomains[org.kind]));
   const domains = [...new Set(promptManifest.modules.flatMap(module =>
-    module.applicableStages.includes('world') && module.domain && (!module.domain.startsWith('org_') || kinds.has(module.domain))
+    module.applicableStages.includes('world') && module.domain && (module.domain.startsWith('npc_') || kinds.has(module.domain))
       ? [module.domain] : []))];
   return {
     domains,

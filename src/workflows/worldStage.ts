@@ -63,16 +63,14 @@ export class WorldStage {
       if (!current.story || current.stageStatus.story !== 'ready')
         throw new AiError('configuration');
       requestSnapshot(config, 'world', input.vault);
-      if (settings.runtime.useEntityStage && !current.entities || settings.runtime.useVariableStage && !current.variables)
-        throw new AiError('candidate_conflict');
-      // 不信任持久化的 validated 字样，执行前重新核验变量候选。
-      if (current.variables?.validation === 'validated')
-        parseVariables(JSON.stringify(current.variables.result), state, current);
       const started = startStageAttempt(current, ['world'], {
         useEntityStage: settings.runtime.useEntityStage,
         useVariableStage: settings.runtime.useVariableStage,
         useWorldStage: true,
       });
+      if (started.useEntityStage && !started.entities) throw new AiError('candidate_conflict');
+      if (started.variables?.validation === 'validated')
+        parseVariables(JSON.stringify(started.variables.result), state, started);
       const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal, current);
       attempt.check();
       input.onDraft?.(draft);

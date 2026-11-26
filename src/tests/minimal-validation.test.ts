@@ -1,3 +1,4 @@
+import { stagedFixture } from './fixtures/stageScope';
 import { describe, expect, it } from 'vitest';
 import { buildCreationState, newCreation } from '../ui/creation/model';
 import { defaultSettings } from '../ui/settings/model';
@@ -42,10 +43,10 @@ describe('M8-P0A 最小校验失败复现', () => {
     // 创角主角ID随机；只在隔离测试数据中绑定物品目标。
     const fixed = commands.map((c) => c.type === 'AcquireItem' ? { ...c, item: { ...c.item, ownerRef: { kind: 'protagonist', id: state.protagonist.id } } } : c);
     const variables = parseVariables(JSON.stringify({ ...empty, commands: fixed }), state, draft);
-    const candidate = { ...draft, variables: { storyRevision: draft.storyRevision, candidateRevision: 1, requestRevision: 0, validation: 'validated' as const, result: variables }, stageStatus: { ...draft.stageStatus, variables: 'ready' as const } };
+    const candidate = stagedFixture({ ...draft, variables: { storyRevision: draft.storyRevision, candidateRevision: 1, requestRevision: 0, validation: 'validated' as const, result: variables }, stageStatus: { ...draft.stageStatus, variables: 'ready' as const } });
     expect(projectTurn(state, candidate).worldClock).toBe(end);
     const output = parseWorld(JSON.stringify(world), state, candidate);
-    const complete = { ...candidate, world: { storyRevision: draft.storyRevision, basedOnVariableRevision: 1, candidateRevision: 1, requestRevision: 0, validation: 'validated' as const, result: output }, stageStatus: { ...candidate.stageStatus, world: 'ready' as const } };
+    const complete = { ...candidate, world: { basedOnEntityRevision: candidate.entities?.candidateRevision, storyRevision: draft.storyRevision, basedOnVariableRevision: 1, candidateRevision: 1, requestRevision: 0, validation: 'validated' as const, result: output }, stageStatus: { ...candidate.stageStatus, world: 'ready' as const } };
     expect(settleTurn(state, complete, state.updatedAt).worldClock).toBe(end);
     expect(state.openingTimePending).toBe(true);
   });

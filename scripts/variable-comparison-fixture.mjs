@@ -32,13 +32,17 @@ export async function comparisonFixture(load, scenario = 'ordinary') {
   });
   return { state: GameStateSchema.parse(state), draft, scene };
 }
-export function fixedSceneCandidate(draft, commands) {
+export function fixedEntityCandidate(draft) {
   const result = { commands: [], unresolved: [], rejectedSuggestions: [] };
   if ('useEntityStage' in draft) {
     draft.entities = { storyRevision: 1, candidateRevision: 1, requestRevision: 0,
       validation: 'structural', contactedNpcIds: [], result };
     draft.stageStatus.entities = 'ready';
   }
+}
+export function fixedSceneCandidate(draft, commands) {
+  fixedEntityCandidate(draft);
+  const result = { unresolved: [], rejectedSuggestions: [] };
   draft.variables = { storyRevision: 1, candidateRevision: 1, requestRevision: 0, validation: 'validated',
     ...(draft.entities ? { basedOnEntityRevision: 1 } : {}), result: { ...result, commands } };
   draft.stageStatus.variables = 'ready';

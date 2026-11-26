@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
-import { createTurnDraft, TurnDraftSchema } from '../domain/drafts';
+import { configureTurnStages, createTurnDraft, startStageAttempt, TurnDraftSchema } from '../domain/drafts';
 import { awaitingPlayerAction, rebindableAfterStoryStop } from '../domain/turnCommit';
 import { AiClient } from '../services/ai/client';
 import { record } from '../services/ai/protocols';
@@ -169,4 +169,29 @@ describe('真实协调器→自动正式结算→等待玩家', () => {
     await expect(run(value)).rejects.toThrow();
     const state = await repo.load('save-a'); expect(state.protagonist.emotionText).toBe('来自另一标签'); expect(state.turnNumber).toBe(0); expect(state.economy.cash).toBe(10000); expect(value.calls).toHaveLength(4);
   });
+});
+
+it('关闭后重载可零请求恢复三段成功候选，缓存不能写入正式状态，过期标签的回包被拒绝', async () => {
+  const value = server(), input = setup();
+  const original = (await value.runner.generate({...input, draft:(await repo.loadDraft('save-a'))!})).draft;
+  const switches = {useEntityStage:false, useVariableStage:false, useWorldStage:false};
+  Object.assign(input.settings.runtime, switches);
+  const disabled = (await value.runner.generate({...input, draft:original})).draft;
+  expect(disabled.stageStatus).toEqual({story:'ready', entities:'skipped', variables:'skipped', world:'skipped'});
+  expect(disabled.entities ?? disabled.variables ?? disabled.world).toBeUndefined();
+  expect(disabled.inactiveCandidates).toEqual({entities:original.entities,variables:original.variables,world:original.world});
+  expect((await repo.load('save-a')).economy.cash).toBe(10000);
+  await expect(repo.saveDraft({...original,draftRevision:original.draftRevision+1},original.draftRevision)).rejects.toThrow();
+  const restored = (await value.runner.generate({...setup(),draft:(await repo.loadDraft('save-a'))!})).draft;
+  expect(restored.entities).toEqual(original.entities);
+  expect(restored.variables).toEqual(original.variables);
+  expect(restored.world).toEqual(original.world);
+  expect(restored.inactiveCandidates).toBeUndefined();
+  expect(value.calls).toEqual(['story','entities','variables','world']);
+  const disabledScene = configureTurnStages(restored, {useVariableStage:false});
+  expect(disabledScene.entities).toEqual(original.entities);
+  expect(disabledScene.world).toBeUndefined();
+  const redo = startStageAttempt(disabledScene,['entities']);
+  expect(redo.inactiveCandidates).toBeUndefined();
+  expect(configureTurnStages(redo, {useVariableStage:true}).variables).toBeUndefined();
 });

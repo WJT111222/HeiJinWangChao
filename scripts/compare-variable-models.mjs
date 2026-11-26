@@ -1,5 +1,6 @@
 // Run once per checkout in a separate process. A model is contacted only with --live.
 import process from 'node:process';
+import { execFileSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { resolve } from 'node:path';
 import { log } from 'node:console';
@@ -21,6 +22,7 @@ try {
     load('services/ai/runtime'),load('services/ai/client'),load('services/ai/configuration'),load('ui/settings/model'),
     load('domain/drafts'),load('prompts/variableDomains'),load('prompts/worldDomains'),load('domain/turnProjection'),
     load('services/validation/turnCommit'),load('domain/turnCommit'),load('tests/fixtures/variableReply')]);
+  const {requestInspections} = await load('services/ai/inspection');
   const fixture = await comparisonFixture(load), {state} = fixture;
   let draft = fixture.draft;
   const settings = defaultSettings(), config = defaultAiConfig(), channel = newChannel('openai');
@@ -31,7 +33,7 @@ try {
   config.routes.story = {channelId:channel.id, modelId:channel.defaultModel};
   const stages = 'useEntityStage' in draft ? ['entities','variables','world'] : ['variables','world'];
   const identity = createHash('sha256').update(JSON.stringify({state, story:draft.story, userInput:draft.userInput})).digest('hex');
-  const report = {run:live ? 'real-model' : 'simulated', identicalInput:identity, model:channel.defaultModel, parameters:channel.parameters,
+  const report = {run:live ? 'real-model' : 'simulated', commit:execFileSync('git',['-C',resolve(checkout),'rev-parse','HEAD'],{encoding:'utf8'}).trim(), identicalInput:identity, model:channel.defaultModel, parameters:channel.parameters,
     protocol:channel.protocol, stages:[], settled:false};
   const start = performance.now();
   try {
@@ -41,7 +43,7 @@ try {
       report.stages.push(record);
       try {
         draft = startStageAttempt(draft,[stage]);
-        const selection = stage === 'world' ? selectWorldDomains(projectTurn(state,draft),draft) : selectVariableDomains(state,draft);
+        const selection = stage === 'world' ? selectWorldDomains(projectTurn(state,draft),draft) : selectVariableDomains(state,draft,stage);
         const client = live ? new AiClient() : new AiClient(async () => {
           const content = stage === 'entities' ? '<接触者>[]</接触者>' + variableReply({commands:[]}) :
             stage === 'variables' ? variableReply({commands:fixture.scene}) :
@@ -59,7 +61,11 @@ try {
         if (stage !== 'entities' && draft.entities) candidate.basedOnEntityRevision = draft.entities.candidateRevision;
         if (stage === 'world') candidate.basedOnVariableRevision = draft.variables?.candidateRevision;
         draft = TurnDraftSchema.parse({...draft,[stage]:candidate,stageStatus:{...draft.stageStatus,[stage]:'ready'}});
-      } finally { record.elapsedMs = Math.round(performance.now()-at); }
+      } finally {
+        const actual = requestInspections.getSnapshot().find(item => item.stage === stage)?.statistics.actual;
+        record.usage ??= actual && Object.values(actual).some(value => value !== undefined) ? actual : null;
+        record.elapsedMs = Math.round(performance.now()-at);
+      }
     }
     validateTurnCandidates(state,draft);
     const next = settleTurn(state,draft,state.updatedAt);

@@ -61,7 +61,7 @@ for (const failFirst of [false, true]) test(`blocked任务与active事件保留�
     expect(calls).toBe(1);
     return;
   }
-  await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
+  await expect(page.getByRole('region', { name: '四阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
   const saved = await stored(page);
   expect(saved.state.tasks[fixture.task.id]).toMatchObject({ status: 'blocked', blockers: fixture.task.blockers, prerequisites: fixture.task.prerequisites, linkedEventId: fixture.event.id });
   expect(saved.state.events[fixture.event.id]).toMatchObject({ status: 'active', blockers: fixture.event.blockers, prerequisites: fixture.event.prerequisites });

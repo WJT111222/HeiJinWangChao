@@ -19,7 +19,7 @@ async function seedReady(page:Page){
   const channel=newChannel(),config=defaultAiConfig();channel.name='隔离测试渠道';channel.baseUrl='https://mobile2.mock.invalid/v1';channel.defaultModel='mock-chat';config.channels=[channel];config.routes.story={channelId:channel.id,modelId:'mock-chat'};saveAiConfig(localStorage,config);new CredentialVault(sessionStorage,localStorage).set(channel.id,'fictional-mobile-test-value');
  });await page.goto('/#game/save-a');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
 }
-async function workflow(page:Page){await page.getByRole('button',{name:'三阶段工作流详情',exact:true}).click();return page.getByRole('dialog',{name:'三阶段工作流',exact:true});}
+async function workflow(page:Page){await page.getByRole('button',{name:'四阶段工作流详情',exact:true}).click();return page.getByRole('dialog',{name:'四阶段工作流',exact:true});}
 async function settings(page:Page){await page.getByRole('navigation',{name:'底部导航'}).getByRole('button',{name:'设置',exact:true}).click();return aiTab(page);}
 
 for(const [width,height]of [[375,667],[390,844],[430,932],[750,800],[900,800]])test(`手机 ${width}×${height}：候选、选择器和操作表`,async({page})=>{
@@ -27,7 +27,7 @@ for(const [width,height]of [[375,667],[390,844],[430,932],[750,800],[900,800]])t
  for(const [stage,name] of [['variables','变量'],['world','世界']] as const){
   const candidate=await openStageCandidates(page,stage);await expect(wf).toHaveAttribute('aria-modal','false');await expect(candidate).toBeVisible();await expect(candidate.getByLabel(`完整${name}候选`,{exact:true})).toHaveCount(0);await expect(candidate).toContainText('未正式结算');await page.screenshot({path:`${dir}/react-${name}-${width}.png`});
   await candidate.getByRole('button',{name:`主动查看完整${name}候选`,exact:true}).click();await expect(candidate.getByLabel(`完整${name}候选`,{exact:true})).toBeVisible();
-  await wf.getByRole('button',{name:'返回三阶段列表',exact:true}).click();await expect(wf).toBeVisible();await expect(wf.locator('.workflow-stages>li').nth(stage==='variables'?1:2).locator('.wf-ri')).toBeFocused();
+  await wf.getByRole('button',{name:'返回四阶段列表',exact:true}).click();await expect(wf).toBeVisible();await expect(wf.locator('.workflow-stages>li').nth(stage==='variables'?1:2).locator('.wf-ri')).toBeFocused();
  }
  await page.keyboard.press('Escape');const st=await settings(page);const trigger=st.getByRole('combobox',{name:'正文生成渠道',exact:true});await trigger.click();const picker=page.getByRole('dialog',{name:'正文生成渠道',exact:true});await expect(picker).toBeVisible();// Wait for the sheet's real entrance animation; keep the exact bottom-edge assertion.
  await expect.poll(async()=>{const rect=(await picker.boundingBox())!;return rect.y+rect.height;}).toBe(height);await expect(picker.getByRole('listbox',{name:'正文生成渠道'})).toBeVisible();await page.screenshot({path:`${dir}/react-picker-${width}.png`});await page.keyboard.press('Escape');await expect(st).toBeVisible();await expect(trigger).toBeFocused();await page.keyboard.press('Escape');await fit(page);expect(calls).toBe(0);expect(await nightSealStored(page)).toEqual(before);
@@ -74,7 +74,7 @@ test('新错误自动进入诊断日志，复制单条、清空、原文与规�
 });
 
 test('诊断纯浏览：不请求模型、不写正式状态或草稿；刷新不持久化临时响应',async({page})=>{
- let calls=0;await page.route('https://mobile2.mock.invalid/**',route=>{calls++;return route.abort();});await seedReady(page);const before=await nightSealStored(page);await workflow(page);await openWorkflowDiagnostics(page);await page.getByRole('button',{name:'重试与变更详情',exact:true}).click();const diag=page.getByRole('dialog',{name:'重试与变更详情'});for(const name of ['概要','运行日志','请求用量','模型原文'])await diag.getByRole('tab',{name:new RegExp(`^${name}`)}).click();await page.keyboard.press('Escape');await expect(diag).toHaveCount(0);await expect(page.getByRole('dialog',{name:'三阶段工作流',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'重试与变更详情',exact:true})).toBeFocused();expect(calls).toBe(0);expect(await nightSealStored(page)).toEqual(before);await page.reload();await expect(diag).toHaveCount(0);expect(await nightSealStored(page)).toEqual(before);
+ let calls=0;await page.route('https://mobile2.mock.invalid/**',route=>{calls++;return route.abort();});await seedReady(page);const before=await nightSealStored(page);await workflow(page);await openWorkflowDiagnostics(page);await page.getByRole('button',{name:'重试与变更详情',exact:true}).click();const diag=page.getByRole('dialog',{name:'重试与变更详情'});for(const name of ['概要','运行日志','请求用量','模型原文'])await diag.getByRole('tab',{name:new RegExp(`^${name}`)}).click();await page.keyboard.press('Escape');await expect(diag).toHaveCount(0);await expect(page.getByRole('dialog',{name:'四阶段工作流',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'重试与变更详情',exact:true})).toBeFocused();expect(calls).toBe(0);expect(await nightSealStored(page)).toEqual(before);await page.reload();await expect(diag).toHaveCount(0);expect(await nightSealStored(page)).toEqual(before);
 });
 
 test('记忆失败操作表：保留来源、重试授权与暂停条件',async({page})=>{

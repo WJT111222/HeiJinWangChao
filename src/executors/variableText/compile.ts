@@ -1,4 +1,4 @@
-import { entityCreationProjection } from '../../domain/entityCandidate';
+import { checkEntityCommands } from '../../domain/entityCandidate';
 import { HaremChangesSchema } from '../../domain/harem/schema';
 import { compileSourceOperation, normalizeSourcePath, sourceValues, trackSourceValues } from './sourceSemantics';
 import { SceneEventCreationSchema, SceneEventStateSchema } from '../../domain/events/schema';
@@ -92,7 +92,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   let base: GameState, clock: string, systemCommands: DomainCommand[];
   try {
     base = openingTimeBase(current, draft, []);
-    if (context.phase !== 'entities' && draft.entities) base = entityCreationProjection(base, draft.entities.result.commands);
+    if (context.phase !== 'entities' && draft.entities) base = checkEntityCommands(base, draft, draft.entities.contactedNpcIds, draft.entities.result.commands);
     clock = openingTimeSelection(current, draft, [])?.endAt ?? base.worldClock;
     systemCommands = variableCommandsForTurn(current, draft, []);
     // 开局投影的精确重放：占位标记已在模拟副本清除，但保留原程序时钟幂等凭据。

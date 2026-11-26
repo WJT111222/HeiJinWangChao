@@ -31,7 +31,7 @@ const stageIndex = { story: 0, variables: 1, world: 2 } as const;
 export type WorkflowStage = keyof typeof stageIndex;
 export async function openStageSwitches(page: Page) {
   await openWorkflow(page);
-  const back=page.getByRole('button',{name:'返回三阶段列表',exact:true});
+  const back=page.getByRole('button',{name:'返回四阶段列表',exact:true});
   if(await back.isVisible())await back.click();
 }
 async function openRailView(page:Page,name:'运行诊断'|'已绑定输入') {
@@ -56,7 +56,7 @@ export async function openCandidateRaw(page:Page,stage:'variables'|'world'){awai
 export async function openStoryInspection(page:Page){return openStageRaw(page,'story');}
 // Candidate is a tab inside the workflow now; return to its first level on phones.
 export async function closeStageCandidates(page:Page){if(!desktopWorkflow(page))await openStageSwitches(page);}
-export async function closeWorkflowSheet(page:Page){if(!desktopWorkflow(page)&&await page.getByRole('dialog',{name:'三阶段工作流',exact:true}).isVisible())await page.keyboard.press('Escape');}
+export async function closeWorkflowSheet(page:Page){if(!desktopWorkflow(page)&&await page.getByRole('dialog',{name:'四阶段工作流',exact:true}).isVisible())await page.keyboard.press('Escape');}
 
 // Responsive navigation opens the existing directory/profile dialogs, without touching save state.
 export async function openWorldArchive(page: Page) {

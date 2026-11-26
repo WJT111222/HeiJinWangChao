@@ -36,7 +36,7 @@ async function stored(page: Page) {
     try { return await repo.loadGame(location.hash.slice(6)); } finally { repo.close(); }
   });
 }
-const settled = (page: Page) => expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
+const settled = (page: Page) => expect(page.getByRole('region', { name: '四阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
 async function mock(page: Page) {
   const calls: string[] = [], control = { badWorld: false };
   await page.route('https://opening-life.mock.invalid/**', async route => {
@@ -71,7 +71,7 @@ test('创角自动三阶段初始化生活基础，刷新不重复，下一回�
 
 test('World失败不提前初始化，刷新后明确恢复只请求World', async ({ page }) => {
   await prepare(page); const server = await mock(page); server.control.badWorld = true; await create(page);
-  const workflow = page.getByRole('region', { name: '三阶段工作流' });
+  const workflow = page.getByRole('region', { name: '四阶段工作流' });
   await expect(workflow.getByRole('status')).toHaveText('三阶段 · 动态世界生成失败 · 查看详情');
   const before = await stored(page); expect(before.state.economy.cash).toBeNull(); expect(before.state.openingInitializationPending).toBe(true);
   expect(before.draft.variables.validation).toBe('validated'); expect(server.calls).toEqual(['story', 'variables', 'world']);

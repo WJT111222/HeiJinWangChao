@@ -31,9 +31,10 @@ describe('三段依赖与权限', () => {
     const {contactedNpcIds,...result} = entities;
     const withEntities = TurnDraftSchema.parse({...draft,entities:{contactedNpcIds,result,storyRevision:1,requestRevision:0,candidateRevision:1,validation:'structural'},stageStatus:{...draft.stageStatus,entities:'ready'}});
     const scene = startStageAttempt(withEntities,['variables']);
-    const candidate = await parseTextVariables(envelope('set organizations[new-org].state = {"description":"开始营业"}'),state,scene);
+    await expect(parseTextVariables(envelope('set organizations[new-org].state = {"description":"替换建档说明"}'), state, scene)).rejects.toThrow();
+    const candidate = await parseTextVariables(envelope('set organizations[new-org].state = {"operatingAreaText":"社区商铺"}'),state,scene);
     const ready = TurnDraftSchema.parse({...scene,variables:{result:candidate,storyRevision:1,requestRevision:scene.stageRequestRevisions.variables,candidateRevision:2,basedOnEntityRevision:1,validation:'validated'},stageStatus:{...scene.stageStatus,variables:'ready'}});
-    expect(projectTurn(state,ready).organizations[id].description).toBe('开始营业');
+    expect(projectTurn(state,ready).organizations[id]).toMatchObject({operatingAreaText:'社区商铺'});
     expect(state.organizations[id]).toBeUndefined();
     expect(startStageAttempt(ready,['entities']).variables).toBeUndefined();
     expect(TurnDraftSchema.safeParse({...ready, entities:undefined,stageStatus:{...ready.stageStatus,entities:'pending'}}).success).toBe(false);

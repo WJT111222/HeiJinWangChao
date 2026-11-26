@@ -319,7 +319,7 @@ describe('真实正文入口与草稿原子替换', () => {
   });
   it('重新 Roll 成功后递增版本，清除两种旧候选；同一回合、输入与执行开关保持不变', async () => {
     await repo.deleteDraft(draft.saveId, 0);
-    draft = createTurnDraft(draft.saveId, 0, 'both-stages', 'opening', '本回合绑定输入');
+    draft = createTurnDraft(draft.saveId, 0, 'both-stages', 'opening', '本回合绑定输入', true, true, false);
     await repo.saveDraft(draft, null);
     let old = rerollStory(draft, {
       turnKind: 'opening',

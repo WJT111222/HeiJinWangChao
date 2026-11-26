@@ -192,7 +192,7 @@ async function discardForRetry(page: Page, failed: Awaited<ReturnType<typeof sto
   return expected;
 }
 async function generated(page: Page) {
-  await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(0)).toContainText('已完成');
+  await expect(page.getByRole('region', { name: '四阶段工作流' }).locator('.workflow-stages > li').nth(0)).toContainText('已完成');
 }
 test('真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计', async ({
   page,

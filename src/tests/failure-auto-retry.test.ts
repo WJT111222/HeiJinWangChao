@@ -207,7 +207,7 @@ describe('失败自动重试', () => {
         onAttemptFailure: (_stage, error) => { failures.push(error instanceof AiError ? error.code : 'other'); },
       });
       expect(result.status).toBe('complete');
-      expect(counts).toEqual({ story: 1, variables: 4, world: 1 });
+      expect(counts).toEqual({ story: 1, entities:0, variables: 4, world: 1 });
       expect(failures).toHaveLength(3);
       expect((await repo.load('save-a')).turnNumber).toBe(0);
     } finally {

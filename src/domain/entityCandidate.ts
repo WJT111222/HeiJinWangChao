@@ -1,6 +1,5 @@
-import { NpcSchema } from './npc/schema';
 import { requireData } from './common';
-import type { DomainCommand } from './commands';
+import { projectEntityChanges, type DomainCommand } from './commands';
 import type { TurnDraft } from './drafts';
 import type { GameState } from './state';
 import { commandsForPhase } from './stageCommands';
@@ -14,12 +13,13 @@ export function checkEntityCommands(state: GameState, draft: TurnDraft, declared
   const ids = contactIds(state, declared);
   const allowed = new Set(commandsForPhase('entities', draft.turnKind));
   const people = new Set(Object.keys(state.npc));
-  const entities = entityCreationProjection(state, commands);
+  for (const command of commands)
+    requireData(allowed.has(command.type), 'STAGE_PERMISSION', '人物与实体阶段命令越权');
+  const entities = projectEntityChanges(state, draft.turnId, commands);
   const checkPerson = (id: string) => requireData(Object.hasOwn(entities.npc, id), 'NOT_FOUND', '人物引用不存在');
   const checkLocation = (id: string) => requireData(Object.hasOwn(entities.locations, id), 'NOT_FOUND', '地点引用不存在');
   requireData(new Set(commands.map(command => command.commandId)).size === commands.length, 'DUPLICATE_COMMAND', '候选命令 ID 重复');
   for (const command of commands) {
-    requireData(allowed.has(command.type), 'STAGE_PERMISSION', '人物与实体阶段命令越权');
     if (command.type === 'CreateNpc') {
       requireData(!people.has(command.npc.id), 'DUPLICATE_ID', '新建人物 ID 重复');
       people.add(command.npc.id);
@@ -51,31 +51,25 @@ export function checkEntityCommands(state: GameState, draft: TurnDraft, declared
     }
   }
   for (const id of declared) requireData(people.has(id), 'NOT_FOUND', '接触名单中的人物不存在');
-}
-
-/** Only entity tables are overlaid. The persisted save revision and clock remain the compilation basis. */
-export function entityCreationProjection(state: GameState, commands: readonly DomainCommand[]) {
-  const npc = { ...state.npc }, locations = { ...state.locations }, organizations = { ...state.organizations };
-  for (const command of commands) {
-    if (command.type === 'CreateNpc') {
-      const value = command.npc;
-      requireData(!Object.hasOwn(npc, value.id), 'DUPLICATE_ID', '新建人物 ID 重复');
-      npc[value.id] = NpcSchema.parse(value.kind === 'special' ? { longTermMemories: [], ...value } : value);
-    } else if (command.type === 'CreateLocation') {
-      requireData(!Object.hasOwn(locations, command.location.id), 'DUPLICATE_ID', '新建地点 ID 重复');
-      locations[command.location.id] = command.location;
-    } else if (command.type === 'CreateOrganization') {
-      requireData(!Object.hasOwn(organizations, command.organization.id), 'DUPLICATE_ID', '新建组织 ID 重复');
-      organizations[command.organization.id] = command.organization;
-    }
-  }
-  return { ...state, npc, locations, organizations };
+  return entities;
 }
 
 export function sceneAndEntityCommands(state: GameState, draft: TurnDraft, scene: readonly DomainCommand[]) {
   if (!draft.entities) return [...scene];
   const { result, contactedNpcIds } = draft.entities;
   checkEntityCommands(state, draft, contactedNpcIds, result.commands);
+  const created = new Map(result.commands.flatMap(command => command.type === 'CreateOrganization'
+    ? [[command.organization.id, command.organization] as const] : []));
+  for (const command of scene) {
+    if (command.type === 'UpdateOrganization') {
+      const initial = created.get(command.organizationId);
+      requireData(!initial || Object.keys(command.changes).every(field => !Object.hasOwn(initial, field)),
+        'STAGE_PERMISSION', '现场阶段不能覆盖本回合新组织已写入的字段');
+    }
+    if (command.type === 'RecordOrgRelation' && created.has(command.organizationId))
+      requireData(!Object.hasOwn(created.get(command.organizationId)!, 'protagonistRelation'),
+        'STAGE_PERMISSION', '现场阶段不能覆盖本回合新组织已记录的主角关系');
+  }
   const clocks = scene.filter(c => c.type === 'SetWorldClock');
   const clock = clocks.at(-1)?.worldClock ?? openingTimeSelection(state, draft, scene)?.endAt ?? state.worldClock;
   const entities = result.commands.map(command => command.type === 'RecordNpcMemory'

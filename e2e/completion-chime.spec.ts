@@ -124,7 +124,7 @@ test('设置页可切换提示音并试听', async ({ page }) => {
 });
 
 // —— 与实际回合流程的联动 ——
-const workflowRegion = (page: Page) => page.getByRole('region', { name: '三阶段工作流' });
+const workflowRegion = (page: Page) => page.getByRole('region', { name: '四阶段工作流' });
 /** 关闭 CORS 中转，只走直连，便于按阶段替换回包（与 turn-coordinator 的瞬时失败用例相同）。 */
 const directOnly = (page: Page) => page.evaluate(async () => { const path = '/src/services/ai/corsRelay.ts'; (await import(path)).setRelayMode('off'); });
 /** 在原替身之前拦截指定阶段：返回 fail 给出的状态码，否则交还原替身。 */

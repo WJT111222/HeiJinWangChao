@@ -1,3 +1,4 @@
+import { stagedFixture } from './fixtures/stageScope';
 import { afterEach, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { stageContext, subStage, endStage, stageCommand, stageStart, stageNow } from './fixtures/eventStages';
@@ -186,7 +187,7 @@ it('真实新建阶段排队入场→下一轮Story回执→文本Variables提�
   const time='2027-01-02T01:00:00+08:00';
   const text=variableTextEnvelope(`<命令>set worldClock = ${JSON.stringify(time)}\nset events[${invited.id}].sceneState = {"status":"resolved","resolvedAt":"${time}","outcome":"changed","resolutionText":"主角在通话中实际结束了本阶段。"}</命令>`);
   const vars=await parseTextVariables(text,formal,next);
-  const selected=TurnDraftSchema.parse({...next,variables:{storyRevision:1,candidateRevision:1,requestRevision:0,validation:'validated',result:vars},stageStatus:{...next.stageStatus,variables:'ready'}});
+  const selected=stagedFixture({...next,variables:{storyRevision:1,candidateRevision:1,requestRevision:0,validation:'validated',result:vars},stageStatus:{...next.stageStatus,variables:'ready'}});
   expect(projectTurn(formal,selected).events[invited.id].resolvedAt).toBe(time);
   expect(()=>parseWorld(JSON.stringify({...a.response,eventCommands:[]}),formal,selected)).not.toThrow();
   const noReceipt={...next,story:{...next.story!,variableGuide:[]}};

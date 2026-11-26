@@ -61,5 +61,8 @@ departments每项{id,name,duty,headPosition?,headPublicName?,headNpcId?,scaleTex
 
 World可自主更新合法场外组织现状。UpdateOrganization={commandId,type,organizationId,expectedRevision,changes,financialBasis?,evidence}；依赖正式BASE_SAVE_REVISION，changes仅白名单字段。不得重写本轮合法Variables已经确认的同一组织字段或主角关系；可更新不冲突的后台字段。World创建组织仍保持原创建权限，不内联金额；已有组织金额采用上述明确更新入口。
 
-## 新建场外人物和地点
-先按稳定 ID、identityKey、姓名与别名查询存档。新建人物遵循 COMMAND_CATALOG 的 CreateNpc 结构，onScene=false、affinity=0、memories=[]、knownInformation=[]，省略 affinityConfirmed 和 lastInteractionAt。男性也可为特殊人物。privateProfile 仅限有资格的特殊女性，未知字段可省略。场外记忆单独使用 RecordNpcMemory。CreateLocation.parentId 是真实地理上级，未知时省略。
+## World新建NPC初值
+先按稳定 ID、identityKey、姓名与别名查询存档。新建人物 onScene=false、affinity=0、memories=[]、knownInformation=[]，affinityConfirmed必须省略，同时省略 lastInteractionAt。亲属关系可记入 relationshipText，亲属身份本身不产生好感确认。场外记忆单发 RecordNpcMemory。
+私密档案资格按已登记的性别、类型和年龄处理。男性特殊NPC不得携带privateProfile。地理从属用真实存在的上级地点，例如苏黎世属于瑞士，未知时可省略 parentId。
+新建组织的relationHistory=[]。关系变化另发 RecordOrgRelation。
+输出前结构自检应检查到期事项、命令分组、稳定引用、时间窗口及任务与事件的关联。

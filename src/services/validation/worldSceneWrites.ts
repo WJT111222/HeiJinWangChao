@@ -30,7 +30,8 @@ function describe(command: string, id: string, same: string[], changed: string[]
 
 /** 原始候选已通过权限和领域校验后，仅剔除合法 worldCommands 的冲突字段。 */
 export function stripVariableSceneWrites(result: WorldResult, state: GameState, draft: TurnDraft): string[] {
-  const prior = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
+  const prior = [...(draft.entities?.result.commands ?? []),
+    ...(draft.variables?.validation === 'validated' ? draft.variables.result.commands : [])];
   if (!prior.length) return [];
   const orgWrites = new Map<string, Map<string, unknown>>(), npcWrites = new Map<string, Map<string, unknown>>();
   const relationOrgs = new Set<string>();
@@ -40,6 +41,10 @@ export function stripVariableSceneWrites(result: WorldResult, state: GameState, 
     map.set(id, fields);
   };
   for (const c of prior) {
+    if (c.type === 'CreateOrganization') {
+      remember(orgWrites, c.organization.id, Object.entries(c.organization));
+      relationOrgs.add(c.organization.id);
+    }
     if (c.type === 'UpdateOrganization') remember(orgWrites, c.organizationId, Object.entries(c.changes));
     if (c.type === 'RecordOrgRelation') relationOrgs.add(c.organizationId);
     if (c.type === 'UpdateNpc') remember(npcWrites, c.npcId, Object.entries(c.changes));

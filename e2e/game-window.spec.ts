@@ -241,7 +241,7 @@ test('设置、历史检索及创角长页仍可滚动，关闭资料保留阅�
 });
 
 test('工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间', async ({ page }, info) => {
-  const before = await seed(page), workflow = page.getByRole('region', { name: '三阶段工作流', exact: true });
+  const before = await seed(page), workflow = page.getByRole('region', { name: '四阶段工作流', exact: true });
   const disclosure = page.locator('.workflow-disclosure'), summary = workflowSummary(page);
   await expect(disclosure).not.toHaveAttribute('open'); await expect(summary).toContainText('详情');
   expect((await workflow.boundingBox())!.height).toBeLessThanOrEqual(44);

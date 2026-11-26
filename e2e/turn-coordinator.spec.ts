@@ -59,7 +59,7 @@ async function seed(page: Page, mode: 'opening' | 'regular' = 'opening') {
   }, mode);
   await page.goto('/#game/save-a'); await openGameTools(page);
   await page.reload(); await openGameTools(page);
-  await expect(page.getByRole('region', { name: '三阶段工作流' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '四阶段工作流' })).toBeVisible();
   return before;
 }
 async function stored(page: Page) {
@@ -141,7 +141,7 @@ async function mock(
   });
   return { calls, options };
 }
-const workflow = (page: Page) => page.getByRole('region', { name: '三阶段工作流' });
+const workflow = (page: Page) => page.getByRole('region', { name: '四阶段工作流' });
 async function complete(page: Page) {
   await expect(workflow(page)).toContainText('本回合已结算');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();

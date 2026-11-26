@@ -245,7 +245,7 @@ describe('变量阶段真实请求到草稿保存', () => {
       expect(inspection.scope?.modules.some((m) => m.id === 'stages.opening.variables')).toBe(true);
       expect(
         inspection.scope?.modules.filter((m) => m.id.startsWith('variableGroups.')),
-      ).toHaveLength(9);
+      ).toHaveLength(3);
       expect(JSON.stringify(inspection.body)).toContain('turn-a');
       expect(JSON.stringify(inspection.body)).toContain('SpendFunds');
       expect(JSON.stringify(inspection)).not.toContain('mock-variable-key');

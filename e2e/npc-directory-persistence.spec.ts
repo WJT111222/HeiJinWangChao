@@ -40,7 +40,7 @@ test('真实Chromium持久用户目录关闭重启，星标/休眠七字段不�
     });
     await closeNpcRoster(page); await page.getByLabel('你的行动', { exact: true }).fill('重新开始工作交流'); await page.getByRole('button', { name: '发送', exact: true }).click();
     try { await expect.poll(async () => (await rosterGame(page)).state.turnNumber, { timeout: 20000 }).toBe(before.state.turnNumber + 1); }
-    catch { await openGameTools(page); throw new Error(JSON.stringify({ calls: mock.calls, workflow: await page.getByRole('region', { name: '三阶段工作流', exact: true }).innerText() })); }
+    catch { await openGameTools(page); throw new Error(JSON.stringify({ calls: mock.calls, workflow: await page.getByRole('region', { name: '四阶段工作流', exact: true }).innerText() })); }
     expect(mock.calls).toEqual(['story', 'variables', 'world']);
     await openNpcRoster(page); detail = await selectNpc(page, '林澄'); await expect(detail).not.toContainText('特殊人物资料待完善'); await expect(detail).toContainText('从社区成长为设计师');
     await closeNpcRoster(page); await page.getByRole('button', { name: /^撤回（1）$/ }).click();

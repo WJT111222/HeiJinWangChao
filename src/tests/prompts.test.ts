@@ -110,7 +110,7 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
         ).toEqual(
           stage === 'story'
             ? ['shared.06_story_output', 'shared.09_dialogue_labels']
-            : [stage === 'variables' ? 'shared.07_command_output' : 'shared.08_world_output'],
+            : stage === 'variables' ? ['shared.07_command_output'] : ['shared.08_world_output','shared.history_output'],
         );
         if (stage !== 'story')
           expect(
@@ -153,7 +153,7 @@ describe('M3-P1 静态资源注册（不是提示词组装或 API 请求）', ()
       const offscreen = moduleById(`variableGroups.${domain}.offscreen`);
       expect(init.modes).toEqual(['opening']);
       expect(update.modes).toEqual(['regular']);
-      expect(update.applicableStages).toEqual(['variables']);
+      expect(update.applicableStages).toEqual(domain.startsWith('org_') ? ['entities','variables'] : [domain.startsWith('npc_') ? 'entities' : 'variables']);
       expect(offscreen.applicableStages).toEqual(['world']);
       expect(offscreen.modes).toEqual(['opening', 'regular']);
       expect([init, update, offscreen].every((m) => m.activation === 'relevant-domain')).toBe(true);

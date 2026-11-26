@@ -94,7 +94,7 @@ describe('合成展览筹备样例经真实Runtime、候选、Commit与重载',(
  it('旧式双方已填写的合法候选继续通过，不需迁移存档或增加请求',async()=>{
   const a=await setup(),raw={...a.response,taskCommands:[{...a.response.taskCommands[0],task:{...a.response.taskCommands[0].task,linkedEventId:'event_fixture_exhibition'}}]};
   const result=parseWorld(JSON.stringify(raw),a.state,a.draft);
-  const candidate=await a.repo.saveDraft({...a.draft,draftRevision:a.draft.draftRevision+1,world:{storyRevision:1,candidateRevision:1,requestRevision:0,basedOnVariableRevision:1,validation:'validated',result},stageStatus:{...a.draft.stageStatus,world:'ready'}},a.draft.draftRevision);
+  const candidate=await a.repo.saveDraft({...a.draft,draftRevision:a.draft.draftRevision+1,world:{storyRevision:1,candidateRevision:1,requestRevision:0,basedOnEntityRevision:a.draft.entities?.candidateRevision,basedOnVariableRevision:1,validation:'validated',result},stageStatus:{...a.draft.stageStatus,world:'ready'}},a.draft.draftRevision);
   await a.repo.commitTurn(submission(candidate,''));expect(a.transport).not.toHaveBeenCalled();
  });
 });

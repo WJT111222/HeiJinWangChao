@@ -36,7 +36,7 @@ for(const firstFailure of [false,true])test(`固定阶段积压结算保留原�
     expect(calls).toBe(1);await page.reload();await openGameTools(page);expect(calls).toBe(1);invalid=false;
     await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
   }
-  await expect(page.getByRole('region',{name:'三阶段工作流'}).getByRole('status')).toContainText('本回合已结算');
+  await expect(page.getByRole('region',{name:'四阶段工作流'}).getByRole('status')).toContainText('本回合已结算');
   const saved=await stored(page);expect(saved.state.events['stage-one']).toBeUndefined();
   expect(saved.state.retiredEvents['stage-one'].detail).toMatchObject({resolvedAt:'2027-01-03T00:00:00+08:00',outcome:'success',resolutionText:expect.any(String),resultKnowledge:{reported:['值班人员提出另一种说法']}});
   expect(saved.state.events['main-stage']).toEqual(initial.state.events['main-stage']);expect(saved.state.worldClock).toBe('2027-04-01T00:00:00+08:00');
