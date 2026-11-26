@@ -95,7 +95,7 @@ it('详细记忆经文本编译/候选模拟/World/原子提交/重载原样保�
   expect(new Set(saved.state.npc.person.memories.map(m => m.id)).size).toBe(saved.state.npc.person.memories.length);
 });
 
-it('真实Coordinator→Runtime→Mock→候选→Commit：亲历/推测/转述分属本人，恰好三次请求', async () => {
+it('真实Coordinator→Runtime→Mock→候选→Commit：亲历/推测/转述分属本人，恰好四次请求', async () => {
   const factory = new IDBFactory(), name = 'quality-runtime', repo = await SaveRepository.open(name, factory); repositories.push(repo);
   const state = npcRosterState(); await seedExisting(factory, name, state);
   const initial = createTurnDraft(state.saveId, state.revision, 'quality-runtime-turn', 'regular', '核对费用'); await repo.saveDraft(initial, null);
@@ -124,7 +124,7 @@ it('真实Coordinator→Runtime→Mock→候选→Commit：亲历/推测/转述�
     expect(saved.state.npc.person.memories.at(-1)?.text).toBe(experiencedMemory);
     expect(saved.state.npc.special.memories.at(-1)?.text).toBe('[推测]' + suspectedMemory);
     expect(saved.state.npc.other.memories.at(-1)).toMatchObject({ text: '[转述]' + reportedMemory, knowledgeKind: 'reported', knowledgeSource: '林澄发来的消息', visibility: 'npc_private', sourceTurnIds: [initial.turnId] });
-    expect(calls).toEqual(['story', 'entities', 'variables', 'world']); expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(calls).toEqual(['story', 'entities', 'variables', 'world']); expect(fetcher).toHaveBeenCalledTimes(4);
   } finally { coordinator.dispose(); }
 });
 

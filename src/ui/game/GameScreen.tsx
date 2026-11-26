@@ -377,7 +377,7 @@ export function GameScreen({
   const canCommit = Boolean(validDraft && draft && !stageSettingsChanged && !openingIssue && completeTurnDraft(draft));
   const retainedOpeningVariables = draft?.variables?.validation === 'validated';
   const openingGuidance = openingIssue && `${storyRuleNames[openingIssue.reason]}，正文已保留。可重新 Roll 开局正文，或${useVariableStage
-    ? '在变量阶段重新生成候选。'
+    ? '在主角与现场重新生成候选。'
     : retainedOpeningVariables ? '重新启用主角与现场，继续时重新校验并尝试复用已有候选。' : '启用主角与现场后主动补算时间。'}`;
   const openingReuse = Boolean(openingTime && useVariableStage && retainedOpeningVariables);
   const awaitingAction = awaitingPlayerAction(state, draft);
@@ -555,7 +555,8 @@ export function GameScreen({
         : '当前候选尚不满足正式结算条件。请展开高级设置检查并补算必要候选。'
       : '')
     : '';
-  function openRuntimeSettings(target = !useVariableStage ? 'variables' as const : 'world' as const) {
+  const disabledStage = !useEntityStage && !recoveryStagesOff ? 'entities' : !useVariableStage ? 'variables' : 'world';
+  function openRuntimeSettings(target: 'entities' | 'variables' | 'world' = disabledStage) {
     if (!compactSidebars) {
       // PC：选中提示所指的阶段，并聚焦该阶段自己的开关。
 
@@ -652,7 +653,7 @@ export function GameScreen({
     (activeStage === 'story' || activeStage === 'entities' || activeStage === 'variables' || activeStage === 'world' ? activeStage : undefined)
     ?? progressSteps.find((step) => step.visual === 'fail')?.stage
     ?? progressSteps.find((step) => step.text === '待生成' || step.text === '仅预览')?.stage
-    ?? (disabledGuidance ? (!settings.runtime.useVariableStage ? 'variables' : 'world') : undefined)
+    ?? (disabledGuidance ? disabledStage : undefined)
     ?? 'story';
   const rawTurnId = awaitingAction ? state.journal.at(-1)?.turnId : draft?.turnId;
   const staleDraftMessage = draft ? '当前草稿已过期，请重新读取存档。' : '没有可执行的回合草稿。请重新读取存档；暂时无法生成或结算。';

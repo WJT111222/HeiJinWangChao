@@ -64,7 +64,7 @@ async function seed(page: Page, stage: 'variables' | 'world', old = false) {
 }
 async function closeDiagnostics(page: Page) { if (await page.locator('dialog.mobile-diagnostics-sheet[open]').isVisible()) await page.keyboard.press('Escape'); }
 async function closeWorkflow(page: Page) {
-  const close = page.getByRole('button', { name: '收起三阶段详情', exact: true });
+  const close = page.getByRole('button', { name: '收起四阶段详情', exact: true });
   if (await close.isVisible()) await close.click(); else await workflowTrigger(page).click();
 }
 async function begin(page: Page, stage: 'variables' | 'world', label: string) {
@@ -90,7 +90,7 @@ test('旧运行设置不重置：两个独立开关默认关闭，显式保存�
 });
 
 for (const stage of ['variables', 'world'] as const) {
-  const label = stage === 'variables' ? '变量' : '世界', rawLabel = stage === 'variables' ? '变量' : '动态世界';
+  const label = stage === 'variables' ? '变量' : '世界', rawLabel = stage === 'variables' ? '变量' : '场外与网络';
   test(`${stage} 实时只读、主动公开思考、跟随与复制、完整校验后结算`, async ({ page }, info) => {
     const before = await seed(page, stage); await begin(page, stage, label);
     await page.evaluate(async () => {

@@ -60,9 +60,9 @@ async function mock(page: Page) {
   const calls: { stage: Stage; context: Record<string, unknown>; messages: string }[] = [];
   const plan: { failure?: Stage; status?: number; hold?: Stage; gate?: Promise<void>; network?: boolean; badSummary?: boolean } = {};
   await page.route('https://action.mock.invalid/**', async (route) => {
-    if (route.request().method() === 'GET') { await route.fulfill({ json: { data: [{ id: 'story' }, { id: 'variables' }, { id: 'world' }] } }); return; }
+    if (route.request().method() === 'GET') { await route.fulfill({ json: { data: [{ id: 'story' }, {id:'entities'}, { id: 'variables' }, { id: 'world' }] } }); return; }
     const body = record(route.request().postDataJSON()), stage = string(body.model);
-    if (stage !== 'story' && stage !== 'variables' && stage !== 'world') throw new Error('unexpected model route');
+    if (stage !== 'story' && stage !== 'entities' && stage !== 'variables' && stage !== 'world') throw new Error('unexpected model route');
     const messages = array(body.messages).map((item) => string(record(item).content)).join('\n');
     const match = messages.match(/<GAME_CONTEXT>\n([\s\S]*?)\n<\/GAME_CONTEXT>/); if (!match) throw new Error('missing actual context');
     const ctx = record(JSON.parse(match[1])); calls.push({ stage, context: ctx, messages });
@@ -115,7 +115,7 @@ test('缺少AI配置零请求，设置后不自动补发，只在明确开始时
   await addChannel(settings, { preset: 'OpenAI 兼容', name: '行动测试', url: 'https://action.mock.invalid/v1', key: 'mock-action-key' });
   // 填好后只自动读取模型列表（不产生费用）；从真实设置给三个阶段选同一渠道的不同模型，不通过生成请求探测模型。
   await expect(settings.locator('.ai-connect')).toContainText('连接正常');
-  for (const [label, model] of [['正文生成', 'story'], ['变量管理', 'variables'], ['动态世界', 'world']]) await stageModel(settings, label, '行动测试', model, 'list');
+  for (const [label, model] of [['正文生成','story'],['人物与实体','entities'],['主角与现场','variables'], ['场外与网络', 'world']]) await stageModel(settings, label, '行动测试', model, 'list');
   await saveAi(settings);
   await page.getByRole('button', { name: '关闭资料界面', exact: true }).click(); expect(server.calls).toHaveLength(0);
   expect(await stored(page)).toEqual(before);
@@ -277,11 +277,11 @@ for (const disabled of ['world', 'variables'] as const) {
       const guidance = page.getByRole('note', { name: '阶段设置提示', exact: true });
       await expect(guidance).toContainText('世界结果仅供预览，不能正式结算');
       await guidance.getByRole('button', { name: /^(?:展开高级设置|前往阶段开关)$/ }).click();
-      await expect(page.getByLabel('变量管理', {exact:true})).toBeFocused();
+      await expect(page.getByLabel('主角与现场', {exact:true})).toBeFocused();
       await page.getByLabel('你的行动', { exact: true }).fill('继续观察街道');
       await expect(page.getByRole('button', {name:'发送',exact:true})).toBeDisabled();
     }
-    const toggle = page.getByLabel(disabled === 'world' ? '动态世界' : '变量管理', { exact: true });
+    const toggle = page.getByLabel(disabled === 'world' ? '场外与网络' : '主角与现场', { exact: true });
     await expect(toggle).not.toBeChecked(); await toggle.check();
     expect(await stored(page)).toEqual(before); expect(server.calls.map((call) => call.stage)).toEqual(initial);
     let completedCalls = initial;
@@ -294,7 +294,7 @@ for (const disabled of ['world', 'variables'] as const) {
       expect(server.calls.map((call) => call.stage)).toEqual(completedCalls);
     }
     await closeWorkflowSheet(page);
-    const close = page.getByRole('button', {name:'关闭三阶段详情',exact:true}); if(await close.isVisible()) await close.click();
+    const close = page.getByRole('button', {name:'收起四阶段详情',exact:true}); if(await close.isVisible()) await close.click();
     await page.getByLabel('你的行动', {exact:true}).fill('继续观察街道');
     await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
     await page.getByRole('button', { name: '发送', exact: true }).click();

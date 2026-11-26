@@ -15,7 +15,7 @@ export function checkEntityCommands(state: GameState, draft: TurnDraft, declared
   const people = new Set(Object.keys(state.npc));
   for (const command of commands)
     requireData(allowed.has(command.type), 'STAGE_PERMISSION', '人物与实体阶段命令越权');
-  const entities = projectEntityChanges(state, draft.turnId, commands);
+  const entities = commands.length ? projectEntityChanges(state, draft.turnId, commands) : state;
   const checkPerson = (id: string) => requireData(Object.hasOwn(entities.npc, id), 'NOT_FOUND', '人物引用不存在');
   const checkLocation = (id: string) => requireData(Object.hasOwn(entities.locations, id), 'NOT_FOUND', '地点引用不存在');
   requireData(new Set(commands.map(command => command.commandId)).size === commands.length, 'DUPLICATE_COMMAND', '候选命令 ID 重复');
@@ -28,15 +28,42 @@ export function checkEntityCommands(state: GameState, draft: TurnDraft, declared
       requireData(people.has(command.npcId) && ids.has(command.npcId), 'STAGE_PERMISSION', '人物引用或接触名单无效');
     }
     if (command.type === 'CreateNpc') {
+      const person = entities.npc[command.npc.id];
+      person.usualLocations?.forEach(ref => checkLocation(ref.locationId));
+      if (person.kind === 'special') {
+        person.relationshipNetwork?.forEach(ref => { if (ref.npcId) checkPerson(ref.npcId); });
+        for (const id of person.offscreenTaskIds) {
+          const actor = state.tasks[id]?.actorRef;
+          requireData(actor?.kind === 'npc' && actor.id === command.npc.id, 'NOT_FOUND', '场外任务引用或归属无效');
+        }
+      }
       if (command.npc.locationId) checkLocation(command.npc.locationId);
     }
-    if (command.type === 'CreateLocation' && command.location.parentId) checkLocation(command.location.parentId);
+    if (command.type === 'CreateLocation') {
+      const seen = new Set([command.location.id]);
+      let parent = command.location.parentId;
+      while (parent) {
+        checkLocation(parent);
+        requireData(!seen.has(parent), 'LOCATION_CYCLE', '地点层级存在环');
+        seen.add(parent);
+        parent = entities.locations[parent].parentId;
+      }
+    }
     if (command.type === 'CreateOrganization') {
       const org = command.organization;
       org.keyNpcIds.forEach(checkPerson);
-      org.members?.forEach(member => checkPerson(member.npcId));
+      const departments = new Set(org.departments?.map(department => department.id));
+      org.departments?.forEach(department => { if (department.headNpcId) checkPerson(department.headNpcId); });
+      org.members?.forEach(member => {
+        checkPerson(member.npcId);
+        requireData(!member.departmentId || departments.has(member.departmentId), 'NOT_FOUND', '成员所属部门不存在');
+      });
+      for (const id of org.currentTaskIds) {
+        const actor = state.tasks[id]?.actorRef;
+        requireData(actor?.kind === 'organization' && actor.id === org.id, 'NOT_FOUND', '组织任务引用或归属无效');
+      }
       org.leadership?.forEach(leader => { if (leader.npcId) checkPerson(leader.npcId); });
-      org.relations?.forEach(ref => requireData(Object.hasOwn(entities.organizations, ref.organizationId), 'NOT_FOUND', '组织引用不存在'));
+      org.relations?.forEach(ref => requireData(ref.organizationId !== org.id && Object.hasOwn(entities.organizations, ref.organizationId), 'NOT_FOUND', '组织引用不存在'));
     }
     if (command.type === 'UpdateNpc') {
       if (command.changes.locationId) checkLocation(command.changes.locationId);
@@ -72,7 +99,12 @@ export function sceneAndEntityCommands(state: GameState, draft: TurnDraft, scene
   }
   const clocks = scene.filter(c => c.type === 'SetWorldClock');
   const clock = clocks.at(-1)?.worldClock ?? openingTimeSelection(state, draft, scene)?.endAt ?? state.worldClock;
-  const entities = result.commands.map(command => command.type === 'RecordNpcMemory'
-    ? { ...command, memory: { ...command.memory, createdAtGameTime: clock } } : command);
+  const entities = result.commands.map(command => {
+    if (command.type === 'CreateNpc' && command.npc.lastInteractionAt)
+      requireData(Date.parse(command.npc.lastInteractionAt) <= Date.parse(clock), 'NPC_TIME', '新人物互动时间超出本回合');
+    if (command.type !== 'RecordNpcMemory') return command;
+    requireData(Date.parse(command.memory.createdAtGameTime) <= Date.parse(clock), 'NPC_TIME', '人物记忆时间超出本回合');
+    return { ...command, memory: { ...command.memory, createdAtGameTime: clock } };
+  });
   return [...clocks, ...entities, ...scene.filter(c => c.type !== 'SetWorldClock')];
 }

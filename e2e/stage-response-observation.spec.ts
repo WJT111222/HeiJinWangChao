@@ -40,7 +40,7 @@ async function closeDiagnostics(page: Page) {
   if (await dialog.isVisible()) await page.keyboard.press('Escape');
 }
 async function closeWorkflow(page: Page) {
-  const close = page.getByRole('button', { name: '收起三阶段详情', exact: true });
+  const close = page.getByRole('button', { name: '收起四阶段详情', exact: true });
   if (await close.isVisible()) await close.click(); else await workflowTrigger(page).click();
 }
 for (const stage of ['variables', 'world'] as const) {

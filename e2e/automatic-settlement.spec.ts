@@ -46,7 +46,7 @@ const settled = (page: Page) => expect(page.getByRole('region', { name: '四阶�
 
 async function expandSettlementSummary(page: Page, skipped: number) {
   await closeWorkflowSheet(page);
-  const close = page.getByRole('button',{name:'收起三阶段详情',exact:true});
+  const close = page.getByRole('button',{name:'收起四阶段详情',exact:true});
   if (await close.isVisible()) await close.click();
   const summary = page.getByText(`本回合已结算，跳过 ${skipped} 项更新`,{exact:true});
   await expect(summary).toBeVisible();

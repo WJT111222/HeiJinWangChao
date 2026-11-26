@@ -35,7 +35,7 @@ test('真实浏览器加载原文、校验哈希并组装六种模式，记录�
           variableGuide: [],
         },
       );
-      for (const stage of ['story', 'variables', 'world']) {
+      for (const stage of ['story','entities','variables','world']) {
         const prompt = await composePrompt({
           state,
           settings: defaultSettings(),
@@ -64,7 +64,7 @@ test('真实浏览器加载原文、校验哈希并组装六种模式，记录�
   for (const example of examples) {
     const ids = example.modules.map((module) => module.id);
     expect(ids.filter((id) => id.startsWith('stages.'))).toEqual([
-      `stages.${example.mode}.${example.stage}${example.stage === 'variables' ? '.text' : ''}`,
+      `stages.${example.mode}.${example.stage}`,
     ]);
     expect(example.roles.at(-1)).toBe('user');
     if (example.stage === 'story') {
@@ -226,8 +226,8 @@ test('AI 多渠道：选服务商后自动获取模型、测试回复、阶段�
   }
   // 正文用第一个渠道（从列表选），变量单独用 Gemini 渠道（手动填写），其余跟随正文。
   await stageModel(settings, '正文生成', 'Mock openai', 'mock-model', 'list');
-  await stageModel(settings, '变量管理', 'Mock gemini', 'variable-override');
-  await expect(settings.getByRole('group', { name: '动态世界模型来源', exact: true }).getByRole('button', { name: '跟随正文', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await stageModel(settings, '主角与现场', 'Mock gemini', 'variable-override');
+  await expect(settings.getByRole('group', { name: '场外与网络模型来源', exact: true }).getByRole('button', { name: '跟随正文', exact: true })).toHaveAttribute('aria-pressed', 'true');
   // 第三个渠道关闭「记住密钥」，只在本次会话保留。
   await openChannel(settings, 'Mock anthropic');
   await settings.getByRole('switch', { name: '记住密钥' }).uncheck();
@@ -238,8 +238,8 @@ test('AI 多渠道：选服务商后自动获取模型、测试回复、阶段�
   await openChannel(again, 'Mock openai');
   await expect(again.getByLabel('API 密钥', { exact: true })).toHaveValue('browser-mock-credential');
   await backToList(again);
-  await expect(again.getByRole('combobox', { name: '变量管理渠道', exact: true })).toContainText('Mock gemini');
-  await expect(again.getByRole('combobox', { name: '变量管理模型', exact: true })).toHaveAttribute('value', 'variable-override');
+  await expect(again.getByRole('combobox', { name: '主角与现场渠道', exact: true })).toContainText('Mock gemini');
+  await expect(again.getByRole('combobox', { name: '主角与现场模型', exact: true })).toHaveAttribute('value', 'variable-override');
   await expect(again.getByRole('combobox', { name: '正文生成模型', exact: true })).toHaveAttribute('value', 'mock-model');
   const stored = await page.evaluate(() => ({ local: Object.entries(localStorage), session: Object.entries(sessionStorage) }));
   const config = stored.local.find(([key]) => key === 'heijin.ai.v1')?.[1] ?? '';
@@ -381,7 +381,7 @@ test('原生 DeepSeek 官方地址、四阶段独立选模与刷新恢复，纯�
   await settings.getByLabel('渠道名称', { exact: true }).fill('DeepSeek 审查用 Mock');
   await settings.getByLabel('API 密钥', { exact: true }).fill('fictional-review-key');
   await expect(settings.getByRole('status').filter({ hasText: '连接正常' }).first()).toContainText('当前接口返回 4 个模型');
-  const labels = ['正文生成', '变量管理', '动态世界', '记忆维护'];
+  const labels = ['正文生成', '主角与现场', '场外与网络', '记忆维护'];
   for (let i = 0; i < labels.length; i++) await stageModel(settings, labels[i], 'DeepSeek 审查用 Mock', models[i], 'list');
   await saveAi(settings);
   await page.keyboard.press('Escape');
@@ -420,10 +420,10 @@ test('换服务商：替换已填的中转地址前先确认；跟随正文可�
   await page.getByRole('button', { name: '替换地址', exact: true }).click();
   await expect(settings.getByLabel('服务地址', { exact: true })).toHaveValue('https://generativelanguage.googleapis.com/v1beta');
   await expect(settings.getByLabel('渠道名称', { exact: true })).toHaveValue('我的中转');
-  await follow(settings, '动态世界', false);
-  await expect(settings.getByRole('combobox', { name: '动态世界渠道', exact: true })).toBeVisible();
-  await follow(settings, '动态世界', true);
-  await expect(settings.getByRole('combobox', { name: '动态世界渠道', exact: true })).toHaveCount(0);
+  await follow(settings, '场外与网络', false);
+  await expect(settings.getByRole('combobox', { name: '场外与网络渠道', exact: true })).toBeVisible();
+  await follow(settings, '场外与网络', true);
+  await expect(settings.getByRole('combobox', { name: '场外与网络渠道', exact: true })).toHaveCount(0);
   await chooseText(settings, '正文生成渠道', '我的中转');
   await expect(settings.getByRole('button', { name: '保存 AI 配置', exact: true })).toBeDisabled();
 });
@@ -545,12 +545,12 @@ test('换服务商只清掉指向这个渠道的隐藏旧模型，其他阶段�
   await openChannel(settings, '乙渠道');
   await settings.getByRole('group', { name: '服务商', exact: true }).getByRole('button', { name: 'Claude', exact: true }).click();
   await page.getByRole('button', { name: '替换地址', exact: true }).click();
-  await follow(settings, '变量管理', false);
-  await expect(settings.getByRole('combobox', { name: '变量管理渠道', exact: true })).toHaveAttribute('value', 'b');
-  await expect(settings.getByRole('combobox', { name: '变量管理模型', exact: true })).toHaveAttribute('value', '');
-  await follow(settings, '动态世界', false);
-  await expect(settings.getByRole('combobox', { name: '动态世界渠道', exact: true })).toHaveAttribute('value', 'b');
-  await expect(settings.getByRole('combobox', { name: '动态世界模型', exact: true })).toHaveAttribute('value', '');
+  await follow(settings, '主角与现场', false);
+  await expect(settings.getByRole('combobox', { name: '主角与现场渠道', exact: true })).toHaveAttribute('value', 'b');
+  await expect(settings.getByRole('combobox', { name: '主角与现场模型', exact: true })).toHaveAttribute('value', '');
+  await follow(settings, '场外与网络', false);
+  await expect(settings.getByRole('combobox', { name: '场外与网络渠道', exact: true })).toHaveAttribute('value', 'b');
+  await expect(settings.getByRole('combobox', { name: '场外与网络模型', exact: true })).toHaveAttribute('value', '');
   // 正文（甲）和记忆（丙）不受影响。
   await expect(settings.getByRole('combobox', { name: '正文生成模型', exact: true })).toHaveAttribute('value', 'a-model');
   await expect(settings.getByRole('combobox', { name: '记忆维护模型', exact: true })).toHaveAttribute('value', 'c-memory');

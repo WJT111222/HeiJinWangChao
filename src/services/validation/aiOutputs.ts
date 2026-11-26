@@ -87,7 +87,10 @@ export async function validateVariableStatements(ast: readonly ParsedVariableCom
   if (sceneOnly || draft.requestedStages.includes('variables')) {
     const allowed = new Set(commandsForPhase('scene', draft.turnKind));
     for (const [index, command] of compiled.value.commands.entries())
-      if (!allowed.has(command.type)) throw new AiError('permission', undefined, { commandIndex: index, commandType: command.type });
+      if (!allowed.has(command.type)) {
+        const origin = compiled.value.origins[index];
+        throw new AiError('permission', undefined, { commandIndex: origin ? origin.commandIndex - 1 : undefined, commandType: command.type });
+      }
   }
   try { validateTimeCommands(state, draft, compiled.value.commands); }
   catch (error) { throw variableFailure(error, 'simulation'); }

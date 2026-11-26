@@ -24,7 +24,7 @@ const worldText = JSON.stringify({ worldCommands: [], taskCommands: [], eventCom
 function setup(protocol: Protocol = 'deepseek') {
   const channel = newChannel(protocol), config = defaultAiConfig(); channel.defaultModel = 'story';
   config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'story' };
-  for (const stage of ['variables', 'world'] as const) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
+  for (const stage of ['entities', 'variables', 'world'] as const) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
   const map = new Map<string, string>(), storage = { getItem: (key: string) => map.get(key) ?? null,
     setItem: (key: string, value: string) => { map.set(key, value); }, removeItem: (key: string) => { map.delete(key); } };
   const vault = new CredentialVault(storage, storage); vault.set(channel.id, 'mock-streaming-secret');
@@ -83,6 +83,28 @@ it('old local settings retain every preference and version without rewriting sto
 });
 
 for (const protocol of ['deepseek', 'openai', 'gemini', 'anthropic'] as const) {
+  it.each([false, true])(`${protocol} 人物与实体独立选模与流式开关 %s`, async streaming => {
+    const a = setup(protocol), { repo, draft } = await repository();
+    Object.assign(a.settings.runtime, { useEntityStage: true, useVariableStage: false, useWorldStage: false,
+      streamEntities: streaming, streamVariables: !streaming });
+    const text = '<接触者>[]</接触者>' + variableTextEnvelope('<命令>\n</命令>');
+    const fetcher = vi.fn<typeof fetch>(async (url, init) => {
+      if (protocol === 'gemini') expect(String(url)).toContain('models/entities:');
+      else expect(JSON.parse(String(init?.body)).model).toBe('entities');
+      expect(wantsStream(url, init)).toBe(streaming);
+      return streaming ? stream(protocol, text) : Response.json(json(protocol, text));
+    });
+    try {
+      const state = await repo.load('save-a');
+      const saved = await new VariableStage(repo, new AiClient(fetcher), undefined, 'entities').generate({ ...a, draft });
+      expect(saved.entities).toMatchObject({ validation: 'structural', contactedNpcIds: [], result: { commands: [] } });
+      expect(saved.stageStatus.entities).toBe('ready');
+      expect(stageResponses.getSnapshot()[0]).toMatchObject({ stage: 'entities', text, status: 'validated' });
+      expect(await repo.load('save-a')).toEqual(state);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    } finally { repo.close(); }
+  });
+
   it.each([[false, false], [true, false], [false, true], [true, true]])(`${protocol} independent flags Variables=%s World=%s: manual and automatic wires/results match`, async (v, w) => {
     const outputs: TurnDraft[] = [];
     for (const automatic of [false, true]) {

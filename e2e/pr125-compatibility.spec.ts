@@ -26,7 +26,7 @@ test('#125 兼容：车票主按钮进入存档，#120 双层非模态工作流�
   const before=await nightSealStored(page);
   const trigger=page.locator('.workflow-toggle'); await trigger.click();
   const drawer=page.getByRole('dialog',{name:'四阶段工作流',exact:true});
-  const panel=drawer.getByRole('region',{name:'三阶段详情',exact:true});
+  const panel=drawer.getByRole('region',{name:'四阶段详情',exact:true});
   await expect(drawer).toBeVisible(); await expect(drawer).toHaveAttribute('aria-modal','false');
   expect(await drawer.evaluate(element=>element.tagName==='DIALOG'||element.matches(':modal'))).toBe(false);
   await expect(panel).toHaveAttribute('data-level','home');
@@ -39,7 +39,7 @@ test('#125 兼容：车票主按钮进入存档，#120 双层非模态工作流�
   await input.click(); await page.keyboard.type('观察江边，不提交行动');
   await expect(input).toBeFocused(); await expect(input).toHaveValue('观察江边，不提交行动');
   await expect(send).toBeEnabled(); await expect(drawer).toBeVisible();
-  await drawer.getByRole('button',{name:'收起三阶段详情',exact:true}).click();
+  await drawer.getByRole('button',{name:'收起四阶段详情',exact:true}).click();
   await expect(drawer).toHaveCount(0); await expect(trigger).toBeFocused();
   await input.click(); await expect(input).toBeEditable(); await expect(send).toBeEnabled();
   await page.keyboard.press('Tab'); await expect(send).toBeFocused();

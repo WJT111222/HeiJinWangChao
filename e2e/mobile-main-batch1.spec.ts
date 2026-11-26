@@ -42,7 +42,7 @@ async function seedWorkflow(page:Page,mode:'opening'|'ready'|'error',long=false)
 for(const mode of ['opening','ready','error'] as const)test(`工作流 ${mode}：保留全部操作、候选与正式状态`,async({page})=>{
  await seedWorkflow(page,mode);const before=await nightSealStored(page);
  if(mode==='opening'){await expect(page.locator('.mobile-city-pill')).toContainText('--:--');await page.locator('.mobile-city-pill').click();await expect(page.getByRole('dialog',{name:'此时此地'})).toContainText('开局时间待确认');await expect(page.locator('.st-place')).not.toContainText('早晨');await page.keyboard.press('Escape');await openTurnTools(page);await expect(page.getByRole('button',{name:'生成开局正文',exact:true})).toBeVisible();await page.keyboard.press('Escape');}
- const sheet=await workflow(page);await expect(sheet.locator('.workflow-stages>li')).toHaveCount(3);await expect(sheet.getByRole('checkbox',{name:'变量管理',exact:true})).toBeChecked();await expect(sheet.getByRole('checkbox',{name:'动态世界',exact:true})).toBeChecked();
+ const sheet=await workflow(page);await expect(sheet.locator('.workflow-stages>li')).toHaveCount(3);await expect(sheet.getByRole('checkbox',{name:'主角与现场',exact:true})).toBeChecked();await expect(sheet.getByRole('checkbox',{name:'场外与网络',exact:true})).toBeChecked();
  if(mode==='ready'){
   await expect(sheet.getByRole('button',{name:'完成本回合结算',exact:true})).toBeEnabled();
   for(const [stage,label] of [['variables','变量'],['world','世界']] as const){

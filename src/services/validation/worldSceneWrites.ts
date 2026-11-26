@@ -85,9 +85,9 @@ export function stripVariableSceneWrites(result: WorldResult, state: GameState, 
   return notes;
 }
 
-/** Full-record task/event saves must preserve fields actually changed on a pre-existing record. */
+/** Full-record task/event saves must preserve fields actually changed on an existing record, or established when a record was created. */
 export function conflictingSceneField<T extends Record<string, unknown>>(formal: T | undefined, scene: T | undefined, world: T) {
-  if (!formal || !scene) return undefined;
-  return [...new Set([...Object.keys(formal), ...Object.keys(scene)])].find(key =>
-    key !== 'sourceTurnIds' && fingerprint(formal[key]) !== fingerprint(scene[key]) && fingerprint(world[key]) !== fingerprint(scene[key]));
+  if (!scene) return undefined;
+  return [...new Set([...Object.keys(formal ?? {}), ...Object.keys(scene)])].find(key =>
+    key !== 'sourceTurnIds' && (!formal || fingerprint(formal[key]) !== fingerprint(scene[key])) && fingerprint(world[key]) !== fingerprint(scene[key]));
 }

@@ -36,7 +36,7 @@ for(const [width,height]of [[375,667],[390,844],[430,932],[750,800],[900,800]])t
 test('全局提示：抽屉上方、不挤布局、完整文案、不自动消失和关闭',async({page})=>{
  await settled(page);const before=await nightSealStored(page),inputBox=await page.getByLabel('你的行动',{exact:true}).boundingBox(),wf=await workflow(page);
  await page.evaluate(async()=>{const p='/src/ui/settings/model.ts',{settingsKey}=await import(p),original=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k===settingsKey)throw new Error('mock-storage-only');return original.call(this,k,v);};});
- await wf.getByRole('checkbox',{name:'变量管理',exact:true}).click();const alert=page.locator('.app-error');await expect(alert).toHaveAttribute('role','alert');await expect(alert).toContainText('运行偏好保存失败，请检查浏览器存储权限。');await expect(alert).toBeVisible();expect((await alert.boundingBox())!.y).toBe(62);expect(await page.getByLabel('你的行动',{exact:true}).boundingBox()).toEqual(inputBox);await page.screenshot({path:`${dir}/react-global-error-390.png`});
+ await wf.getByRole('checkbox',{name:'主角与现场',exact:true}).click();const alert=page.locator('.app-error');await expect(alert).toHaveAttribute('role','alert');await expect(alert).toContainText('运行偏好保存失败，请检查浏览器存储权限。');await expect(alert).toBeVisible();expect((await alert.boundingBox())!.y).toBe(62);expect(await page.getByLabel('你的行动',{exact:true}).boundingBox()).toEqual(inputBox);await page.screenshot({path:`${dir}/react-global-error-390.png`});
  await page.waitForTimeout(2000);await expect(alert).toBeVisible();await alert.getByRole('button',{name:'关闭提示',exact:true}).click();await expect(alert).toHaveCount(0);await expect(wf).toBeVisible();expect(await nightSealStored(page)).toEqual(before);await fit(page);
 });
 

@@ -37,7 +37,7 @@ async function stored(page: Page) {
 }
 
 const trigger=(page:Page)=>page.locator('.workflow-toggle');
-const panel=(page:Page)=>page.getByRole('region',{name:'三阶段详情',exact:true});
+const panel=(page:Page)=>page.getByRole('region',{name:'四阶段详情',exact:true});
 async function stage(page:Page,name:string){
  const back=page.getByRole('button',{name:'返回四阶段列表'});if(await back.isVisible())await back.click();
  await panel(page).getByRole('navigation',{name:'三阶段导航'}).getByRole('button',{name:new RegExp(name)}).click();
@@ -48,11 +48,11 @@ test('整合：双层导航、候选/原文/诊断、非模态输入边界与四
  for(const [width,height] of mobile?[[390,844],[392,640],[392,420]]:[[901,900],[1440,900]]){
   await page.setViewportSize({width,height});await trigger(page).click();
   if(mobile){const dialog=page.getByRole('dialog',{name:'四阶段工作流',exact:true});await expect(dialog).toBeVisible();await expect(dialog).toHaveAttribute('aria-modal','false');expect(await dialog.evaluate(e=>e.matches(':modal'))).toBe(false);}
-  if(mobile){await expect(page.getByRole('dialog',{name:'四阶段工作流',exact:true}).getByRole('button',{name:'收起三阶段详情',exact:true})).toBeInViewport({ratio:1});await page.screenshot({animations:'disabled',path:`docs/pr120-integration/screenshots/home-${width}x${height}.png`});writeFileSync(`docs/pr120-integration/home-${width}.json`,JSON.stringify(await page.getByRole('dialog',{name:'四阶段工作流',exact:true}).evaluate(el=>[el,...el.querySelectorAll('.modal-heading,.modal-body,.wf-mobile-content,.wf-hd,.wf-main,.wf-ft')].map(e=>({className:e.className,y:e.getBoundingClientRect().y,height:e.getBoundingClientRect().height,scrollTop:e.scrollTop,overflow:getComputedStyle(e).overflow}))),null,2));}
+  if(mobile){await expect(page.getByRole('dialog',{name:'四阶段工作流',exact:true}).getByRole('button',{name:'收起四阶段详情',exact:true})).toBeInViewport({ratio:1});await page.screenshot({animations:'disabled',path:`docs/pr120-integration/screenshots/home-${width}x${height}.png`});writeFileSync(`docs/pr120-integration/home-${width}.json`,JSON.stringify(await page.getByRole('dialog',{name:'四阶段工作流',exact:true}).evaluate(el=>[el,...el.querySelectorAll('.modal-heading,.modal-body,.wf-mobile-content,.wf-hd,.wf-main,.wf-ft')].map(e=>({className:e.className,y:e.getBoundingClientRect().y,height:e.getBoundingClientRect().height,scrollTop:e.scrollTop,overflow:getComputedStyle(e).overflow}))),null,2));}
   await stage(page,'变量管理');await panel(page).getByRole('tab',{name:/^候选/}).click();
   await expect(panel(page).getByLabel('完整变量候选')).toHaveCount(0);
   await panel(page).getByRole('button',{name:'主动查看完整变量候选'}).click();await expect(panel(page).getByLabel('完整变量候选')).toContainText('SetWorldClock');
-  if(mobile){await expect(page.getByRole('dialog',{name:'四阶段工作流',exact:true}).getByRole('button',{name:'收起三阶段详情',exact:true})).toBeInViewport({ratio:1});await expect(panel(page).getByRole('button',{name:'完成本回合结算',exact:true})).toBeInViewport({ratio:1});expect(await panel(page).locator('.wf-main').evaluate(e=>{e.scrollTop=e.scrollHeight;const y=e.scrollTop;e.scrollTop=0;return y>0;})).toBe(true);}
+  if(mobile){await expect(page.getByRole('dialog',{name:'四阶段工作流',exact:true}).getByRole('button',{name:'收起四阶段详情',exact:true})).toBeInViewport({ratio:1});await expect(panel(page).getByRole('button',{name:'完成本回合结算',exact:true})).toBeInViewport({ratio:1});expect(await panel(page).locator('.wf-main').evaluate(e=>{e.scrollTop=e.scrollHeight;const y=e.scrollTop;e.scrollTop=0;return y>0;})).toBe(true);}
   await page.screenshot({animations:'disabled',path:`docs/pr120-integration/screenshots/${width}x${height}.png`});
   await panel(page).getByRole('tab',{name:'模型原文',exact:true}).click();await expect(panel(page).getByRole('region',{name:'模型原文',exact:true})).toContainText('没有可恢复');
   if(mobile)await panel(page).getByRole('button',{name:'返回四阶段列表'}).click();
@@ -69,7 +69,7 @@ test('整合：双层导航、候选/原文/诊断、非模态输入边界与四
  if(mobile){
   for(const close of ['button','shade','drag']){
    await trigger(page).click();await expect(panel(page)).toHaveAttribute('data-level','home');
-   if(close==='button')await page.getByRole('button',{name:'收起三阶段详情'}).click();
+   if(close==='button')await page.getByRole('button',{name:'收起四阶段详情'}).click();
    else if(close==='shade')await page.getByRole('button',{name:'收起工作流暗区'}).click();
    else {const input=page.getByLabel('你的行动',{exact:true});await input.click();await page.keyboard.type('拖动只应关闭抽屉');const send=page.getByRole('button',{name:'发送',exact:true});await expect(send).toBeEnabled();const box=(await page.getByRole('button',{name:'收起四阶段工作流',exact:true}).boundingBox())!,target=(await send.boundingBox())!;await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:8});await page.mouse.up();await expect(input).toHaveValue('拖动只应关闭抽屉');}
    await expect(panel(page)).toBeHidden();await expect(trigger(page)).toBeFocused();if(close==='drag')await page.getByLabel('你的行动',{exact:true}).fill('');

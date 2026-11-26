@@ -161,7 +161,7 @@ for (const width of [900, 901]) {
 test('运行偏好未保存时 Escape 允许继续编辑或明确放弃', async ({ page }) => {
   const { root: settings, posts } = await prepare(page, false);
   await settings.getByRole('button', { name: '运行', exact: true }).click();
-  const world = settings.getByRole('checkbox', { name: '动态世界', exact: true });
+  const world = settings.getByRole('checkbox', { name: '场外与网络', exact: true });
   const original = await world.isChecked();
   await world.setChecked(!original);
   await expect(settings.locator('[data-settings-category="运行"] .dirty')).toBeAttached();
@@ -181,7 +181,7 @@ test('运行偏好未保存时 Escape 允许继续编辑或明确放弃', async 
 test('未保存运行设置时离开存档需要确认，继续编辑及放弃不写入设置', async ({ page }) => {
   const { root, before, posts } = await prepare(page, true);
   await tab(root, '运行');
-  const world = root.getByRole('checkbox', { name: '动态世界', exact: true });
+  const world = root.getByRole('checkbox', { name: '场外与网络', exact: true });
   const original = await world.isChecked();
   const persisted = () => page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
   const originalSettings = await persisted();

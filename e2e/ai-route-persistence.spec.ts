@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { choose, selected } from './helpers/select';
 import { backToList, follow, openAiSettings, openChannel, saveAi } from './helpers/aiSettings';
 
-const tasks = [['variables', '变量管理'], ['world', '动态世界'], ['memory', '记忆维护']] as const;
+const tasks = [['variables', '主角与现场'], ['world', '场外与网络'], ['memory', '记忆维护']] as const;
 const settingsOf = (page: Page) => page.getByRole('dialog', { name: '设置', exact: true });
 // 打开 AI 连接（手机端先进分类菜单）；手机端停在渠道列表（各阶段模型在列表页）。
 const open = async (page: Page) => { await openAiSettings(page); await backToList(settingsOf(page)); };
@@ -74,15 +74,15 @@ test('旧跟随配置没有独立选择时明确留空，不默默使用正文�
 
 test('未保存关闭与分类切换需要明确放弃；继续编辑保留选择，保存后可直接关闭',async({page})=>{
   const posts=await seed(page,false),before=await raw(page);
-  await setFollow(page,'变量管理',false);await choose(page,'变量管理渠道','variables');
+  await setFollow(page,'主角与现场',false);await choose(page,'主角与现场渠道','variables');
   await close(page);
   const warning=page.getByRole('dialog',{name:'AI 配置尚未保存',exact:true});
   await expect(warning).toBeVisible();await warning.getByRole('button',{name:'继续编辑',exact:true}).click();
-  await selected(page,'变量管理渠道','variables');expect(await raw(page)).toBe(before);
+  await selected(page,'主角与现场渠道','variables');expect(await raw(page)).toBe(before);
   await leave(page,'记忆');await expect(warning).toBeVisible();
-  await warning.getByRole('button',{name:'继续编辑',exact:true}).click();await selected(page,'变量管理渠道','variables');
-  await selected(page,'变量管理模型','variables-default');
-  await save(page);await close(page);await open(page);await following(page,'变量管理',false);
+  await warning.getByRole('button',{name:'继续编辑',exact:true}).click();await selected(page,'主角与现场渠道','variables');
+  await selected(page,'主角与现场模型','variables-default');
+  await save(page);await close(page);await open(page);await following(page,'主角与现场',false);
   expect(posts).toHaveLength(0);
 });
 
@@ -97,18 +97,18 @@ test('Escape、明确放弃和分类切换不会静默保存；密钥编辑同�
   await close(page);await warning.getByRole('button',{name:'放弃本次修改',exact:true}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);expect(await raw(page)).toBe(before);
   await open(page);await openChannel(settingsOf(page),'story渠道');await expect(page.getByLabel('API 密钥',{exact:true})).toHaveValue('mock-route-secret');
-  await setFollow(page,'动态世界',true);
+  await setFollow(page,'场外与网络',true);
   await leave(page,'记忆');await warning.getByRole('button',{name:'放弃本次修改',exact:true}).click();
   await expect(warning).toHaveCount(0);if(page.viewportSize()!.width<700)await settingsOf(page).getByRole('button',{name:'记忆',exact:true}).click(); // 手机端放弃后回到分类菜单
   await expect(page.getByRole('heading',{name:'记忆',exact:true})).toBeVisible();
-  await category(page,'AI 连接');await backToList(settingsOf(page));await following(page,'动态世界',false);
+  await category(page,'AI 连接');await backToList(settingsOf(page));await following(page,'场外与网络',false);
   await close(page);await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(await raw(page)).toBe(before);expect(before).not.toContain('mock-route-secret');expect(posts).toHaveLength(0);
 });
 
 test('名称为空时不能保存、存储失败不清除未保存保护；成功保存后才解除',async({page})=>{
   const posts=await seed(page),before=await raw(page),settings=settingsOf(page);
-  await setFollow(page,'变量管理',true);await openChannel(settings,'story渠道');await page.getByLabel('渠道名称',{exact:true}).fill('');
+  await setFollow(page,'主角与现场',true);await openChannel(settings,'story渠道');await page.getByLabel('渠道名称',{exact:true}).fill('');
   await expect(saveBar(page).getByRole('status')).toContainText('渠道名称不能为空');
   await expect(settings.getByRole('button',{name:'保存 AI 配置',exact:true})).toBeDisabled();
   await close(page);const warning=page.getByRole('dialog',{name:'AI 配置尚未保存',exact:true});await expect(warning).toBeVisible();
@@ -118,8 +118,8 @@ test('名称为空时不能保存、存储失败不清除未保存保护；成�
   await expect(saveBar(page).getByRole('status')).toContainText('保存失败，请检查浏览器存储权限或空间后重试。');expect(await raw(page)).toBe(before);
   await close(page);await expect(warning).toBeVisible();await warning.getByRole('button',{name:'继续编辑',exact:true}).click();
   await save(page);await close(page);await expect(page.getByRole('dialog')).toHaveCount(0);
-  await open(page);await following(page,'变量管理');await setFollow(page,'变量管理',false);
-  await selected(page,'变量管理渠道','variables');await selected(page,'变量管理模型','variables-model');expect(posts).toHaveLength(0);
+  await open(page);await following(page,'主角与现场');await setFollow(page,'主角与现场',false);
+  await selected(page,'主角与现场渠道','variables');await selected(page,'主角与现场模型','variables-model');expect(posts).toHaveLength(0);
 });
 
 test('恢复后四路真实Mock请求使用各自渠道模型，默认模型及旧配置不变',async({page})=>{
@@ -153,11 +153,11 @@ test('删除单独指定用的渠道后该阶段改回跟随正文，其他渠�
   await settings.getByRole('button',{name:'删除渠道',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'删除「variables渠道」？',exact:true})).toContainText('它正被「变量」使用');
   await page.getByRole('button',{name:'确认删除渠道',exact:true}).click();
-  await backToList(settings);await following(page,'变量管理');
-  await selected(page,'动态世界模型','world-model');await selected(page,'记忆维护模型','memory-model');
-  await save(page);await close(page);await page.reload();await open(page);await following(page,'变量管理');
-  await setFollow(page,'变量管理',false);await selected(page,'变量管理渠道','');
-  await selected(page,'动态世界模型','world-model');await selected(page,'记忆维护模型','memory-model');
+  await backToList(settings);await following(page,'主角与现场');
+  await selected(page,'场外与网络模型','world-model');await selected(page,'记忆维护模型','memory-model');
+  await save(page);await close(page);await page.reload();await open(page);await following(page,'主角与现场');
+  await setFollow(page,'主角与现场',false);await selected(page,'主角与现场渠道','');
+  await selected(page,'场外与网络模型','world-model');await selected(page,'记忆维护模型','memory-model');
   await expect(settings.getByRole('button',{name:/^编辑渠道：/})).toHaveCount(3);
   expect(posts).toHaveLength(0);
 });

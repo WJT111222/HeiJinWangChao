@@ -47,7 +47,7 @@ for(const stream of [true,false]){
   await openStageSwitches(page);await expect(page.locator('.workflow-stages>li').first()).toContainText('已结算');
   await shot(page,`${info.project.name}-${stream}-committed-stale-error`);
   expect(calls).toEqual(['story','story','variables','world']);await closeWorkflowSheet(page);
-  const x=page.getByRole('button',{name:'关闭三阶段详情',exact:true});if(await x.isVisible())await x.click();
+  const x=page.getByRole('button',{name:'收起四阶段详情',exact:true});if(await x.isVisible())await x.click();
   await page.locator('#player-input').fill('再次观察');await page.getByRole('button',{name:'发送',exact:true}).click();
   await expect.poll(async()=>(await load(page)).draft?.failures.at(-1)?.errorCode).toBe('authorization');await closeDiagnostics(page);
   await expect(page.locator('.workflow-summary')).toContainText('正文生成失败');

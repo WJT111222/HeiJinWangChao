@@ -5,6 +5,8 @@ import { composePrompt } from '../prompts/composer';
 import { defaultSettings, SettingsSchema } from '../ui/settings/model';
 import { defaultAiConfig, AiConfigSchema } from '../services/ai/configuration';
 import { parseEntities, parseTextVariables, parseWorld } from '../services/validation/aiOutputs';
+import {organizationUpdate,organizationWorld} from './fixtures/organizations';
+import {worldNormalizationNotes} from '../services/validation/worldSceneWrites';
 import { projectTurn } from '../domain/turnProjection';
 import { validateTurnCandidates } from '../services/validation/turnCommit';
 import { variableTextEnvelope } from './fixtures/variableReply';
@@ -35,6 +37,13 @@ describe('三段依赖与权限', () => {
     const candidate = await parseTextVariables(envelope('set organizations[new-org].state = {"operatingAreaText":"社区商铺"}'),state,scene);
     const ready = TurnDraftSchema.parse({...scene,variables:{result:candidate,storyRevision:1,requestRevision:scene.stageRequestRevisions.variables,candidateRevision:2,basedOnEntityRevision:1,validation:'validated'},stageStatus:{...scene.stageStatus,variables:'ready'}});
     expect(projectTurn(state,ready).organizations[id]).toMatchObject({operatingAreaText:'社区商铺'});
+    const mixed = organizationUpdate(id,{description:'场外替换说明',operatingAreaText:'场外重复区域',ownershipText:'新增的后台持股资料'},state.revision);
+    const world = parseWorld(JSON.stringify(organizationWorld([mixed])),state,ready);
+    expect(world.worldCommands).toMatchObject([{type:'UpdateOrganization',changes:{ownershipText:'新增的后台持股资料'}}]);
+    expect(world.worldCommands[0]).not.toHaveProperty('changes.description');
+    expect(world.worldCommands[0]).not.toHaveProperty('changes.operatingAreaText');
+    expect(worldNormalizationNotes.get(world)?.join(' ')).toMatch(/description.*operatingAreaText/);
+    expect(parseWorld(JSON.stringify(world),state,ready)).toEqual(world);
     expect(state.organizations[id]).toBeUndefined();
     expect(startStageAttempt(ready,['entities']).variables).toBeUndefined();
     expect(TurnDraftSchema.safeParse({...ready, entities:undefined,stageStatus:{...ready.stageStatus,entities:'pending'}}).success).toBe(false);
@@ -69,6 +78,17 @@ describe('三段依赖与权限', () => {
     const {state,draft}=turn();
     await expect(parseEntities(envelope('add economy.cash = -10'),state,draft)).rejects.toThrow();
     await expect(parseEntities(envelope('set npc[npc-a].healthText = "疲倦"'),state,draft)).rejects.toThrow();
+  });
+  it('实体候选保存前拒绝跨表重号、循环地点以及不存在的上级', async () => {
+    const {state,draft}=turn();
+    for (const lines of [
+      ['set locations[hero] = {"name":"重号地点"}'],
+      ['set locations[hall] = {"name":"大厅","parentId":"room"}','set locations[room] = {"name":"房间","parentId":"hall"}'],
+      ['set locations[hall] = {"name":"大厅","parentId":"unknown"}'],
+    ]) {
+      await expect(parseEntities(envelope(lines.join('\n')),state,draft)).rejects.toThrow();
+      expect(state.locations.hall).toBeUndefined();
+    }
   });
   it('旧阶段配置复制为两份独立选择；旧协议候选作废并保留正文', () => {
     const settings = defaultSettings(), config = defaultAiConfig();
