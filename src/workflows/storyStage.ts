@@ -146,10 +146,11 @@ export class StoryStage {
         throw new DataError('DRAFT_CONFLICT', '这段正文已不能续写，请重新生成。');
       const retry = !input.freshWorldview && draft.stageStatus.story === 'failed';
       const partial = continuation ? trimIncompleteTag(draft.storyPartial!.text) : '';
-      const stream = new StoryStream();
+      let stream = new StoryStream();
       // 续写：先把已写部分放进显示流；续写开头缓冲到能确定拼接方式，去掉重复后再显示。
       let narrative = continuation ? stream.push(partial) : '';
-      const preview = continuation ? new ContinuationPreview(partial) : undefined;
+      let preview = continuation ? new ContinuationPreview(partial) : undefined;
+      let showingProvisional = false;
       const pushDelta = (delta: string) => {
         const shown = preview ? preview.push(delta) : delta;
         return shown ? stream.push(shown) : narrative;
@@ -197,8 +198,22 @@ export class StoryStage {
             presetSelection, frozenStoryChannel,
             signal: attempt.signal,
             ...(continuation ? { continuation: { partial, consent } } : {}),
+            onLiteraryPreview: (delta) => {
+              current();
+              showingProvisional = true;
+              narrative = pushDelta(delta);
+              progress();
+            },
             onDelta: (delta) => {
               current();
+              // The sandbox delivered its complete, validated output. Replace the temporary
+              // reading stream, including continuation overlap state, before displaying it.
+              if (showingProvisional) {
+                stream = new StoryStream();
+                narrative = continuation ? stream.push(partial) : '';
+                preview = continuation ? new ContinuationPreview(partial) : undefined;
+                showingProvisional = false;
+              }
               narrative = pushDelta(delta);
               progress();
               storyInspections.update(inspectionId, { planning: redactInspection(stream.planning, secrets), activity: 'content' });

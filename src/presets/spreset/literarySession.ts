@@ -114,7 +114,7 @@ export class LiterarySession {
       this.profile.field,
       { ...observer, onUnverifiedTool: observer.oracleStory ? observer.onUnverifiedTool : undefined },
       this.profile.optionalTextFields,
-      observer.oracleStory ? observer.onDelta : undefined,
+      observer.oracleStory ? observer.onLiteraryPreview : undefined,
     );
     const content = upstream.call && (record(upstream.call.args)[this.profile.field] as string | undefined);
     // Only the original frames can attest to padding before this completed call.
@@ -139,8 +139,6 @@ export class LiterarySession {
         : receipt !== null
     )
       throw new AiError('invalid_output');
-    if (!finished.output.startsWith(upstream.previewText))
-      throw new AiError('invalid_output');
     observer.onUnverifiedTool?.();
     if (content) {
       const original = this.profile.optionalTextFields?.some((key) =>
@@ -151,7 +149,7 @@ export class LiterarySession {
       observer.onRawTextDelta?.(content);
       observer.onRawResponse?.({ text: original, order: 'events' });
     }
-    return { ...upstream, previewChars: upstream.previewText.length, text: finished.output };
+    return { ...upstream, text: finished.output };
   }
   readonly dispose = () => {
     if (this.closed) return;

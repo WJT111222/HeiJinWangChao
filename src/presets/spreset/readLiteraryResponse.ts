@@ -101,6 +101,6 @@ export async function readLiteraryResponse(response: Response, protocol: Protoco
   if (trace.error) throw trace.error;
   // #252 validates the original protocol, the unique terminal call and its content schema.
   const call = frames.singleCompletedCall();
-  return { text, previewText: previewChars ? text.slice(previewStart, (previewStart ?? 0) + previewChars) : '', reasoning, call, matchesDelivery: trace.matchesDelivery, usage: trace.usage, finish: trace.finish,
+  return { text, reasoning, call, matchesDelivery: trace.matchesDelivery, usage: trace.usage, finish: trace.finish,
     transport: streaming ? 'sse' as const : 'json' as const };
 }

@@ -60,6 +60,8 @@ export interface RequestOptions {
   onRawTextDelta?: (text: string) => void;
   onNativeReasoningDelta?: (text: string) => void;
   /** Read-only event observation; never used as accepted model text. */
+  /** Ephemeral Story reader. Only onDelta receives the final processor delivery. */
+  onLiteraryPreview?: (delta: string) => void;
   onUnverifiedTool?: (read?: () => string) => void;
   onRawResponse?: (event: RawResponseObservation) => void;
   /** Only public text actually extracted from a leading <think> block. */
@@ -384,8 +386,7 @@ export class AiClient {
           observedUsage = usage = delivered.usage;
           signal.throwIfAborted();
           if (reasoning) options.onReasoningDelta?.(reasoning);
-          const remaining = text.slice(delivered.previewChars);
-          if (remaining) options.onDelta?.(remaining);
+          options.onDelta?.(text);
           observe({ transport: delivered.transport, complete: true, finishReasons: [delivered.finish] });
         } else if (!streaming) {
           // Inspect an unsolicited SSE copy without accepting it as a summary or
