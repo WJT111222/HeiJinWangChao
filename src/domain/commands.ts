@@ -79,7 +79,7 @@ function ownedByProtagonist(s: GameState, ref: z.infer<typeof ActorRefSchema> | 
 }
 function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedReceipts: ReadonlySet<string>, pendingSceneClock = false) {
   switch (c.type) {
-    case 'ApplyHaremChanges': applyHarem(s,c,turnId); break;
+    case 'ApplyHaremChanges': applyHarem(s,c,turnId,pendingSceneClock); break;
     case 'ApplyHaremBackground': applyHaremBackground(s,c,turnId); break;
     case 'InitializeOpeningState': initializeOpeningState(s, c.changes, (id) => newEntity(s, id)); break;
     case 'PurchaseItem':

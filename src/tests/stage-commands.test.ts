@@ -13,7 +13,7 @@ describe('三段命令目录', () => {
     for (const mode of ['opening', 'regular'] as const) {
       const catalog = textVariableCatalog(mode, phase);
       const types = commandsForPhase(phase, mode)
-        .filter(type => mode === 'regular' || type !== 'SetSceneDescription');
+        .filter(type => type !== 'RegisterContact' && (mode === 'regular' || type !== 'SetSceneDescription'));
       expect(new Set(catalog.entries.map(entry => entry.commandType))).toEqual(new Set(types));
     }
   });

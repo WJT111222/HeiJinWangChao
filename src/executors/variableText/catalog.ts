@@ -58,7 +58,6 @@ const entries:Entry[] = [
   {operation:'set',path:'npc[id]',commandType:'CreateNpc',value:z.union([OrdinaryNpcCreationSchema.omit({id:true}),SpecialNpcCreationSchema.omit({id:true,longTermMemories:true})])},
   {operation:'set',path:'npc[id].activeGoals',commandType:'UpdateNpc',value:variableCommandSchemas[1].shape.activeGoals.unwrap()},
   {operation:'set',path:'npc[id].specialProfile',commandType:'PromoteNpc',value:z.union([PromotionProfileSchema,z.strictObject({})])},
-  {operation:'set',path:'npc[id].contact',commandType:'RegisterContact',value:z.strictObject({reason:TextSchema})},
   // 创建只展示基础字段；部门、成员在创建后用state补充，主角已知只能逐条push，避免四类结构重复展示。
   {operation:'set',path:'organizations[id]',commandType:'CreateOrganization',value:z.union([
     GangOrgSchema.omit(creationOmit),GovernmentOrgSchema.omit(creationOmit),CivilOrgSchema.omit(creationOmit),BusinessOrgSchema.omit(creationOmit)])},

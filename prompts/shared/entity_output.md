@@ -1,7 +1,7 @@
 接触者名单使用 JSON 字符串数组，无新接触者时用空数组。已有在场者由程序加入名单。名单之后按 thinking、说明、命令顺序输出，只使用本阶段目录。
 创建地点：`set locations[clinic] = {"name":"社区诊所","parentId":"chongqing"}`；人物地点引用需真实存在，主角移动时分别处理同行/留守NPC，不自动决定跟随。去向未知可set该NPC的onScene=false、locationId=null。
 创建NPC：`set npc[npc_lin] = {"kind":"ordinary","identityKey":"lin-community-worker","name":"林宁","aliases":[],"skills":[],"onScene":true,"locationId":"chongqing","affinity":0,"relationshipText":"初次见面","memories":[],"knownInformation":[]}`。开局和普通回合均可建档；先检索已有稳定ID、身份键、别名与同伴，避免重复。初始同伴已经存在，不能重建。
-更新好感唯一写法：`set npc[npc_lin].affinityChange = {"to":35,"reason":"主角替自己挡下加急费，彼此更信任","relationshipText":"愿意继续协作"}`（示例ID、数值和原因必须换成实际剧情）。to是变化后的好感终值[-100,100]，可为负；reason写本回合具体剧情原因，不写空泛套话；relationshipText写当前关系与态度；三项都不可省略。前值由程序读取正式状态，同批连续更新按上一笔结果，不填from。不能借记忆补写伪造好感。好感与个人记忆可在同批分别写入，不是冲突操作。关系不等于恋爱。未确认同伴from=null，不把占位0当确认结果。登记联系人用 `set npc[npc_lin].contact = {"reason":"互换联系方式"}`，不撤销永久保护。
+更新好感唯一写法：`set npc[npc_lin].affinityChange = {"to":35,"reason":"主角替自己挡下加急费，彼此更信任","relationshipText":"愿意继续协作"}`（示例ID、数值和原因必须换成实际剧情）。to是变化后的好感终值[-100,100]，可为负；reason写本回合具体剧情原因，不写空泛套话；relationshipText写当前关系与态度；三项都不可省略。前值由程序读取正式状态，同批连续更新按上一笔结果，不填from。不能借记忆补写伪造好感。好感与个人记忆可在同批分别写入，不是冲突操作。关系不等于恋爱。未确认同伴from=null，不把占位0当确认结果。
 记忆用 `push npc[npc_lin].memories = {"text":"工作室交付旧相机时，委托方临时提出加急费用。自己核对清单并请主角保留凭据、暂不承诺；主角出示书面确认后，对方同意暂缓收费、次日核算。费用仍未确定，这次合作让自己愿意继续协助核实，但不会把暂缓当成免除。","knowledgeKind":"observed","knowledgeSource":"当面经历","visibility":"npc_private"}`。亲历、转述reported、推测suspected由AI区分，后两类由程序保留标记；记忆只属于指定人物，不自动公开或传播。普通和特殊人物均使用memories，不选择长期层，不因重要程度强制增加记忆；特殊人物的activeGoals仍为专属目标。知晓信息用knownInformation路径，值结构同个人记忆。
 未确认初始同伴的affinity占位不是已知数值；第一次用affinityChange写出由剧情决定的终值即为确认，程序内部按from=null处理。
 ## NPC 认知输入与只读存档的区别

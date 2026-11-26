@@ -1,6 +1,6 @@
 import { assertWorldEntityDependencies, effectiveEntityCandidate, sceneAndEntityCommands } from './entityCandidate';
 import { storySceneAuthority, validateNarrationClock } from './events/narration';
-import { timeOutcome, validateTimeCommands } from './timePreflight';
+import { effectiveTurnClock, validateTimeCommands } from './timePreflight';
 import { eventInteractionCommands } from './events/interactions';
 import { openingTimeBase, openingTimeSelection, variablesChooseOpening } from './openingTime';
 import { commitCommands } from './commands';
@@ -29,13 +29,13 @@ export function prepareVariableProjection(state: GameState, draft: TurnDraft, co
   // 开局一律孤身一人：正式候选入口同样拒绝开局绑定主势力，不只依赖文本编译。
   requireData(draft.turnKind === 'regular' || commands.every(c => c.type !== 'RecordOrgRelation' || !c.faction),
     'FACTION_BINDING', '开局回合不能绑定主势力');
-  const entities = effectiveEntityCandidate(state, draft, commands);
+  const clock = effectiveTurnClock(state, draft, commands);
+  const entities = effectiveEntityCandidate(state, draft, commands, clock.endAt);
   commands = sceneAndEntityCommands(draft, commands, entities);
   validateTimeCommands(state,draft,commands);
   let variables = variableCommandsForTurn(state, draft, commands);
-  if(draft.story?.variableGuideRaw === undefined && draft.turnKind==='regular' && draft.story?.variableGuide.some(g=>g.group==='time'&&g.subjectHint==='time:pause')) {
-    const stop=timeOutcome(state,draft)!;
-    variables=[{type:'SetWorldClock',commandId:`story-pause-clock:${draft.storyRevision}`,worldClock:stop.at,evidence:'所选Story结构化实际停止时间'},
+  if (clock.pause) {
+    variables=[{type:'SetWorldClock',commandId:`story-pause-clock:${draft.storyRevision}`,worldClock:clock.endAt,evidence:'所选Story结构化实际停止时间'},
       ...variables.filter(c=>c.type!=='SetWorldClock')];
   }
   const events = { ...state.events };

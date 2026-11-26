@@ -91,3 +91,20 @@ export function conflictingSceneField<T extends Record<string, unknown>>(formal:
   return [...new Set([...Object.keys(formal ?? {}), ...Object.keys(scene)])].find(key =>
     key !== 'sourceTurnIds' && (!formal || fingerprint(formal[key]) !== fingerprint(scene[key])) && fingerprint(world[key]) !== fingerprint(scene[key]));
 }
+
+/** Keep a field protected even when a later scene command restores its original value. */
+export function sceneEventWriteFields(state: GameState, draft: TurnDraft) {
+  const fields = new Map<string, Set<string>>();
+  const previous = new Map(Object.entries(state.events));
+  for (const command of draft.variables?.result.commands ?? []) {
+    if (command.type !== 'SaveEvent') continue;
+    const event = command.event, prior = previous.get(event.id);
+    const written = fields.get(event.id) ?? new Set<string>();
+    for (const key of new Set([...Object.keys(prior ?? {}), ...Object.keys(event)])) {
+      if (key !== 'sourceTurnIds' && (!prior || fingerprint(Reflect.get(prior,key)) !== fingerprint(Reflect.get(event,key)))) written.add(key);
+    }
+    fields.set(event.id, written);
+    previous.set(event.id, event);
+  }
+  return fields;
+}

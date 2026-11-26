@@ -1,6 +1,7 @@
+import { joinFamily } from './fixtures/harem';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
-import { configureTurnStages, createTurnDraft, startStageAttempt, TurnDraftSchema } from '../domain/drafts';
+import { configureTurnStages, createTurnDraft, rerollStory, startStageAttempt, TurnDraftSchema } from '../domain/drafts';
 import { awaitingPlayerAction, rebindableAfterStoryStop } from '../domain/turnCommit';
 import { AiClient } from '../services/ai/client';
 import { record } from '../services/ai/protocols';
@@ -194,4 +195,36 @@ it('关闭后重载可零请求恢复三段成功候选，缓存不能写入正�
   const redo = startStageAttempt(disabledScene,['entities']);
   expect(redo.inactiveCandidates).toBeUndefined();
   expect(configureTurnStages(redo, {useVariableStage:true}).variables).toBeUndefined();
+});
+
+it('家庭确认使用现场结束时钟，经三段请求在场外提示词和正式存档中一致', async () => {
+  const initial = { ...worldState(), saveId:'family-clock' };
+  initial.npc.scene = { ...initial.npc.scene, age:28, gender:'female' };
+  await repo.create(initial);
+  const opening = await repo.saveDraft(createTurnDraft(initial.saveId, 0, 'family-opening', 'opening', '', false, false, false), null);
+  const story = await repo.saveDraft(rerollStory(opening,{turnKind:'opening',narrative:'一家人会面。',summary:'会面',variableGuide:[]}),opening.draftRevision);
+  const {draft:pending} = await repo.commitTurn({draft:story,nextAction:'确认家庭情况',useEntityStage:true,useVariableStage:true,useWorldStage:true});
+  const selected = rerollStory(pending, {turnKind:'regular', narrative:'家庭成员在八点零五分确认了消息。', summary:'家庭确认', variableGuide:[]});
+  const draft = await repo.saveDraft(selected, pending.draftRevision);
+  const confirmedAt = '2026-10-18T08:05:00+08:00';
+  const end = '2026-10-18T08:10:00+08:00';
+  const changes = [joinFamily('scene',100), {op:'pregnancy',npcId:'scene',reason:'已确认',
+    value:{status:'confirmed',visibility:'player_known',confirmedAt}}];
+  const wire = (line:string) => '<thinking>整理记录</thinking><说明></说明><命令>\n'+line+'\n</命令>';
+  const stages: string[] = [];
+  let worldContext;
+  const runner = new TurnCoordinator(repo,new AiClient(async (_url, init) => {
+    const {model,messages} = JSON.parse(String(init?.body));
+    stages.push(model);
+    if (model === 'entities') return jsonWire('<接触者>[]</接触者>'+wire('set harem.changes = '+JSON.stringify(changes)));
+    if (model === 'variables') return jsonWire(wire('set worldClock = '+JSON.stringify(end)));
+    worldContext = JSON.parse(messages.find((m:{content:string}) => m.content.startsWith('<GAME_CONTEXT>')).content.split('\n')[1]);
+    return jsonWire(JSON.stringify(worldResult()));
+  }));
+  runners.push(runner);
+  const result = await generateAndSettleTurn(runner,repo,{...setup(),draft},{check:()=>undefined,onSettling:()=>undefined});
+  expect(stages).toEqual(['entities','variables','world']);
+  expect(worldContext).toMatchObject({worldClock:end,SAVE_STATE:{harem:{members:[{npcId:'scene',pregnancy:{confirmedAt}}]}}});
+  expect(result.committed?.state.harem?.members.scene.pregnancy).toMatchObject({confirmedAt,at:end});
+  expect(result.outcome.draft.entities?.result.commands.map(c=>c.type)).toEqual(['ApplyHaremChanges']);
 });

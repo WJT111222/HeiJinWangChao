@@ -2,7 +2,7 @@ import { settleTurn } from '../domain/turnCommit';
 import { effectiveEntityCandidate } from '../domain/entityCandidate';
 import { parsePartialEntities, parsePartialVariables, parsePartialWorld } from '../services/validation/partialOutputs';
 import { describe, expect, it } from 'vitest';
-import { createTurnDraft, rerollStory, startStageAttempt, TurnDraftSchema } from '../domain/drafts';
+import { configureTurnStages, createTurnDraft, rerollStory, startStageAttempt, TurnDraftSchema } from '../domain/drafts';
 import { historyCatalogReason } from '../prompts/historyCatalog';
 import { composePrompt } from '../prompts/composer';
 import { defaultSettings, SettingsSchema } from '../ui/settings/model';
@@ -198,5 +198,82 @@ describe('场外纪事按需加载', () => {
     const prompt=await composePrompt({stage:'world',state,draft,mode:'regular',userInput:draft.userInput,settings:defaultSettings()});
     expect(prompt.modules.some(item=>item.id==='shared.history_output')).toBe(true);
     expect(prompt.context.COMMAND_CATALOG).toMatchObject({ commandTypes:expect.arrayContaining(['RecordHistory']) });
+  });
+});
+
+describe('第一轮复审的跨阶段反例', () => {
+  it('旧暂停时钟随现场开关、恢复和重做取值',async()=>{
+    const {state,draft}=turn();
+    draft.story!.variableGuide=[{group:'time',subjectHint:'time:pause',textEvidence:'停下',observedFact:projectedTime}];
+    const {contactedNpcIds,...result}=await parsePartialEntities(envelope('set npc[scene].lastInteractionAt = '+JSON.stringify(actionTime)),state,draft);
+    const first=TurnDraftSchema.parse({...draft,entities:{storyRevision:1,candidateRevision:1,validation:'structural',contactedNpcIds,result},stageStatus:{...draft.stageStatus,entities:'ready'}});
+    const scene=await parsePartialVariables(envelope(''),state,first);
+    const ready=TurnDraftSchema.parse({...first,useWorldStage:false,variables:{storyRevision:1,candidateRevision:2,basedOnEntityRevision:1,validation:'validated',result:scene},stageStatus:{...first.stageStatus,variables:'ready',world:'skipped'}});
+    const off=configureTurnStages(ready,{useVariableStage:false});
+    expect.soft(settleTurn(state,off,state.updatedAt).worldClock).toBe(state.worldClock);
+    expect(settleTurn(state,off,state.updatedAt).npc.scene.lastInteractionAt).toBeUndefined();
+    const restored=configureTurnStages(off,{useVariableStage:true});
+    for (const current of [ready,restored]){
+      const next=settleTurn(state,current,state.updatedAt);
+      expect.soft(next.worldClock).toBe(projectedTime);
+      expect.soft(next.npc.scene.lastInteractionAt).toBe(actionTime);
+    }
+    const redo=startStageAttempt(restored,['variables']);
+    expect(redo.variables).toBeUndefined();
+    expect(redo.entities).toEqual(ready.entities);
+    const rerun=await parsePartialVariables(envelope(''),state,redo);
+    const rerunReady=TurnDraftSchema.parse({...redo,variables:{...ready.variables,requestRevision:redo.stageRequestRevisions.variables,candidateRevision:redo.executionRevision,result:rerun},stageStatus:{...redo.stageStatus,variables:'ready'}});
+    expect(settleTurn(state,rerunReady,state.updatedAt).npc.scene.lastInteractionAt).toBe(actionTime);
+  });
+  it('新建组织可在相同关系值上正式绑定，改写该值仍被拒绝', async()=>{
+    const {state,draft}=turn();
+    const {id,...org}=organizations[3];
+    const {contactedNpcIds,...result}=await parsePartialEntities(envelope('set organizations['+id+'] = '+JSON.stringify({...org,protagonistRelation:'正式成员',relationHistory:[]})),state,draft);
+    const first=TurnDraftSchema.parse({...draft,entities:{storyRevision:1,candidateRevision:1,validation:'structural',contactedNpcIds,result},stageStatus:{...draft.stageStatus,entities:'ready'}});
+    for (const relation of ['正式成员','另一种关系']){
+      const bind={relation,reason:'本幕入职',faction:{action:'bind',position:'职员',bondText:'入职'}};
+      const scene=await parsePartialVariables(envelope('set organizations['+id+'].protagonistRelation = '+JSON.stringify(bind)),state,first);
+      const ready=TurnDraftSchema.parse({...first,useWorldStage:false,variables:{storyRevision:1,candidateRevision:2,validation:'validated',basedOnEntityRevision:1,result:scene},stageStatus:{...first.stageStatus,variables:'ready',world:'skipped'}});
+      expect(settleTurn(state,ready,state.updatedAt).protagonistFaction?.organizationId).toBe(relation==='正式成员'?id:undefined);
+    }
+  });
+  it.each(['blocked','active'] as const)('场外保留现场事件最终字段，拒绝回退 %s', async status=>{
+    const {state,draft}=turn();
+    state.events.review={...event('review'),estimatedEndAt:'2026-10-20T08:00:00+08:00',sourceTurnIds:['history-1']};
+    const first=configureTurnStages(draft,{useEntityStage:false});
+    const result=await parsePartialVariables(envelope('set events[review].sceneState = {"status":"active"}\nset events[review].sceneState = {"status":"blocked"}'),state,first);
+    const ready=TurnDraftSchema.parse({...first,variables:{storyRevision:1,candidateRevision:1,validation:'validated',result},stageStatus:{...first.stageStatus,variables:'ready'}});
+    const last=projectTurn(state,ready).events.review;
+    expect(last.status).toBe('blocked');
+    const independent = {type:'CreateLocation',commandId:'independent',evidence:'新会场',location:{id:'meeting-room',name:'会场'}};
+    const world=await parsePartialWorld(JSON.stringify({...worldResult(),worldCommands:[independent],eventCommands:[{type:'SaveEvent',commandId:'outside',evidence:'补充会议背景',event:{...last,status,backgroundText:'新的会场信息'}}]}),state,ready);
+    expect(world.worldCommands).toEqual([independent]);
+    expect(world.eventCommands.length).toBe(status==='blocked'?1:0);
+    expect(world.settlement?.skipped.length??0).toBe(status==='blocked'?0:1);
+  });
+  it('家庭候选保留内部日期顺序校验，最终时钟未到时整组不能落库', async()=>{
+    const {state,draft}=turn();
+    state.npc.scene={...state.npc.scene,age:28,gender:'female'};
+    const join={op:'join',npcId:'scene',identityKey:state.npc.scene.identityKey,to:100,reason:'加入家庭'};
+    const pregnancy=(startedAt:string)=>({op:'pregnancy',npcId:'scene',reason:'已确认',value:{
+      status:'confirmed',visibility:'player_known',startedAt,confirmedAt:projectedTime}});
+    const family=(start:string)=>envelope('set harem.changes = '+JSON.stringify([join,pregnancy(start)]));
+    expect((await parsePartialEntities(family('2026-10-19T08:00:00+08:00'),state,draft)).commands).toHaveLength(0);
+    const {contactedNpcIds,...result}=await parsePartialEntities(family(actionTime),state,draft);
+    expect(result.commands.map(c=>c.type)).toEqual(['ApplyHaremChanges']);
+    const first=TurnDraftSchema.parse({...draft,entities:{storyRevision:1,candidateRevision:1,validation:'structural',contactedNpcIds,result},stageStatus:{...draft.stageStatus,entities:'ready'}});
+    const scene=configureTurnStages(first,{useVariableStage:false,useWorldStage:false});
+    expect(()=>settleTurn(state,scene,state.updatedAt)).toThrow();
+    expect(state.harem).toBeUndefined();
+    expect(first.entities?.result.commands).toHaveLength(1);
+  });
+  it('新目录和发送提示不推荐旧联系人登记，旧文本仍可解析', async()=>{
+    const {state,draft}=turn();
+    const prompt=await composePrompt({stage:'entities',state,draft,mode:'regular',settings:defaultSettings(),userInput:'交换电话号码',domains:['npc_ordinary','npc_special']});
+    const sent=prompt.messages.map(m=>m.content).join('\n');
+    expect.soft(sent).not.toMatch(/npc\[[^\]]+\]\.contact\b|RegisterContact/u);
+    expect(sent).toContain('phoneContact');
+    const result=await parsePartialEntities(envelope('set npc[scene].contact = {"reason":"既有登记"}'),state,draft);
+    expect(result.commands.map(command=>command.type)).toEqual(['RegisterContact']);
   });
 });

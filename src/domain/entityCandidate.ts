@@ -9,7 +9,7 @@ import { projectEntityChanges, type DomainCommand } from './commands';
 import type { TurnDraft } from './drafts';
 import type { GameState } from './state';
 import { commandsForPhase } from './stageCommands';
-import { openingTimeSelection } from './openingTime';
+import { effectiveTurnClock } from './timePreflight';
 
 export function contactIds(state: GameState, declared: readonly string[]) {
   return new Set([...Object.values(state.npc).filter(person => person.onScene).map(person => person.id), ...declared]);
@@ -159,7 +159,8 @@ function assertEntityDependencies(removedIds: ReadonlySet<string>, commands: rea
 }
 
 /** Recompute from immutable candidates and the formal save. Only attributable entity failures may be isolated. */
-export function effectiveEntityCandidate(state: GameState, draft: TurnDraft, scene: readonly DomainCommand[]) {
+export function effectiveEntityCandidate(state: GameState, draft: TurnDraft, scene: readonly DomainCommand[],
+  clock = effectiveTurnClock(state, draft, scene).endAt) {
   const candidate = draft.entities;
   const removedIds = new Set<string>();
   const lostWorldActors = new Set<string>();
@@ -168,8 +169,6 @@ export function effectiveEntityCandidate(state: GameState, draft: TurnDraft, sce
   const original = result.commands;
   const before = checkEntityCommands(state, draft, contactedNpcIds, original);
   if (!original.length) return { commands: original, settlement: result.settlement, removedIds, lostWorldActors };
-  const clocks = scene.filter(command => command.type === 'SetWorldClock');
-  const clock = clocks.at(-1)?.worldClock ?? openingTimeSelection(state, draft, scene)?.endAt ?? state.worldClock;
   const skipped = new Map<DomainCommand, SkippedUpdate>();
   const previous = result.settlement?.skipped ?? [];
   function isolate(command: DomainCommand, field: SkippedUpdate['field'], reason: SkippedUpdate['reason']) {
@@ -239,7 +238,7 @@ export function sceneAndEntityCommands(draft: TurnDraft, scene: readonly DomainC
         'STAGE_PERMISSION', '现场阶段不能覆盖本回合新组织已写入的字段');
     }
     if (command.type === 'RecordOrgRelation' && created.has(command.organizationId))
-      requireData(!Object.hasOwn(created.get(command.organizationId)!, 'protagonistRelation'),
+      requireData(command.faction?.action === 'bind' && command.relation === created.get(command.organizationId)!.protagonistRelation,
         'STAGE_PERMISSION', '现场阶段不能覆盖本回合新组织已记录的主角关系');
   }
   const clocks = scene.filter(c => c.type === 'SetWorldClock');

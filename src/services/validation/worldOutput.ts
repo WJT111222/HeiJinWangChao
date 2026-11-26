@@ -21,7 +21,7 @@ import { requireWorld, safeWorldPath, worldValidationError } from './worldDiagno
 import { worldProjectionError } from './worldProjectionDiagnostics';
 import { worldNpcAllowed, worldTaskNpcAllowed } from '../../domain/npc/worldAccess';
 import { NpcSchema } from '../../domain/npc/schema';
-import { conflictingSceneField, stripVariableSceneWrites, worldForbiddenNpcChange, worldNormalizationNotes } from './worldSceneWrites';
+import { conflictingSceneField, sceneEventWriteFields, stripVariableSceneWrites, worldForbiddenNpcChange, worldNormalizationNotes } from './worldSceneWrites';
 import { keepTaskIdentity, sameTaskInstant, sameTaskText } from './worldTaskIdentity';
 
 function sameActor(a: ActorRef, b: ActorRef) { return a.kind === b.kind && a.id === b.id; }
@@ -113,6 +113,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     || (ref.kind === 'organization' && createdOrgs.has(ref.id));
   const taskActorAllowed = (ref: ActorRef) => actorAllowed(ref) ||
     (ref.kind === 'npc' && worldTaskNpcAllowed(base, draft, ref.id));
+  const eventWrites = sceneEventWriteFields(state, draft);
   const causal = structuredClone(base);
   // Only structured ID dependencies are ordered. Evidence is a non-executing explanation.
   for (const command of orderWorldCommands(commands)) {
@@ -202,8 +203,8 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         }
         case 'SaveEvent': {
           const event = command.event, old = base.events[event.id];
-          const sceneWrite = draft.variables?.result.commands.find(c => c.type === 'SaveEvent' && c.event.id === event.id);
-          const conflict = sceneWrite?.type === 'SaveEvent' && conflictingSceneField(state.events[event.id], sceneWrite.event, event);
+          const conflict = old && [...(eventWrites.get(event.id) ?? [])].find(key =>
+            fingerprint(Reflect.get(old,key)) !== fingerprint(Reflect.get(event,key)));
           requireWorld(!conflict, 'permission', 'actor_permission', conflict ? `event.${conflict}` : undefined);
           if(event.eventKind==='sub' && old && terminalEvent(old))
             requireWorld(false,'invalid_output','event_transition',changedRecordField('event',old,event));
