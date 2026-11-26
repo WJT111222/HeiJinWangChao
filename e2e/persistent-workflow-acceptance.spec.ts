@@ -63,6 +63,7 @@ SaveRepository.prototype.commitTurn = async function(...args) {
 const originalSaveDraft = SaveRepository.prototype.saveDraft;
 SaveRepository.prototype.saveDraft = async function(...args) {
   if (window.__pr162HoldStory && args[0].story?.narrative.includes('保存边界')) {
+    window.__pr162HoldStory = false;
     window.__pr162StoryEntered = true;
     await new Promise(resolve => { window.__pr162ReleaseStory = resolve; });
   }

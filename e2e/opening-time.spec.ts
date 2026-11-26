@@ -119,6 +119,7 @@ test('Variables 非法日期不能保存或启动 World；刷新零请求，主�
   test.setTimeout(60000); await prepare(page); const server = await mock(page, '2015-07-08T14:00:00+08:00', '2015-07-08T14:02:00+08:00');
   server.plan.badDate = true; await creation(page, '故事发生在2015年夏天。');
   await page.getByRole('button', { name: '确认并创建存档', exact: true }).click();
+  await expect(page).toHaveURL(/#game\//);
   await expect.poll(async () => (await stored(page)).draft.stageStatus.variables).toBe('failed');
   const before = await stored(page);
   expect(before.draft.stageStatus.story).toBe('ready');
