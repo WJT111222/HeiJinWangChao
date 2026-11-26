@@ -1,0 +1,124 @@
+{
+  "base": "5d4a42104c3f363d8bf6559f20a5dea719d7e12f",
+  "environment": {
+    "node": "24.19.0",
+    "npm": "11.9.0",
+    "playwright": "1.64.1",
+    "chromium": "154.0.8037.57",
+    "workers": 1,
+    "retries": 0,
+    "generation": "local mock"
+  },
+  "vitest": {
+    "files": 247,
+    "passed": 5795
+  },
+  "promptSubset": 93,
+  "browserRuns": {
+    "signoff": {
+      "expected": 140,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "production": {
+      "expected": 132,
+      "unexpected": 2,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "wave-gate": {
+      "expected": 72,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "final-production": {
+      "expected": 2,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "upgrade": {
+      "expected": 2,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "acceptance": {
+      "expected": 24,
+      "unexpected": 8,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "baseline-v10": {
+      "expected": 0,
+      "unexpected": 8,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "final-menu": {
+      "expected": 18,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    }
+  },
+  "checks": {
+    "regressionCases": "C2、文学归属、世界观、文生图与手机，完整双端签收见 signoff",
+    "criticalGameplay": "另有 6 个连续十回合、失败回滚、重复提交双端身份通过（final-cat 子集）",
+    "rawBytes": "桌面、手机同协议同传输的实际请求字节 8/8 对完全相同",
+    "earlierRun": "production 的两项失败是新增用例未关闭控制台便去点生成；final-production 经实际关闭、生成、重新打开和检查纸条/用量全部通过。",
+    "expanded": "acceptance 中 8 项失败与干净发布基线完全一致；第 72 行之后的断言在这些用例内未执行。"
+  },
+  "preExistingFailures": [
+    {
+      "file": "v10-save-reset.spec.ts",
+      "test": "V6旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变",
+      "project": "desktop",
+      "error": "Error: expect(received).toMatchObject(expected)\n\n- Expected  - 1\n+ Received  + 1\n\n@@ -4,7 +4,7 @@\n    \"loadCode\": \"UNSUPPORTED_VERSION\",\n    \"parsed\": Object {\n      \"code\": \"UNSUPPORTED_VERSION\",\n      \"ok\": false,\n    },\n-   \"version\": 10,\n+   \"version\": 11,\n  }"
+    },
+    {
+      "file": "v10-save-reset.spec.ts",
+      "test": "V7旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变",
+      "project": "desktop",
+      "error": "Error: expect(received).toMatchObject(expected)\n\n- Expected  - 1\n+ Received  + 1\n\n@@ -4,7 +4,7 @@\n    \"loadCode\": \"UNSUPPORTED_VERSION\",\n    \"parsed\": Object {\n      \"code\": \"UNSUPPORTED_VERSION\",\n      \"ok\": false,\n    },\n-   \"version\": 10,\n+   \"version\": 11,\n  }"
+    },
+    {
+      "file": "v10-save-reset.spec.ts",
+      "test": "V8旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变",
+      "project": "desktop",
+      "error": "Error: expect(received).toMatchObject(expected)\n\n- Expected  - 1\n+ Received  + 1\n\n@@ -4,7 +4,7 @@\n    \"loadCode\": \"UNSUPPORTED_VERSION\",\n    \"parsed\": Object {\n      \"code\": \"UNSUPPORTED_VERSION\",\n      \"ok\": false,\n    },\n-   \"version\": 10,\n+   \"version\": 11,\n  }"
+    },
+    {
+      "file": "v10-save-reset.spec.ts",
+      "test": "V9旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变",
+      "project": "desktop",
+      "error": "Error: expect(received).toMatchObject(expected)\n\n- Expected  - 1\n+ Received  + 1\n\n@@ -4,7 +4,7 @@\n    \"loadCode\": \"UNSUPPORTED_VERSION\",\n    \"parsed\": Object {\n      \"code\": \"UNSUPPORTED_VERSION\",\n      \"ok\": false,\n    },\n-   \"version\": 10,\n+   \"version\": 11,\n  }"
+    },
+    {
+      "file": "v10-save-reset.spec.ts",
+      "test": "V6旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变",
+      "project": "mobile",
+      "error": "Error: expect(received).toMatchObject(expected)\n\n- Expected  - 1\n+ Received  + 1\n\n@@ -4,7 +4,7 @@\n    \"loadCode\": \"UNSUPPORTED_VERSION\",\n    \"parsed\": Object {\n      \"code\": \"UNSUPPORTED_VERSION\",\n      \"ok\": false,\n    },\n-   \"version\": 10,\n+   \"version\": 11,\n  }"
+    },
+    {
+      "file": "v10-save-reset.spec.ts",
+      "test": "V7旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变",
+      "project": "mobile",
+      "error": "Error: expect(received).toMatchObject(expected)\n\n- Expected  - 1\n+ Received  + 1\n\n@@ -4,7 +4,7 @@\n    \"loadCode\": \"UNSUPPORTED_VERSION\",\n    \"parsed\": Object {\n      \"code\": \"UNSUPPORTED_VERSION\",\n      \"ok\": false,\n    },\n-   \"version\": 10,\n+   \"version\": 11,\n  }"
+    },
+    {
+      "file": "v10-save-reset.spec.ts",
+      "test": "V8旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变",
+      "project": "mobile",
+      "error": "Error: expect(received).toMatchObject(expected)\n\n- Expected  - 1\n+ Received  + 1\n\n@@ -4,7 +4,7 @@\n    \"loadCode\": \"UNSUPPORTED_VERSION\",\n    \"parsed\": Object {\n      \"code\": \"UNSUPPORTED_VERSION\",\n      \"ok\": false,\n    },\n-   \"version\": 10,\n+   \"version\": 11,\n  }"
+    },
+    {
+      "file": "v10-save-reset.spec.ts",
+      "test": "V9旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变",
+      "project": "mobile",
+      "error": "Error: expect(received).toMatchObject(expected)\n\n- Expected  - 1\n+ Received  + 1\n\n@@ -4,7 +4,7 @@\n    \"loadCode\": \"UNSUPPORTED_VERSION\",\n    \"parsed\": Object {\n      \"code\": \"UNSUPPORTED_VERSION\",\n      \"ok\": false,\n    },\n-   \"version\": 10,\n+   \"version\": 11,\n  }"
+    }
+  ]
+}
