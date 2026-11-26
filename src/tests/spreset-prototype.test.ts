@@ -23,8 +23,8 @@ describe('SPreset 请求独立生命周期', () => {
     const code = await readFile(kernel, 'utf8');
     const exact = code.slice(code.indexOf('function normalizeSPresetOutputProcessorResult'), code.indexOf('// The original output')).trimEnd() + '\n';
     expect(createHash('sha256').update(exact).digest('hex')).toBe(sources.sections['normalizeSPresetOutputProcessorResult:916-943']);
-    expect(createHash('sha256').update(sources.localFiles['core.mjs'] + sources.localFiles['worker.mjs']).digest('hex')).toBe(sources.edition);
-    expect(definition.version).toBe('c2.1-' + sources.edition);
+    expect(createHash('sha256').update(sources.localFiles['core.mjs'] + sources.localFiles['worker.mjs'] + sources.localFiles['frame.mjs']).digest('hex')).toBe(sources.edition);
+    expect(definition.version).toBe('c2.2-' + sources.edition);
     const loaded = loadPreset(await readPrototype(), definition);
     expect(loaded.scripts).toEqual([]);
     expect(loaded.entries.filter(e => e.enabled).map(e => e.identifier)).toContain('chatHistory');

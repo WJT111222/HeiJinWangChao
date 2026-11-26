@@ -86,10 +86,10 @@ export function createSession() {
       phase = 'closed';
       if (!object(input)) throw new TypeError();
       let content = input.text;
-      if (input.call) {
+      if (input.call !== undefined) {
         const { id, name, args } = input.call;
-        if (content || typeof id !== 'string' || !id || name !== tool.function.name || !object(args)
-          || Object.keys(args).length !== 1 || typeof args.content !== 'string') throw new TypeError();
+        if (content || typeof id !== 'string' || !id.trim() || name !== tool.function.name || !object(args)
+          || Object.keys(args).length !== 1 || !Object.hasOwn(args, 'content') || typeof args.content !== 'string') throw new TypeError();
         content = args.content;
       }
       if (typeof content !== 'string' || !content.trim()) throw new TypeError();

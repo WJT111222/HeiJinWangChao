@@ -42,9 +42,10 @@
     }
   },
   "localFiles": {
-    "core.mjs": "88fe04ec66b474a895ddd5c65d879756da0e8159f312f9aec8fa9574abc02b99",
+    "core.mjs": "fa6d15358d1da34264c8b6eb6752a13033132062268dbefca16b0f16cc898b5a",
     "worker.mjs": "15cc5dedff8de3c229ed6044dd1b9cc145258cf04d4cecd572abb7728298a2df",
-    "COPYING": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    "COPYING": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "frame.mjs": "644182a6661b79ba9b5f781891abc189a151cd7b33ff7de2d1216d3edfe3be7b"
   },
-  "edition": "992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30"
+  "edition": "2c01410c6a7680f51ccadd03c5e647d802b16ed421ff6b22111fe31fb3380664"
 }

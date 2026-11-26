@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { prototypeSandbox } from './experiments/spreset/devServer';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
@@ -24,18 +25,7 @@ export default defineConfig(({ command }) => ({
   define: {
     'import.meta.env.VITE_FEEDBACK_BUILD': JSON.stringify(command === 'build' ? buildVersion() : 'development'),
   },
-  plugins: [react(), {
-    name: 'spreset-local-worker-policy',
-    apply: 'serve',
-    configureServer(server) {
-      server.middlewares.use((request, response, next) => {
-        if (request.url?.split('?')[0] === '/experiments/spreset/worker.mjs') {
-          response.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self'; connect-src 'none'; worker-src 'none'");
-        }
-        next();
-      });
-    },
-  }],
+  plugins: [react(), prototypeSandbox()],
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],

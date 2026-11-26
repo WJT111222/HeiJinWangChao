@@ -8,29 +8,50 @@ import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
 import { tavernWire } from '../tavern/wire';
 import { readPrototypeResponse } from './response';
 
-// The worker receives an auditable message contract. The host owns secrets, fetch and storage.
+// One private port per request. The host exposes no callable storage, DOM or network operations.
 export class PrototypeSession {
-  private readonly worker: Worker;
+  private readonly frame = document.createElement('iframe');
+  private readonly channel = new MessageChannel();
+  private readonly id = crypto.randomUUID();
+  private sequence = 0;
+  private closed = false;
+  private rejectPending?: (error: AiError) => void;
+
   constructor(private signal: AbortSignal) {
     signal.throwIfAborted();
-    this.worker = new Worker('/experiments/spreset/worker.mjs', { type: 'module', name: 'spreset-c2' });
+    const { frame, channel, id } = this;
+    frame.hidden = true;
+    frame.title = 'SPreset 实验处理器';
+    frame.sandbox.add('allow-scripts');
+    frame.src = '/experiments/spreset/sandbox.html#' + id;
+    frame.addEventListener('load', () => {
+      // Opaque targets require "*". The WindowProxy and single-use port identify this frame.
+      if (!this.closed) frame.contentWindow?.postMessage({ bind: id }, '*', [channel.port2]);
+    }, { once: true });
+    signal.addEventListener('abort', this.dispose, { once: true });
+    window.addEventListener('pagehide', this.dispose, { once: true });
+    document.body.append(frame);
   }
   private run(operation: 'prepare' | 'finish', input: unknown) {
     this.signal.throwIfAborted();
+    if (this.closed || this.rejectPending || this.sequence !== (operation === 'prepare' ? 0 : 1))
+      throw new AiError('invalid_output');
+    const sequence = ++this.sequence;
+    const port = this.channel.port1;
     return new Promise<unknown>((resolve, reject) => {
-      const cleanup = () => {
-        this.worker.onmessage = this.worker.onerror = this.worker.onmessageerror = null;
-        this.signal.removeEventListener('abort', cancel);
+      this.rejectPending = reject;
+      const fail = () => {
+        reject(new AiError('invalid_output', undefined, { fieldPath: 'tavern.spreset.processor' }));
+        this.dispose();
       };
-      const cancel = () => { cleanup(); reject(new AiError('cancelled')); };
-      const fail = () => { cleanup(); reject(new AiError('invalid_output', undefined, { fieldPath: 'tavern.spreset.processor' })); };
-      this.worker.onerror = this.worker.onmessageerror = fail;
-      this.worker.onmessage = ({ data }) => {
-        if (!data || !Object.hasOwn(data, 'result')) return fail();
-        cleanup(); resolve(data.result);
+      port.onmessageerror = fail;
+      port.onmessage = ({ data }) => {
+        if (data?.session !== this.id || data.sequence !== sequence || !Object.hasOwn(data, 'result')) return fail();
+        port.onmessage = port.onmessageerror = null;
+        this.rejectPending = undefined;
+        resolve(data.result);
       };
-      this.signal.addEventListener('abort', cancel, { once: true });
-      try { this.worker.postMessage({ operation, input }); } catch { fail(); }
+      try { port.postMessage({ session: this.id, sequence, operation, input }); } catch { fail(); }
     });
   }
   async wire(snapshot: RequestSnapshot, messages: readonly AiMessage[], stream: boolean, worldbook?: PlayerWorldbook) {
@@ -58,5 +79,16 @@ export class PrototypeSession {
     }
     return { ...upstream, text: finished.output };
   }
-  dispose() { this.worker.terminate(); }
+  readonly dispose = () => {
+    if (this.closed) return;
+    this.closed = true;
+    this.signal.removeEventListener('abort', this.dispose);
+    window.removeEventListener('pagehide', this.dispose);
+    this.rejectPending?.(new AiError('cancelled'));
+    this.rejectPending = undefined;
+    this.channel.port1.onmessage = this.channel.port1.onmessageerror = null;
+    this.channel.port1.close();
+    this.channel.port2.close();
+    this.frame.remove();
+  };
 }

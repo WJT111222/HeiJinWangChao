@@ -113,7 +113,7 @@ export function captureAssistantSelection(): AssistantSelection {
   if (new URLSearchParams(globalThis.location?.search).get('safe') === '1') return null;
   const settings = readPresetSettings();
   const mode = storyMode(settings);
-  if (!mode) return prototypeRequested() ? { definition: prototype } : null;
+  if (!mode) return import.meta.env.DEV && prototypeRequested() ? { definition: prototype } : null;
   if (mode === nativeDeliveryId) return nativeDeliveryId;
   const item = registry.get(mode);
   if (!item) throw new Error('所选内置预设不存在');

@@ -34,7 +34,7 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
   for (const stream of [false, true]) test(protocol + (stream ? ' SSE' : ' JSON') + ' 正式正文及结算', async ({ page }, info) => {
     const wires: string[] = [], external: string[] = [], replies: Buffer[] = [];
     let workers = 0;
-    page.on('worker', worker => { if (worker.url().endsWith('/experiments/spreset/worker.mjs')) workers++; });
+    page.on('worker', worker => { if (worker.url().startsWith('blob:null/')) workers++; });
     await page.route('**/*', route => {
       const url = new URL(route.request().url());
       if (url.hostname === 'spreset.mock.invalid' && route.request().method() === 'POST') {
@@ -174,7 +174,7 @@ test('失败与取消只结束本次 Worker，旧候选及正式档保持可读'
 });
 
 test('刷新与预设切换清除实验会话，非正文阶段继续使用原有传输', async ({ page }) => {
-  const policy = await page.request.get('/experiments/spreset/worker.mjs');
+  const policy = await page.request.get('/experiments/spreset/sandbox.html');
   expect(policy.headers()['content-security-policy']).toContain("connect-src 'none'");
   const wires: string[] = [];
   let workers = 0;
@@ -218,7 +218,7 @@ test('刷新与预设切换清除实验会话，非正文阶段继续使用原�
 test('A 档在途操作卸载，B 档独立结算，刷新后核对两个正式档', async ({ page }) => {
   await page.goto('/?spreset=prototype');
   const requests: string[] = [], closed: Promise<void>[] = [];
-  page.on('worker', worker => { if (worker.url().endsWith('/experiments/spreset/worker.mjs')) closed.push(worker.waitForEvent('close').then(() => undefined)); });
+  page.on('worker', worker => { if (worker.url().startsWith('blob:null/')) closed.push(worker.waitForEvent('close').then(() => undefined)); });
   await page.route('https://spreset.mock.invalid/**', async route => {
     requests.push(route.request().postData()!);
     if (requests.length === 1) {

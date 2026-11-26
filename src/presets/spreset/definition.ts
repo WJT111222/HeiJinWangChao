@@ -3,7 +3,7 @@ import type { AssistantSelection } from '../library';
 import type { PresetDefinition } from '../package';
 
 export const prototypeId = 'spreset-c2';
-export const definition: PresetDefinition = { id: prototypeId, version: 'c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30', lockedOff: [] };
+export const definition: PresetDefinition = { id: prototypeId, version: 'c2.2-2c01410c6a7680f51ccadd03c5e647d802b16ed421ff6b22111fe31fb3380664', lockedOff: [] };
 
 export function selectedPrototype(selection: AssistantSelection | undefined): boolean {
   return import.meta.env.DEV && typeof selection === 'object' && selection?.definition.id === prototypeId;
