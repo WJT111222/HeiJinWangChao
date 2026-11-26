@@ -37,7 +37,9 @@ try {
         const draft = createTurnDraft('upgrade', 0, 'r', 'opening', '读取');
         await repo.saveDraft(draft, null);
         const lease = await repo.prepareWorldview(draft, false);
-        if (hasNote) await repo.writeOracleNote('upgrade', await repo.readOracleNote('upgrade'), '旧版纸条', false);
+        const note = hasNote
+          ? (await repo.writeOracleNote('upgrade', await repo.readOracleNote('upgrade'), '  雨声  ', false)).note
+          : null;
         window.checkOld = async () => {
           for (const work of [() => repo.loadDraft('upgrade'), () => repo.undoStatus('upgrade'), () => repo.prepareWorldview(draft, true)]) {
             try { await work(); throw new Error('旧连接仍能写入'); }
@@ -54,7 +56,7 @@ try {
         read();
         raw.onversionchange = () => { window.upgrading = true; raw.close(); };
         window.releaseTransaction = () => { hold = false; };
-        return { game: gameBeforeUpgrade, lease: lease.generation };
+        return { game: gameBeforeUpgrade, lease: lease.generation, note };
       }, root === previous);
       await serve(process.cwd());
       await current.goto(origin + '/probe');
@@ -68,16 +70,30 @@ try {
       assert.equal(await upgrading, 10);
       const state = await current.evaluate(async () => {
         const repo = window.repo;
+        const { request, transaction } = await import('/src/services/storage/idb.ts');
+        const db = await request(indexedDB.open('heijinwangchao'));
+        let migrated;
+        try {
+          migrated = await transaction(db, ['oracleNotes'], 'readonly', tx => request(tx.objectStore('oracleNotes').get('upgrade')));
+        } finally { db.close(); }
         const old = await repo.readOracleNote('upgrade');
-        const saved = await repo.writeOracleNote('upgrade', old, '新页保存', true);
+        const repeated = old.note ? await repo.writeOracleNote('upgrade', old, old.note.text, old.note.once) : old;
+        const saved = await repo.writeOracleNote('upgrade', repeated, '新页保存', true);
         const game = await repo.loadGame('upgrade'), undo = await repo.undoStatus('upgrade');
         await repo.prepareWorldview(game.draft, false);
         const raw = await repo.exportRaw('upgrade');
-        return { old, saved, game, undo: undo.available, control: raw.records.saveControls[0].value };
+        return { migrated, old, repeated, saved, game, undo: undo.available, control: raw.records.saveControls[0].value };
       });
       assert.deepEqual(state.game, before.game);
-      assert.equal(state.old.note?.text ?? null, root === previous ? '旧版纸条' : null);
-      if (root === previous) assert.equal(state.old.note.once, false);
+      assert.deepEqual(state.old.note, before.note);
+      if (root === previous) {
+        assert.deepEqual(state.migrated.note, before.note);
+        assert.deepEqual(state.migrated.history, ['雨声']);
+        assert.deepEqual(state.repeated.history, ['雨声']);
+        assert.equal(state.repeated.note.text, '  雨声  ');
+        assert.equal(state.repeated.note.once, false);
+      }
+      assert.deepEqual(state.saved.history, root === previous ? ['新页保存', '雨声'] : ['新页保存']);
       assert.equal(state.saved.note.text, '新页保存');
       assert.equal(Object.hasOwn(state.control, 'oracleNote'), false);
       assert.equal(await old.evaluate(() => window.checkOld()), 'VersionError');
