@@ -15,7 +15,7 @@ async function workflow(page:Page){await page.getByRole('button',{name:'四阶�
 
 for(const [width,height] of [[375,667],[390,844],[430,932],[750,800],[900,800]])test(`手机骨架 ${width}×${height}：真实数据、建议、发送和抽屉`,async({page})=>{
  await page.setViewportSize({width,height});await enter(page);const before=await nightSealStored(page);
- await expect(page.locator('.mobile-city-pill')).toBeVisible();await expect(page.locator('.player-status')).toHaveCount(0);await expect(page.locator('.atmo')).toHaveAttribute('data-city','cq');await expect(page.locator('.mobile-game-nav button')).toHaveCount(4);
+ await expect(page.locator('.mobile-city-pill')).toBeVisible();await expect(page.locator('.player-status')).toHaveCount(0);await expect(page.locator('.atmo')).toHaveAttribute('data-city','cq');await expect(page.locator('.mobile-game-nav button')).toHaveCount(5);await expect(page.locator('.mobile-game-nav button').nth(3)).toHaveAttribute('data-phone-entry','mobile');
  const input=page.getByLabel('你的行动',{exact:true}),send=page.getByRole('button',{name:'发送',exact:true});await expect(input).toHaveCSS('font-size','16px');await expect(send).toBeDisabled();await expect(send).toBeInViewport({ratio:1});
  await page.getByTestId('story-reader').evaluate(e=>{e.scrollTop=0;});await page.screenshot({path:`${shots}/react-main-${width}.png`});
  const option=page.locator('.rail-cards .opt').first();await option.scrollIntoViewIfNeeded();await option.click();await expect(option.locator('.go')).toBeVisible();await expect(input).toHaveValue('回复编辑，确认明天的会面');await expect(option).toHaveAttribute('aria-pressed','true');await expect(send).toBeEnabled();await expect(input).toBeFocused();

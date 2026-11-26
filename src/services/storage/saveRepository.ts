@@ -46,7 +46,8 @@ import type { BackupEntry } from './backup';
  * V4 closes deployed V3 clients via their existing versionchange handler before
  * imports become available. Old V3 code cannot reopen and bypass instance CAS.
  * That V4 upgrade required no store, index or saved payload changes. */
-export const saveDatabaseVersion = 8;
+// V9 closes V8 writers before a V11 GameState is read or persisted. No phone object store.
+export const saveDatabaseVersion = 9;
 
 declare const confirmationBrand: unique symbol;
 /**
@@ -237,11 +238,11 @@ export class SaveRepository {
       // IndexedDB 结构版本独立于每个存档的 schemaVersion。
       const operation = factory.open(name, saveDatabaseVersion);
       let schemaError: DataError | undefined;
-      operation.onupgradeneeded = () => {
+      operation.onupgradeneeded = event => {
         const db = operation.result;
         const tx = operation.transaction!;
         try {
-          checkImageStores(db, tx);
+          checkImageStores(db, tx, event.oldVersion < 8);
         } catch (error) {
           if (error instanceof DataError) schemaError = error;
           try { tx.abort(); } catch { /* The upgrade was already aborted. */ }

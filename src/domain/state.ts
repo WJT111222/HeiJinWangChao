@@ -36,7 +36,10 @@ export const StorySchema = z.strictObject({
   actionOptions: z.array(TextSchema).optional(),
 });
 export const SaveShape = {
-  schemaVersion: z.literal(10), saveId: IdSchema, title: TextSchema,
+  schemaVersion: z.literal(11),
+  phone: z.strictObject({
+    threads: z.record(IdSchema, z.never()), scheduled: z.array(z.never()), topics: z.array(z.never()),
+  }), saveId: IdSchema, title: TextSchema,
   openingCityId: IdSchema.nullable().optional(),
   /** 自定义开局城市的名称、地区与可选介绍快照；官方城市不写。 */
   openingCityProfile: OpeningCityProfileSchema.optional(),
@@ -313,14 +316,14 @@ export function createGameState(input: {
   companion?: z.infer<typeof SpecialNpcSchema>;
 }, now = new Date().toISOString()): GameState {
   return GameStateSchema.parse({
-    schemaVersion: 10, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
+    schemaVersion: 11, phone: { threads: {}, scheduled: [], topics: [] }, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
     openingCityId: input.openingCityId ?? null,
     ...(input.openingCityProfile ? { openingCityProfile: input.openingCityProfile } : {}),
     createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,
     weatherText: '', environmentText: '', protagonist: input.protagonist,
     initialCompanionId: input.companion?.id,
     contactNpcIds: input.companion ? [input.companion.id] : [],
-    npc: input.companion ? { [input.companion.id]: input.companion } : {},
+    npc: input.companion ? { [input.companion.id]: { ...input.companion, phoneContact: input.companion.phoneContact ?? { status: 'known' } } } : {},
     locations: input.locations, items: {}, organizations: {}, events: {}, retiredEvents: {}, tasks: {},
     economy: { cash: input.cash ?? null, onlineBalance: input.onlineBalance ?? null,
       incomes: {}, debts: {}, properties: {}, vehicles: {}, otherAssets: {} },
