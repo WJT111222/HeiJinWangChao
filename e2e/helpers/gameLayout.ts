@@ -27,8 +27,7 @@ export async function openWorkflow(page: Page) {
 
 // 两端复用阶段页签；手机在 #122 原生模态 Dialog 中提供两层导航。
 const desktopWorkflow = (page: Page) => (page.viewportSize()?.width ?? 0) > 900;
-const stageIndex = { story: 0, entities: 1, variables: 2, world: 3 } as const;
-export type WorkflowStage = keyof typeof stageIndex;
+export type WorkflowStage = 'story' | 'entities' | 'variables' | 'world';
 export async function openStageSwitches(page: Page) {
   await openWorkflow(page);
   const back=page.getByRole('button',{name:'返回四阶段列表',exact:true});
@@ -40,7 +39,7 @@ async function openRailView(page:Page,name:'运行诊断'|'已绑定输入') {
 export async function openWorkflowDiagnostics(page:Page){await openRailView(page,'运行诊断');}
 export async function openBoundInput(page:Page){await openRailView(page,'已绑定输入');}
 export async function openWorkflowStage(page:Page,stage:WorkflowStage){
-  await openStageSwitches(page);await page.locator('.wf-rail .workflow-stages>li').nth(stageIndex[stage]).locator('.wf-ri').click();
+  await openStageSwitches(page);await page.locator(`.wf-rail .workflow-stages > li[data-stage=${stage}]`).locator('.wf-ri').click();
 }
 export async function openStageTab(page:Page,stage:WorkflowStage,tab:'概览'|'候选'|'模型原文'|'校验结果'){
   await openWorkflowStage(page,stage);await page.locator('.wf-stage').getByRole('tab',{name:new RegExp(`^${tab}`)}).click();

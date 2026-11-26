@@ -363,7 +363,7 @@ test('最大输出：自定义合法范围与 4K/8K/16K 往返，只保存玩家
 });
 
 test('原生 DeepSeek 官方地址、四阶段独立选模与刷新恢复，纯设置不生成内容', async ({ page }, testInfo) => {
-  const posts: string[] = [], models = ['mock-story', 'mock-variables', 'mock-world', 'mock-memory'];
+  const posts: string[] = [], models = ['mock-story', 'mock-entities', 'mock-variables', 'mock-world', 'mock-memory'];
   await page.route('https://api.deepseek.com/**', async route => {
     const request = route.request();
     if (request.method() !== 'GET') posts.push(request.url());
@@ -380,8 +380,8 @@ test('原生 DeepSeek 官方地址、四阶段独立选模与刷新恢复，纯�
   await expect(settings.getByLabel('渠道名称', { exact: true })).toHaveValue('DeepSeek 官方');
   await settings.getByLabel('渠道名称', { exact: true }).fill('DeepSeek 审查用 Mock');
   await settings.getByLabel('API 密钥', { exact: true }).fill('fictional-review-key');
-  await expect(settings.getByRole('status').filter({ hasText: '连接正常' }).first()).toContainText('当前接口返回 4 个模型');
-  const labels = ['正文生成', '主角与现场', '场外与网络', '记忆维护'];
+  await expect(settings.getByRole('status').filter({ hasText: '连接正常' }).first()).toContainText('当前接口返回 5 个模型');
+  const labels = ['正文生成', '人物与实体', '主角与现场', '场外与网络', '记忆维护'];
   for (let i = 0; i < labels.length; i++) await stageModel(settings, labels[i], 'DeepSeek 审查用 Mock', models[i], 'list');
   await saveAi(settings);
   await page.keyboard.press('Escape');

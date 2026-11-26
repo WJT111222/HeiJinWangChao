@@ -681,7 +681,7 @@ export function GameScreen({
       : {
           label: draft?.world ? '重新生成世界候选' : draft?.useWorldStage === false ? '启用并补算世界' : '生成世界候选',
           cancel: false,
-          disabled: !validDraft || !draft?.story || draft.stageStatus.story !== 'ready' || entitiesNeeded || variablesNeeded || !settings.runtime.useWorldStage || busy,
+          disabled: !validDraft || !draft?.story || draft.stageStatus.story !== 'ready' || entitiesNeeded || !settings.runtime.useWorldStage || busy,
           onClick: () => void world.generate(),
         },
   };

@@ -99,7 +99,7 @@ export function DesktopWorkflowPanel(props: {
             {steps.map((step, i) => {
               const state = stepState(step);
               return (
-                <li key={step.stage} data-s={state}>
+                <li key={step.stage} data-stage={step.stage} data-s={state}>
                   <button className="wf-ri" aria-current={view === step.stage ? 'true' : undefined} aria-controls="wf-detail" onClick={() => props.onView(step.stage)}>
                     <span className="wf-node" aria-hidden="true">{glyphs[state] ?? ''}</span>
                     <strong><span className="stage-number">0{i + 1}</span>{stageNames[step.stage]}</strong>

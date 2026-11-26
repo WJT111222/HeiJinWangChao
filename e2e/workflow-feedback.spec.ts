@@ -39,7 +39,7 @@ for (const mode of ['opening','ready','off','error','settled'] as const) test(`�
   if(desktop)await page.setViewportSize({width:1440,height:900});
   await expect(page.getByRole('button',{name:'重新 Roll',exact:true})).toHaveCount(0);
   const input=page.getByLabel('你的行动',{exact:true}),box=await input.boundingBox();await openWorkflow(page);
-  await expect(page.locator('.workflow-stages > li')).toHaveCount(3);
+  await expect(page.locator('.workflow-stages > li')).toHaveCount(4);
   if(desktop){
     const pop=page.getByRole('region',{name:'四阶段详情',exact:true});await expect(pop).toBeVisible();
     expect(await input.boundingBox()).toEqual(box);
@@ -62,7 +62,7 @@ for (const mode of ['opening','ready','off','error','settled'] as const) test(`�
     // PC 候选在面板“候选”页；模型原文在同一阶段的“模型原文”页。移动端仍在只读弹窗内。
     await expect(await openCandidateRaw(page,'variables')).toContainText('本页面没有可恢复的模型原文');
     await page.screenshot({path:`docs/workflow-feedback/screenshots/react-variables-${info.project.name}.png`});
-    if(!desktop){await closeStageCandidates(page);await expect(page.locator('.wf-rail .workflow-stages>li').nth(1).getByRole('button')).toBeFocused();}
+    if(!desktop){await closeStageCandidates(page);await expect(page.locator('.wf-rail .workflow-stages > li[data-stage=variables]').getByRole('button')).toBeFocused();}
     const world=await openStageCandidates(page,'world');
     await world.getByRole('button',{name:'主动查看完整世界候选',exact:true}).click();await expect(world.getByLabel('完整世界候选')).toContainText('worldCommands');
     await page.screenshot({path:`docs/workflow-feedback/screenshots/react-world-${info.project.name}.png`});await closeStageCandidates(page);
@@ -258,7 +258,7 @@ test('PC 失败状态：阶段标记、恢复入口、单阶段重试与诊断�
   await seed(page, 'error'); const before = await stored(page), counter = await countRequests(page), pop = workflowPop(page);
   await expect(workflowSummary(page).getByRole('status')).toContainText('动态世界生成失败 · 查看详情');
   await openWorkflow(page);
-  await expect(pop.locator('.workflow-stages > li').nth(2)).toContainText('失败 · 可重试');
+  await expect(pop.locator('.workflow-stages > li[data-stage=world]')).toContainText('失败 · 可重试');
   await expect(pop.locator('.wf-ft').getByRole('button', { name: '继续未完成阶段', exact: true })).toBeEnabled();
   await openWorkflowStage(page, 'world');
   await expect(pop.locator('.wf-stage .wf-pill[data-s="fail"]')).toHaveText('失败 · 可重试');
@@ -270,7 +270,7 @@ test('PC 失败状态：阶段标记、恢复入口、单阶段重试与诊断�
 test('手机非模态抽屉：两层导航、统一候选原文、诊断与只读绑定输入',async({page},info)=>{
  test.skip(info.project.name!=='mobile','手机专用');await seed(page,'ready');const before=await stored(page);
  await openWorkflow(page);const sheet=page.getByRole('dialog',{name:'四阶段工作流',exact:true});await expect(sheet).toHaveAttribute('aria-modal','false');
- await expect(sheet.locator('.workflow-stages>li')).toHaveCount(3);await expect(sheet.getByRole('checkbox')).toHaveCount(2);
+ await expect(sheet.locator('.workflow-stages>li')).toHaveCount(4);await expect(sheet.getByRole('checkbox')).toHaveCount(3);
  const candidate=await openStageCandidates(page,'variables');await expect(candidate.getByLabel('完整变量候选')).toHaveCount(0);
  await candidate.getByRole('button',{name:'主动查看完整变量候选'}).click();await expect(candidate.getByLabel('完整变量候选')).toContainText('SetWorldClock');
  await expect(await openCandidateRaw(page,'variables')).toContainText('没有可恢复');await openWorkflowDiagnostics(page);await expect(sheet.getByRole('region',{name:'运行诊断',exact:true})).toContainText('本页暂无错误');

@@ -38,7 +38,7 @@ for(const major of [false,true])test(`到期${major?'隐藏重大':'普通'}事�
   await page.route('https://events.mock.invalid/**',async route=>{calls++;const body=route.request().postData()??'';expect(body).toContain('EVENT_SCHEDULE');expect(body).toContain('estimatedEndAt');
     await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:JSON.stringify(endResult(data))},finish_reason:'stop'}]})});});
   await openWorkflowStage(page, 'world'); await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();
-  await expect(page.getByRole('region',{name:'四阶段工作流'}).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
+  await expect(page.getByRole('region',{name:'四阶段工作流'}).locator('.workflow-stages > li[data-stage=world]')).toContainText('已完成');
   expect((await stored(page)).state).toEqual(data.state);await expect(page.locator('main')).not.toContainText('封存清单');
   await page.reload();await openGameTools(page);expect(calls).toBe(1);expect((await stored(page)).state).toEqual(data.state);
   const committed=await page.evaluate(async()=>{const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();try{
@@ -54,7 +54,7 @@ test('未处理到期事件不能伪装World成功，合法重试仍仅保存候
   const data=await prepare(page);let calls=0;
   await page.route('https://events.mock.invalid/**',async route=>{calls++;await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:JSON.stringify(calls===1?worldResult():endResult(data))},finish_reason:'stop'}]})});});
   await openWorkflowStage(page, 'world'); await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();await expect(page.getByRole('alert')).toBeVisible();expect(calls).toBe(1);expect((await stored(page)).state).toEqual(data.state);
-  await openWorkflowStage(page, 'world'); await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();await expect(page.getByRole('region',{name:'四阶段工作流'}).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
+  await openWorkflowStage(page, 'world'); await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();await expect(page.getByRole('region',{name:'四阶段工作流'}).locator('.workflow-stages > li[data-stage=world]')).toContainText('已完成');
   expect(calls).toBe(2);expect((await stored(page)).state).toEqual(data.state);
 });
 
@@ -75,7 +75,7 @@ for (const visibility of ['known','partially_known','hidden'] as const) test(`${
     await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content:JSON.stringify(result)},finish_reason:'stop'}]})});
   });
   await openWorkflowStage(page, 'world'); await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();
-  await expect(page.getByRole('region',{name:'四阶段工作流'}).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
+  await expect(page.getByRole('region',{name:'四阶段工作流'}).locator('.workflow-stages > li[data-stage=world]')).toContainText('已完成');
   expect((await stored(page)).state).toEqual(data.state);
   const committed=await page.evaluate(async()=>{
     const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();

@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { choose, selected } from './helpers/select';
 import { backToList, follow, openAiSettings, openChannel, saveAi } from './helpers/aiSettings';
 
-const tasks = [['variables', '主角与现场'], ['world', '场外与网络'], ['memory', '记忆维护']] as const;
+const tasks = [['entities', '人物与实体'], ['variables', '主角与现场'], ['world', '场外与网络'], ['memory', '记忆维护']] as const;
 const settingsOf = (page: Page) => page.getByRole('dialog', { name: '设置', exact: true });
 // 打开 AI 连接（手机端先进分类菜单）；手机端停在渠道列表（各阶段模型在列表页）。
 const open = async (page: Page) => { await openAiSettings(page); await backToList(settingsOf(page)); };
@@ -32,7 +32,8 @@ async function seed(page: Page, independent = true) {
     if(!url.hostname.endsWith('.mock.invalid')) {await route.abort();throw Error('Unexpected external request');}
     if(request.method()==='GET') {await route.fulfill({json:{data:[]}});return;}
     const model=request.postDataJSON().model;posts.push({host:url.hostname,model});
-    const text=model==='variables-model'?'<thinking>没有新增变化。</thinking><说明>无变化。</说明><命令></命令>'
+    const text=model==='entities-model'?'<接触者>[]</接触者><thinking>人物无变更。</thinking><说明></说明><命令></命令>'
+      :model==='variables-model'?'<thinking>没有新增变化。</thinking><说明>无变化。</说明><命令></命令>'
       :model==='world-model'?JSON.stringify({worldCommands:[],taskCommands:[],eventCommands:[],visibleHooks:[],unresolved:[]})
       :'<thinking>保持场景连续。</thinking><正文>【旁白】主角观察街边的行人。</正文><短期记忆>观察街边行人。</短期记忆><变量规划>[]</变量规划>';
     await route.fulfill({json:{choices:[{message:{content:text},finish_reason:'stop'}]}});
@@ -41,9 +42,9 @@ async function seed(page: Page, independent = true) {
   await page.evaluate(async independent=>{
     const cp='/src/services/ai/configuration.ts',vp='/src/services/ai/credentials.ts';
     const {defaultAiConfig,newChannel,saveAiConfig}=await import(cp),{CredentialVault}=await import(vp),config=defaultAiConfig();
-    config.channels=['story','variables','world','memory'].map(id=>({...newChannel(),id,name:`${id}渠道`,baseUrl:`https://${id}.mock.invalid/v1`,defaultModel:`${id}-default`}));
+    config.channels=['story','entities','variables','world','memory'].map(id=>({...newChannel(),id,name:`${id}渠道`,baseUrl:`https://${id}.mock.invalid/v1`,defaultModel:`${id}-default`}));
     config.routes.story={channelId:'story',modelId:'story-model'};
-    if(independent) for(const stage of ['variables','world','memory']) config.routes[stage]={mode:'independent',channelId:stage,modelId:`${stage}-model`};
+    if(independent) for(const stage of ['entities','variables','world','memory']) config.routes[stage]={mode:'independent',channelId:stage,modelId:`${stage}-model`};
     saveAiConfig(localStorage,config);
     const vault=new CredentialVault(sessionStorage,localStorage);
     for(const channel of config.channels)vault.set(channel.id,'mock-route-secret');
@@ -131,12 +132,12 @@ test('恢复后四路真实Mock请求使用各自渠道模型，默认模型及�
     const {readAiConfig}=await import(cp),{CredentialVault}=await import(vp),{runStageRequest}=await import(rp),{worldState,worldDraft}=await import(fp),{defaultSettings}=await import(sp),{AiClient}=await import(ap),{requestSnapshot}=await import(sn);
     const config=readAiConfig(localStorage),vault=new CredentialVault(sessionStorage,localStorage),settings=defaultSettings(),state=worldState(),before=JSON.stringify(state);
     settings.prompts.minNarrativeChars=1;settings.prompts.actionOptions=false;
-    for(const stage of ['story','variables','world'])await runStageRequest({stage,mode:'opening',state,draft:worldDraft(true,'opening'),settings,userInput:'观察'},config,vault,{stream:false});
+    for(const stage of ['story','entities','variables','world'])await runStageRequest({stage,mode:'opening',state,draft:worldDraft(true,'opening'),settings,userInput:'观察'},config,vault,{stream:false});
     await new AiClient().generate(requestSnapshot(config,'memory',vault),[{role:'user',content:'验证Mock路由'}],{stream:false});
     return {unchanged:before===JSON.stringify(state),models:config.channels.map((c:{defaultModel:string})=>c.defaultModel)};
   });
-  expect(result).toEqual({unchanged:true,models:['story-default','variables-default','world-default','memory-default']});
-  expect(posts).toEqual(['story','variables','world','memory'].map(id=>({host:`${id}.mock.invalid`,model:`${id}-model`})));
+  expect(result).toEqual({unchanged:true,models:['story-default','entities-default','variables-default','world-default','memory-default']});
+  expect(posts).toEqual(['story','entities','variables','world','memory'].map(id=>({host:`${id}.mock.invalid`,model:`${id}-model`})));
 });
 
 test('保存栏在长路由页面可触达且无横向溢出，窄屏也能保存并恢复选择',async({page},info)=>{

@@ -48,7 +48,7 @@ for(const mode of ['opening','ready','error'] as const)test(`工作流 ${mode}�
   for(const [stage,label] of [['variables','变量'],['world','世界']] as const){
    const candidate=await openStageCandidates(page,stage);await expect(candidate).toBeVisible();await expect(candidate.getByLabel(`完整${label}候选`,{exact:true})).toHaveCount(0);
    await candidate.getByRole('button',{name:`主动查看完整${label}候选`,exact:true}).click();await expect(candidate.getByLabel(`完整${label}候选`,{exact:true})).not.toBeEmpty();
-   await sheet.getByRole('button',{name:'返回四阶段列表',exact:true}).click();await expect(sheet).toBeVisible();await expect(sheet.locator('.workflow-stages>li').nth(stage==='variables'?1:2).locator('.wf-ri')).toBeFocused();
+   await sheet.getByRole('button',{name:'返回四阶段列表',exact:true}).click();await expect(sheet).toBeVisible();await expect(sheet.locator(`.workflow-stages > li[data-stage=${stage}]`).locator('.wf-ri')).toBeFocused();
   }
  }
  if(mode==='error'){await expect(sheet.getByRole('button',{name:'继续未完成阶段',exact:true})).toBeEnabled();await openWorkflowDiagnostics(page);await expect(sheet.locator('.workflow-diagnostics')).toContainText('world_schema');}
