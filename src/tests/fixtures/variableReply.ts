@@ -28,6 +28,9 @@ function commandText(value:unknown):string[]{
     case 'AcquireItem':return[line('set',`items[${nested('item').id}]`,withoutId(c.item))];
     case 'PurchaseItem':return[line('set',`items[${nested('item').id}].purchase`,{account:c.account,price:c.price,item:withoutId(c.item)})];
     case 'PurchaseVehicle':return[line('set',`economy.vehicles[${nested('vehicle').id}].purchase`,{account:c.account,price:c.price,vehicle:withoutId(c.vehicle)})];
+    case 'PurchaseProperty':return[line('set',`economy.properties[${nested('property').id}].purchase`,{account:c.account,price:c.price,property:withoutId(c.property)})];
+    case 'PurchaseOtherAsset':return[line('set',`economy.otherAssets[${nested('asset').id}].purchase`,{account:c.account,price:c.price,asset:withoutId(c.asset)})];
+    case 'AcquireAsset':{const a=nested('asset');return[line('set',`economy.${a.kind==='property'?'properties':a.kind==='vehicle'?'vehicles':'otherAssets'}[${a.id}]`,withoutId(c.asset))];}
     case 'TransferItem':return[line('set',`items[${c.itemId}].transfer`,{from:c.from,to:c.to})];
     case 'LoseItem':return[line('set',`items[${c.itemId}].loss`,{expectedOwner:c.expectedOwner,locationId:c.locationId,conditionText:c.conditionText})];
     case 'SetEquipment':return[line('set','protagonist.currentWear',c.equipment)];

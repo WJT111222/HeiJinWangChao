@@ -1,4 +1,5 @@
 import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
+import { saveFixtureStory } from './fixtures/turn';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { rerollStory } from '../domain/drafts';
@@ -53,7 +54,7 @@ describe('源仓库标准Variables协议：先复现缺口', () => {
     const repo = await SaveRepository.open('source-storage', new IDBFactory()); const { state, draft } = fixture();
     await repo.create(state);
     await repo.saveDraft(createTurnDraft(state.saveId, state.revision, draft.turnId, 'opening', draft.userInput), null);
-    await repo.saveDraft(draft, 0);
+    await saveFixtureStory(repo, draft, 0);
     const original = repo.saveDraft.bind(repo);
     vi.spyOn(repo, 'saveDraft').mockImplementation(async (next, expected, signal) => {
       if (next.stageStatus.variables === 'ready') throw new DOMException('private storage detail', 'QuotaExceededError');

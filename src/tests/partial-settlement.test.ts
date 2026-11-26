@@ -14,7 +14,7 @@ import { defaultSettings } from '../ui/settings/model';
 import { stageCommand } from './fixtures/eventStages';
 import { handoffDeadline, issue194 } from './fixtures/issue194';
 import { event, task } from './fixtures/game';
-import { submission } from './fixtures/turn';
+import { seedFixtureTurn, submission } from './fixtures/turn';
 import { worldResult } from './fixtures/world';
 import {
   assign, correctPlace, isolationClock, isolationNpcIds, locationIsolationCommands, locationsForIsolation,
@@ -41,6 +41,42 @@ function saveWorld(draft: TurnDraft, result: NonNullable<TurnDraft['world']>['re
 }
 
 describe('隔离结构、依赖和事务', () => {
+  it('按揭房贷与所购房产互相引用，另一条坏资产被隔离时两者一起保留', async () => {
+    const {state,draft}=issue194();
+    state.economy.onlineBalance=20000;
+    const hero={kind:'protagonist',id:state.protagonist.id};
+    const house=(extra={})=>({kind:'property',name:'江景别墅',ownerRef:hero,estimatedValue:110000,source:'购买',statusText:'可入住',locationId:'chongqing',ownershipText:'主角名下，抵押给银行',...extra});
+    const mortgage={account:'onlineBalance',debt:{creditor:'银行',principal:100000,outstanding:100000,status:'active',repaymentTerms:'按月还款',collateralAssetIds:['villa'],autoPaymentAuthorized:false,source:'购房按揭'}};
+    const result=await parsePartialVariables(wrap([
+      `set economy.debts[mortgage] = ${JSON.stringify(mortgage)}`,
+      `set economy.properties[villa].purchase = ${JSON.stringify({account:'onlineBalance',price:110000,property:house({mortgageDebtId:'mortgage'})})}`,
+      `set economy.properties[broken] = ${JSON.stringify(house({name:'坏房产',locationId:'missing'}))}`,
+    ].join('\n')),state,draft);
+    expect(result.settlement?.skipped).toMatchObject([{commandIndex:2,category:'economy'}]);
+    const projected=projectTurn(state,withVariables(draft,result));
+    expect(projected.economy.onlineBalance).toBe(10000);
+    expect(projected.economy.properties.villa.mortgageDebtId).toBe('mortgage');
+    expect(projected.economy.debts.mortgage.collateralAssetIds).toEqual(['villa']);
+    expect(projected.economy.properties.broken).toBeUndefined();
+  });
+
+  it.each([[[]],[['villa']]])('购房失败时，它引用的同批房贷一起跳过（房贷抵押物 %j）', async collateralAssetIds => {
+    const {state,draft}=issue194();
+    state.economy.onlineBalance=20000;
+    const hero={kind:'protagonist',id:state.protagonist.id};
+    const loan=(id:string)=>`set economy.debts[${id}] = ${JSON.stringify({account:'onlineBalance',debt:{creditor:'银行',principal:100000,outstanding:100000,status:'active',repaymentTerms:'按月还款',collateralAssetIds:id==='mortgage'?collateralAssetIds:[],autoPaymentAuthorized:false,source:'本轮借款'}})}`;
+    const result=await parsePartialVariables(wrap([
+      loan('mortgage'),
+      `set economy.properties[villa].purchase = ${JSON.stringify({account:'onlineBalance',price:500000,property:{kind:'property',name:'江景别墅',ownerRef:hero,estimatedValue:500000,source:'购买',statusText:'可入住',locationId:'chongqing',ownershipText:'主角名下',mortgageDebtId:'mortgage'}})}`,
+      loan('friend'), emotion,
+    ].join('\n')),state,draft);
+    expect(result.settlement?.skipped?.map(s=>s.commandIndex)).toEqual([0,1]);
+    const projected=projectTurn(state,withVariables(draft,result));
+    expect(projected.economy.debts.mortgage).toBeUndefined(); expect(projected.economy.properties.villa).toBeUndefined();
+    expect(projected.economy.debts.friend).toBeDefined(); expect(projected.economy.onlineBalance).toBe(120000);
+    expect(projected.protagonist.emotionText).toBe('平静');
+  });
+
   it('包含多行对象的无归属物品和对它的操作一起跳过，人物与正常物品保留', async () => {
     const {state,draft}=issue194();
     const transfer='set items[note].transfer = {"from":{"kind":"protagonist","id":"hero"},"to":{"kind":"organization","id":"org-stage-a"}}';
@@ -122,7 +158,7 @@ describe('隔离结构、依赖和事务', () => {
     const variables=await parsePartialVariables(wrap([`set worldClock = "${handoffDeadline}"`,makeItem,emotion].join('\n')),state,draft);
     const input={state,draft:withVariables(draft,variables)};
     try {
-      await repo.importBackup(input,(await repo.compareBackup(input)).confirmation);
+      await seedFixtureTurn(repo,input);
       const before=await repo.loadGame(state.saveId), selected=before.draft!;
       const prompt=await composePrompt({stage:'world',mode:'regular',state,draft:selected,userInput:'',settings:defaultSettings()});
       expect(prompt.context.VARIABLE_RESULT).toMatchObject({result:{settlement:{skipped:[{commandIndex:1,category:'item'}]}}});
@@ -339,7 +375,7 @@ describe('地点写入精确隔离', () => {
     const factory = new IDBFactory(), repo = await SaveRepository.open('location-isolation',factory);
     try {
       const input = {state,draft:readyVariables};
-      await repo.importBackup(input,(await repo.compareBackup(input)).confirmation);
+      await seedFixtureTurn(repo,input);
       const imported = (await repo.loadGame(state.saveId)).draft!;
       const ready = await repo.saveDraft(saveWorld(imported,world),imported.draftRevision);
       const commit = submission(ready,'收录合成更新');

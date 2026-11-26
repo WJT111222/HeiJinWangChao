@@ -74,7 +74,7 @@ export function inspectBudget(messages: readonly AiMessage[]) {
     for (const ch of text) row.weight += ch.codePointAt(0)! < 128 ? 0.25 : 1.5;
   };
   messages.forEach((message, index) => {
-    if (message.role === 'user' && message.content.startsWith('<PLAYER_WORLDBOOK>\n') && message.content.endsWith('\n</PLAYER_WORLDBOOK>')) {
+    if (message.role === 'user' && ['PLAYER_WORLDBOOK', 'MAIN_WORLDBOOK'].some(tag => message.content.startsWith(`<${tag}>\n`) && message.content.endsWith(`\n</${tag}>`))) {
       add('player_worldbook', message.content);
       return;
     }

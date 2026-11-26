@@ -1,6 +1,6 @@
 import { afterEach, afterAll, expect, it, vi } from 'vitest';
 import { writeFile } from 'node:fs/promises';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
@@ -39,7 +39,7 @@ for (const stage of ['story', 'variables', 'world'] as const) {
       ? {candidates:[{content:{parts:[{text:content}]},finishReason:'STOP'}]}
       : protocol === 'anthropic' ? {content:[{type:'text',text:content}],stop_reason:'end_turn'}
         : {choices:[{message:{content},finish_reason:'stop'}]}));
-    await runStageRequest(input, config, vault, {stream:false}, new AiClient(fetcher));
+    await requestFixtureStage(input, config, vault, {stream:false}, new AiClient(fetcher));
     expect(fetcher).toHaveBeenCalledTimes(1); expect(input).toEqual(before);
     const body = JSON.parse(String(fetcher.mock.calls[0][1]!.body));
     const messages: {role:string;content:string}[] = protocol === 'gemini'

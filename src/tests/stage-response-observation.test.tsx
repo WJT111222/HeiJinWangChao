@@ -1,5 +1,5 @@
 import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
-
+import { saveFixtureStory } from './fixtures/turn';
 import { IDBFactory } from 'fake-indexeddb';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { VariableStage } from '../workflows/variableStage';
@@ -7,7 +7,7 @@ import { WorldStage } from '../workflows/worldStage';
 import { afterEach, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AiClient } from '../services/ai/client';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
@@ -28,7 +28,7 @@ function fixture(protocol: Protocol = 'deepseek') {
 async function request(data: unknown, stage: 'variables' | 'world' = 'variables') {
   const a = fixture(), before = structuredClone(a.state);
   const transport = vi.fn<typeof fetch>(async () => Response.json(data));
-  const promise = runStageRequest({ settings: a.settings, state: a.state, draft: a.draft, stage, mode: 'regular', userInput: '' }, a.config, a.vault, {}, new AiClient(transport));
+  const promise = requestFixtureStage({ settings: a.settings, state: a.state, draft: a.draft, stage, mode: 'regular', userInput: '' }, a.config, a.vault, {}, new AiClient(transport));
   await expect(promise).rejects.toBeDefined();
   expect(transport).toHaveBeenCalledTimes(1); expect(a.state).toEqual(before);
   expect(JSON.parse(String(transport.mock.calls[0][1]?.body)).stream).not.toBe(true);
@@ -74,7 +74,7 @@ it.each(['openai', 'deepseek', 'gemini', 'anthropic'] as const)('%s exposes only
     : protocol === 'anthropic' ? { content: [{ type: 'thinking', thinking: '公开思考', signature: '隐藏签名' }, { type: 'text', text: content }, { type: 'redacted_thinking', data: '隐藏思考' }], stop_reason: 'max_tokens' }
       : { choices: [{ message: { content, reasoning_content: '公开思考' }, finish_reason: 'length' }] };
   const fetcher = vi.fn<typeof fetch>(async () => Response.json(data));
-  await expect(runStageRequest({ settings: a.settings, state: a.state, draft: a.draft, stage: 'variables', mode: 'regular', userInput: '' }, a.config, a.vault, {}, new AiClient(fetcher))).rejects.toMatchObject({ code: 'output_limit' });
+  await expect(requestFixtureStage({ settings: a.settings, state: a.state, draft: a.draft, stage: 'variables', mode: 'regular', userInput: '' }, a.config, a.vault, {}, new AiClient(fetcher))).rejects.toMatchObject({ code: 'output_limit' });
   expect(fetcher).toHaveBeenCalledTimes(1);
   const r = stageResponses.getSnapshot()[0]; expect(r).toMatchObject({ text: content, nativeReasoning: '公开思考', diagnostics: { complete: true } });
   expect(JSON.stringify(r)).not.toMatch(/隐藏签名|隐藏思考/);
@@ -83,7 +83,7 @@ it.each(['openai', 'deepseek', 'gemini', 'anthropic'] as const)('%s exposes only
 it.each([400, 401, 429, 500])('HTTP %i observes status without publishing error prose or sending another request', async status => {
   const a = fixture('openai'), response = Response.json({ error: { type: 'content_filter', message: '任意错误与密钥' + key, other: '隐藏信息' } }, { status });
   const json = vi.spyOn(response, 'json'), fetcher = vi.fn<typeof fetch>(async () => response);
-  await expect(runStageRequest({ settings: a.settings, state: a.state, draft: a.draft, stage: 'variables', mode: 'regular', userInput: '' }, a.config, a.vault, {}, new AiClient(fetcher))).rejects.toBeDefined();
+  await expect(requestFixtureStage({ settings: a.settings, state: a.state, draft: a.draft, stage: 'variables', mode: 'regular', userInput: '' }, a.config, a.vault, {}, new AiClient(fetcher))).rejects.toBeDefined();
   const r = stageResponses.getSnapshot()[0]; expect(r.diagnostics).toMatchObject({ transport: 'http', httpStatus: status });
   if (status === 400) expect(r.diagnostics).toMatchObject({ filtered: true, errorPresent: true });
   else expect(r.diagnostics?.filtered).not.toBe(true);
@@ -97,7 +97,7 @@ it.each(['cancelled', 'timeout', 'stream_interrupted'] as const)('%s preserves p
   let stream!: ReadableStreamDefaultController<Uint8Array>;
   const frame = (delta: object) => new TextEncoder().encode('data: ' + JSON.stringify({ choices: [{ delta }] }) + '\n\n');
   const fetcher = vi.fn<typeof fetch>(async () => new Response(new ReadableStream<Uint8Array>({ start(c) { stream = c; c.enqueue(frame({ content: '部分中文' + key.slice(0, 8), reasoning_content: '公开思考' })); } })));
-  const task = runStageRequest({ settings: a.settings, state: a.state, draft: a.draft, stage: 'variables', mode: 'regular', userInput: '' }, a.config, a.vault,
+  const task = requestFixtureStage({ settings: a.settings, state: a.state, draft: a.draft, stage: 'variables', mode: 'regular', userInput: '' }, a.config, a.vault,
     { stream: true, signal: controller.signal, timeoutSeconds: failure === 'timeout' ? 0.2 : 10 }, new AiClient(fetcher));
   const rejected = expect(task).rejects.toMatchObject({ code: failure });
   await vi.waitFor(() => expect(stageResponses.getSnapshot()[0]?.text).toContain('部分中文'));
@@ -114,7 +114,7 @@ it.each(['variables', 'world'] as const)('%s real stage failure only saves exist
   try {
     await repo.create(a.state);
     await repo.saveDraft(createTurnDraft(a.state.saveId, a.state.revision, a.draft.turnId, 'regular', ''), null);
-    const draft = await repo.saveDraft(a.draft, 0);
+    const draft = await saveFixtureStory(repo, a.draft, 0);
     const fetcher = vi.fn<typeof fetch>(async () => Response.json({ choices: [{ message: { content: null, reasoning_content: '不进入草稿的公开思考' }, finish_reason: 'stop' }] }));
     const runner = stage === 'variables' ? new VariableStage(repo, new AiClient(fetcher)) : new WorldStage(repo, new AiClient(fetcher));
     await expect(runner.generate({ ...a, draft })).rejects.toMatchObject({ code: 'empty' });
@@ -161,7 +161,7 @@ it('late JSON after cancellation cannot resurrect response text or append to the
   const a = fixture(), controller = new AbortController();
   let finish!: (value: Response) => void;
   const fetcher = vi.fn<typeof fetch>(() => new Promise<Response>(resolve => { finish = resolve; }));
-  const task = runStageRequest({ settings: a.settings, state: a.state, draft: a.draft, stage: 'variables', mode: 'regular', userInput: '' }, a.config, a.vault,
+  const task = requestFixtureStage({ settings: a.settings, state: a.state, draft: a.draft, stage: 'variables', mode: 'regular', userInput: '' }, a.config, a.vault,
     { signal: controller.signal }, new AiClient(fetcher));
   const rejected = expect(task).rejects.toMatchObject({ code: 'cancelled' });
   await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1)); controller.abort(); await rejected;

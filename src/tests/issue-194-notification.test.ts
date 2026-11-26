@@ -9,7 +9,7 @@ import { validateStageSettlement } from '../domain/events/stages';
 import { validateSceneEventUpdate } from '../domain/events/scenePermission';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { SaveRepository } from '../services/storage/saveRepository';
-import { submission } from './fixtures/turn';
+import { seedFixtureTurn, submission } from './fixtures/turn';
 import { projectTurn } from '../domain/turnProjection';
 import { defaultSettings } from '../ui/settings/model';
 
@@ -160,7 +160,7 @@ it('正式事务失败不落盘，再提交只发生一次，备份及返读保�
   const a = withAcknowledgment(), repo = await SaveRepository.open('acknowledged-entry',new IDBFactory());
   try {
     const input = {state:a.state,draft:a.draft};
-    await repo.importBackup(input,(await repo.compareBackup(input)).confirmation);
+    await seedFixtureTurn(repo,input);
     a.draft = (await repo.loadGame(a.state.saveId)).draft!;
     a.state = await repo.load(a.state.saveId);
     const result = validate(a);

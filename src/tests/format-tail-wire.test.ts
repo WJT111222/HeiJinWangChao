@@ -4,7 +4,7 @@ import { composePrompt } from '../prompts/composer';
 import type { ComposeInput } from '../prompts/context';
 import { formatTailMessage } from '../prompts/formatTail';
 import { inspectBudget } from '../prompts/budgetInspection';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
@@ -57,7 +57,7 @@ async function verify(protocol: Protocol, scenario: string, input: ReturnType<ty
   };
   const vault = new CredentialVault(storage, storage); vault.set(channel.id, 'mock-format-tail-key');
   const before = structuredClone(input), fetcher = vi.fn<typeof fetch>(async () => reply(text, protocol));
-  const pending = runStageRequest(input, config, vault, { stream: false }, new AiClient(fetcher));
+  const pending = requestFixtureStage(input, config, vault, { stream: false }, new AiClient(fetcher));
   let result;
   if (rejectedRule) await expect(pending).rejects.toMatchObject({ details: input.stage === 'world' ? { worldRule: rejectedRule } : { variableStep: rejectedRule } });
   else result = await pending;

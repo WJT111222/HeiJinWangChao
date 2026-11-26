@@ -28,7 +28,7 @@ it('旧 world 失败草稿经明确确认重做正文，只能在结算投影收
     expect(()=>parseWorld(JSON.stringify(a.response),before.state,before.draft!)).toThrow(expect.objectContaining({
       details:expect.objectContaining({worldRule:'event_entry'}),
     }));
-    const draft = await repo.saveRecoveredStory(before.draft!,a.story,a.selection);
+    const draft = await repo.saveRecoveredStory(before.draft!,a.story,a.selection,undefined,await repo.prepareWorldview(before.draft!,false));
     expect(draft.storyRevision).toBe(before.draft!.storyRevision+1);
     expect(draft.variables).toBeUndefined();
     expect(draft.world).toBeUndefined();

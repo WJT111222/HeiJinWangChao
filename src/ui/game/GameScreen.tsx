@@ -254,11 +254,11 @@ export function GameScreen({
     progress: manualProgress,
     error,
     retry: storyRetry,
-  } = useStoryGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent);
-  const entities = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent, 'entities');
-  const variables = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
-  const world = useWorldGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
-  const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent, handleSettled);
+  } = useStoryGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent, instance ?? null);
+  const entities = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent, 'entities', instance ?? null);
+  const variables = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent, 'variables', instance ?? null);
+  const world = useWorldGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent, instance ?? null);
+  const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent, handleSettled, instance ?? null);
   // 延后一微任务，让 StrictMode 的首次 effect 清理先完成。消费的是创角或历史覆盖确认的单次事件授权，
   // 而不是“草稿没有正文”；刷新、读档和重新挂载没有新的授权。
   useEffect(() => {
@@ -442,7 +442,7 @@ export function GameScreen({
     setConcurrencyBlocked(false);
     try {
       if (bindAction) {
-        const bound = await repository.bindTurnAction(draft, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage, settings.runtime.useEntityStage);
+        const bound = await repository.bindTurnAction(draft, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage, settings.runtime.useEntityStage, instance ?? null);
         if (submitToken.current !== token) return;
         onDraftSaved(bound); setInput(''); setSubmitting(false);
         await automatic.generate(bound);
@@ -455,7 +455,7 @@ export function GameScreen({
         nextAction: input,
         useEntityStage: settings.runtime.useEntityStage, useVariableStage: settings.runtime.useVariableStage,
         useWorldStage: settings.runtime.useWorldStage,
-      });
+      },instance ?? null);
       if (submitToken.current !== token) return;
       reportRuntimeEvent('commit', 'completed');
       handleSettled(result);
@@ -777,7 +777,7 @@ export function GameScreen({
         title: !validDraft ? staleDraftMessage : '生成本回合正文（使用已绑定的行动）', onClick: continueStory }
     : !validDraft ? { kind: 'idle', label: '继续', short: '续', disabled: true, title: staleDraftMessage }
     : openingIssue ? { kind: 'continue', label: '重新 Roll 开局正文', short: '重', disabled: busy,
-        title: '重新生成开局正文。当前正文保留到新正文保存成功。', onClick: () => void generate(undefined, true) }
+        title: '重新生成开局正文。当前正文保留到新正文保存成功。', onClick: () => void generate(undefined, 'openingTime') }
     : canCommit && !nextStage ? { kind: 'continue', label: '完成本回合结算', short: '结', disabled: busy, title: '候选已完成，保存本回合结果', onClick: () => void continueWorkflow() }
     : stageSettingsChanged && !nextStage ? { kind: 'continue', label: '应用阶段设置并继续', short: '续', disabled: busy, title: '在执行锁内保存本次阶段选择，再校验并结算', onClick: () => void continueWorkflow() }
     : nextStage && canGenerate ? { kind: 'continue', label: '继续生成' + stageLabels[nextStage], short: '续', disabled: busy,
@@ -834,6 +834,8 @@ export function GameScreen({
             onClick={() => setDismissedError(errorSignature)}>×</button>
         </div>
       )}
+      {validDraft && currentFailure?.fieldPath === 'worldbook.unbound' &&
+        <button type="button" disabled={busy} onClick={() => void generate(undefined, 'worldview')}>按当前世界观重新生成正文</button>}
       {legacyRecoveryOptions.length > 0 && (
         <div className="wf-banner" data-level="warn" role="note">
           <span className="wf-banner-tag" aria-hidden="true">复</span>

@@ -11,6 +11,6 @@ export async function generateAndSettleTurn(runner: TurnCoordinator, repository:
   control.onSettling();
   control.check();
   const committed = await repository.commitTurn({ draft: outcome.draft, nextAction: '',
-    useEntityStage: outcome.draft.useEntityStage, useVariableStage: outcome.draft.useVariableStage, useWorldStage: outcome.draft.useWorldStage });
+    useEntityStage: outcome.draft.useEntityStage, useVariableStage: outcome.draft.useVariableStage, useWorldStage: outcome.draft.useWorldStage },input.expectedInstance);
   return { outcome, committed };
 }

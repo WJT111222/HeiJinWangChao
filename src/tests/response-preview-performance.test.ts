@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { StageResponseStore, responseStoreBudget, responseSize, stageResponses, candidateResponseLimits, responseLimits } from '../services/ai/stageResponses';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { AiClient } from '../services/ai/client';
 import { newChannel, defaultAiConfig } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
@@ -38,7 +38,7 @@ it('hundreds of SSE fragments publish at 50ms intervals, keep private raw output
   let controller!: ReadableStreamDefaultController<Uint8Array>;
   const fetcher = vi.fn<typeof fetch>(async () => new Response(new ReadableStream<Uint8Array>({ start(c) { controller = c; } })));
   const state = worldState(), draft = worldDraft(false), settings = defaultSettings();
-  const promise = runStageRequest({ state, draft, settings, stage: 'world', mode: 'regular', userInput: '' }, config, vault, { stream: true }, new AiClient(fetcher));
+  const promise = requestFixtureStage({ state, draft, settings, stage: 'world', mode: 'regular', userInput: '' }, config, vault, { stream: true }, new AiClient(fetcher));
   const rejected = expect(promise).rejects.toMatchObject({ code: 'stream_interrupted' });
   await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
   const start = performance.now();

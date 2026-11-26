@@ -25,7 +25,7 @@ import { requestSnapshot } from '../services/ai/snapshot';
 import { defaultAiConfig, newChannel, saveAiConfig } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { defaultSettings, SettingsSchema } from '../ui/settings/model';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
 import { game } from './fixtures/game';
@@ -388,12 +388,12 @@ describe('内存请求快照、安全边界和 Token 统计', () => {
     vi.stubGlobal('window', { localStorage: store });
     const before = structuredClone(source.state);
     await expect(
-      runStageRequest({ ...source, orderOverrides: {}, orderPreferences: {} }, a.config, a.vault),
+      requestFixtureStage({ ...source, orderOverrides: {}, orderPreferences: {} }, a.config, a.vault),
     ).rejects.toMatchObject({ code: 'configuration' });
     const text = '<thinking>本轮创作提纲：保持人物与场景连续，按行动呈现事实。</thinking><正文>【旁白】观察街道。</正文><短期记忆>观察</短期记忆><变量规划>[]</变量规划>';
     source.settings.prompts.actionOptions = false;
     const client = new AiClient(vi.fn<typeof fetch>().mockResolvedValue(response('openai', text)));
-    await runStageRequest(source, a.config, a.vault, { stream: false }, client);
+    await requestFixtureStage(source, a.config, a.vault, { stream: false }, client);
     const storyRecord = requestInspections.getSnapshot()[0];
     expect(
       storyRecord.scope?.modules.filter((m) => m.order >= 80 && m.order <= 82).map((m) => m.id),
@@ -412,7 +412,7 @@ describe('内存请求快照、安全边界和 Token 统计', () => {
         ),
       ),
     );
-    await runStageRequest({ ...source, stage: 'world' }, a.config, a.vault, {}, worldClient);
+    await requestFixtureStage({ ...source, stage: 'world' }, a.config, a.vault, {}, worldClient);
     const [captured] = requestInspections.getSnapshot();
     expect(captured.scope).toMatchObject({
       kind: 'stage',

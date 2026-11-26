@@ -36,7 +36,7 @@ const failed = (value: unknown): LibraryFailure => {
 const input: StoryWorldbookInput = { messages: ['李四走进茶楼'], contextTokens: 32_000, storyRemainingTokens: 8_000, messageCount: 3, seed: 's1' };
 
 describe('简化版世界书：全局启用与删除', () => {
-  it('结构第 3 版：新增 enabled 表；从第 2 版升级保留已有数据', async () => {
+  it('从第 2 版升级到第 4 版后可启用书籍并从 Worker 读取', async () => {
     const factory = new IDBFactory(), name = uniqueName('upgrade');
     // 手工建一个第 2 版的库（三张表），模拟此前的测试数据。
     await new Promise<void>((resolve, reject) => {
@@ -56,10 +56,10 @@ describe('简化版世界书：全局启用与删除', () => {
     expect(await library.setEnabled(r.bookId, true)).toEqual({ ok: true, enabled: true });
     library.close();
     const db = await new Promise<IDBDatabase>((resolve) => { const o = factory.open(name); o.onsuccess = () => resolve(o.result); });
-    expect(db.version).toBe(3);
-    expect([...db.objectStoreNames].sort()).toEqual(['books', 'enabled', 'releases', 'summaries']);
+    expect(db.version).toBe(4);
+    expect([...db.objectStoreNames].sort()).toEqual(['books', 'enabled', 'mainSettings', 'releases', 'summaries', 'turnWorldviews']);
     db.close();
-    // 触发 Worker 的只读读取器接受第 3 版。
+    // 触发 Worker 的只读读取器接受第 4 版。
     const reader = new LibraryReader({ name, factory });
     expect(await reader.read(r.bookId, r.versionId)).toEqual({ ok: true, release: r });
     reader.close();

@@ -18,6 +18,7 @@ const ModuleSchema = z.strictObject({
   messageRole: z.enum(['system', 'user', 'assistant']).nullable(),
   activation: z.enum([
     'always',
+    'main-worldbook',
     'setting',
     'relevant-domain',
     'history-recording',
@@ -141,6 +142,7 @@ export const PromptManifestSchema = z
         module.permanent === (module.activation === 'always'),
         `${module.id} 常驻与加载策略不一致`,
       );
+      check((module.activation === 'main-worldbook') === manifest.ordering.lockedPrefix.slice(1).some(id => id === module.id), '主世界书开关只适用于两本内置世界书');
       if (module.activation === 'never') {
         check(
           !module.messageRole &&
@@ -212,21 +214,20 @@ export const PromptManifestSchema = z
     const prefix = manifest.ordering.lockedPrefix.map((id) => byId.get(id));
     check(
       prefix.every(
-        (m) =>
-          m?.permanent &&
+        (m, index) =>
+          !!m && (index === 0 ? m.permanent && !m.configurable : m.activation === 'main-worldbook' && m.configurable && m.applicableStages.join() === 'story,entities,variables,world') &&
           m.messageRole === 'system' &&
-          !m.configurable &&
           !m.reorderable &&
           m.modes.length === 2,
       ),
-      '身份与世界书必须常驻锁定',
+      '身份与世界书的角色、适用阶段及顺序必须锁定',
     );
     check(
       prefix.every((m, i) => m?.defaultOrder === i * 10),
       '身份与双世界书顺序错误',
     );
     const first = modules
-      .filter((m) => m.permanent && m.applicableStages.includes('story'))
+      .filter((m) => (m.permanent || m.activation === 'main-worldbook') && m.applicableStages.includes('story'))
       .sort((a, b) => a.defaultOrder - b.defaultOrder)
       .slice(0, 3)
       .map((m) => m.id);

@@ -14,7 +14,7 @@ async function seed(page:Page,clock?:string,unseen=false) {
     new CredentialVault(sessionStorage,localStorage).set(channel.id,'stage-browser-test-only');
     const a=stageContext(clock),repo=await SaveRepository.open();
     if(unseen){const stage=a.state.events['stage-one'];stage.sourceTurnIds=[a.draft.turnId];stage.protagonistEntry={id:'unseen-stage-entry',sourceTurnId:a.draft.turnId,queuedAt:a.state.worldClock,channel:'电话',cue:'尚未呈现的旧安排',status:'pending'};}
-    try {await repo.create(a.state);const initial=createTurnDraft('save-a',0,a.draft.turnId,'opening','',true,true,false);await repo.saveDraft(initial,null);await repo.saveDraft(rerollStory(initial,a.draft.story),0);await repo.saveDraft({...a.draft,draftRevision:2},1);}finally{repo.close();}
+    try {await repo.create(a.state);const initial=createTurnDraft('save-a',0,a.draft.turnId,'opening','',true,true,false);await repo.saveDraft(initial,null);await repo.saveDraft(rerollStory(initial,a.draft.story),0,undefined,initial,await repo.prepareWorldview(initial,false));await repo.saveDraft({...a.draft,draftRevision:2},1);}finally{repo.close();}
     return {...a.response,eventCommands:[stageCommand(endStage(a.state.events['stage-one'])),{type:'DeleteEvent',commandId:'cleanup-stage',eventId:'stage-one',expectedStatus:'resolved',reason:'阶段成果保留后清理',evidence:'合成测试'}]};
   },{clock,unseen});
   await page.goto('/#game/save-a');await page.reload();await openGameTools(page);return response;

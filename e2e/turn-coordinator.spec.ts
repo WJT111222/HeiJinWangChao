@@ -176,7 +176,7 @@ for (const mode of ['opening', 'regular'] as const) {
       expect(
         snapshot
           .find((s: { stage: string }) => s.stage === stage)
-          .scope.modules.some((m: { id: string }) => m.id === `stages.${mode}.${stage}${stage === 'variables' ? '.text' : ''}`),
+          .scope.modules.some((m: { id: string }) => m.id === `stages.${mode}.${stage}`),
       ).toBe(true);
     expect(JSON.stringify(snapshot)).not.toContain('mock-auto-key');
     await expect(workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true })).toHaveCount(0);
@@ -252,13 +252,13 @@ test('取消世界后保留上游；快速双击不重复，旧回包不能推�
   expect(plan.calls).toEqual(['story', 'variables', 'world', 'world']);
   expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
 });
-test('关闭两个阶段只生成正文，再开启后补算不 Roll', async ({ page }) => {
+test('关闭两个阶段只生成并结算正文，重新启用不会重算已结算回合', async ({ page }) => {
   const before = await seed(page),
     plan = await mock(page);
   await page.getByLabel('主角与现场', { exact: true }).uncheck();
   await page.getByLabel('场外与网络', { exact: true }).uncheck();
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
-  await expect(workflow(page).getByRole('status')).toContainText('阶段已关闭');
+  await complete(page);
   expect(plan.calls).toEqual(['story']);
   await page.getByLabel('主角与现场', { exact: true }).check();
   await page.getByLabel('场外与网络', { exact: true }).check();
@@ -266,6 +266,7 @@ test('关闭两个阶段只生成正文，再开启后补算不 Roll', async ({ 
   await complete(page);
   expect(plan.calls).toEqual(['story', 'variables', 'world']);
   expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
+  expect(plan.calls).toEqual(['story']);
 });
 test('运行中切换开关不会改变本次冻结配置', async ({ page }) => {
   await seed(page);

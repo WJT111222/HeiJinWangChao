@@ -100,6 +100,7 @@ export interface EntryEdit {
 }
 /** 对一本书的一次修改：书名、改条目、新增条目（追加在末尾）、删除条目。 */
 export interface BookChange {
+  purpose?: 'ordinary' | 'main';
   title?: string;
   entries?: Readonly<Record<string, EntryEdit>>;
   add?: ReadonlyArray<{ entryId: string } & EntryEdit>;
@@ -176,6 +177,10 @@ export async function reviseRelease(release: WorldbookRelease, change: BookChang
     const title = Array.from(change.title.trim()).slice(0, 200).join('');
     if (!title) notices.add(notice('metadata_invalid', {}, { value: '书名不能为空' }));
     else if (title !== release.metadata.title) { metadata = { ...release.metadata, title }; changed = true; }
+  }
+  if (change.purpose && change.purpose !== (metadata.purpose ?? 'ordinary')) {
+    metadata = { ...metadata, purpose: change.purpose };
+    changed = true;
   }
   for (const entry of touched) {
     if (!Number.isFinite(entry.order)) notices.add(notice('field_type', { entryRef: entry.entryId, field: 'order' }, { value: '数字' }));
