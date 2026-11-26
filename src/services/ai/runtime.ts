@@ -5,10 +5,10 @@ import { nativeReferenceRecords } from '../../presets/nativeDelivery';
 import { captureAssistantPreferences, ensureNativeDeliveryHost, withTavernRequest } from '../../presets/tavern/hostState';
 import { promptReady, tavernGeneration, type GenerationType } from '../../presets/tavern/events';
 import { nativeDeliveryId } from '../../presets/settings';
-import type { AssistantSelection } from '../../presets/library';
+import { captureStoryWriting, type AssistantSelection } from '../../presets/library';
 import { parsePartialVariables, parsePartialWorld } from '../validation/partialOutputs';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
-import { narrativeRange } from '../../ui/settings/model';
+import { sameWritingSource, type StoryWriting } from '../../domain/storyWriting';
 import { DataError } from '../../domain/common';
 import { historicalPerspective } from '../../domain/timePreflight';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
@@ -72,11 +72,15 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const nativeAllowed = captured.stage === 'story' && !requestedContinuation && !captured.legacyNotificationRecovery;
   const selected = captured.stage === 'story' && suppliedSelection === undefined
     ? captureAssistantPreferences(nativeAllowed) : suppliedSelection;
-  const presetSelection = selected === nativeDeliveryId && !nativeAllowed ? null : selected;
+  const presetSelection = selected === nativeDeliveryId && !nativeAllowed ? null : structuredClone(selected);
+  const writing = captured.stage === 'story' ? await captureStoryWriting(presetSelection, captured.settings.prompts) : undefined;
+  if (requestedContinuation && captured.draft?.storyPartial && writing
+    && !sameWritingSource(captured.draft.storyPartial.writing, writing))
+    throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_changed' });
   const type = requestedContinuation ? 'continue' : captured.draft?.story || captured.draft?.storyPartial
     || captured.draft?.failures.some(f => f.stage === 'story') ? 'regenerate' : 'normal';
   const generation = stageResponses.generation();
-  const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation);
+  const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation, writing);
   if (!presetSelection || captured.stage !== 'story') return run();
   if (presetSelection === nativeDeliveryId) await ensureNativeDeliveryHost(options.signal);
   const recent = captured.state.journal.slice(-captured.settings.memory.immediateWindowSize);
@@ -90,7 +94,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
 
 async function executePrepared(captured: ComposeInput & { stage: AiStage }, snapshot: RequestSnapshot,
   presetSelection: AssistantSelection | undefined, type: GenerationType, config: AiConfig, vault: CredentialVault,
-  options: RequestOptions, requestedContinuation: StageRequestOptions['continuation'], client: AiClient, generation: number) {
+  options: RequestOptions, requestedContinuation: StageRequestOptions['continuation'], client: AiClient, generation: number, writing?: StoryWriting) {
   const prompt = captured.stage === 'variables'
     ? await composeTextVariablesPrompt({ ...captured, stage: 'variables', cotAllowed: snapshot.useCot })
     : await composePrompt({ ...captured, cotAllowed: snapshot.useCot }, presetSelection);
@@ -99,7 +103,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const messages = continuation
     ? [...prompt.messages, { role: 'assistant' as const, content: continuation.partial },
       { role: 'user' as const, content: continuationInstruction({ actionOptions: captured.settings.prompts.actionOptions,
-        minNarrativeChars: captured.settings.prompts.minNarrativeChars, maxNarrativeChars: narrativeRange(captured.settings.prompts).max,
+        minNarrativeChars: writing?.source === 'native' ? writing.min : undefined, maxNarrativeChars: writing?.source === 'native' ? writing.max : undefined,
         partial: continuation.partial }) }]
     : prompt.messages;
   const merged = (text: string) => continuation ? mergeContinuation(continuation.partial, text) : text;
@@ -232,7 +236,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const responseText = merged(response.text);
   const envelope = (() => {
     if (captured.stage !== 'story') return undefined;
-    try { return parseStoryEnvelope(responseText, captured.mode, captured.settings); }
+    try { return parseStoryEnvelope(responseText, captured.mode, captured.settings, writing?.source === 'native' ? writing.min : null); }
     catch (error) {
       // Genuine missing tail/body retains the established partial/continuation path.
       // Complete but invalid content keeps its precise strict validation error.
@@ -269,6 +273,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   stageResponses.update(responseId, { status: 'validated', normalized: JSON.stringify(result, null, 2), ...(notes ? { notes } : {}) }, secrets);
   return {
     result,
+    storyWriting: writing,
     responseInspectionId: responseId,
     // 临时诊断单独返回；StorySchema和后续阶段永远不接收这些字段。
     storyInspection: envelope ? { planning: envelope.planning, nativeReasoning: response.nativeReasoning } : undefined,
@@ -305,7 +310,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     if (captured.stage === 'story' && failure && typeof failure === 'object') {
       // 兼容渠道会把推理写成开头的 <think>…</think>：与正式解析一致先去掉，推理不进入可续写的正文。
       const raw = addition ?? received, content = splitLeadingThink(raw).content;
-      storyFailureText.set(failure, { produced: raw.trim() !== '',
+      storyFailureText.set(failure, { writing, produced: raw.trim() !== '',
         text: !continuation ? content : content.trim() ? merged(content) : continuation.partial });
     }
     clearTimeout(observationTimer);

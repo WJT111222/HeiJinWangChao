@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { Dialog } from '../Dialog';
-import { builtInPresets, resolveStoryPreset } from '../../presets/library';
+import { type builtInPresets, resolveStoryPreset } from '../../presets/library';
 import type { LoadedPreset, PackageOverride } from '../../presets/package';
 import {
   customSlot,
@@ -26,7 +26,6 @@ import { presetMacros } from '../../presets/macros';
 import { ScriptStatusRows } from './TavernAssistant';
 import './peinture-settings.css';
 
-const definition = builtInPresets[0];
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const samplingSection = '采样与输出';
 const compatibilitySection = '兼容与预览';
@@ -60,7 +59,7 @@ function rangeValue(raw: string, fallback: number, min: number, max: number) {
   return raw.trim() && Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
 }
 
-export default function PeintureSettings({ close }: { close(): void }) {
+export default function PeintureSettings({ close, definition }: { close(): void; definition: (typeof builtInPresets)[number] }) {
   const savedRefresh = useRef(false);
   const deliveryId = useId();
   const scripts = useSyncExternalStore(assistantView.subscribe, assistantView.snapshot);
@@ -103,7 +102,7 @@ export default function PeintureSettings({ close }: { close(): void }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [definition]);
   useEffect(() => {
     if (!dirty) return;
     const guard = (event: BeforeUnloadEvent) => {
@@ -345,7 +344,7 @@ export default function PeintureSettings({ close }: { close(): void }) {
             </section> : sectionName === compatibilitySection && <section className="peinture-section">
               <header><h3>{compatibilitySection}</h3></header>
               <div className="peinture-compatibility">
-                <div><h4>王朝保留</h4><p>王朝保留正文篇幅、行动选项和资料边界。</p></div>
+                <div><h4>王朝保留</h4><p>王朝保留行动选项、资料边界和正文标签协议。</p></div>
                 <div><h4>本版未开放</h4><p>附页、HTML 卡片及预设导入未开放。</p></div>
               </div>
               <button type="button" onClick={() => void preview()}>估算已保存配置</button>

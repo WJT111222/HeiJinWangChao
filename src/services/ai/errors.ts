@@ -88,6 +88,7 @@ const messages: Record<AiErrorCode, string> = {
 };
 export const aiErrorCodes = Object.keys(messages);
 const fieldMessages = new Map<string, string>([
+  ['tavern.writing_changed', '这段正文的文学设置与当前选择不同。请恢复原文学设置后续写，或主动重新生成。已写内容保留。'],
   ['tavern.refresh_required', '正文模式已在其他页面变更，请刷新后再生成。'],
   ['tavern.context_boundary', '正文资料与交付标记冲突，本次未发送。'],
   ['tavern.native_delivery.tools', '未能准备本次正文所需的工具。请关闭破甲模式或检查渠道后再生成。'],

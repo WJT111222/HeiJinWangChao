@@ -1,4 +1,6 @@
-import { captureAssistantSelection, resolveStoryPreset, type AssistantSelection, type PresetSelection } from '../presets/library';
+import { literaryPreset, captureAssistantSelection, resolveStoryPreset, type AssistantSelection, type PresetSelection } from '../presets/library';
+import { sha256Hex } from '../domain/worldbook/canonical';
+import { storyModuleText } from './literaryStory';
 import { nativeDeliveryId } from '../presets/settings';
 import { deliveryContext, checkDeliveryBoundaries } from '../presets/nativeDelivery';
 import { assemblePreset } from '../presets/messages';
@@ -49,7 +51,7 @@ export async function composePrompt(
   unchecked: ComposeInput,
   selection: AssistantSelection = unchecked.stage === 'story' ? captureAssistantSelection() : null,
 ) {
-  return compose(unchecked, selection === nativeDeliveryId ? null : selection, selection === nativeDeliveryId);
+  return compose(unchecked, literaryPreset(selection), selection === nativeDeliveryId);
 }
 /** 正式Variables及离线预览共用同一组装器；组装本身不请求模型或写库。 */
 export async function composeTextVariablesPrompt(input: ComposeInput & { stage: 'variables' }) {
@@ -100,10 +102,10 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
   const messages: AiMessage[] = [];
   let confirmation: AiMessage | undefined;
   for (const module of selected) {
-    // Keep domain boundaries and the player's output contract while the preset owns literary preferences.
-    if (preset && module.category === 'writing' &&
-      !['writing.action_options', 'writing.min_length', 'writing.intimacy_boundaries'].includes(module.id)) continue;
-    let content = await readPromptResource(module.id);
+    const original = await readPromptResource(module.id);
+    let content = storyModuleText(module, original, Boolean(preset));
+    if (content === undefined) continue;
+    const templateHash = content === original ? module.contentSha256 : await sha256Hex(content);
     content = content.replace(/\{\{([A-Za-z][A-Za-z0-9]*)\}\}/g, (_, key: string) => {
       const value = replacements[key];
       if (value === undefined || String(value).trim() === '') throw new AiError('placeholder');
@@ -115,7 +117,7 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
     records.push({
       id: module.id,
       version: module.version,
-      contentSha256: module.contentSha256,
+      contentSha256: templateHash,
       role,
       order: order(module),
       characters: Array.from(content).length,
@@ -144,7 +146,7 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
   // 最终格式提醒紧贴生成点：有确认历史时并入收尾 user 消息；否则作为末尾独立 user 消息。
   const tail = formatTailMessage(input.stage, {
     actionOptions: input.settings.prompts.actionOptions,
-    minNarrativeChars: input.settings.prompts.minNarrativeChars,
+    minNarrativeChars: preset ? undefined : input.settings.prompts.minNarrativeChars,
     maxNarrativeChars: narrativeRange(input.settings.prompts).max,
     openingTime: input.mode === 'opening' && input.state.openingTimePending
       ? (input.settings.runtime.useVariableStage || input.settings.runtime.useWorldStage ? 'reference' : 'required')

@@ -17,6 +17,9 @@ async function openPromptSettings(page: Page, seed?: Record<string, unknown>) {
     }, seed);
     await page.reload();
   }
+  return promptTab(page);
+}
+async function promptTab(page: Page) {
   await page.getByRole('button', { name: '设置', exact: true }).first().click();
   const root = page.getByRole('dialog', { name: '设置', exact: true });
   const back = root.getByRole('button', { name: '返回设置', exact: true });
@@ -134,4 +137,36 @@ test('旧设置主动选择低档后保存刷新，按显式预设恢复', async
   await page.reload();
   const again = await openPromptSettings(page);
   await expect(tier(again, '低')).toBeChecked();
+});
+
+test('文学预设接管篇幅和人称，可打开控制台，停用后恢复原值', async ({ page }, info) => {
+  const initial = await openPromptSettings(page, { minNarrativeChars: 4000, maxNarrativeChars: 5000, perspective: 'first' });
+  await expect(initial.getByLabel('叙事人称')).toBeEnabled();
+  const preferences = await stored(page);
+  async function mode(value: string) {
+    await page.goto('/');
+    await page.getByRole('button', { name: '设置', exact: true }).first().click();
+    const dialog = page.getByRole('dialog', { name: '设置', exact: true });
+    const back = dialog.getByRole('button', { name: '返回设置', exact: true });
+    if (await back.isVisible()) await back.click();
+    await dialog.getByRole('button', { name: '运行', exact: true }).click();
+    await dialog.getByLabel('正文预设').selectOption(value);
+    await Promise.all([page.waitForNavigation(), dialog.getByRole('button', { name: '保存预设并刷新' }).click()]);
+  }
+  await mode('peinture-1118');
+  const managed = await promptTab(page);
+  await expect(managed.getByText('由当前文学预设接管', { exact: false })).toBeVisible();
+  for (const label of ['正文最低字数', '正文建议上限', '叙事人称', '自然文风修复'])
+    await expect(managed.getByLabel(label)).toBeDisabled();
+  await expect(managed.getByLabel('行动选项', { exact: true })).toBeEnabled();
+  await page.screenshot({ path: info.outputPath('literary-settings.png'), animations: 'disabled' });
+  await managed.getByRole('button', { name: '打开文学预设控制台' }).click();
+  await expect(page.getByRole('dialog', { name: '王朝预设设置', exact: true })).toBeVisible();
+  expect(await stored(page)).toEqual(preferences);
+  await mode('');
+  const restored = await promptTab(page);
+  await expect(restored.getByLabel('正文最低字数')).toBeEnabled();
+  await expect(restored.getByLabel('正文最低字数')).toHaveValue('4000');
+  await expect(restored.getByLabel('叙事人称')).toHaveValue('first');
+  expect(await stored(page)).toEqual(preferences);
 });

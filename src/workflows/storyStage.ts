@@ -100,7 +100,7 @@ export class StoryStage {
       };
     };
     // 浏览器取得 Web Lock 本身也是异步的。预设、渠道与凭证在调用入口一起选定。
-    const frozen = presetSelection ? captureInputs() : undefined;
+    const frozen = captureInputs();
     return this.guard.run(expected.saveId, async (attempt) => {
       const current = attempt.check;
       if (presetSelection && waitingForScripts) {
@@ -109,7 +109,7 @@ export class StoryStage {
         current();
         presetSelection = captureAssistantPreferences(allowNativeDelivery);
       }
-      const { config, settings, companionProfile, orderPreferences, frozenStoryChannel, secrets } = frozen ?? captureInputs();
+      const { config, settings, companionProfile, orderPreferences, frozenStoryChannel, secrets } = frozen;
       const streaming = settings.runtime.streamStory;
       const [state, draft] = await Promise.all([
         this.repository.load(expected.saveId),
@@ -230,8 +230,8 @@ export class StoryStage {
         input.onProgress?.({ phase: 'saving', readingPhase: streaming ? 'body' : 'waiting', narrative: streaming ? story.narrative : '' });
         // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
         const saved = selection
-          ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal)
-          : await this.repository.saveDraft(rerollStory(draft,story), draft.draftRevision, attempt.signal, draft);
+          ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal,response.storyWriting)
+          : await this.repository.saveDraft(rerollStory(draft,story,response.storyWriting), draft.draftRevision, attempt.signal, draft);
         if (responseInspectionId) {
           try { stageResponses.update(responseInspectionId, { candidateSaved: true, draftSavedMs: clock?.elapsed() }, secrets); } catch { /* Already persisted. */ }
         }

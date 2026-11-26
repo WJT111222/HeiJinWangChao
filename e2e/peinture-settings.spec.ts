@@ -733,7 +733,7 @@ for (const appearance of ['night', 'day']) test('预设纸档布局与完整条�
       await expect(content.locator('textarea').last()).toHaveValue('合成测试文字');
     }
   }
-  expect(allDisplayed).toHaveLength(82);
+  expect(allDisplayed).toHaveLength(85);
   expect(allDisplayed.sort()).toEqual(controls.sections.flatMap(section => section.ids).sort());
   if (!mobile) {
     const search = panel.getByRole('searchbox', { name: '搜索预设条目' });

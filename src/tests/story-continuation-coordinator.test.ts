@@ -129,6 +129,8 @@ describe('续写与自动重试', () => {
 
 /** 兼容渠道把推理写成开头的 <think>…</think>：与正式解析一致先剥掉，推理不进入可续写的正文。 */
 describe('前导 <think> 的截断原文', () => {
+  const expectedWriting = { source: 'native', min: 5, max: 2000, perspective: setup().settings.prompts.perspective,
+    style: setup().settings.prompts.style, naturalProse: setup().settings.prompts.naturalProse };
   function sse(chunks: string[], finish: string) {
     const events = chunks.map((content, index) => ({ choices: [{ delta: { content }, finish_reason: index === chunks.length - 1 ? finish : null }] }));
     return new Response(events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join('') + 'data: [DONE]\n\n', { headers: { 'content-type': 'text/event-stream' } });
@@ -142,7 +144,7 @@ describe('前导 <think> 的截断原文', () => {
     const coordinator = runner(async () => sse(['<think>内部推理：先想', '想人物动机。</think>\n', head], 'length'));
     await expect(coordinator.generate({ ...setup(), draft })).rejects.toThrow();
     const saved = await current();
-    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 0 });
+    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 0, writing: expectedWriting });
     expect(JSON.stringify(saved)).not.toContain('内部推理');
   });
   it('<think> 还没闭合就截断：没有正文可保存', async () => {
@@ -158,7 +160,7 @@ describe('前导 <think> 的截断原文', () => {
     const coordinator = runner(async () => sse(['<think>续写前的推理</think>', more], 'length'));
     await expect(coordinator.generate({ ...setup(), draft })).rejects.toThrow();
     const saved = await current();
-    expect(saved.storyPartial).toEqual({ text: `${head}${more}`, storyRevision: 0, continuations: 3 });
+    expect(saved.storyPartial).toEqual({ text: `${head}${more}`, storyRevision: 0, continuations: 3, writing: expectedWriting });
     expect(JSON.stringify(saved)).not.toContain('续写前的推理');
   });
 });

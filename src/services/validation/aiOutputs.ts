@@ -90,7 +90,7 @@ export function worldJson(text: string): unknown {
 }
 // 只解析结构；叙事规划不属于 StorySchema，也不检查文学步骤的内容质量。
 // 可选项目规划与确定性标签恢复只影响封套解析，原文仍在临时原文视图保留。
-export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', settings: Settings) {
+export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', settings: Settings, minimum: number | null = settings.prompts.minNarrativeChars) {
   const actions = settings.prompts.actionOptions;
   const pattern = actions
     ? /^\s*(?:<thinking>([\s\S]*?)<\/thinking>\s*)?<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*(?:<变量规划>([\s\S]*?)<\/变量规划>)?\s*<行动选项>([\s\S]*?)<\/行动选项>\s*$/
@@ -132,8 +132,8 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
   // 100～200 汉字为质量目标，偏离仅提示；空摘要不能充当有效的本回合事实记录。
   if (assessSummary(summary).status === 'empty') fail(new AiError('invalid_output', undefined, { storyRule: 'summary_empty', storyTag: '短期记忆' }));
   const narrativeChars = Array.from(narrative.replace(/\s/gu, '')).length;
-  if (narrativeChars < settings.prompts.minNarrativeChars)
-    fail(new AiError('invalid_output', undefined, { storyRule: 'narrative_short', actualCount: narrativeChars, minimumCount: settings.prompts.minNarrativeChars }));
+  if (minimum !== null && narrativeChars < minimum)
+    fail(new AiError('invalid_output', undefined, { storyRule: 'narrative_short', actualCount: narrativeChars, minimumCount: minimum }));
   const actionOptions = actions
     ? envelope[5]
         .split('\n')

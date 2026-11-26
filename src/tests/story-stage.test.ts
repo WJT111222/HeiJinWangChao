@@ -737,3 +737,69 @@ it.each(['', 'data: [DONE]\n', 'data: 非 JSON\n'])('完整正文和 stop 后的
   expect(after.draft?.story).toBeUndefined();
   expect(transport).toHaveBeenCalledTimes(1);
 });
+
+it('文学断点与请求配置绑定：重开数据库能补尾；切换来源或改动预设时零传输，旧片段保留', async () => {
+  const values = new Map<string,string>();
+  vi.stubGlobal('localStorage', {getItem:(key:string) => values.get(key) ?? null,
+    setItem:(key:string,value:string) => { values.set(key,value); }});
+  const factory = new IDBFactory();
+  let database = await SaveRepository.open('writing-recovery',factory);
+  try {
+    const state = await database.create(game());
+    const initial = await database.saveDraft(createTurnDraft(state.saveId,state.revision,'writing-recover','opening',''),null);
+    const root = {enabled:true,selected:'peinture-1118',packages:{}};
+    savePresetSettings(root);
+    const fixture = setup();
+    fixture.settings.runtime.streamStory=false;
+    fixture.settings.prompts.actionOptions=false;
+    fixture.settings.prompts.minNarrativeChars=4000;
+    const transport = vi.fn<typeof fetch>().mockImplementationOnce(async () =>
+      Response.json({choices:[{message:{content:'<正文>林舟等到了电车。</正文>'},finish_reason:'length'}]}))
+      .mockImplementationOnce(async () => Response.json({choices:[{message:{content:'<短期记忆>电车到站。</短期记忆>'},finish_reason:'stop'}]}));
+    await expect(runner(transport,database).generate({...fixture,draft:initial,onFailureSaved:()=>{}})).rejects.toBeDefined();
+    database.close();
+    database = await SaveRepository.open('writing-recovery',factory);
+    const partial = (await database.loadDraft(state.saveId))!;
+    expect(partial.storyPartial).toMatchObject({text:'<正文>林舟等到了电车。</正文>',writing:{source:'preset',id:'peinture-1118',version:'heijin.1',configuration:expect.stringMatching(/^[a-f0-9]{64}$/)}});
+    const resume = () => runner(transport,database).generate({...fixture,draft:partial,continuation:true});
+    for (const selection of [{...root,enabled:false},{...root,packages:{'peinture-1118':{version:'heijin.1',entries:{'wave-pace-normal':{enabled:false}},scripts:{}}}}]) {
+      savePresetSettings(selection);
+      await expect(resume()).rejects.toMatchObject({code:'configuration',details:{fieldPath:'tavern.writing_changed'}});
+      expect(await database.loadDraft(state.saveId)).toEqual(partial);
+      expect(transport).toHaveBeenCalledTimes(1);
+    }
+    // Applying untouched literary controls or updating transport sampling preserves the original writing choices.
+    savePresetSettings({...root,packages:{'peinture-1118':{version:'heijin.1',entries:{},scripts:{},sampling:{temperature:0.6}}}});
+    const completed = await resume();
+    expect(completed.story?.narrative).toBe('林舟等到了电车。');
+    expect(completed.storyWriting).toEqual(partial.storyPartial?.writing);
+    expect(await database.load(state.saveId)).toEqual(state);
+    expect(transport).toHaveBeenCalledTimes(2);
+    const messages = JSON.parse(String(transport.mock.calls[1][1]?.body)).messages;
+    expect(messages.at(-1).content).toContain('只输出续写部分');
+    expect(messages.at(-1).content).not.toMatch(/正文字数|最低|建议上限|4000/);
+  } finally { database.close(); vi.unstubAllGlobals(); }
+});
+
+it('开始请求后停用预设仍按发出时的归属保存；下一次主动重新生成使用原生最低字数', async () => {
+  const values = new Map<string,string>();
+  vi.stubGlobal('localStorage', {getItem:(key:string) => values.get(key) ?? null,
+    setItem:(key:string,value:string) => { values.set(key,value); }});
+  try {
+    const preset = {enabled:true,selected:'peinture-1118',packages:{}};
+    savePresetSettings(preset);
+    const fixture = setup();
+    fixture.settings.prompts.minNarrativeChars=4000;
+    fixture.settings.runtime.streamStory=false;
+    const transport = vi.fn<typeof fetch>(async () => {
+      savePresetSettings({...preset,enabled:false});
+      return Response.json({choices:[{message:{content:output()},finish_reason:'stop'}]});
+    });
+    const stage = runner(transport);
+    const saved = await stage.generate({...fixture,draft});
+    expect(saved.storyWriting).toMatchObject({source:'preset',id:'peinture-1118'});
+    await expect(stage.generate({...fixture,draft:saved})).rejects.toMatchObject({details:{storyRule:'narrative_short',minimumCount:4000}});
+    expect(await repo.loadDraft(draft.saveId)).toEqual(saved);
+    expect(transport).toHaveBeenCalledTimes(2);
+  } finally { vi.unstubAllGlobals(); }
+});

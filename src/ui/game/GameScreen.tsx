@@ -1,3 +1,4 @@
+import { continuationMinimum } from '../../domain/storyWriting';
 import { FeedbackCorrelation, linkMemoryFeedback } from '../../services/feedback/report';
 import { assistantView, bindTavernPage, enterTavernChat } from '../../presets/tavern/hostState';
 import { ScriptButtons } from '../settings/TavernAssistant';
@@ -369,6 +370,7 @@ export function GameScreen({
   // 正文被截断：显示已写出的部分（只取正文，不显示规划和尾部标签）；续写次数用完后仍显示，只是不能再续写。
   // 「正文已闭合但字数不足」也不能续写（续写只能补 </正文> 之后的标签）；按本次设置的最低字数判断。
   const minNarrativeChars = settings.prompts.minNarrativeChars;
+  const partialMinimum = continuationMinimum(draft?.storyPartial?.writing, minNarrativeChars);
   const storyContinuable = !busy && canContinueStory(draft, minNarrativeChars);
   const partialBlock = continuationBlock(draft, minNarrativeChars);
   const partialText = (!busy || storyRetryWait) && storyPartialVisible(draft) ? draft?.storyPartial?.text : undefined;
@@ -909,7 +911,7 @@ export function GameScreen({
                 : partialBlock === 'used_up'
                 ? `正文未写完 · 已续写 ${STORY_CONTINUATION_LIMIT} 次，不能再续写；可复制已写内容，按「发送」重新生成`
                 : partialBlock === 'closed_short'
-                  ? `正文已结束但只有 ${partialCount?.chars ?? 0} 字，低于最低 ${minNarrativeChars} 字，续写无法补足 · 可复制已写内容，按「发送」重新生成`
+                  ? `正文已结束但只有 ${partialCount?.chars ?? 0} 字，低于最低 ${partialMinimum} 字，续写无法补足 · 可复制已写内容，按「发送」重新生成`
                   : partialCount?.closed
                     ? '正文已写完，只差结尾的记录标签 · 点「续写正文」补齐，或按「发送」重新生成'
                     : '正文未写完 · 点「续写正文」从断点接着写，或按「发送」重新生成'}</span>
@@ -917,7 +919,7 @@ export function GameScreen({
                 : <p className="field-hint">模型还在写创作提纲时就中断了，{storyContinuable ? '续写会从提纲处接着往下写。' : '没有可阅读的正文。'}</p>}
               {!partialCount?.closed && <p className="story-partial-end" aria-hidden="true">……</p>}
               <div className="story-partial-actions" role="group" aria-label="未写完的正文">
-                <span className="story-partial-meta">已写 <b>{partialCount?.chars ?? 0}</b> 字 · 最低 {minNarrativeChars} 字</span>
+                <span className="story-partial-meta">已写 <b>{partialCount?.chars ?? 0}</b> 字{partialMinimum !== undefined && ` · 最低 ${partialMinimum} 字`}</span>
                 {partialNarrative && <button type="button" className={`partial-action partial-copy${partialCopy?.text === partialNarrative ? (partialCopy.ok ? ' is-done' : ' is-failed') : ''}`}
                   onClick={() => void copyPartial(partialNarrative)} title="把已写出的正文复制到剪贴板">
                   <span className="partial-seal" aria-hidden="true">{partialCopy?.text === partialNarrative && partialCopy.ok ? '✓' : '抄'}</span>

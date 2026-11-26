@@ -1,3 +1,6 @@
+import type { StoryWriting } from '../domain/storyWriting';
+import { canonicalJson, sha256Hex } from '../domain/worldbook/canonical';
+import { narrativeRange, type Settings } from '../ui/settings/model';
 import controls from './resources/peinture-controls.json';
 import peinture from './resources/peinture-manifest.json';
 import { loadPreset, type PresetDefinition, type PackageOverride } from './package';
@@ -17,10 +20,28 @@ export type PresetSelection = { definition: PresetDefinition; overrides?: Packag
 
 /** Capture preferences before awaiting either repository reads or a lazy package load. */
 export function captureStoryPreset(): PresetSelection {
-  const selected = captureAssistantSelection();
-  return selected === nativeDeliveryId ? null : selected;
+  return literaryPreset(captureAssistantSelection());
 }
 export type AssistantSelection = PresetSelection | typeof nativeDeliveryId;
+export function literaryPreset(selection: AssistantSelection | undefined): PresetSelection {
+  return selection === nativeDeliveryId ? null : selection ?? null;
+}
+
+/** Store only a digest of the literary overrides. Custom prompt text belongs in preset preferences. */
+export async function captureStoryWriting(selection: AssistantSelection | undefined, prompts: Settings['prompts']): Promise<StoryWriting> {
+  const preset = literaryPreset(selection);
+  if (preset) {
+    const edits = preset.overrides;
+    const configuration = await sha256Hex(canonicalJson({
+      entries: edits?.entries ?? {}, scripts: edits?.scripts ?? {},
+      variables: edits?.variables ?? {}, scriptVariables: edits?.scriptVariables ?? {},
+    }));
+    return { source: 'preset', id: preset.definition.id, version: preset.definition.version, configuration };
+  }
+  return { source: 'native', ...narrativeRange(prompts), perspective: prompts.perspective,
+    style: prompts.style, naturalProse: prompts.naturalProse };
+}
+
 export function captureAssistantSelection(): AssistantSelection {
   if (new URLSearchParams(globalThis.location?.search).get('safe') === '1') return null;
   const settings = readPresetSettings();

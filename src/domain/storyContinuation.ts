@@ -3,6 +3,7 @@
  * 由玩家手动点「续写正文」，用同一份上下文让模型从断点接着写，拼接后仍走原有严格解析。
  * 不改变正文输出格式，也不放宽任何校验。
  */
+import { continuationMinimum, type StoryWriting } from './storyWriting';
 import type { TurnDraft } from './drafts';
 
 /** 一次截断最多续写的次数；用完后只能重新生成。 */
@@ -50,7 +51,8 @@ export function continuationBlock(draft: TurnDraft | undefined, minNarrativeChar
   const partial = draft!.storyPartial!;
   if (partial.continuations >= STORY_CONTINUATION_LIMIT) return 'used_up';
   const narrative = partialNarrative(partial.text);
-  return narrative.closed && narrative.chars < minNarrativeChars ? 'closed_short' : undefined;
+  const minimum = continuationMinimum(partial.writing, minNarrativeChars);
+  return minimum !== undefined && narrative.closed && narrative.chars < minimum ? 'closed_short' : undefined;
 }
 
 export function canContinueStory(draft: TurnDraft | undefined, minNarrativeChars: number): boolean {
@@ -127,18 +129,19 @@ export function overlapLength(base: string, next: string, max = OVERLAP_MAX): nu
  * 续写请求末尾追加的指令（user 消息）；紧跟在作为 assistant 消息的已写部分之后。
  * 每次请求都按当前已写部分与本次设置重新计算字数，告诉模型已写多少、至少还需多少；不要求凑到某个精确字数。
  */
-export function continuationInstruction(options: { actionOptions: boolean; minNarrativeChars: number; maxNarrativeChars?: number; partial: string }): string {
+export function continuationInstruction(options: { actionOptions: boolean; minNarrativeChars?: number; maxNarrativeChars?: number; partial: string }): string {
   const tags = options.actionOptions ? '<短期记忆>、<变量规划>、<行动选项>' : '<短期记忆>、<变量规划>';
-  const min = options.minNarrativeChars, narrative = partialNarrative(options.partial), need = Math.max(0, min - narrative.chars);
-  const progress = !narrative.started
+  const min = options.minNarrativeChars, narrative = partialNarrative(options.partial);
+  const need = min === undefined ? undefined : Math.max(0, min - narrative.chars);
+  const progress = min === undefined ? '' : !narrative.started
     ? `正文字数：<正文> 还没有开始（已写 0 字）；本回合 <正文> 至少需要 ${min} 字（只计正文里的非空白字符）。`
     : narrative.closed
       ? `正文字数：<正文> 已经完整结束，共 ${narrative.chars} 字，已达到最低 ${min} 字。不要再写正文，也不要重新打开 <正文>，只补齐缺少的结构标签。`
-      : need > 0
+      : need !== undefined && need > 0
         ? `正文字数：<正文> 目前已写 ${narrative.chars} 字（只计非空白字符），本回合至少需要 ${min} 字，还需至少约 ${need} 字。请自然推进场景直到合适的收束点，不必恰好停在某个字数，也不要为凑字数重复或灌水。`
         : `正文字数：<正文> 目前已写 ${narrative.chars} 字，已达到最低 ${min} 字；把当前场景自然收尾即可，不必扩写。`;
   // 建议上限只作目标（程序不因超出判失败）；正文已闭合时不再提。
-  const ceiling = !narrative.closed && options.maxNarrativeChars && options.maxNarrativeChars > min
+  const ceiling = min !== undefined && !narrative.closed && options.maxNarrativeChars && options.maxNarrativeChars > min
     ? `本回合正文建议上限约 ${options.maxNarrativeChars} 字，不要明显超出。` : '';
   return [
     '【续写】你的上一条回复在中途被截断，上面那条助手消息就是你已经输出的全部内容。请直接从中断处接着写：',
@@ -146,12 +149,12 @@ export function continuationInstruction(options: { actionOptions: boolean; minNa
     narrative.closed ? '2. <正文> 已经结束，不要在 </正文> 之后再写任何正文；' : '2. 如果 <正文> 还没有结束，先把正文自然地写完并输出 </正文>；',
     `3. 然后按本阶段的格式要求，依次补齐还没输出的结构标签（${tags}），每个都要完整闭合；`,
     '4. 只输出续写部分，第一个字符就是接在断点后面的内容，不加任何说明。',
-    progress + ceiling,
+    ...(progress ? [progress + ceiling] : []),
   ].join('\n');
 }
 
 /** 正文请求失败时收到的内容：text 为可保存的原文（已去掉前导 <think>，续写时为拼接后的全文）；produced 表示模型这次是否返回了任何文字。 */
-export interface StoryFailureText { text: string; produced: boolean }
+export interface StoryFailureText { text: string; produced: boolean; writing?: StoryWriting }
 
 /** 截断正文是否应在阅读区显示（不论还能否续写；次数用完后仍可阅读、复制）。 */
 export function storyPartialVisible(draft: TurnDraft | undefined): boolean {
@@ -171,7 +174,7 @@ export function nextStoryPartial(draft: TurnDraft, failure: { code: string; stor
   const produced = Boolean(received?.produced);
   const continuations = previous ? Math.min(STORY_CONTINUATION_LIMIT, previous.continuations + (produced ? 1 : 0)) : 0;
   if (received && produced && continuableStoryFailure(failure.code, failure.storyRule) && partialWorthKeeping(received.text))
-    return { text: received.text, storyRevision: draft.storyRevision, continuations };
+    return { ...(received.writing ? { writing: received.writing } : {}), text: received.text, storyRevision: draft.storyRevision, continuations };
   return previous ? { ...previous, continuations } : undefined;
 }
 
