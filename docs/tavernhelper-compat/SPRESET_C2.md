@@ -1,5 +1,44 @@
 # SPreset 核心运行时原型（C2）
 
+## 原始内容块顺序整改
+
+本轮从 `755f75b7` 独立复现了 6 个失败身份。桌面与手机各有三项：Gemini JSON 和 Anthropic JSON 的合法前置空白被拒，Gemini 同一个 SSE 事件内的后置空白被放行并推进回合。整改前后使用的 12 份 HTTP 响应逐份 SHA-256 相同。原 16 份「直接工具／先收到排版空白」配对继续通过。[原始帧、前后状态与完整矩阵](spreset-c2-block-order-evidence.json)
+
+| 相同工具参数和空白，双端实测 | 整改前 | 整改后 |
+| --- | --- | --- |
+| Gemini JSON、Anthropic JSON，文本块在工具块之前 | 4/4 被拒 | 4/4 取得收据并显式结算 |
+| Gemini SSE，同帧工具 part 在文本 part 之前 | 2/2 被错当作前导空白且结算 | 2/2 保留附随文本，零收据、零候选、零正式状态增量 |
+| Gemini SSE 同帧前置文本、两协议直接 JSON 工具 | 6/6 符合预期 | 6/6 符合预期 |
+
+公共解析器在遍历原始块或事件时记录精确的前置排版字符。OpenAI 兼容与 DeepSeek 的同一消息或 delta 内，并列字段不能提供时序证明。C2 仅凭公共层对「原工具正文、实收前缀」的双重核对清空独立文本字段。后置或位置不明的空白进入处理器后被拒，真实竞争正文在调用处理器前被拒。模型原文、公开思考和工具参数正文仍分别保留。[协议逐项契约](1124/upstream-contract.md#单一终端工具的排版空白与块顺序) · [公共解析器](../../src/presets/tavern/upstream.ts) · [C2 宿主](../../src/presets/spreset/session.ts)
+
+新增长期回归覆盖四协议 JSON/SSE 共 77 种形态。桌面和手机各运行一遍，154 份请求由本地 HTTP 模型实际收件。每份样本恰有一次 POST。50 份工具交付核对了原始参数、调用 ID 和 UTF-8 收据，16 份纯文本交付无工具收据。其余 56 份后置或位置不明的伴随文本和 32 份竞争正文都没有写入候选。成功样本保存候选后回合与 revision 增量均为 0，显式提交后均为 1。[合成响应及预期结果](../../src/tests/fixtures/toolOrder.ts) · [浏览器端断言](../../e2e/spreset-tool-order.spec.ts)
+
+### 合流与复跑
+
+已同步含 #254 的发布基线 `75e8abc2dee53078d126886058acbc2a0dce70de`，Git 合流无冲突。相对上轮审查 HEAD，`experiments/spreset/` 与第三方署名文件均无差异。GPL 核心、Worker、iframe 与 COPYING 逐文件 SHA-256 与固定清单一致。[合流提交](https://github.com/WJT111222/HeiJinWangChao/commit/be71dd58f4efbef2bc9f970948d5b65fe59652ed) · [源码清单](../../experiments/spreset/SOURCES.json)
+
+| 本轮独立运行 | 结果 |
+| --- | --- |
+| Node 24.19.0 全工程检查 | ESLint、TypeScript、构建、命令目录及 243 个文件的 5,758 项 Vitest 通过 |
+| 协议定向 Vitest、Prompt 专项 | 分别 308/308、93/93，均与全量 Vitest 重叠 |
+| 四协议新增顺序矩阵 | 77/77 单测，16/16 浏览器测试身份，共 154 份 HTTP 样本 |
+| 原始独立探针 | 顺序 6/12 → 12/12；原配对 16/16，真实竞争正文 8/8 在处理器前拒绝；原解析探针 45/45、Anthropic 关闭块 3/3 |
+| 双端正式版定向 | 178/178，零失败、跳过或重试。含原 C2 三套 52 项、34 份畸形输入、存储隔离、1118、1124、独立防截断、文生图与三段变量共同结算、#254 只读手机 |
+| 历史与生产 | 双端真实 v3 断点升级后按 v4 续写并结算；#254 的 V8 → V9 升级双端通过且零 POST。扫描 141 份生产文件，六个实验特征均零命中；双端生产预览没有启动实验 iframe 或 Worker |
+
+独立复审可用仓库锁文件和 Mock 复跑。开发服务器使用 5174，每组桌面与手机测试均为单 Worker、零重试。
+
+```sh
+npm ci
+npm run check
+npm run prompts:check
+npx vitest run src/tests/tavern-tool-order.test.ts src/tests/tavern-anthropic-blocks.test.ts
+CI=1 CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/spreset-tool-order.spec.ts e2e/spreset-terminal.spec.ts e2e/spreset-prototype.spec.ts e2e/spreset-isolation.spec.ts --workers=1 --retries=0
+```
+
+全仓 Playwright、付费模型和物理手机未在本轮运行。Chromium 底层 POST 重放、其他模式的 `TURN_INCOMPLETE` 和 C3 面向玩家组合分发的许可仍单独跟踪。
+
 ## 合法工具调用前的排版空白
 
 独立复审使用同一份 `submit_scene` 参数，分别直接交付和在交付前增加空格与换行。在 `82dca2fe` 上，四协议各自在桌面和手机复现误拒。公共解析器已确认唯一完整调用，C2 却将排版空白填入处理器的独立正文字段。处理器收到两种交付后拒发收据。每份失败样本只发送了一次请求。
@@ -14,7 +53,7 @@ C2 现在把公共解析器针对原始帧建立的 `matchesDelivery` 核对函�
 
 本地 Mock 服务记录实际收到的 POST，浏览器通过私有端口观察 `finish` 及收据，再从 IndexedDB 读取候选与正式回合。原配对样本的逐份响应哈希在修复前后相同。一个工具正文为 122 UTF-8 字节的样本，旧宿主发送的 `finish.text` 为一个空格和换行，新宿主发送空串，收据为 `local-call / 122`。候选保存前后回合和 revision 都是 1，显式提交后两者都是 2。另有 8 个多段 SSE 样本检查工具参数首尾、正文内部换行与缩进、原文观察顺序及收据字节数。[逐样本证据](spreset-c2-padding-evidence.json) · [四协议浏览器断言](../../e2e/spreset-prototype.spec.ts)
 
-最新发布基线为 `3be381f64808b16d46ed54c6cf1fb0065555c0ed`。合流提交保留 #248 的完整署名文件，在其后附回原 #251 的 SPreset 署名、GPLv3 许可和对应源码说明。1118、1124、文生图及既有许可记录保留。C2 处理器、Worker、许可文本和 iframe 四个文件的 SHA-256 均与原清单相符。[合流提交](https://github.com/WJT111222/HeiJinWangChao/commit/ed4067fa9b524f4ad9fd87be9cab175f84fbd7ed) · [双方署名](../../THIRD_PARTY_NOTICES.md) · [源码指纹](../../experiments/spreset/SOURCES.json)
+该轮发布基线为 `3be381f64808b16d46ed54c6cf1fb0065555c0ed`。合流提交保留 #248 的完整署名文件，在其后附回原 #251 的 SPreset 署名、GPLv3 许可和对应源码说明。1118、1124、文生图及既有许可记录保留。C2 处理器、Worker、许可文本和 iframe 四个文件的 SHA-256 均与原清单相符。[合流提交](https://github.com/WJT111222/HeiJinWangChao/commit/ed4067fa9b524f4ad9fd87be9cab175f84fbd7ed) · [双方署名](../../THIRD_PARTY_NOTICES.md) · [源码指纹](../../experiments/spreset/SOURCES.json)
 
 ### 复跑范围
 
