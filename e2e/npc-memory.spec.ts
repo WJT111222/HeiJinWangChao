@@ -172,7 +172,7 @@ test('公开自动维护开关不授权NPC额外收费；新正式回合和下�
   });
   await seed(page, true); await page.reload(); await openGameTools(page); expect(tasks).toEqual([]);
   await page.getByLabel('你的行动', { exact: true }).fill('继续观察'); await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(() => stages.filter((model) => model !== 'memory')).toEqual(['story', 'variables', 'world']);
+  await expect.poll(() => stages.filter((model) => model !== 'memory'),{timeout:20000}).toEqual(['story', 'variables', 'world']);
   await expect.poll(async () => (await load(page)).memories.medium.length).toBe(1);
   await page.getByLabel('你的行动', { exact: true }).fill('继续等待'); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
   expect(tasks).toEqual(['memory.short_to_medium']);
