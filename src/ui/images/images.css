@@ -54,18 +54,6 @@
 .image-record > div {
   min-width: 0;
 }
-.image-entry img,
-.image-preview img {
-  width: 3rem;
-  height: 3rem;
-  object-fit: cover;
-  vertical-align: middle;
-  border-radius: 0.25rem;
-}
-.image-preview img {
-  width: 5rem;
-  height: 5rem;
-}
 .image-full {
   display: block;
   max-width: 100%;
@@ -77,16 +65,128 @@
   cursor: pointer;
 }
 
-.dossier-image-avatar {
-  display: block;
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  border-radius: inherit;
-  object-fit: cover;
-}
 .settings-content .image-tools label.image-check {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
+}
+
+/* Display renditions preserve the entire source frame. Originals open on demand. */
+.picture-thumb {
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+  max-width: 100%;
+}
+.picture-thumb > button {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: inherit;
+  cursor: zoom-in;
+}
+.picture-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  border-radius: 0.2rem;
+}
+.thumb-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.modal-body > .thumb-avatar {
+  width: 3rem;
+  height: 3rem;
+}
+.thumb-story,
+.thumb-place,
+.thumb-vehicle,
+.thumb-item {
+  display: grid;
+  margin: 0.45rem 0;
+}
+.thumb-story {
+  width: 12rem;
+  height: 7rem;
+}
+.thumb-place {
+  width: 13rem;
+  height: 8rem;
+}
+.thumb-vehicle {
+  width: 10rem;
+  height: 6rem;
+}
+.thumb-item,
+.thumb-record {
+  width: 4.2rem;
+  height: 4.2rem;
+}
+.picture-thumb[data-unavailable]:empty {
+  display: none;
+}
+.image-record {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+.roster-text {
+  flex: 1;
+  min-width: 0;
+  text-align: start;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.roster-text > span {
+  display: grid;
+}
+.profile-pictures > .wide-portraits {
+  display: none;
+}
+.profile-pictures > details {
+  margin-block: 0.35rem;
+}
+.profile-pictures summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.thumb-home,
+.thumb-bust,
+.thumb-full {
+  width: 6rem;
+  height: 7.5rem;
+  margin: 0.2rem;
+}
+:is(.sec, .npc-section, .modal-body):has(> .profile-pictures) {
+  container-type: inline-size;
+}
+@media (min-width: 840px) {
+  @container (min-width: 25rem) {
+    .profile-pictures {
+      float: right;
+      margin-inline-start: 0.75rem;
+      max-width: 32%;
+    }
+    .profile-pictures > .wide-portraits {
+      display: grid;
+    }
+    .profile-pictures > .compact-portraits {
+      display: none;
+    }
+  }
+}
+
+.pf-photo:has(.thumb-avatar)::before {
+  pointer-events: none;
 }

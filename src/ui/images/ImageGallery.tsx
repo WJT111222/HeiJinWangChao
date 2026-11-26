@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { PictureThumb, downloadPicture } from './PictureThumb';
 import { Dialog } from '../Dialog';
 import { config } from '../../services/images/config';
 import {
@@ -20,28 +21,6 @@ import { useImages } from './ImageScope';
 import type { ImageView } from './ImageScope';
 import './images.css';
 
-function usePicture(view: ImageView, p: Picture | undefined) {
-  const [value, setValue] = useState<{ key: string; url: string }>();
-  const id = p?.id,
-    mime = p?.mime,
-    lib = view.lib,
-    saveId = view.scope.saveId;
-  const key = JSON.stringify([saveId, id, mime]);
-  useEffect(() => {
-    if (!id) return;
-    let live = true;
-    void lib
-      .file(saveId, id)
-      .then((data) => {
-        if (live && data) setValue({ key, url: 'data:' + mime + ';base64,' + data });
-      })
-      .catch(() => {});
-    return () => {
-      live = false;
-    };
-  }, [key, lib, saveId, id, mime]);
-  return value?.key === key ? value.url : undefined;
-}
 function PictureRow({
   view,
   p,
@@ -51,9 +30,7 @@ function PictureRow({
   p: Picture;
   report: (op: Promise<unknown>) => void;
 }) {
-  const url = usePicture(view, p);
-  const [preview, setPreview] = useState(false),
-    [deleting, setDeleting] = useState(false),
+  const [deleting, setDeleting] = useState(false),
     [title, setTitle] = useState(p.album ?? p.target.title);
   const valid = validTarget(view.state, p.target);
   function edit(action: 'use' | 'album' | 'delete', value?: string) {
@@ -61,15 +38,7 @@ function PictureRow({
   }
   return (
     <article className="image-record">
-      {url && (
-        <button
-          className="image-preview"
-          aria-label={'预览 ' + p.target.title}
-          onClick={() => setPreview(true)}
-        >
-          <img src={url} alt={p.target.title} />
-        </button>
-      )}
+      <PictureThumb resources={view.resources} p={p} variant="record" />
       <div>
         <strong>{p.album || p.target.title}</strong>
         <small>
@@ -78,11 +47,15 @@ function PictureRow({
         {p.target.kind === 'story' && <p>{p.target.summary}</p>}
         <div className="image-actions">
           {valid && !p.current && <button onClick={() => edit('use')}>选为当前</button>}
-          {url && (
-            <a href={url} download={p.target.title + '.' + p.mime.split('/')[1]}>
-              导出图片
-            </a>
-          )}
+          <a
+            href="#export-image"
+            onClick={(e) => {
+              e.preventDefault();
+              report(downloadPicture(view.resources, p));
+            }}
+          >
+            导出图片
+          </a>
           <button onClick={() => setDeleting(true)}>删除</button>
         </div>
         {p.target.kind === 'story' && (
@@ -100,11 +73,6 @@ function PictureRow({
           </div>
         )}
       </div>
-      {preview && url && (
-        <Dialog title={p.target.title} onClose={() => setPreview(false)}>
-          <img className="image-full" src={url} alt={p.target.title} />
-        </Dialog>
-      )}
       {deleting && (
         <Dialog small title="删除这张图片？" onClose={() => setDeleting(false)}>
           <p>这会一并删除该图片的历史记录与收藏。</p>
@@ -212,12 +180,20 @@ function ImageEditor({
     </>
   );
 }
-export function Gallery({ view, target }: { view: ImageView; target?: Target }) {
+export function Gallery({
+  view,
+  target,
+  initialSlot,
+}: {
+  view: ImageView;
+  target?: Target;
+  initialSlot?: Slot;
+}) {
   const [filter, setFilter] = useState('all'),
     [query, setQuery] = useState(''),
     [limit, setLimit] = useState(12),
     [error, setError] = useState('');
-  const [slot, setSlot] = useState<Slot>(target ? slotOptions(target.kind)[0] : 'avatar');
+  const [slot, setSlot] = useState<Slot>(initialSlot ?? (target ? slotOptions(target.kind)[0] : 'avatar'));
   function report(op: Promise<unknown>) {
     setError('');
     void op.catch((e) => setError(e instanceof Error ? e.message : '图片操作失败'));
@@ -230,7 +206,9 @@ export function Gallery({ view, target }: { view: ImageView; target?: Target }) 
           : filter === 'all' ||
             (filter === 'album'
               ? p.album !== undefined
-              : p.target.kind === filter || (filter === 'item' && p.target.kind === 'vehicle')),
+              : filter === 'home'
+                ? p.slot === 'home'
+                : p.target.kind === filter),
       )
       .filter((p) => !query || [p.target.title, p.album].some((t) => t?.includes(query)))
       .reverse();
@@ -273,6 +251,8 @@ export function Gallery({ view, target }: { view: ImageView; target?: Target }) 
                   all: '全部',
                   player: '主角图片',
                   npc: 'NPC 图片',
+                  home: '居家照',
+                  vehicle: '车辆图片',
                   story: '剧情插画',
                   place: '地点图片',
                   item: '物品图片',
@@ -314,93 +294,66 @@ export function Gallery({ view, target }: { view: ImageView; target?: Target }) 
     </div>
   );
 }
-function CurrentAvatar({
-  view,
-  id,
-  kind,
-  children,
-}: {
-  view: ImageView;
-  id: string;
-  kind: 'player' | 'npc';
-  children: ReactNode;
-}) {
-  const current = view.library.pictures.find(
-    (p) =>
-      p.target.id === id &&
-      p.target.kind === kind &&
-      p.slot === 'avatar' &&
-      p.current &&
-      validTarget(view.state, p.target),
-  );
-  const url = usePicture(view, current);
-  return url ? <img className="dossier-image-avatar" src={url} alt="" /> : children;
-}
-export function ImageAvatar({
-  id,
-  kind,
-  children,
-}: {
-  id: string;
-  kind: 'player' | 'npc';
-  children: ReactNode;
-}) {
+type Subject = { id: string; kind: Kind };
+type Actor = { id: string; kind: 'player' | 'npc' };
+
+export function ImageAvatar({ id, kind, children }: Actor & { children?: ReactNode }) {
   const view = useImages();
-  return view ? (
-    <CurrentAvatar view={view} id={id} kind={kind}>
-      {children}
-    </CurrentAvatar>
+  const p = view?.current(kind, id, 'avatar');
+  return view && p ? (
+    <PictureThumb key={p.id} resources={view.resources} p={p} fallback={children} />
   ) : (
     children
   );
 }
-function Entry({ view, t }: { view: ImageView; t: Target }) {
-  const [open, setOpen] = useState(false);
-  const m =
-    t.kind === 'story'
-      ? undefined
-      : view.library.pictures.find(
-          (p) =>
-            p.current &&
-            p.slot === slotOptions(t.kind)[0] &&
-            sameSubject(p.target, t) &&
-            validTarget(view.state, p.target),
-        );
-  const url = usePicture(view, m);
-  return (
-    <>
-      <button className="link-btn image-entry" onClick={() => setOpen(true)}>
-        {url && <img src={url} alt="" />}
-        {kinds[t.kind] + '图片'}
-      </button>
-      {open && (
-        <Dialog title={t.title + ' · 图片'} onClose={() => setOpen(false)}>
-          <Gallery view={view} target={t} />
-        </Dialog>
-      )}
-    </>
-  );
-}
-function StoryEntry({ view, id }: { view: ImageView; id: string }) {
-  const [open, setOpen] = useState(false);
-  const target = open ? targetFor(view.state, 'story', id) : undefined;
-  return (
-    <>
-      <button className="link-btn image-entry" onClick={() => setOpen(true)}>
-        查看或生成插画
-      </button>
-      {target && (
-        <Dialog title={target.title + ' · 图片'} onClose={() => setOpen(false)}>
-          <Gallery view={view} target={target} />
-        </Dialog>
-      )}
-    </>
-  );
-}
-export function ImageEntry({ kind, id }: { kind: Kind; id: string }) {
+
+export function Portraits({ id, kind, home = false }: Actor & { home?: boolean }) {
   const view = useImages();
-  if (!view) return null;
-  if (kind === 'story') return <StoryEntry view={view} id={id} />;
-  const t = targetFor(view.state, kind, id);
-  return t ? <Entry key={id} view={view} t={t} /> : null;
+  const pictures = (home ? (['home'] as const) : (['bust', 'full'] as const)).flatMap(
+    (slot) => view?.current(kind, id, slot) ?? [],
+  );
+  if (!view || !pictures.length) return null;
+  return (
+    <div className="profile-pictures">
+      <div className="wide-portraits">
+        {pictures.map((p) => (
+          <PictureThumb key={p.id} resources={view.resources} p={p} />
+        ))}
+      </div>
+      <details className="compact-portraits">
+        <summary>{home ? '查看居家照' : '查看人物立绘'}</summary>
+        {pictures.map((p) => (
+          <PictureThumb key={p.id} resources={view.resources} p={p} />
+        ))}
+      </details>
+    </div>
+  );
+}
+
+export function ImageEntry(props: Subject & { home?: boolean }) {
+  const view = useImages();
+  return view ? <EnabledEntry key={props.id} {...props} view={view} /> : null;
+}
+function EnabledEntry({ kind, id, home, view }: Subject & { home?: boolean; view: ImageView }) {
+  const [open, setOpen] = useState(false);
+  const t = open ? targetFor(view.state, kind, id) : undefined;
+  const p = !person(kind) ? view.current(kind, id, slotOptions(kind)[0]) : undefined;
+  return (
+    <>
+      {p && <PictureThumb key={p.id} resources={view.resources} p={p} variant={kind} />}
+      <button className="link-btn image-entry" onClick={() => setOpen(true)}>
+        {home ? '管理居家照' : kind === 'story' ? (p ? '插画选项' : '查看或生成插画') : kinds[kind] + '图片'}
+      </button>
+      {t && (
+        <Dialog title={t.title + ' · 图片'} onClose={() => setOpen(false)}>
+          <Gallery
+            key={JSON.stringify([id, home])}
+            view={view}
+            target={t}
+            initialSlot={home ? 'home' : undefined}
+          />
+        </Dialog>
+      )}
+    </>
+  );
 }

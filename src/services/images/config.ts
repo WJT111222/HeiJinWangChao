@@ -5,6 +5,7 @@ export const backendNames = { openai: 'OpenAI 兼容', novelai: 'NovelAI', comfy
 export type Backend = keyof typeof backendNames;
 export const templates = {
   person: '将人物档案转为单人肖像描述。保留真实年龄、身份及已知外貌，沿用给定形象锚点。',
+  home: '描绘单人在家中阅读、做饭或休息的日常瞬间。自然便装、环境光，保留人物辨识度与生活空间。',
   story: '选择这个已结算片段中一个具体时刻，描述相关人物、动作与环境，保留所给人物外貌。',
   place: '描述这个地点的用途、空间、光线与材质，画面重点为环境。',
   item: '为指定物品制作单件物品展示，保留可辨识的材质与造型。',
@@ -77,7 +78,13 @@ const schema = z.object({
   positive: z.string().max(4000),
   negative: z.string().max(4000),
   style: z.string().max(2000),
-  templates: z.object({ person: z.string(), story: z.string(), place: z.string(), item: z.string() }),
+  templates: z.object({
+    home: z.string().default(templates.home),
+    person: z.string(),
+    story: z.string(),
+    place: z.string(),
+    item: z.string(),
+  }),
   auto: z.object({ ordinary: z.boolean(), special: z.boolean(), story: z.boolean(), item: z.boolean() }),
   includeImages: z.boolean(),
 });

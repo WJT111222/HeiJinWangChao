@@ -1,3 +1,4 @@
+import { ImageAvatar } from '../images/ImageGallery';
 import {useId} from 'react';
 import type {GameState} from '../../domain/state';
 import {chinaCalendar} from '../../domain/openingTime';
@@ -27,7 +28,7 @@ export function MobileStatus({state,equipment,onProfile,onEconomy}:{state:GameSt
   <section className="st-place" aria-label="此时此地详情"><p className="path">{place.path||'当前地点'}</p><h3>{place.name}</h3><div className="clock"><time dateTime={state.openingTimePending?undefined:state.worldClock}>{clock}</time><span>{date}{period&&<><br/>{period}</>}</span></div>
    <dl><div><dt>天气</dt><dd>{state.weatherText||'天气待确认'}</dd></div><div><dt>环境</dt><dd>{state.environmentText||'环境待确认'}</dd></div></dl>
   </section>
-  <section aria-label="主角信息"><div className="st-hero"><span className="mobile-seal" aria-hidden="true">{Array.from(hero.name)[0]||'人'}</span><div><h3>{hero.name}</h3><p>{hero.age} 岁 · {hero.gender} · {hero.profession||'职业未确认'}</p></div></div>
+  <section aria-label="主角信息"><div className="st-hero"><span className="mobile-seal"><ImageAvatar kind="player" id={hero.id}>{Array.from(hero.name)[0]||'人'}</ImageAvatar></span><div><h3>{hero.name}</h3><p>{hero.age} 岁 · {hero.gender} · {hero.profession||'职业未确认'}</p></div></div>
    <div className="money"><div className="cash" style={fundStyle(money(state.economy.cash),2)}><small>现金</small><b>{money(state.economy.cash)}</b></div><div style={fundStyle(money(state.economy.onlineBalance),4)}><small>线上资金</small><b>{money(state.economy.onlineBalance)}</b></div></div>
    <div className="conds"><div><small>身体</small>{hero.healthText||'待开局确认'}</div><div><small>情绪</small>{hero.emotionText||'待开局确认'}</div></div>
    <dl className="wear" aria-label="当前穿戴与装备">{equipment.map(([label,value])=><div key={label} data-empty={value==='无'?'':undefined}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>

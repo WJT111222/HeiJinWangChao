@@ -1,4 +1,6 @@
-import { ImageAvatar, ImageEntry } from '../images/ImageGallery';
+import type { ReactNode } from 'react';
+import { useImages } from '../images/ImageScope';
+import { ImageAvatar, ImageEntry, Portraits } from '../images/ImageGallery';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Detail, Empty } from '../Dialog';
 import { dateTime } from './playerView';
@@ -57,7 +59,20 @@ export function PrivateProfile({ person }: { person: Person }) {
   </section>;
 }
 
-export function NpcPanel({ view, management, initialId, onOpenOrganization, desktop = false, onSelect, onBack }: { view: PlayerView; management?: NpcManagement; initialId?: string; onOpenOrganization?: (id: string) => void; desktop?: boolean; onSelect?: (id: string) => void; onBack?: () => void }) {
+function RosterPerson({ id, name, selected, select, children }: {
+  id: string; name: string; selected: boolean; select: () => void; children: ReactNode;
+}) {
+  const view = useImages();
+  const props = { 'data-npc-id': id, 'aria-label': '查看人物：' + name, 'aria-pressed': selected, onClick: select };
+  const letter = Array.from(name)[0];
+  if (!view?.current('npc', id, 'avatar')) return <button className="person-row" {...props}>
+    <span className="avatar" aria-hidden="true">{letter}</span>{children}</button>;
+  return <div className="person-row illustrated-person" aria-current={selected || undefined}>
+    <span className="avatar"><ImageAvatar kind="npc" id={id}>{letter}</ImageAvatar></span>
+    <button className="roster-text" {...props}>{children}</button>
+  </div>;
+}
+export function NpcPanel({ view, management, initialId, onOpenOrganization, desktop = false, onSelect, onBack, familyMemberId }: { view: PlayerView; management?: NpcManagement; initialId?: string; onOpenOrganization?: (id: string) => void; desktop?: boolean; onSelect?: (id: string) => void; onBack?: () => void; familyMemberId?: string }) {
   const anchorId = useId();
   const [activeSection, setActiveSection] = useState('profile');
   const heading = useRef<HTMLElement>(null), mobileNav = useRef<HTMLElement>(null);
@@ -122,11 +137,10 @@ export function NpcPanel({ view, management, initialId, onOpenOrganization, desk
           </select></label>
         </div>
         <ul className="npc-people" aria-label="人物名录">{matches.slice(currentPage * 20, (currentPage + 1) * 20).map(person => <li key={person.id} className="npc-directory-row" data-kind={person.kind}>
-          <button className="person-row" data-npc-id={person.id} aria-label={`查看人物：${person.name}`} aria-pressed={person.id === personId} onClick={() => select(person.id)}>
-            <span className="avatar" aria-hidden="true">{Array.from(person.name)[0]}</span>
+          <RosterPerson id={person.id} name={person.name} selected={person.id === personId} select={() => select(person.id)}>
             <span className={desktop ? 'txt' : undefined}><strong title={person.name}>{person.name}</strong><small>{person.identity || '身份未记录'}</small><small>{person.relationshipText}</small>
               <small>{desktop ? <><span className={`pill ${person.onScene ? 'on' : ''}`}>{person.onScene ? '本幕在场' : '场外人物'}</span>{person.lastInteractionAt && <time>{dateTime(person.lastInteractionAt)}</time>}</> : <>{person.onScene ? '本幕在场' : '场外人物'}{person.lastInteractionAt ? ` · ${dateTime(person.lastInteractionAt)}` : ''}</>}</small></span>
-          </button><Star person={person} management={management} />
+          </RosterPerson><Star person={person} management={management} />
         </li>)}</ul>
         {!matches.length && <Empty>{view.npc.length ? '暂无符合条件的人物' : '尚无正式人物档案'}</Empty>}
         {matches.length > 20 && <div className="memory-pagination"><button disabled={!currentPage} onClick={() => setPage(currentPage - 1)}>上一页人物</button><span>第 {currentPage + 1} 页</span><button disabled={(currentPage + 1) * 20 >= matches.length} onClick={() => setPage(currentPage + 1)}>下一页人物</button></div>}
@@ -134,18 +148,20 @@ export function NpcPanel({ view, management, initialId, onOpenOrganization, desk
       <section className="npc-detail" ref={detail} aria-label="人物详情">
         {selected ? <div key={selected.id}>
           {desktop ? <header className="npc-detail-heading" ref={heading}>
-            <div className="nd-hero"><div className="nd-portrait"><span className="seal" aria-hidden="true"><ImageAvatar kind="npc" id={selected.id}>{Array.from(selected.name)[0]}</ImageAvatar></span></div>
+            <div className="nd-hero"><div className="nd-portrait"><span className="seal"><ImageAvatar kind="npc" id={selected.id}>{Array.from(selected.name)[0]}</ImageAvatar></span></div>
             <div className="nd-name"><h3 ref={detailTitle} tabIndex={-1}>{selected.name}</h3><span className="pill gold">{selected.kind === 'special' ? '特殊人物' : '普通人物'}</span>
             <div className="facts"><span>年龄 <b>{selected.age ?? '未记录'}</b></span><span>性别 <b>{gender[selected.gender ?? 'unknown']}</b></span><span>当前位置 <b>{location(selected.locationId)}</b></span><span>{selected.onScene ? '本幕在场' : '场外人物'}</span><span>最近互动 <b>{selected.lastInteractionAt ? dateTime(selected.lastInteractionAt) : '未记录'}</b></span></div></div>
             <div className="nd-rel"><div className="top">关系倾向 <b className={selected.affinity === null ? 'null' : selected.affinity < 0 ? 'neg' : undefined}>{selected.affinity === null ? '尚未确认' : selected.affinity}</b></div><AffinityMeter value={selected.affinity} /><div className="scale" aria-hidden="true"><span>-100</span><span>0</span><span>+100</span></div><p>与主角关系：{selected.relationshipText}</p></div><Star person={selected} management={management} /></div>
             <nav className="nd-tabs" aria-label="人物资料分节">{[['profile','人物档案'],['contact','联系与地点'],...(selected.kind === 'special' ? [['special','特殊人物资料']] : []),['known','已知信息'],['memory','记忆与总结']].map(([key,label]) => <button key={key} aria-current={activeSection === key ? 'true' : undefined} aria-controls={`${anchorId}-${key}`} onClick={() => { const pane=detail.current, target=document.getElementById(`${anchorId}-${key}`); if(pane && target) { pane.scrollTo({top:pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-(heading.current?.dataset.longHeading === 'true' ? 0 : heading.current?.offsetHeight ?? 0)-12,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'}); setActiveSection(key); } }}>{label}</button>)}</nav>
           </header> : <header className="npc-detail-heading">
             <button className="npc-back" ref={backButton} onClick={onBack ?? (() => setPersonId(undefined))}>← {onBack ? '返回后宫' : '返回人物名录'}</button>
-            <div className="npc-detail-title"><div><span className="avatar" aria-hidden="true"><ImageAvatar kind="npc" id={selected.id}>{Array.from(selected.name)[0]}</ImageAvatar></span><span className="tag">{selected.kind === 'special' ? '特殊人物' : '普通人物'}</span><h3 ref={detailTitle} tabIndex={-1}>{selected.name}</h3></div><Star person={selected} management={management} /></div>
+            <div className="npc-detail-title"><div><span className="avatar"><ImageAvatar kind="npc" id={selected.id}>{Array.from(selected.name)[0]}</ImageAvatar></span><span className="tag">{selected.kind === 'special' ? '特殊人物' : '普通人物'}</span><h3 ref={detailTitle} tabIndex={-1}>{selected.name}</h3></div><Star person={selected} management={management} /></div>
           </header>}
           {!desktop&&<nav className="paper-section-nav" aria-label="人物资料分节" ref={mobileNav}>{[['profile','人物档案'],['contact','联系与地点'],...(selected.kind==='special'?[['special','特殊人物资料']]:[]),['known','已知信息'],['memory','记忆与总结']].map(([key,label])=><button key={key} aria-current={activeSection===key?'true':undefined} aria-controls={`${anchorId}-${key}`} onClick={()=>{const pane=detail.current?.closest<HTMLElement>('.modal-body'),target=document.getElementById(`${anchorId}-${key}`);if(pane&&target)pane.scrollTo({top:pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-(mobileNav.current?.offsetHeight??0)-8,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});setActiveSection(key);}}>{label}</button>)}</nav>}
-          <ImageEntry kind="npc" id={selected.id}/>
-          <section className="npc-section" data-npc-section="profile" id={`${anchorId}-profile`}><h4>人物档案</h4><dl>
+          <ImageEntry kind="npc" id={selected.id} home={familyMemberId === selected.id}/>
+          <section className="npc-section" data-npc-section="profile" id={`${anchorId}-profile`}><h4>人物档案</h4>
+            <Portraits kind="npc" id={selected.id} home={familyMemberId === selected.id}/>
+            <dl>
             <Detail label="别名">{selected.aliases.join('、') || '未记录'}</Detail>
             <Detail label="年龄">{selected.age ?? '未记录'}</Detail><Detail label="性别">{gender[selected.gender ?? 'unknown']}</Detail>
             <Detail label="身份">{selected.identity || '未记录'}</Detail>

@@ -389,7 +389,7 @@ export function ImageSettings({ repository }: { repository?: SaveRepository }) {
               <summary>转换提示词</summary>
               {(Object.keys(templates) as (keyof typeof templates)[]).map((k) => (
                 <label key={k}>
-                  {{ person: '人物', story: '剧情', place: '地点', item: '物品' }[k]}
+                  {{ home: '居家照', person: '人物', story: '剧情', place: '地点', item: '物品' }[k]}
                   <textarea
                     value={c.templates[k]}
                     onChange={(e) => set({ ...c, templates: { ...c.templates, [k]: e.target.value } })}

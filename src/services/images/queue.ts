@@ -49,8 +49,10 @@ async function run(lib: ImageLibrary, job: Job, c: ImageConfig, controller: Abor
   assertEnabled();
   const { s, c: collection } = await lib.phase(job, c.convert ? '提示词转换' : '图片生成');
   const entry = job.target.kind === 'story' ? s.journal.find((j) => j.turnId === job.target.id) : undefined;
+  const atTurn = entry ? await lib.storyState(s, entry.turnId).catch(() => undefined) : s;
   const anchors = collection.anchors.filter(
     (a) =>
+      atTurn === s &&
       validTarget(s, a.target) &&
       (sameSubject(a.target, job.target) ||
         entry?.relatedActorRefs.some(
@@ -60,12 +62,16 @@ async function run(lib: ImageLibrary, job: Job, c: ImageConfig, controller: Abor
   );
   const people = (entry?.relatedActorRefs ?? []).slice(0, 8).flatMap((ref) => {
     const kind = ref.kind === 'protagonist' ? 'player' : ref.kind === 'npc' ? 'npc' : undefined;
-    const target = kind && targetFor(s, kind, ref.id);
+    const target = kind && atTurn && targetFor(atTurn, kind, ref.id);
     return target ? [target.summary] : [];
   });
   const source = [
     slots[job.slot],
+    job.slot === 'home' ? c.templates.home : '',
     job.target.summary,
+    entry?.story.narrative.slice(0, 3200),
+    entry?.scene?.worldClock,
+    entry?.scene && (atTurn?.locations[entry.scene.locationId]?.name ?? entry.scene.locationId),
     ...people,
     ...anchors.map((a) => a.target.title + '：' + a.text),
     extra,
@@ -80,7 +86,7 @@ async function run(lib: ImageLibrary, job: Job, c: ImageConfig, controller: Abor
     assertEnabled();
     prompt = await convertText(
       c,
-      c.templates[template(job.target)] +
+      c.templates[job.slot === 'home' ? 'home' : template(job.target)] +
         '\n' +
         (c.backend === 'openai' ? '输出自然语言生图描述。' : '输出英文逗号分隔词组。') +
         '只输出最终提示词。已有年龄、身份和外貌优先于形象锚点。',

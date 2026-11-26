@@ -43,7 +43,7 @@ export function rasterMime(bytes: Uint8Array) {
 }
 // Read dimensions before passing the file to a browser decoder. A small compressed
 // image may otherwise request a bitmap far larger than the encoded body.
-export function checkDimensions(bytes: Uint8Array) {
+export function rasterSize(bytes: Uint8Array) {
   const mime = rasterMime(bytes),
     v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let width = 0,
@@ -87,7 +87,10 @@ export function checkDimensions(bytes: Uint8Array) {
     }
   }
   if (!width || !height || width * height > 16777216) throw new Error('图片尺寸无效或超过 1600 万像素');
-  return mime;
+  return { mime, width, height } as const;
+}
+export function checkDimensions(bytes: Uint8Array) {
+  return rasterSize(bytes).mime;
 }
 export function encode(bytes: Uint8Array) {
   const parts: string[] = [];

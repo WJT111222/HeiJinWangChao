@@ -31,7 +31,7 @@ import { unreadableSaveSummary } from './saveManagement';
 import type { RawSaveExport, RawSaveRecord, SaveSummary } from './saveManagement';
 import { advanceTheaterVersion, clearTheaters, createTheaterStores, createTheaterVersionStore, exportTheaters,
   notifyTheaterChange, putTheater, TheaterRepository, theaterStores, theaterVersionStore } from './theaters';
-import { ImageLibrary, imageStores, createImageStores, clearImages, exportImages, parseImages, restoreImages } from '../images/library';
+import { notifyImages, imageTimelineChange, ImageLibrary, imageStores, createImageStores, clearImages, exportImages, parseImages, restoreImages } from '../images/library';
 import type { PortableImages } from '../images/library';
 import { parseTheaters } from '../../domain/theater/record';
 import type { TheaterRecord } from '../../domain/theater/record';
@@ -405,7 +405,7 @@ export class SaveRepository {
     IdSchema.parse(saveId); CountSchema.parse(expectedRevision); IdSchema.parse(operationId);
     const session = reserveStageSession(saveId);
     try {
-      return await withBrowserLock(saveId, () => transaction(this.database, timelineStores, 'readwrite', async tx => {
+      const result = await withBrowserLock(saveId, () => transaction(this.database, timelineStores, 'readwrite', async tx => {
         session.check();
         const state = await readStoredState(tx, saveId);
         const raw: unknown = await request(tx.objectStore('drafts').get(saveId));
@@ -432,6 +432,8 @@ export class SaveRepository {
         await request(tx.objectStore('drafts').put(next));
         return { ...restored, draft: next, replayed: false };
       }));
+      if (!result.replayed) notifyImages(imageTimelineChange);
+      return result;
     } finally { session.release(); }
   }
 
@@ -673,6 +675,7 @@ export class SaveRepository {
         return { state, ...(images?{imageVersion:await request<string>(tx.objectStore('imageVersions').get(state.saveId))}:{}), theaterVersion: theaters === undefined ? undefined : await advanceTheaterVersion(tx, state.saveId) };
       }));
       notifyTheaterChange();
+      notifyImages(imageTimelineChange);
       return result;
     } finally { session.release(); }
   }
@@ -701,6 +704,7 @@ export class SaveRepository {
       await deleteRecords(tx, storageKey);
     });
     notifyTheaterChange();
+    notifyImages(imageTimelineChange);
   }
 
   // M1 独立领域命令兼容入口；完整回合必须走 commitTurn，不拼接 save/saveDraft。
@@ -838,6 +842,7 @@ export class SaveRepository {
       await deleteRecords(tx, saveId);
     });
     notifyTheaterChange();
+    notifyImages(imageTimelineChange);
   }
 
   // 唯一允许绑定行动的入口：空待输入草稿，或正文失败/取消且尚无任何候选的已绑定草稿（重新绑定为全新草稿）。

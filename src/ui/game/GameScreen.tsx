@@ -33,7 +33,7 @@ import { TurnUndoControl } from './TurnUndoControl';
 import type { TurnUndoResult } from '../../services/storage/saveRepository';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { TalentProfile } from '../components/TalentProfile';
-import { ImageEntry } from '../images/ImageGallery';
+import { ImageAvatar, ImageEntry, Portraits } from '../images/ImageGallery';
 import { ImageScope } from '../images/ImageScope';
 import { config as imageConfig } from '../../services/images/config';
 import { afterSettlement } from '../../services/images/queue';
@@ -1144,6 +1144,7 @@ export function GameScreen({
         <Dialog title={panel} mobileVariant="sheet" sheetFull seal={{NPC:'人',势力组织:'势',我的势力:'盟',地图:'图',物品栏:'物',世界事件:'事',历史时间轴:'史',记忆:'忆',后宫:'家',人物档案:'人',经济与资产:'财'}[panel]} eyebrow="WORLD · ARCHIVE" returnFocus={()=>changeOpener.current?.isConnected?changeOpener.current:mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={`mobile-archive ${panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : panel === '我的势力' ? 'faction-dialog' : ''}`} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
           {panel === '人物档案' ? (
             <>
+            <ImageAvatar kind="player" id={hero.id}/><Portraits kind="player" id={hero.id}/>
             <dl className="profile-details">
               {Object.entries({
                 姓名: hero.name,

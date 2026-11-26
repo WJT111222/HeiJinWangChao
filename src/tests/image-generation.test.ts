@@ -97,6 +97,20 @@ describe('后端协议（Mock）', () => {
     expect(buildRequest(c, '玻璃杯', '虚焦')).not.toHaveProperty('model');
   });
 });
+it('旧版文生图配置保留用户设置并补齐居家照模板', async () => {
+  const { config, configKey } = await import('../services/images/config');
+  const c = structuredClone(defaults);
+  c.enabled = true;
+  c.templates.person = '旧存档自定义人物模板';
+  c.connections.openai.model = 'old-model';
+  const { home: removed, ...oldTemplates } = c.templates;
+  localStorage.setItem(configKey, JSON.stringify({ ...c, templates: oldTemplates }));
+  expect(config()).toMatchObject({
+    enabled: true,
+    connections: { openai: { model: 'old-model' } },
+    templates: { person: c.templates.person, home: removed },
+  });
+});
 describe('存档附属资源', () => {
   let repo: SaveRepository;
   beforeEach(async () => {
@@ -173,6 +187,61 @@ describe('存档附属资源', () => {
     expect(validTarget(entry.state, t)).toBe(false);
     expect(entry.images?.pictures[0].album).toBe('旧相册');
     expect(entry.state.journal).toHaveLength(0);
+  });
+  it('四种人物用途各自保存当前图、历史和备份；家庭退出后资源可导出、删除', async () => {
+    const { householdFixture } = await import('./fixtures/harem');
+    const s = householdFixture(2),
+      t = targetFor(s, 'npc', 'family-1')!;
+    await repo.importBackup({ state: s }, (await repo.compareBackup({ state: s })).confirmation);
+    const scope = {
+      saveId: s.saveId,
+      createdAt: s.createdAt,
+      instance: (await repo.loadGame(s.saveId)).instance,
+    };
+    for (const slot of ['avatar', 'bust', 'full', 'home', 'home'] as const)
+      await repo.images.save(scope, t, slot, bytes);
+    expect(
+      await repo.images.enqueue({
+        id: 'automatic-home',
+        saveId: s.saveId,
+        scope,
+        target: t,
+        slot: 'home',
+        automatic: true,
+        phase: '等待',
+        message: '',
+        time: 1,
+      }),
+    ).toBe(false);
+    expect((await repo.images.read(s.saveId)).jobs).toHaveLength(0);
+    const [backup] = await repo.exportBackup([s.saveId]);
+    const bundle = await parseBackup(await serializeBackup([backup], 'test'));
+    const restored = bundle.entries[0];
+    if (!restored.ok) throw Error('备份无效');
+    expect(
+      restored.images?.pictures
+        .filter((p) => p.current)
+        .map((p) => p.slot)
+        .sort(),
+    ).toEqual(['avatar', 'bust', 'full', 'home'].sort());
+    const oldHome = restored.images!.pictures.find((p) => p.slot === 'home')!;
+    await repo.images.edit(scope, oldHome.id, 'use');
+    const exited = structuredClone(s);
+    const m = exited.harem!.members[t.id];
+    m.changes.push({ ...m.changes.at(-1)!, from: m.changes.at(-1)!.to, to: null, reason: '退出家庭' });
+    const light = { state: exited };
+    await repo.importBackup(light, (await repo.compareBackup(light)).confirmation, { overwrite: true });
+    const now = await repo.loadGame(s.saveId);
+    expect(await repo.images.file(s.saveId, oldHome.id, scope)).toBeUndefined();
+    expect((await repo.exportBackup([s.saveId]))[0].images?.files).toHaveLength(5);
+    expect(
+      (await repo.images.read(s.saveId)).library.pictures.find((p) => p.id === oldHome.id)?.current,
+    ).toBe(true);
+    await repo.images.edit({ ...scope, instance: now.instance }, oldHome.id, 'delete');
+    expect(await repo.images.file(s.saveId, oldHome.id)).toBeUndefined();
+    expect((await repo.images.read(s.saveId)).library.pictures.filter((p) => p.current)).toHaveLength(3);
+    await repo.importBackup(restored, (await repo.compareBackup(restored)).confirmation, { overwrite: true });
+    expect((await repo.images.read(s.saveId)).library.pictures).toHaveLength(5);
   });
   it('空间不足回滚文件与元数据', async () => {
     const s = game();
@@ -279,6 +348,43 @@ describe('任务费用与队列状态（Mock）', () => {
       repo.close();
     }
   });
+  it('缺失同期快照的旧剧情只发送当时正文及场景，不发送当下年龄、外貌和锚点', async () => {
+    const { enqueue } = await import('../services/images/queue');
+    const { saveConfig } = await import('../services/images/config');
+    vi.stubGlobal('window', new EventTarget());
+    const c = structuredClone(defaults);
+    c.enabled = true;
+    c.connections.openai.base = 'https://image.example';
+    saveConfig(c);
+    const s = game();
+    s.npc['npc-a'] = { ...npc(), appearance: '晚年的外貌标记' };
+    s.revision = s.turnNumber = 2;
+    s.journal = ['past', 'current'].map((turnId, i) => ({
+      revision: i + 1,
+      turnId,
+      story: { ...story, narrative: (i ? '现在' : '过去') + '的衣装' },
+      relatedActorRefs: [{ kind: 'npc', id: 'npc-a' }],
+      scene: { worldClock: s.worldClock, locationId: 'chongqing' },
+    }));
+    const repo = await SaveRepository.open('visual-past', new IDBFactory());
+    const f = vi.fn().mockResolvedValue(Response.json({ data: [{ b64_json: png }] }));
+    vi.stubGlobal('fetch', f);
+    try {
+      const input = { state: s };
+      await repo.importBackup(input, (await repo.compareBackup(input)).confirmation);
+      const loaded = await repo.loadGame(s.saveId);
+      const scope = { saveId: s.saveId, createdAt: s.createdAt, instance: loaded.instance };
+      await repo.images.anchor(scope, targetFor(s, 'npc', 'npc-a')!, '当前才有的眼镜');
+      await enqueue(repo.images, scope, targetFor(s, 'story', 'past')!, 'illustration');
+      expect(f).toHaveBeenCalledTimes(1);
+      const prompt = JSON.parse(f.mock.calls[0][1].body).prompt;
+      expect(prompt).toContain('过去的衣装');
+      expect(prompt).toContain(s.worldClock);
+      expect(prompt).not.toMatch(/晚年的外貌标记|当前才有的眼镜|现在的衣装/);
+    } finally {
+      repo.close();
+    }
+  });
   it('转换失败仅请求文本一次，超时或取消不自动重发', async () => {
     const { enqueue } = await import('../services/images/queue'),
       { saveConfig } = await import('../services/images/config');
@@ -337,6 +443,9 @@ it('正式撤回和历史节点覆盖保留原图，禁止旧任务越过存档�
     const { state, draft } = await turn(),
       target = targetFor(state, 'story', state.journal.at(-1)!.turnId)!;
     const scope = { saveId: state.saveId, createdAt: state.createdAt };
+    const historical = await repo.images.storyState(state, state.journal[0].turnId);
+    expect(historical?.turnNumber).toBe(1);
+    expect(historical?.worldClock).not.toBe(state.worldClock);
     await repo.images.save(scope, target, 'illustration', bytes);
     const undone = await repo.undoTurn({
       saveId: scope.saveId,

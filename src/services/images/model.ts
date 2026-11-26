@@ -13,6 +13,7 @@ export const kinds = {
 export type Kind = keyof typeof kinds;
 export const slots = {
   avatar: '头像',
+  home: '居家照',
   bust: '半身照',
   full: '全身立绘',
   illustration: '剧情插画',
@@ -23,7 +24,7 @@ export type Slot = keyof typeof slots;
 export const person = (kind: Kind) => kind === 'player' || kind === 'npc';
 export const slotOptions = (kind: Kind): Slot[] =>
   person(kind)
-    ? ['avatar', 'bust', 'full']
+    ? ['avatar', 'bust', 'full', 'home']
     : [kind === 'story' ? 'illustration' : kind === 'place' ? 'location' : 'object'];
 export const targetSchema = z.strictObject({
   kind: z.enum(['player', 'npc', 'story', 'place', 'item', 'vehicle']),
@@ -87,15 +88,19 @@ export function targetFor(s: GameState, kind: Kind, id: string): Target | undefi
     identity: identity?.slice(0, 4000),
   };
 }
-export function validTarget(s: GameState, t: Target) {
+export function validTarget(s: GameState, t: Target, turnIds?: ReadonlySet<string>) {
+  if (t.kind === 'story')
+    return t.id === t.turnId && (turnIds ? turnIds.has(t.id) : s.journal.some((j) => j.turnId === t.id));
   const current = targetFor(s, t.kind, t.id);
   return Boolean(
-    current && current.identity === t.identity && (!t.turnId || s.journal.some((j) => j.turnId === t.turnId)),
+    current &&
+    current.identity === t.identity &&
+    (!t.turnId || (turnIds ? turnIds.has(t.turnId) : s.journal.some((j) => j.turnId === t.turnId))),
   );
 }
 export const sameSubject = (a: Target, b: Target) =>
   a.kind === b.kind && a.id === b.id && a.identity === b.identity;
-export const slotSchema = z.enum(['avatar', 'bust', 'full', 'illustration', 'location', 'object']);
+export const slotSchema = z.enum(['avatar', 'bust', 'full', 'home', 'illustration', 'location', 'object']);
 export const metaSchema = z.strictObject({
   id: IdSchema,
   target: targetSchema,

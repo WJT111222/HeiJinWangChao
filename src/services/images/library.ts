@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { DataError, IdSchema } from '../../domain/common';
 import type { GameState } from '../../domain/state';
+import { readControl, SnapshotSchema } from '../storage/turnUndo';
+import { migrateSave } from '../storage/migrations';
 import { request, transaction } from '../storage/idb';
 import { collectionSchema, emptyCollection, person, sameSubject, slotOptions, validTarget } from './model';
 import type { Collection, Picture, Scope, Slot, Target } from './model';
@@ -88,11 +90,12 @@ export async function restoreImages(tx: IDBTransaction, p: PortableImages) {
   );
   for (const f of p.files) await request(tx.objectStore('imageFiles').add({ ...f, saveId: p.saveId }));
 }
-export function notifyImages() {
+export const imageTimelineChange = 'heijin.images.timeline.v1';
+export function notifyImages(event = imageChange) {
   if (typeof window === 'undefined') return;
-  window.dispatchEvent(new Event(imageChange));
+  window.dispatchEvent(new Event(event));
   try {
-    localStorage.setItem(imageChange, crypto.randomUUID());
+    localStorage.setItem(event, crypto.randomUUID());
   } catch {
     /* IDB remains authoritative. */
   }
@@ -118,13 +121,53 @@ export class ImageLibrary {
       jobs: await request<Job[]>(tx.objectStore('imageJobs').index('saveId').getAll(id)),
     }));
   }
-  async file(saveId: string, id: string): Promise<string | undefined> {
+  async matchesView(scope: Scope, revision: number, turnId?: string) {
+    return transaction(this.db, ['saveControls', 'saves'], 'readonly', async (tx) => {
+      const control = await readControl(tx, scope.saveId);
+      if (control?.instanceId !== scope.instance) return false;
+      const s: GameState | undefined = await request(tx.objectStore('saves').get(scope.saveId));
+      return (
+        s?.createdAt === scope.createdAt && s.revision === revision && s.journal.at(-1)?.turnId === turnId
+      );
+    });
+  }
+  async file(saveId: string, id: string, expected?: Pick<Scope, 'instance'>): Promise<string | undefined> {
     return transaction(
       this.db,
-      ['imageFiles'],
+      expected ? ['imageFiles', 'saveControls'] : ['imageFiles'],
       'readonly',
-      async (tx) => (await request(tx.objectStore('imageFiles').get([saveId, id])))?.data,
+      async (tx) => {
+        if (expected && (await readControl(tx, saveId))?.instanceId !== expected.instance) return;
+        return (await request(tx.objectStore('imageFiles').get([saveId, id])))?.data;
+      },
     );
+  }
+  // Only a snapshot from the active undo chain can supply historical appearance.
+  async storyState(state: GameState, turnId: string): Promise<GameState | undefined> {
+    const index = state.journal.findIndex((entry) => entry.turnId === turnId);
+    if (index < 0) return;
+    const entry = state.journal[index];
+    if (index === state.journal.length - 1 && entry.revision === state.revision) return state;
+    const next = state.journal[index + 1];
+    if (!next) return;
+    const record = await transaction(this.db, ['saveControls', 'turnUndo'], 'readonly', async (tx) => {
+      const ctl = await readControl(tx, state.saveId);
+      if (!ctl?.records.some((r) => r.turnId === next.turnId && r.beforeTurnId === turnId)) return;
+      return request(tx.objectStore('turnUndo').get([state.saveId, next.turnId]));
+    });
+    if (!record) return;
+    const raw = SnapshotSchema.parse(record);
+    if (raw.saveId !== state.saveId || raw.turnId !== next.turnId || raw.beforeTurnId !== turnId) return;
+    const past = migrateSave(JSON.parse(raw.stateJSON));
+    if (
+      past.saveId === state.saveId &&
+      past.createdAt === state.createdAt &&
+      past.journal.length === index + 1 &&
+      past.journal.every(
+        (j, i) => j.turnId === state.journal[i].turnId && j.revision === state.journal[i].revision,
+      )
+    )
+      return past;
   }
   private async write<T>(
     scope: Scope,
@@ -154,6 +197,8 @@ export class ImageLibrary {
     }
   }
   async enqueue(job: Job) {
+    if ((job.automatic && job.slot === 'home') || !slotOptions(job.target.kind).includes(job.slot))
+      return false;
     return this.write(job.scope, async (tx, s, c) => {
       const store = tx.objectStore('imageJobs');
       if (!validTarget(s, job.target) || (await request(store.getKey([s.saveId, job.id])))) return false;
@@ -215,6 +260,7 @@ export class ImageLibrary {
     });
   }
   async save(scope: Scope, t: Target, slot: Slot, bytes: Uint8Array, signal?: AbortSignal, job?: Job) {
+    if (!slotOptions(t.kind).includes(slot)) throw new Error('图片用途与目标不符');
     const mime = checkDimensions(bytes);
     if (typeof createImageBitmap === 'function') {
       try {

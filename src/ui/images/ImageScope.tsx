@@ -1,10 +1,11 @@
-import { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import type { GameState } from '../../domain/state';
 import { config, subscribeConfig } from '../../services/images/config';
-import { emptyCollection } from '../../services/images/model';
-import type { Scope } from '../../services/images/model';
-import { imageChange } from '../../services/images/library';
+import { PictureResources } from './pictureResources';
+import { emptyCollection, validTarget } from '../../services/images/model';
+import type { Scope, Picture, Kind, Slot } from '../../services/images/model';
+import { imageChange, imageTimelineChange } from '../../services/images/library';
 import type { ImageLibrary } from '../../services/images/library';
 import { recover, stopLocal } from '../../services/images/queue';
 export const enabledSnapshot = () => config().enabled;
@@ -15,6 +16,8 @@ export interface ImageView extends Snapshot {
   state: GameState;
   scope: Scope;
   error: string;
+  resources: PictureResources;
+  current: (kind: Kind, id: string, slot: Slot) => Picture | undefined;
 }
 const Context = createContext<ImageView | undefined>(undefined);
 export const useImages = () => useContext(Context);
@@ -33,56 +36,96 @@ export function ImageScope({
   const { saveId, createdAt } = state;
   const [snapshot, setSnapshot] = useState<Snapshot>();
   const [error, setError] = useState('');
+  const resources = useMemo(
+    () => new PictureResources(lib, saveId, instance),
+    [lib, saveId, createdAt, instance, enabled],
+  );
+  useEffect(() => () => resources.clear(), [resources]);
+  const current = useMemo(() => {
+    const index = new Map<string, Picture>();
+    if (enabled && snapshot) {
+      const turns = new Set(state.journal.map((j) => j.turnId));
+      for (const p of snapshot.library.pictures)
+        if (p.current && validTarget(state, p.target, turns))
+          index.set(JSON.stringify([p.target.kind, p.target.id, p.slot]), p);
+    }
+    return (kind: Kind, id: string, slot: Slot) => index.get(JSON.stringify([kind, id, slot]));
+  }, [state, snapshot, enabled]);
+  const revision = state.revision,
+    turnId = state.journal.at(-1)?.turnId;
   useEffect(() => {
     if (!enabled) return;
+    void recover(lib, { saveId, createdAt, instance }).catch(() => {});
+    return () => stopLocal(saveId);
+  }, [lib, saveId, createdAt, instance, enabled]);
+  useEffect(() => {
+    if (!enabled) {
+      setSnapshot(undefined);
+      return;
+    }
     let disposed = false,
       seq = 0;
-    const refresh = () => {
+    const scope = { saveId, createdAt, instance };
+    let verified: Promise<boolean>;
+    const refresh = (checkTimeline: boolean) => {
       const version = ++seq;
-      void lib.read(saveId).then(
-        (next) => {
+      if (checkTimeline) verified = lib.matchesView(scope, revision, turnId);
+      void (async () => {
+        if (!(await verified)) {
           if (!disposed && version === seq) {
-            setSnapshot(next);
-            setError('');
+            setSnapshot(undefined);
+            resources.clear();
+            stopLocal(saveId);
+            setError('存档时间线已改变，请重新打开存档。');
           }
-        },
-        () => {
-          if (!disposed) setError('图片库读取失败，请检查浏览器存储权限');
-        },
-      );
+          return;
+        }
+        const next = await lib.read(saveId);
+        if (!disposed && version === seq) {
+          setSnapshot(next);
+          setError('');
+        }
+      })().catch(() => {
+        if (!disposed && version === seq) {
+          setSnapshot(undefined);
+          setError('图片库读取失败，请检查浏览器存储权限');
+        }
+      });
     };
+    const metadata = () => refresh(false),
+      timeline = () => refresh(true);
     const changed = (e: StorageEvent) => {
-      if (e.key === imageChange) refresh();
+      if (e.key === imageChange) metadata();
+      if (e.key === imageTimelineChange || !e.key) timeline();
     };
-    refresh();
-    void recover(lib, { saveId, createdAt, instance }).catch(() => {});
-    window.addEventListener(imageChange, refresh);
+    timeline();
+    window.addEventListener(imageChange, metadata);
+    window.addEventListener(imageTimelineChange, timeline);
     window.addEventListener('storage', changed);
-    window.addEventListener('focus', refresh);
+    window.addEventListener('focus', timeline);
     return () => {
       disposed = true;
-      stopLocal(saveId);
-      window.removeEventListener(imageChange, refresh);
+      window.removeEventListener(imageChange, metadata);
+      window.removeEventListener(imageTimelineChange, timeline);
       window.removeEventListener('storage', changed);
-      window.removeEventListener('focus', refresh);
+      window.removeEventListener('focus', timeline);
     };
-  }, [enabled, lib, saveId, createdAt, instance]);
-  return (
-    <Context.Provider
-      value={
-        enabled
-          ? {
-              lib,
-              state,
-              scope: { saveId, createdAt, instance },
-              library: snapshot?.library ?? emptyCollection(),
-              jobs: snapshot?.jobs ?? [],
-              error,
-            }
-          : undefined
-      }
-    >
-      {children}
-    </Context.Provider>
+  }, [enabled, lib, resources, saveId, createdAt, instance, revision, turnId]);
+  const view = useMemo<ImageView | undefined>(
+    () =>
+      enabled
+        ? {
+            lib,
+            resources,
+            current,
+            state,
+            scope: { saveId, createdAt, instance },
+            library: snapshot?.library ?? emptyCollection(),
+            jobs: snapshot?.jobs ?? [],
+            error,
+          }
+        : undefined,
+    [enabled, lib, resources, current, state, saveId, createdAt, instance, snapshot, error],
   );
+  return <Context.Provider value={view}>{children}</Context.Provider>;
 }
