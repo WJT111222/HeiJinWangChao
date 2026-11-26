@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { oracleDefinition } from '../../../presets/meowssiah/definition';
+import { oracleDefinition, previousOracleVersion } from '../../../presets/meowssiah/definition';
 import { oracleEdits } from '../../../presets/meowssiah/config';
 import type { PackageOverride } from '../../../presets/package';
 
 const key = 'heijin.' + oracleDefinition.id + '.schemes.' + oracleDefinition.version;
 function read(): Record<string, PackageOverride> {
-  const parsed: unknown = JSON.parse(localStorage.getItem(key) ?? '{}');
+  const parsed: unknown = JSON.parse(localStorage.getItem(key) ?? localStorage.getItem('heijin.' + oracleDefinition.id + '.schemes.' + previousOracleVersion) ?? '{}');
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('方案列表损坏');
   return Object.fromEntries(Object.entries(parsed).map(([name, value]) => [name, oracleEdits(value)]));
 }

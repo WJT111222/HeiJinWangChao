@@ -1,5 +1,5 @@
 import { packageOverride, type LoadedPreset, type PackageOverride } from '../package';
-import { oracleDefinition } from './definition';
+import { oracleDefinition, upgradeOraclePreferences } from './definition';
 import menu from './menu.json';
 
 export { menu };
@@ -19,7 +19,7 @@ export function checkOracle(preset: LoadedPreset) {
   }
 }
 export function oracleEdits(value: unknown) {
-  const edits = packageOverride.parse(value);
+  const edits = upgradeOraclePreferences(packageOverride.parse(value));
   if (
     edits.version !== oracleDefinition.version ||
     Object.keys(edits.scripts).length ||

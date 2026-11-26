@@ -58,6 +58,9 @@ for p in d["prompts"]:
         keep = True
         t = t[m.end() :]
         reason = "原版文学条目，菜单指令由宿主读取"
+        if i == "eb65ec28-14a7-401c-887a-e6e22c3295c9":
+            t = "在剧情发生处穿插角色的内心活动，以独立的纯文本段落呈现，例如「林舟心想：……」。遵守当前视角和人物知情边界。"
+            reason = "保留原位角色内心话，以阅读器支持的纯文本段落呈现"
         menu.append(dict(id=i, kind=m[1], group=m[2], label=m[3], name=n))
     elif n == "⚙️防全知（带思维链）":
         t = t.split("<<<")[0].strip()
@@ -201,6 +204,6 @@ definition.write_text(
     re.sub(
         r"3\.0-Preview-01\.301-[a-f0-9]{64}",
         "3.0-Preview-01.301-" + edition,
-        definition.read_text(),
+        definition.read_text(), count=1,
     )
 )

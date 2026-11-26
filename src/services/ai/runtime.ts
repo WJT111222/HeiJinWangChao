@@ -148,8 +148,12 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   let rawObserved = false, publicReasoning = '';
   let displayText = '', displayObserved = false, displayOrder: RawResponseObservation['order'] = 'events';
   const preview = (value: string) => captured.stage === 'story' ? safeStreamResponseText(value, secrets) : value;
-  const display = () => !displayObserved ? {} : {
-    displayText: safeStreamResponseText(displayText, secrets), displayOrder,
+  let unverifiedTool: (() => string) | undefined;
+  const display = () => {
+    const partial = unverifiedTool?.();
+    if (!partial && !displayObserved) return {};
+    const shown = partial ? displayText + '\n【未完成的工具正文片段，仅供查看】\n' + partial : displayText;
+    return { displayText: safeStreamResponseText(shown, secrets), displayOrder };
   };
   let observationTimer: ReturnType<typeof setTimeout> | undefined;
   const observe = () => {
@@ -203,6 +207,11 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
       if (sealed || (options.signal?.aborted && !value.tavern)) return;
       diagnostics = mergeResponseDiagnostics(diagnostics, value); observe();
       options.onResponseDiagnostics?.(value);
+    },
+    onUnverifiedTool: read => {
+      if (sealed) return;
+      unverifiedTool = read;
+      observe();
     },
     onRawResponse: (event: RawResponseObservation) => {
       if (sealed || options.signal?.aborted) return;
@@ -328,7 +337,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     sealed = true;
     if (captured.stage === 'story' && failure && typeof failure === 'object') {
       // 兼容渠道会把推理写成开头的 <think>…</think>：与正式解析一致先去掉，推理不进入可续写的正文。
-      const raw = addition ?? received, content = splitLeadingThink(raw).content;
+      const raw = unverifiedTool ? '' : addition ?? received, content = splitLeadingThink(raw).content;
       storyFailureText.set(failure, { writing, produced: raw.trim() !== '',
         text: !continuation ? content : content.trim() ? merged(content) : continuation.partial });
     }

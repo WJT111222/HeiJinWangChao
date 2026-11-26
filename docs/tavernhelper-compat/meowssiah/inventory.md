@@ -54,7 +54,7 @@ Meowssiah-2.1.7.json · SHA-256 81c74429031e005fec1d0ea0a2cb7b4c35e3a055c3ce2ad4
 | ab29af7b-4f0e-402f-8236-80b15800e554 | char | True | 停用 · 酒馆控制标记、合成对话或重复协议 | cd14117786475bff |
 | 34aca678-07d4-4aeb-96ca-37f78617c525 | /char | True | 停用 · 酒馆控制标记、合成对话或重复协议 | 05c957d91b5cbf9c |
 | 42303fec-82ae-4ec4-96a8-4cd424d782e5 | 🧪历史回顾 | True | 原版文学条目，菜单指令由宿主读取 | d842b1eb5ce63ae0 |
-| eb65ec28-14a7-401c-887a-e6e22c3295c9 | ⚙️内心话 | False | 原版文学条目，菜单指令由宿主读取 | cca9460da0ff1cbc |
+| eb65ec28-14a7-401c-887a-e6e22c3295c9 | ⚙️内心话 | False | 保留原位角色内心话，以阅读器支持的纯文本段落呈现 | cca9460da0ff1cbc |
 | b85e04c5-9306-486d-accb-de99eb3ccb0a | 📝／文风（偷） | False | 原版文学条目，菜单指令由宿主读取 | 9baf1c830a71efb6 |
 | cb34b310-4802-4f79-8456-85e70aa55721 | 📏其它格式 | True | 复用王朝标签、行动选项及记忆；不创建额外业务字段 | db656cbb4da25b7f |
 | catgod-deepthink-steps-base | 🧠大思考步骤（可改） | True | 停用 · 原包的显式思考模拟 | 6894fe01024b0209 |

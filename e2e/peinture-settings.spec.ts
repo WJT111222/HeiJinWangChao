@@ -1023,10 +1023,11 @@ test('复审：1118 原控制台方案导入、保存、刷新，散文进入下
 test('正式设置选择小猫之神并通过隔离工具交付开局候选', async ({ page }, info) => {
   const sent = await prepare(page, 'openai', false, false);
   const wires: string[] = [];
+  const narrative = '船靠岸了，林舟沿着石阶往上走。\n林舟心想：该回去了。\n<aside>合成文本</aside>';
   await page.route('https://peinture.mock.invalid/**', route => {
     wires.push(route.request().postData()!);
     return route.fulfill({ json: { choices: [{ finish_reason: 'tool_calls', message: { role:'assistant', tool_calls:[{
-      id:'production-oracle',type:'function',function:{name:'soliumbra_reply',arguments:JSON.stringify({game_content:envelope})},
+      id:'production-oracle',type:'function',function:{name:'soliumbra_reply',arguments:JSON.stringify({game_content:envelope.replace('船靠岸了，林舟沿着石阶往上走。', narrative)})},
     }] } }] } });
   });
   const settings = await runtimeSettings(page);
@@ -1037,6 +1038,7 @@ test('正式设置选择小猫之神并通过隔离工具交付开局候选', as
   const next = await runtimeSettings(page);
   await next.getByRole('button',{name:'神域控制台',exact:true}).click();
   const oracle=page.getByRole('dialog',{name:'神域控制台',exact:true});
+  await oracle.getByRole('button',{name:'⚙️穿插角色内心话',exact:true}).click();
   await oracle.getByLabel('自定义创作要求').fill('沿岸的灯火渐次亮起。');
   await oracle.getByRole('button',{name:'保存文学配置'}).click();
   await expect(oracle.getByRole('status')).toContainText('文学配置已保存');
@@ -1045,12 +1047,20 @@ test('正式设置选择小猫之神并通过隔离工具交付开局候选', as
   await oracle.getByLabel('本档下次正文的附加要求').fill('留意岸边白帆。');
   await oracle.getByRole('button',{name:'保存小纸条',exact:true}).click();
   await expect(oracle.getByRole('status')).toContainText('场外小纸条已保存');
+  await expect(oracle).toContainText('场外小纸条及其历史仅保存在本机当前存档中，不包含在游戏备份内。');
+  await oracle.getByRole('button',{name:'清除当前纸条',exact:true}).click();
+  await expect(oracle.getByLabel('本档下次正文的附加要求')).toHaveValue('');
+  await oracle.getByRole('button',{name:'回填第1条纸条',exact:true}).click();
+  await expect(oracle.getByLabel('本档下次正文的附加要求')).toHaveValue('留意岸边白帆。');
+  await oracle.getByRole('button',{name:'保存小纸条',exact:true}).click();
+  await expect(oracle.getByRole('status')).toContainText('场外小纸条已保存');
+  await info.attach('本机纸条与历史',{contentType:'image/png',body:await page.screenshot()});
   expect(wires).toHaveLength(0);
   await oracle.getByRole('button',{name:'关闭',exact:true}).click();
   await expect(oracle).not.toBeVisible();
   if (await next.isVisible()) { await page.keyboard.press('Escape'); await expect(next).not.toBeVisible(); }
   const workerCreated=page.waitForEvent('worker',worker=>worker.url().startsWith('blob:null/'));
-  await generate(page);
+  await generate(page, 'peinture-smoke', narrative);
   expect((await workerCreated).url()).toContain('blob:null/');
   expect(wires).toHaveLength(1);expect(sent).toEqual([]);
   expect(wires[0]).toContain('沿岸的灯火渐次亮起。');
@@ -1065,8 +1075,21 @@ test('正式设置选择小猫之神并通过隔离工具交付开局候选', as
   await oracle.getByRole('button',{name:'场外小纸条',exact:true}).click();
   await expect(oracle.getByLabel('本档下次正文的附加要求')).toBeEnabled();
   await expect(oracle.getByLabel('本档下次正文的附加要求')).toHaveValue('');
+  await oracle.getByRole('button',{name:'回填第1条纸条',exact:true}).click();
+  await oracle.getByRole('button',{name:'清空纸条历史',exact:true}).click();
+  await expect(oracle.getByRole('button',{name:'回填第1条纸条',exact:true})).toHaveCount(0);
+  await expect(oracle.getByLabel('本档下次正文的附加要求')).toHaveValue('留意岸边白帆。');
   await oracle.getByRole('button',{name:'采样与用量',exact:true}).click();
+  await expect(oracle).toContainText('普通猫神生成只直连所选渠道一次');
   await expect(oracle.getByLabel('实际出站采样参数')).toContainText('已发送');
   await expect(oracle.getByText(/供应商输入/)).toContainText('未返回');
+  expect(wires[0]).toContain('以独立的纯文本段落呈现');
+  expect(wires[0]).not.toContain('<details><summary>内心-角色名</summary>');
+  await page.reload();
+  await openGameTools(page);
+  const reading = page.locator('.story-reading').filter({hasText:'林舟心想：该回去了。'}).first();
+  await expect(reading).toBeVisible();
+  await expect(reading).toContainText('<aside>合成文本</aside>');
+  await expect(reading.locator('aside')).toHaveCount(0);
   expect(wires).toHaveLength(1);
 });

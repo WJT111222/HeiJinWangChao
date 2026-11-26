@@ -243,6 +243,13 @@ export class UpstreamFrames {
     return { choices: [{ index: 0, [streaming ? 'delta' : 'message']: payload, finish_reason: finish }],
       ...(usage ? { usage: normalizedUsage(this.trace.usage) } : {}) };
   }
+  // Read-only observation of bytes already received; this accessor supplies no call
+  // identity or receipt and does not run finish() or relax its validation.
+  pendingArguments() {
+    if (this.tools.size !== 1) return undefined;
+    const tool = this.tools.values().next().value;
+    return tool && tool.name === this.expectedContentTool ? tool.args : undefined;
+  }
   /** Read only after finish validated the provider's original tool-call structure. */
   singleCompletedCall() {
     if (!this.trace.complete || this.trace.error || this.tools.size > 1 || (this.hasText && this.tools.size)) invalid();

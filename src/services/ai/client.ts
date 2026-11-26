@@ -60,6 +60,7 @@ export interface RequestOptions {
   onRawTextDelta?: (text: string) => void;
   onNativeReasoningDelta?: (text: string) => void;
   /** Read-only event observation; never used as accepted model text. */
+  onUnverifiedTool?: (read?: () => string) => void;
   onRawResponse?: (event: RawResponseObservation) => void;
   /** Only public text actually extracted from a leading <think> block. */
   onCompatibilityReasoningDelta?: (text: string) => void;
@@ -347,7 +348,12 @@ export class AiClient {
           try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
           catch { /* Inspection cannot affect transport. */ }
           return this.response(wire.url, wire.init, requestSignal, relay, snapshot, observe,
-            wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission);
+            wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission).catch(error => {
+            if (oracle && !options.confirmedTransmission && !requestSignal.aborted &&
+                (error instanceof TypeError || error instanceof DOMException && error.name === 'NetworkError'))
+              throw new AiError('network', undefined, { fieldPath: 'channel.oracle_direct_network' });
+            throw error;
+          });
         };
         const playerWorldbook = snapshot.stage === 'story' ? options.playerWorldbook : undefined;
         if (oracle) {
@@ -378,7 +384,8 @@ export class AiClient {
           observedUsage = usage = delivered.usage;
           signal.throwIfAborted();
           if (reasoning) options.onReasoningDelta?.(reasoning);
-          options.onDelta?.(text);
+          const remaining = text.slice(delivered.previewChars);
+          if (remaining) options.onDelta?.(remaining);
           observe({ transport: delivered.transport, complete: true, finishReasons: [delivered.finish] });
         } else if (!streaming) {
           // Inspect an unsolicited SSE copy without accepting it as a summary or
@@ -565,7 +572,7 @@ export class AiClient {
       }
       // 页面允许中转，不代表这次用了中转。直连已经返回的生成失败仍可自动重试。
       // 真正发出本站中转后仍失败，以及酒馆包装失败，继续只允许手动处理，避免再付一笔。
-      if ((relay.used || prototype) && failure instanceof AiError) manualRetryOnly.add(failure);
+      if ((relay.used || prototype || oracle) && failure instanceof AiError) manualRetryOnly.add(failure);
       if (trace && failure instanceof AiError) {
         manualRetryOnly.add(failure);
         trace.cancelled = failure.code === 'cancelled' || failure.code === 'timeout';

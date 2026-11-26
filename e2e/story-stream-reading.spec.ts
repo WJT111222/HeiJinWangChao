@@ -22,7 +22,7 @@ test.beforeEach(async ({ page }) => {
   calls = 0; response = undefined;
   await page.route('https://**', route => route.abort());
   server = createServer(async (request, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Headers', 'content-type,authorization');
+    res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Headers', request.headers['access-control-request-headers'] ?? 'content-type,authorization');
     if (request.method === 'OPTIONS') { res.writeHead(204).end(); return; }
     for await (const chunk of request) { void chunk; /* Never log credentials or prompt contents. */ }
     calls++; response = res;
@@ -36,19 +36,24 @@ test.afterEach(async () => {
   server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
   expect(calls).toBe(1);
 });
-async function seed(page: Page, timeout = 120) {
+type LiteraryProtocol = 'deepseek' | 'openai' | 'gemini' | 'anthropic';
+async function seed(page: Page, timeout = 120, oracle?: LiteraryProtocol) {
   await page.goto('/');
-  await page.evaluate(async ({ baseUrl, key, timeout }) => {
+  await page.evaluate(async ({ baseUrl, key, timeout, oracle }) => {
     const p = ['/src/services/storage/saveRepository.ts','/src/tests/fixtures/game.ts','/src/domain/drafts.ts','/src/ui/settings/model.ts','/src/services/ai/configuration.ts','/src/services/ai/credentials.ts'];
     const [{ SaveRepository }, { game }, { createTurnDraft }, { defaultSettings, settingsKey }, { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }] = await Promise.all(p.map(path => import(path)));
     const repo = await SaveRepository.open();
     await repo.create(game()); await repo.saveDraft(createTurnDraft('save-a', 0, 'stream-read', 'opening', ''), null); repo.close();
     const settings = defaultSettings(); settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false; settings.runtime.timeoutSeconds = timeout;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
-    const channel = newChannel('deepseek'), config = defaultAiConfig(); channel.baseUrl = baseUrl; channel.defaultModel = 'mock-stream';
+    if (oracle) {
+      const { savePresetSettings } = await import('/src/presets/settings.ts' as string);
+      savePresetSettings({ enabled: true, selected: 'meowssiah', packages: {} });
+    }
+    const channel = newChannel(oracle ?? 'deepseek'), config = defaultAiConfig(); channel.baseUrl = baseUrl; channel.defaultModel = 'mock-stream';
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: '' };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, key);
-  }, { baseUrl, key, timeout });
+  }, { baseUrl, key, timeout, oracle });
   await page.goto('/#game/save-a'); await page.reload(); await openGameTools(page);
   return stored(page);
 }
@@ -223,5 +228,64 @@ for (const mode of ['all', 'only', 'mirror'] as const) {
     await page.reload(); await openGameTools(page);
     await expect(await openStageRaw(page, 'story')).toContainText('没有可恢复的模型原文');
     expect(await stored(page)).toEqual(saved);
+  });
+}
+
+for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
+  for (const tool of [false, true]) test(`猫神流式 ${protocol} ${tool ? '未完成工具仅脱敏观察' : '结束前正文可读'}`, async ({ page }, info) => {
+    const before = await seed(page, 120, protocol);
+    await start(page);
+    const event = (value: unknown) => response!.write('data: ' + JSON.stringify(value) + '\n\n');
+    const first = '<正文>窗前的灯已经亮起。';
+    const rest = '林舟心想：该回去了。</正文>' + tail;
+    const fragment = first + key;
+    const args = JSON.stringify({ game_content: fragment }).slice(0, -2);
+    const text = (s: string) => {
+      if (protocol === 'gemini') event({ candidates: [{ content: { parts: [{ text: s }] } }] });
+      else if (protocol === 'anthropic') event({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: s } });
+      else send(s);
+    };
+    if (protocol === 'anthropic') event({ type: 'message_start', message: { role: 'assistant', content: [] } });
+    if (tool) {
+      const name = 'soliumbra_reply', id = 'stream-tool';
+      if (protocol === 'anthropic') {
+        event({ type: 'content_block_start', index: 0, content_block: { type: 'tool_use', name, id, input: {} } });
+        event({ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: args } });
+      } else if (protocol === 'gemini') {
+        event({ candidates: [{ content: { parts: [{ functionCall: { id, name, args: { game_content: fragment } } }] } }] });
+      } else event({ choices: [{ delta: { tool_calls: [{ index: 0, id, type: 'function', function: { name, arguments: args } }] } }] });
+      const observation = () => page.evaluate(async () => (await import('/src/services/ai/stageResponses.ts' as string)).stageResponses.getSnapshot()[0]);
+      await expect.poll(async () => (await observation())?.displayText).toContain('窗前的灯已经亮起。');
+      const mid = await observation();
+      expect(mid.displayText).toContain('未完成的工具正文片段');
+      expect(mid.displayText).not.toContain(key);
+      expect(mid.text ?? '').toBe('');
+      expect((await stored(page)).draft?.story).toBeUndefined();
+      // EOF without a successful tool terminator.
+      response!.end();
+      await expect.poll(async () => (await observation()).status).toBe('failed');
+      await expect.poll(async () => (await stored(page)).draft?.stageStatus.story).toBe('failed');
+      const failed = await stored(page);
+      expect(failed.draft?.storyPartial).toBeUndefined();
+      expect(failed.draft?.story).toBeUndefined();
+      expect(failed.state).toEqual(before.state);
+    } else {
+      if (protocol === 'anthropic') event({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } });
+      text(first);
+      const reader = page.getByTestId('stream-narrative');
+      await expect(reader).toHaveText('窗前的灯已经亮起。');
+      if (protocol === 'openai') await shot(page, info, '猫神结束前的阅读界面');
+      expect((await stored(page)).draft?.story).toBeUndefined();
+      text(rest);
+      if (protocol === 'anthropic') {
+        event({ type: 'content_block_stop', index: 0 });
+        event({ type: 'message_delta', delta: { stop_reason: 'end_turn' } });
+        event({ type: 'message_stop' });
+      } else if (protocol === 'gemini') event({ candidates: [{ finishReason: 'STOP' }] });
+      else event({ choices: [{ delta: {}, finish_reason: 'stop' }] });
+      response!.end();
+      await expect.poll(async () => (await stored(page)).draft?.story?.narrative).toBe('窗前的灯已经亮起。林舟心想：该回去了。');
+      expect((await stored(page)).state).toEqual(before.state);
+    }
   });
 }

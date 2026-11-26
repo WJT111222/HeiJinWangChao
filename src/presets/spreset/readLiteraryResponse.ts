@@ -1,3 +1,4 @@
+import { observedToolString } from './toolObservation';
 import { checkFinish, providerToolFinish } from '../../services/ai/compat';
 import { isOpenAiCompatible, type Protocol } from '../../services/ai/configuration';
 import { AiError } from '../../services/ai/errors';
@@ -14,7 +15,7 @@ function json(text: string): unknown {
 
 // Only completed calls enter the processor. Trace, credentials and the transport stay in the host.
 export async function readLiteraryResponse(response: Response, protocol: Protocol, signal: AbortSignal,
-  tool: string, contentField: string, observer: Pick<RequestOptions, 'onRawTextDelta' | 'onNativeReasoningDelta' | 'onRawResponse'> = {}, optionalTextFields: readonly string[] = []) {
+  tool: string, contentField: string, observer: Pick<RequestOptions, 'onRawTextDelta' | 'onNativeReasoningDelta' | 'onRawResponse' | 'onUnverifiedTool'> = {}, optionalTextFields: readonly string[] = [], onPlainProgress?: (text: string) => void) {
   if (!response.body) throw new AiError('stream_interrupted');
   const trace = newTrace();
   trace.status = response.status;
@@ -22,6 +23,9 @@ export async function readLiteraryResponse(response: Response, protocol: Protoco
   const body = await identifyBody(response.body, signal, trace);
   const streaming = trace.normalized === 'sse';
   let text = '', reasoning = '';
+  let previewStart: number | undefined, previewChars = 0;
+  let thinkEndSearch = 0, thinkEnd = -1;
+  const toolPreview = () => observedToolString(frames.pendingArguments() ?? '', contentField);
   function accept(value: unknown) {
     const payload = record(value);
     const choice = record(array(isOpenAiCompatible(protocol) ? payload.choices : payload.candidates)[0]);
@@ -30,11 +34,38 @@ export async function readLiteraryResponse(response: Response, protocol: Protoco
     if (role !== undefined && role !== (protocol === 'gemini' ? 'model' : 'assistant')) throw new AiError('invalid_output');
     if (trace.finish && (Object.keys(message).length || payload.type === 'content_block_start' || payload.type === 'content_block_delta'))
       throw new AiError('invalid_output');
-    frames.project(value, streaming);
+    try { frames.project(value, streaming); }
+    finally {
+      if (observer.onUnverifiedTool && frames.pendingArguments() !== undefined)
+        observer.onUnverifiedTool(toolPreview);
+    }
     const delta = responseContent(value, protocol, streaming), thought = nativeReasoning(value, protocol, streaming);
     text += delta;
     reasoning += thought;
     if (delta) observer.onRawTextDelta?.(delta);
+    if (streaming && delta && onPlainProgress && frames.pendingArguments() === undefined) {
+      // Padding can precede a tool. A leading compatibility <think> block may be
+      // removed by the processor. Only emit a prefix the processor will preserve.
+      if (previewStart === undefined) {
+        const start = text.trimStart();
+        if (/^<think[\s>]/iu.test(start)) {
+          if (thinkEnd < 0) {
+            const close = /<\/think>/igu;
+            close.lastIndex = thinkEndSearch;
+            if (close.exec(text)) thinkEnd = close.lastIndex;
+            thinkEndSearch = Math.max(0, text.length - 7);
+          }
+          if (thinkEnd >= 0) {
+            const envelope = text.slice(thinkEnd).trimStart();
+            if (/^<(?:正文|thinking)>/u.test(envelope)) previewStart = text.length - envelope.length;
+          }
+        } else if (start && !'<think'.startsWith(start.toLowerCase())) previewStart = 0;
+      }
+      if (previewStart !== undefined) {
+        onPlainProgress(text.slice(previewStart + previewChars));
+        previewChars = text.length - previewStart;
+      }
+    }
     if (thought) observer.onNativeReasoningDelta?.(thought);
     if (observer.onRawResponse) observer.onRawResponse(rawResponseObservation(value, protocol, streaming));
     if (text.length > 8_000_000 || reasoning.length > 2_000_000) throw new AiError('invalid_output');
@@ -70,6 +101,6 @@ export async function readLiteraryResponse(response: Response, protocol: Protoco
   if (trace.error) throw trace.error;
   // #252 validates the original protocol, the unique terminal call and its content schema.
   const call = frames.singleCompletedCall();
-  return { text, reasoning, call, matchesDelivery: trace.matchesDelivery, usage: trace.usage, finish: trace.finish,
+  return { text, previewText: previewChars ? text.slice(previewStart, (previewStart ?? 0) + previewChars) : '', reasoning, call, matchesDelivery: trace.matchesDelivery, usage: trace.usage, finish: trace.finish,
     transport: streaming ? 'sse' as const : 'json' as const };
 }

@@ -24,6 +24,7 @@ export default function OracleConsole({ close, saveId }: { close(): void; saveId
     [tab, setTab] = useState('创作菜单');
   const [selected, select] = useState<string>();
   const [noteState, setNoteState] = useState<Awaited<ReturnType<SaveRepository['readOracleNote']>>>();
+  const [paperBusy, setPaperBusy] = useState(false);
   const note = noteState?.note;
   useEffect(() => {
     if (!saveId) return;
@@ -98,6 +99,35 @@ export default function OracleConsole({ close, saveId }: { close(): void; saveId
     } catch (error) {
       notify(String(error));
     }
+  }
+  async function updatePaper(action: 'save' | 'clear' | 'history') {
+    if (!saveId || !noteState || paperBusy) return;
+    setPaperBusy(true);
+    try {
+      const repo = await SaveRepository.open();
+      try {
+        const value = action === 'history'
+          ? await repo.clearOracleHistory(saveId, noteState)
+          : action === 'clear' ? await repo.clearOracleNote(saveId, noteState, paper)
+          : await repo.writeOracleNote(saveId, noteState, paper, once);
+        setNoteState(value);
+        if (action !== 'history') {
+          write(value.note?.text ?? '');
+          setOnce(value.note?.once ?? true);
+        }
+        notify(action === 'history' ? '纸条历史已清空' : action === 'clear' ? '当前纸条已清除' : '场外小纸条已保存');
+      } finally {
+        repo.close();
+      }
+    } catch (error) {
+      notify(String(error));
+    }
+    finally { setPaperBusy(false); }
+  }
+  function refill(text: string) {
+    const combined = paper.trim() ? paper.trimEnd() + '\n' + text : text;
+    if (combined.length > 100000) return notify('回填后超过纸条容量，请先缩短当前纸条。');
+    write(combined);
   }
   const groups = [...new Set(menu.map((row) => row.group))];
   const dirty =
@@ -189,47 +219,30 @@ export default function OracleConsole({ close, saveId }: { close(): void; saveId
       {tab === '场外小纸条' && (
         <section>
           <h3>导演便签</h3>
+          <p>场外小纸条及其历史仅保存在本机当前存档中，不包含在游戏备份内。</p>
+          <p>生成或续写开始时读取已保存的纸条。之后编辑会用于下次请求；断点已有正文保留原来的文学来源。</p>
           {saveId ? (
             <>
               <label>
                 本档下次正文的附加要求
                 <textarea
                   maxLength={100000}
-                  disabled={!noteState}
+                  disabled={!noteState || paperBusy}
                   value={paper}
                   onChange={(e) => write(e.target.value)}
                 />
               </label>
               <label>
-                <input type="checkbox" checked={once} onChange={(e) => setOnce(e.target.checked)} />
+                <input type="checkbox" disabled={paperBusy} checked={once} onChange={(e) => setOnce(e.target.checked)} />
                 候选保存后清空
               </label>
-              <button
-                disabled={!noteState}
-                onClick={async () => {
-                  if (!noteState) return;
-                  try {
-                    const repo = await SaveRepository.open();
-                    try {
-                      setNoteState(
-                        await repo.writeOracleNote(
-                          saveId,
-                          { instance: noteState.instance, noteId: note?.id },
-                          paper,
-                          once,
-                        ),
-                      );
-                    } finally {
-                      repo.close();
-                    }
-                    notify('场外小纸条已保存');
-                  } catch (error) {
-                    notify(String(error));
-                  }
-                }}
-              >
-                保存小纸条
-              </button>
+              <button disabled={!noteState || paperBusy} onClick={() => void updatePaper('save')}>保存小纸条</button>
+              <button disabled={!noteState || paperBusy || (!paper && !note)} onClick={() => void updatePaper('clear')}>清除当前纸条</button>
+              <h4>最近六条</h4>
+              {noteState?.history.map((item, index) =>
+                <button key={item} aria-label={`回填第${index + 1}条纸条`} title={item}
+                  disabled={paperBusy} onClick={() => refill(item)}>{item.slice(0, 36)}</button>)}
+              <button disabled={!noteState?.history.length || paperBusy} onClick={() => void updatePaper('history')}>清空纸条历史</button>
             </>
           ) : (
             <p>载入存档后可填写场外小纸条。</p>
@@ -239,6 +252,7 @@ export default function OracleConsole({ close, saveId }: { close(): void; saveId
       {tab === '采样与用量' && (
         <section>
           <h3>生成设置</h3>
+          <p>普通猫神生成只直连所选渠道一次。请使用允许浏览器从本站直连的 HTTPS 接口。旧断点续写按本次确认的路径发送。</p>
           {samplingFields.map((f) => (
             <label key={f.key}>
               {f.label}

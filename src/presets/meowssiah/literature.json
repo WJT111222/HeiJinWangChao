@@ -322,7 +322,7 @@
       "injection_position": 0,
       "injection_depth": 0,
       "injection_order": 0,
-      "content": "在剧情中穿插角色的内心活动，格式如下\n<details><summary>内心-角色名</summary>\n内心话\n</details>"
+      "content": "在剧情发生处穿插角色的内心活动，以独立的纯文本段落呈现，例如「林舟心想：……」。遵守当前视角和人物知情边界。"
     },
     {
       "identifier": "b85e04c5-9306-486d-accb-de99eb3ccb0a",

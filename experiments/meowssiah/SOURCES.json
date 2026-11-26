@@ -42,7 +42,7 @@
     "pipeline.mjs": "1a6927bbad75e48944d32c68d5dc3a6ffbbbe30863aebcf8fc346ba1f48be4d2",
     "build.mjs": "24ca1000138d492a20f818a2901b07cca6aad0708cc6fc8893280eec78a77cda",
     "../spreset/frame.mjs": "644182a6661b79ba9b5f781891abc189a151cd7b33ff7de2d1216d3edfe3be7b",
-    "../../src/presets/meowssiah/literature.json": "009b4f9da3e64e690185d7aa832d2fcbe0b6119dfa565781da225ccd78be6839"
+    "../../src/presets/meowssiah/literature.json": "6426bb3fd74a1011597587250d5657feebc52ba7bd64855af4e50d4c04e01b46"
   },
   "changes": [
     "Fixed local request callback and single game_content terminal delivery; private port broker uses the Meowssiah worker name.",
