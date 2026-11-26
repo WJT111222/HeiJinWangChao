@@ -2,7 +2,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { describe, expect, it } from 'vitest';
 import { imageStores } from '../services/images/library';
 import { request, transaction } from '../services/storage/idb';
-import { SaveRepository } from '../services/storage/saveRepository';
+import { SaveRepository, saveDatabaseVersion } from '../services/storage/saveRepository';
 import { createTheaterStores } from '../services/storage/theaters';
 import { recordPhone, schedulePhone } from '../domain/phone';
 import { phoneGame } from './fixtures/phone';
@@ -67,7 +67,7 @@ async function snapshot(factory: IDBFactory) {
   }
 }
 
-describe('图片数据库 V8 到 V11 的打开和升级', () => {
+describe('图片数据库 V8 到 V12 的打开和升级', () => {
   it('第三步 V10 原地升级保留旧会话、排期、未结算回合及独立存储，并关闭旧写入连接',async()=>{
     const factory = new IDBFactory(), state = phoneGame();
     recordPhone(state,'partner',{messageId:'old-sms',medium:'text',sender:'npc',text:'旧短信'},'evening',false);
@@ -84,7 +84,7 @@ describe('图片数据库 V8 到 V11 的打开和升级', () => {
     const repo=await SaveRepository.open(name,factory);
     try {
       expect(closed).toBe(true);
-      expect(await snapshot(factory)).toEqual(before);
+      expect(await snapshot(factory)).toEqual({ ...before, oracleNotes: [] });
       const loaded=await repo.loadGame(state.saveId);
       expect(loaded.state.phone).toEqual(state.phone);
       expect(loaded.draft).toEqual(draft);
@@ -95,7 +95,7 @@ describe('图片数据库 V8 到 V11 的打开和升级', () => {
     const fresh = new IDBFactory();
     (await SaveRepository.open(name, fresh)).close();
     const created = await openRaw(fresh);
-    expect(created.version).toBe(11);
+    expect(created.version).toBe(12);
     const tx = created.transaction([...imageStores]);
     expect(tx.objectStore('imageFiles').index('saveId').keyPath).toBe('saveId');
     expect(tx.objectStore('imageJobs').index('subject').keyPath).toEqual([
@@ -114,7 +114,7 @@ describe('图片数据库 V8 到 V11 的打开和升级', () => {
     ).close();
     const before = await snapshot(existing);
     (await SaveRepository.open(name, existing)).close();
-    expect(await snapshot(existing)).toEqual(before);
+    expect(await snapshot(existing)).toEqual({ ...before, oracleNotes: [] });
   });
 
   it.each([false, true])(
@@ -136,7 +136,7 @@ describe('图片数据库 V8 到 V11 的打开和升级', () => {
       expect(await snapshot(factory)).toMatchObject(before);
       repo.close();
       const check = await openRaw(factory);
-      expect(check.version).toBe(11);
+      expect(check.version).toBe(12);
       expect(check.transaction('imageJobs').objectStore('imageJobs').index('subject').keyPath).toEqual([
         'saveId',
         'target.kind',
@@ -181,7 +181,7 @@ describe('图片数据库 V8 到 V11 的打开和升级', () => {
     });
     expect(await snapshot(factory)).toEqual(before);
     // Only this test opens a later version, to detect a leaked connection from the rejected open.
-    (await openRaw(factory, 11)).close();
+    (await openRaw(factory, saveDatabaseVersion + 1)).close();
   });
 
   it('升级中遇到不兼容的旧图片主键时回滚整个升级，V7 记录可重新打开', async () => {
@@ -208,7 +208,7 @@ describe('图片数据库 V8 到 V11 的打开和升级', () => {
     const repo = await SaveRepository.open(name, factory);
     expect(await snapshot(factory)).toMatchObject(before);
     // The active repository must also release its connection on versionchange.
-    (await openRaw(factory, 11)).close();
+    (await openRaw(factory, saveDatabaseVersion + 1)).close();
     repo.close();
   });
 });

@@ -1,3 +1,4 @@
+import { usesSpreset } from '../presets/spreset/definition';
 import { captureAssistantSelection } from '../presets/library';
 import { promptReady, tavernGeneration, type GenerationType } from '../presets/tavern/events';
 import { prepareStoryWorldbook, storyTriggerInput } from '../services/worldbook/storyWorldbook';
@@ -87,7 +88,7 @@ export async function buildStagePreviews(input: Omit<ComposeInput, 'stage'>, con
         const prompt = await composePrompt(captured, preset);
         if (stage === 'story') {
           const type = draft?.story || draft?.storyPartial || draft?.failures.some(f => f.stage === 'story') ? 'regenerate' : 'normal';
-          prompt.messages = await previewStoryMessages(captured, prompt, type, !!preset);
+          prompt.messages = await previewStoryMessages(captured, prompt, type, !!preset && !usesSpreset(preset));
         }
         return [stage, { ok: true, prompt, route, statistics: contextStatistics(prompt.messages) }];
       } catch (error) {

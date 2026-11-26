@@ -60,7 +60,7 @@ export class UpstreamFrames {
   // Exact visible text observed before the first tool. null means its position or content disqualifies it.
   private leadingPadding: string | null = '';
   boundary = false;
-  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null) {}
+  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null, private contentField = 'content', private optionalTextFields: readonly string[] = []) {}
   private observeCompanionText(text: string, sharesToolFields = false) {
     if (!this.expectedContentTool || !text || this.leadingPadding === null) return;
     if (this.tools.size || sharesToolFields || /[^ \t\r\n]/u.test(text)) this.leadingPadding = null;
@@ -243,6 +243,13 @@ export class UpstreamFrames {
     return { choices: [{ index: 0, [streaming ? 'delta' : 'message']: payload, finish_reason: finish }],
       ...(usage ? { usage: normalizedUsage(this.trace.usage) } : {}) };
   }
+  // Read-only observation of bytes already received; this accessor supplies no call
+  // identity or receipt and does not run finish() or relax its validation.
+  pendingArguments() {
+    if (this.tools.size !== 1) return undefined;
+    const tool = this.tools.values().next().value;
+    return tool && tool.name === this.expectedContentTool ? tool.args : undefined;
+  }
   /** Read only after finish validated the provider's original tool-call structure. */
   singleCompletedCall() {
     if (!this.trace.complete || this.trace.error || this.tools.size > 1 || (this.hasText && this.tools.size)) invalid();
@@ -268,8 +275,9 @@ export class UpstreamFrames {
         const args = parse(tool.args);
         if (!objectArgs(args)) invalid();
         if (this.expectedContentTool !== undefined) {
-          if (tool.name !== this.expectedContentTool || Object.keys(record(args)).length !== 1) invalid();
-          const content = record(args).content;
+          if (tool.name !== this.expectedContentTool || Object.entries(record(args)).some(([key, value]) =>
+            key !== this.contentField && (!this.optionalTextFields.includes(key) || typeof value !== 'string'))) invalid();
+          const content = record(args)[this.contentField];
           if (typeof content !== 'string' || !content.trim()) invalid();
           const padding = this.leadingPadding;
           this.trace.matchesDelivery = (restored, leadingPadding) => {

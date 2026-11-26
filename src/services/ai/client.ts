@@ -1,4 +1,4 @@
-import type { PrototypeSession } from '../../presets/spreset/session';
+import type { LiterarySession } from '../../presets/spreset/literarySession';
 import { fetchWithRelay, relayAttempt, relayMode, type ConfirmedTransmission } from './corsRelay';
 import { relayUpstreamHeader } from './relayTarget';
 import { nativeFetch } from '../../presets/tavern/fetch';
@@ -41,6 +41,8 @@ export interface RequestOptions {
   storyClock?: import('../../presets/tavern/timing').StoryClock;
   presetSampling?: Sampling;
   spresetPrototype?: boolean;
+  oracleStory?: boolean;
+  oracleComment?: boolean;
   tavernType?: GenerationType;
   /** Frozen reference records for checking the bundled script’s final tool declaration. */
   nativeDeliveryReference?: readonly AiMessage[];
@@ -57,6 +59,10 @@ export interface RequestOptions {
   /** Read-only observations before compatibility extraction; not a second request. */
   onRawTextDelta?: (text: string) => void;
   onNativeReasoningDelta?: (text: string) => void;
+  /** Ephemeral Story reader. Only onDelta receives the final processor delivery. */
+  onLiteraryPreview?: (delta: string) => void;
+  /** Lazily snapshot partial arguments for the diagnostic viewer. Clear after successful verification. */
+  onUnverifiedTool?: (read?: () => string) => void;
   /** Read-only event observation; never used as accepted model text. */
   onRawResponse?: (event: RawResponseObservation) => void;
   /** Only public text actually extracted from a leading <think> block. */
@@ -311,9 +317,10 @@ export class AiClient {
   ): Promise<AiResponse> {
     const theater = snapshot.stage === 'theater';
     const prototype = import.meta.env.DEV && options.spresetPrototype && snapshot.stage === 'story';
-    let session: PrototypeSession | undefined;
+    const oracle = options.oracleStory && snapshot.stage === 'story';
+    let session: LiterarySession | undefined;
     // Theater keeps a single paid transport. A failed direct POST is not replayed through a relay.
-    const relay = theater || snapshot.stage === 'phone' || (prototype && !options.confirmedTransmission) ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
+    const relay = theater || snapshot.stage === 'phone' || ((prototype || oracle) && !options.confirmedTransmission) ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
     const allowOutputLimit = options.validateStoryOutputLimit === true || theater;
     const relayEnabled = relayMode() === 'auto';
     const started = performance.now();
@@ -344,10 +351,19 @@ export class AiClient {
           try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
           catch { /* Inspection cannot affect transport. */ }
           return this.response(wire.url, wire.init, requestSignal, relay, snapshot, observe,
-            wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission);
+            wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission).catch(error => {
+            if (oracle && !options.confirmedTransmission && !requestSignal.aborted &&
+                (error instanceof TypeError || error instanceof DOMException && error.name === 'NetworkError'))
+              throw new AiError('network', undefined, { fieldPath: 'channel.oracle_direct_network' });
+            throw error;
+          });
         };
         const playerWorldbook = snapshot.stage === 'story' ? options.playerWorldbook : undefined;
-        if (import.meta.env.DEV && prototype) {
+        if (oracle) {
+          const { LiterarySession } = await import('../../presets/spreset/literarySession');
+          session = new LiterarySession(signal, { title: '神域文学处理器', path: '/literature/meowssiah/sandbox.html',
+            tool: 'soliumbra_reply', field: 'game_content', optionalTextFields: options.oracleComment ? ['think_nya', 'comment'] : ['think_nya'], result: JSON.stringify({ ok:true }) }, options.presetSampling);
+        } else if (import.meta.env.DEV && prototype) {
           const { PrototypeSession } = await import('../../presets/spreset/session');
           session = new PrototypeSession(signal);
         }
@@ -558,7 +574,7 @@ export class AiClient {
       }
       // 页面允许中转，不代表这次用了中转。直连已经返回的生成失败仍可自动重试。
       // 真正发出本站中转后仍失败，以及酒馆包装失败，继续只允许手动处理，避免再付一笔。
-      if ((relay.used || prototype) && failure instanceof AiError) manualRetryOnly.add(failure);
+      if ((relay.used || prototype || oracle) && failure instanceof AiError) manualRetryOnly.add(failure);
       if (trace && failure instanceof AiError) {
         manualRetryOnly.add(failure);
         trace.cancelled = failure.code === 'cancelled' || failure.code === 'timeout';

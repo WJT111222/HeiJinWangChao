@@ -1,4 +1,5 @@
-import { selectedPrototype } from '../../presets/spreset/definition';
+import { oracleId } from '../../presets/meowssiah/definition';
+import { usesSpreset } from '../../presets/spreset/definition';
 import { parsePartialEntities } from '../validation/partialOutputs';
 import { canonicalJson } from '../../domain/worldbook/canonical';
 import { prepareStoryWorldbook, storyTriggerInput } from '../worldbook/storyWorldbook';
@@ -101,7 +102,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   captured.worldview ??= await loadMainWorldview();
   if (options.signal?.aborted) throw new AiError('cancelled');
   const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation, writing);
-  if (!presetSelection || captured.stage !== 'story' || selectedPrototype(presetSelection)) return run();
+  if (!presetSelection || captured.stage !== 'story' || usesSpreset(presetSelection)) return run();
   if (presetSelection === nativeDeliveryId) await ensureNativeDeliveryHost(options.signal);
   const recent = captured.state.journal.slice(-captured.settings.memory.immediateWindowSize);
   const chatLength = 1 + recent.reduce((sum, entry) => sum + 1 + Number(Boolean(captured.historyActions?.[entry.turnId])), 0);
@@ -120,8 +121,8 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     : await composePrompt({ ...captured, cotAllowed: snapshot.useCot }, presetSelection);
   // 续写：上下文与原请求完全相同（缓存前缀不变），末尾追加已写部分（assistant）与续写指令（user）。
   const continuation = requestedContinuation ? { partial: trimIncompleteTag(requestedContinuation.partial) } : undefined;
-  const spresetPrototype = captured.stage === 'story' && selectedPrototype(presetSelection);
-  const scripted = captured.stage === 'story' && !!presetSelection && !spresetPrototype;
+  const isolatedLiterature = captured.stage === 'story' && usesSpreset(presetSelection);
+  const scripted = captured.stage === 'story' && !!presetSelection && !isolatedLiterature;
   const composed = captured.stage === 'story' && prompt.foundation ? prompt.messages.filter(message => message !== prompt.foundation) : prompt.messages;
   const messages = continuation
     ? [...composed, { role: 'assistant' as const, content: continuation.partial },
@@ -147,8 +148,12 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   let rawObserved = false, publicReasoning = '';
   let displayText = '', displayObserved = false, displayOrder: RawResponseObservation['order'] = 'events';
   const preview = (value: string) => captured.stage === 'story' ? safeStreamResponseText(value, secrets) : value;
-  const display = () => !displayObserved ? {} : {
-    displayText: safeStreamResponseText(displayText, secrets), displayOrder,
+  let unverifiedTool: (() => string) | undefined;
+  const display = () => {
+    const partial = unverifiedTool?.();
+    if (!partial && !displayObserved) return {};
+    const shown = partial ? displayText + '\n【未完成的工具正文片段，仅供查看】\n' + partial : displayText;
+    return { displayText: safeStreamResponseText(shown, secrets), displayOrder };
   };
   let observationTimer: ReturnType<typeof setTimeout> | undefined;
   const observe = () => {
@@ -187,7 +192,9 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const nativeDeliveryReference = presetSelection === nativeDeliveryId ? nativeReferenceRecords(messages) : undefined;
   const responseResult = await client.generate(snapshot, scripted ? await promptReady(messages, false) : messages, {
     ...options,
-    spresetPrototype,
+    oracleComment: prompt.preset?.oracleComment,
+    spresetPrototype: isolatedLiterature && prompt.preset?.id !== oracleId,
+    oracleStory: isolatedLiterature && prompt.preset?.id === oracleId,
     confirmedTransmission: requestedContinuation?.consent,
     tavernType: scripted ? type : undefined,
     playerWorldbook,
@@ -200,6 +207,11 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
       if (sealed || (options.signal?.aborted && !value.tavern)) return;
       diagnostics = mergeResponseDiagnostics(diagnostics, value); observe();
       options.onResponseDiagnostics?.(value);
+    },
+    onUnverifiedTool: read => {
+      if (sealed) return;
+      unverifiedTool = read;
+      observe();
     },
     onRawResponse: (event: RawResponseObservation) => {
       if (sealed || options.signal?.aborted) return;
@@ -321,11 +333,11 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     const compatibilityError = prompt.preset && error instanceof AiError && error.details?.fieldPath?.startsWith('tavern.');
     const failure = (captured.stage === 'variables' || captured.stage === 'entities') ? variableFailure(error, step)
       : captured.stage === 'story' && !compatibilityError ? storyFailure(error, true) : error;
-    if (captured.stage === 'story' && selectedPrototype(presetSelection) && failure instanceof AiError) manualRetryOnly.add(failure);
+    if (captured.stage === 'story' && usesSpreset(presetSelection) && failure instanceof AiError) manualRetryOnly.add(failure);
     sealed = true;
     if (captured.stage === 'story' && failure && typeof failure === 'object') {
       // 兼容渠道会把推理写成开头的 <think>…</think>：与正式解析一致先去掉，推理不进入可续写的正文。
-      const raw = addition ?? received, content = splitLeadingThink(raw).content;
+      const raw = unverifiedTool ? '' : addition ?? received, content = splitLeadingThink(raw).content;
       storyFailureText.set(failure, { writing, produced: raw.trim() !== '',
         text: !continuation ? content : content.trim() ? merged(content) : continuation.partial });
     }
@@ -387,5 +399,5 @@ export async function previewTavernStory(input: ComposeInput & { stage: 'story' 
   const captured = checkedInput(input);
   captured.worldview = await loadMainWorldview();
   const { previewStoryMessages } = await import('../../prompts/preview');
-  return previewStoryMessages(captured, await composePrompt(captured, selected), type, true);
+  return previewStoryMessages(captured, await composePrompt(captured, selected), type, !usesSpreset(selected));
 }

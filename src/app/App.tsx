@@ -149,11 +149,19 @@ export function App() {
   useEffect(() => {
     let disposed = false;
     let connection: SaveRepository | undefined;
-    SaveRepository.open()
+    SaveRepository.open(undefined, undefined, () => {
+      if (!disposed) {
+        setRepository(undefined);
+        setError('其他页面正在升级本机存档库。请刷新本页，载入新版后继续。');
+      }
+    })
       .then((repo) => {
         connection = repo;
         if (disposed) repo.close();
-        else setRepository(repo);
+        else {
+          setRepository(repo);
+          if (repo.upgradedFrom) setError('本机存档库已升级，已有数据保留。请刷新其他旧版游戏页面后继续使用。');
+        }
       })
       .catch(failure => {
         if (!disposed) {

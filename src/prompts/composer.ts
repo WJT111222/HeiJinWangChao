@@ -1,3 +1,5 @@
+import { commentEntry } from '../presets/meowssiah/config';
+import { oracleId } from '../presets/meowssiah/definition';
 import { literaryPreset, captureAssistantSelection, resolveStoryPreset, type AssistantSelection, type PresetSelection } from '../presets/library';
 import { sha256Hex } from '../domain/worldbook/canonical';
 import { storyModuleText } from './literaryStory';
@@ -144,6 +146,8 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
     if (nativeDelivery && input.stage === 'story') messages.push(...deliveryContext(ordered, input.draft));
     else messages.push({ role: 'user', content: contextMessage(ordered) });
   }
+  if (preset?.definition.id === oracleId && input.oracleNote)
+    messages.push({ role: 'user', content: '场外小纸条（本次文学创作要求）\n' + input.oracleNote });
   // 最终格式提醒紧贴生成点：有确认历史时并入收尾 user 消息；否则作为末尾独立 user 消息。
   const tail = formatTailMessage(input.stage, {
     actionOptions: input.settings.prompts.actionOptions,
@@ -171,6 +175,7 @@ async function compose(unchecked: ComposeInput, selection: PresetSelection = nul
     ...(preset && assembled ? { preset: {
       id: preset.definition.id, version: preset.definition.version,
       sampling: preset.sampling, unknownMacros: assembled.unknownMacros,
+      ...(preset.definition.id === oracleId && { oracleComment: preset.entries.some(e => e.identifier === commentEntry && e.enabled) }),
     } } : {}),
     ...(assembled ? { presetHistory: assembled.history } : {}),
     context,

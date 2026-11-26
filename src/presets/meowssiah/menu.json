@@ -1,0 +1,170 @@
+[
+  {
+    "id": "3682cbc5-2edd-46ab-9466-a670908b67e7",
+    "kind": "menu",
+    "group": "角色控制",
+    "label": "😸情绪别太激烈",
+    "name": "😸情绪别太激烈"
+  },
+  {
+    "id": "37fc5f95-679d-4aba-83c7-21e15a60919d",
+    "kind": "menu",
+    "group": "角色控制",
+    "label": "😸活人感加强",
+    "name": "😸活人感加强"
+  },
+  {
+    "id": "18e1bcb1-c329-4aba-957a-c22fb77712be",
+    "kind": "menu",
+    "group": "涩涩控制",
+    "label": "⛔️关闭NSFW",
+    "name": "⛔️关闭NSFW"
+  },
+  {
+    "id": "0fb9ef19-6676-4acb-a844-6c870a81a2df",
+    "kind": "menu",
+    "group": "涩涩控制",
+    "label": "❤️防发情（明示才进）",
+    "name": "❤️防发情"
+  },
+  {
+    "id": "9f6fb39c-5373-47a0-a3d9-dc6fcbbe83de",
+    "kind": "radio",
+    "group": "涩涩风格",
+    "label": "❤️色色拉满（直白激烈）",
+    "name": "❤️nsfw风格|色色！"
+  },
+  {
+    "id": "d6fa9105-b1ec-4079-a3be-a608388a4812",
+    "kind": "radio",
+    "group": "涩涩风格",
+    "label": "❤️正常温柔（重细节）",
+    "name": "❤️nsfw风格|正常"
+  },
+  {
+    "id": "b0930f00-156e-428a-8247-4977549ca41f",
+    "kind": "radio",
+    "group": "涩涩风格",
+    "label": "❤️更加舒缓（弱化生理）",
+    "name": "❤️nsfw风格|更舒缓"
+  },
+  {
+    "id": "80aa69d4-0bcf-4f95-a0be-60a50cfb5376",
+    "kind": "menu",
+    "group": "涩涩控制",
+    "label": "❤️ASMR声效对话",
+    "name": "❤️ASMR对话"
+  },
+  {
+    "id": "eda5ebe9-54d0-455c-878e-7dbe7d0ec8c0",
+    "kind": "radio",
+    "group": "主文风选择",
+    "label": "📝s喵特调一（电影运镜）",
+    "name": "📝文风（选一）丨s喵特调一"
+  },
+  {
+    "id": "1fd196ce-ff82-4447-928a-cc0bd625740f",
+    "kind": "radio",
+    "group": "主文风选择",
+    "label": "📝纯五感写实",
+    "name": "📝文风（选一）|五感"
+  },
+  {
+    "id": "b85e04c5-9306-486d-accb-de99eb3ccb0a",
+    "kind": "radio",
+    "group": "主文风选择",
+    "label": "📝自定义文风",
+    "name": "📝|文风（偷）"
+  },
+  {
+    "id": "ee33ae12-feea-42fd-98fe-97c995903f11",
+    "kind": "menu",
+    "group": "文风细节",
+    "label": "📝第二人称控制",
+    "name": "📝人称控制"
+  },
+  {
+    "id": "b9c29eab-3a14-4d7f-a8b0-fdd268c2d0ab",
+    "kind": "menu",
+    "group": "文风细节",
+    "label": "📝防公式化开头",
+    "name": "📝防投石"
+  },
+  {
+    "id": "9fcf4beb-5996-4d01-8490-7332502bc422",
+    "kind": "menu",
+    "group": "文风细节",
+    "label": "📝字数要求（1000字+）",
+    "name": "📝字数要求"
+  },
+  {
+    "id": "9ac6be6e-304f-4888-9ee5-aedb8c7df103",
+    "kind": "radio",
+    "group": "玩家输入转述",
+    "label": "要转述（扩写玩家行动）",
+    "name": "要转述"
+  },
+  {
+    "id": "ed3b6119-cb78-47b4-beab-6d109beb9e38",
+    "kind": "radio",
+    "group": "玩家输入转述",
+    "label": "不要转述（直接往后接）",
+    "name": "不要转述"
+  },
+  {
+    "id": "5e89beb6-bcb8-4854-af27-49dcb2e6292a",
+    "kind": "menu",
+    "group": "额外设定",
+    "label": "⚙️我不是主角",
+    "name": "⚙️防媚User"
+  },
+  {
+    "id": "630b20d3-2d85-4b20-85ce-cc5e483e14b8",
+    "kind": "menu",
+    "group": "额外设定",
+    "label": "⚙️严禁抢话/代写行动",
+    "name": "⚙️防抢话"
+  },
+  {
+    "id": "ef48b167-dac9-4015-b42c-b16a7cf69ec9",
+    "kind": "menu",
+    "group": "额外设定",
+    "label": "⚙️背景NPC独立发展",
+    "name": "⚙️背景npc发展"
+  },
+  {
+    "id": "b568bd80-af5b-4b14-9b0e-bb7d90c9a62c",
+    "kind": "radio",
+    "group": "多视角模式",
+    "label": "⚙️多视角（智能切换）",
+    "name": "⚙️多视角（智能）"
+  },
+  {
+    "id": "7733f4e2-ddda-45d9-af9f-5716acd5ad6b",
+    "kind": "radio",
+    "group": "多视角模式",
+    "label": "⚙️多视角（全局上帝）",
+    "name": "⚙️多视角（全局）"
+  },
+  {
+    "id": "eb65ec28-14a7-401c-887a-e6e22c3295c9",
+    "kind": "menu",
+    "group": "额外设定",
+    "label": "⚙️穿插角色内心话",
+    "name": "⚙️内心话"
+  },
+  {
+    "id": "42303fec-82ae-4ec4-96a8-4cd424d782e5",
+    "kind": "menu",
+    "group": "额外设定",
+    "label": "🧪强制历史设定回顾",
+    "name": "🧪历史回顾"
+  },
+  {
+    "id": "48863da8-9556-4f14-b5bf-1816e4d4207b",
+    "kind": "menu",
+    "group": "猫猫留言",
+    "label": "📏猫猫悄悄话",
+    "name": "📏猫猫留言~"
+  }
+]

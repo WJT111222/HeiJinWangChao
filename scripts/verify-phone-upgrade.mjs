@@ -161,7 +161,7 @@ try {
       } else {
         const { version: newVersion, backup: newPackage, ...after } = data,
           { version: oldVersion, backup: oldPackage, ...before } = previous;
-        assert.deepEqual([oldVersion, newVersion], [oldDb, 10]);
+        assert.deepEqual([oldVersion, newVersion], [oldDb, 12]);
         for (const state of [before.game.state, before.manualState]) {
           assert.equal(state.schemaVersion, oldDb === 8 ? 10 : 11);
           state.schemaVersion = 11;
@@ -170,7 +170,7 @@ try {
         }
         assert.deepEqual(after, before);
         assert.equal(oldPackage.version, oldDb === 8 ? 3 : 4);
-        assert.equal(newPackage.version, 5);
+        assert.equal(newPackage.version, 6);
         assert.equal(after.images.pictures.length, 1);
         for (const file of [oldPackage, newPackage]) {
           const restored = await page.evaluate(
@@ -272,8 +272,8 @@ try {
             base: sha(base),
             candidate: sha(candidate),
             from: oldDb,
-            to: 10,
-            backup: [oldPackage.version, 5],
+            to: newVersion,
+            backup: [oldPackage.version, newPackage.version],
             images: 1,
             storedTurns: 2,
             historyNodes: after.nodes.length,

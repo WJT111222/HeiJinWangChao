@@ -1,17 +1,19 @@
 import { test, expect } from './helpers/test';
 import type { Page } from '@playwright/test';
 
-async function start(page: Page) {
+async function start(page: Page, oracle = false) {
   const created = page.waitForEvent('worker', w => w.url().startsWith('blob:null/'));
-  await page.evaluate(async () => {
+  await page.evaluate(async oracle => {
     const { PrototypeSession } = await import('/src/presets/spreset/session.ts' as string);
-    const session = new PrototypeSession(new AbortController().signal);
+    const signal = new AbortController().signal;
+    const session = oracle ? new (await import('/src/presets/spreset/literarySession.ts' as string)).LiterarySession(signal,
+      {title:'神域文学处理器', path:'/literature/meowssiah/sandbox.html', tool:'soliumbra_reply',field:'game_content'}) : new PrototypeSession(signal);
     window.addEventListener('dispose-c2', () => session.dispose(), { once: true });
-  });
+  }, oracle);
   return await created;
 }
 
-test('实际处理器与父游戏的存档、草稿、凭证和网络隔离', async ({ page }, info) => {
+for (const oracle of [false,true]) test((oracle ? '神域 · ' : '')+'实际处理器与父游戏的存档、草稿、凭证和网络隔离', async ({ page }, info) => {
   const hits: string[] = [];
   await page.route('**/c2-storage-probe', route => { hits.push(route.request().url()); return route.fulfill({ body: 'fixture' }); });
   await page.goto('/?spreset=prototype');
@@ -29,7 +31,7 @@ test('实际处理器与父游戏的存档、草稿、凭证和网络隔离', as
       return { saveId: state.saveId, draft: await repo.loadDraft(state.saveId), state: await repo.load(state.saveId) };
     } finally { repo.close(); }
   });
-  const worker = await start(page);
+  const worker = await start(page, oracle);
   const evidence = await worker.evaluate(async url => {
     async function access(fn: () => unknown) {
       try { await fn(); return 'granted'; } catch (e) { return (e as Error).name; }
@@ -52,7 +54,7 @@ test('实际处理器与父游戏的存档、草稿、凭证和网络隔离', as
     indexedDB: 'SecurityError', databases: 'SecurityError', network: 'TypeError' });
   for (const key of ['cache', 'files'] as const) expect(['SecurityError', 'unavailable']).toContain(evidence[key]);
   expect(hits).toEqual([]);
-  const frame = page.frames().find(f => f.url().includes('/experiments/spreset/sandbox.html'))!;
+  const frame = page.frames().find(f => f.url().includes(oracle ? '/literature/meowssiah/sandbox.html' : '/experiments/spreset/sandbox.html'))!;
   expect(await frame.evaluate(() => {
     const denied = (read: () => unknown) => { try { read(); return false; } catch (e) { return (e as Error).name === 'SecurityError'; } };
     return [denied(() => parent.document), denied(() => localStorage.getItem('c2-test-only')),

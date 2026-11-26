@@ -195,6 +195,7 @@ describe('targeted unreadable deletion stays atomic', () => {
         open.result.createObjectStore('turnReceipts', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
         open.result.createObjectStore('turnUndo', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
         open.result.createObjectStore('saveControls', { keyPath: 'saveId' });
+        open.result.createObjectStore('oracleNotes', { keyPath: 'saveId' });
         for (const name of ['historyMetadata', 'historyPayloads'])
           open.result.createObjectStore(name, { keyPath: ['saveId', 'id'] }).createIndex('saveId', 'saveId');
         checkImageStores(open.result, open.transaction!);

@@ -175,7 +175,7 @@ it('旧自动描述符无新摘要仍可读，当前数据库版本保留历史�
   await turns(3); const before = await raw(), control = before.records.saveControls![0].value as { records: object[] };
   await edit('saveControls', s => s.put({ ...control, records: control.records.map(entry => { const row = { ...entry } as { summary?: unknown }; delete row.summary; return row; }) }));
   const preview = await repo.history.preview('save-a', await oldest()); expect(preview.state.turnNumber).toBe(1);
-  expect(saveDatabaseVersion).toBe(11);
+  expect(saveDatabaseVersion).toBe(12);
 });
 it('删除正式存档原子删除关联收藏；导入同 ID 备份保留收藏但标记旧时间线', async () => {
   await turns(3); await repo.history.create('save-a', '收藏');
@@ -243,4 +243,18 @@ it('正式世界私密七字段和休眠档案压缩往返完全一致；未知�
   const dormant = hibernateNpcProfile(state, 'npc-a', state.npc['npc-a'].identityKey);
   expect(await decodeHistory(await encodeHistory(dormant))).toEqual(dormant);
   await expect(decodeHistory({ ...payload, version: 2 } as unknown as typeof payload)).rejects.toThrow();
+});
+
+it('历史回溯重新核对本档纸条，只有仍有效的确认能清理旧实例', async () => {
+  await turns(2);
+  const node = await oldest();
+  const previous = await repo.history.preview('save-a', node);
+  let sheet = await repo.readOracleNote('save-a');
+  sheet = await repo.writeOracleNote('save-a', sheet, '回溯之前的纸条', true);
+  await expect(repo.history.restore(previous.confirmation, '恢复', true, true)).rejects.toMatchObject({ code: 'HISTORY_CONFLICT' });
+  expect(await repo.readOracleNote('save-a')).toEqual(sheet);
+  const fresh = await repo.history.preview('save-a', node);
+  await repo.history.restore(fresh.confirmation, '恢复', true, true);
+  expect(await repo.readOracleNote('save-a')).toMatchObject({ note: null, history: [] });
+  await expect(repo.clearOracleHistory('save-a', sheet)).rejects.toMatchObject({ code: 'REVISION_CONFLICT' });
 });

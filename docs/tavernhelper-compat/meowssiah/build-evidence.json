@@ -1,0 +1,21 @@
+{
+  "node": "v24.19.0",
+  "sha256": "2d63ba145ef921d32bba0b4af102b8d216aeb213c94f7f3cf09b847008b35b53",
+  "rebuildBytes": 7626,
+  "sourceFiles": [
+    "AUTHOR.txt",
+    "COPYING",
+    "SOURCES.json",
+    "build.mjs",
+    "frame.mjs",
+    "pipeline.mjs",
+    "worker.mjs"
+  ],
+  "upstreamCommit": "53bd585da14248ba10baaede7fc7ed0cebe1eeeb",
+  "upstreamSha256": {
+    "regex_bind/index.js": "bc9fe020e629da3b7890c879c3525269e54ebb2d6dabb75dba1a576a2454e8ee",
+    "regex_bind/inject.js": "4858bcb57530e3ff6ef68f0c94a4d291e2914c766c274f888e9a2fdf8d0efb59",
+    "regex_bind/LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  "assetsContainingC2ToolOrEntry": []
+}

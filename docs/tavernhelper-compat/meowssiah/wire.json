@@ -1,0 +1,1100 @@
+[
+  {
+    "device": "desktop",
+    "protocol": "openai",
+    "transport": "JSON",
+    "modelPosts": 1,
+    "httpPath": "/chat/completions",
+    "responseBytes": 520,
+    "providerUsageFixture": {
+      "inputTokens": 120,
+      "outputTokens": 30,
+      "totalTokens": 150,
+      "cacheReadTokens": 40
+    },
+    "requestBytes": 65767,
+    "requestSha256": "7f823384270d106bd2b2e16159a15c5d810b9b8e4328b0ddb243578a0e3f27d0",
+    "responseSha256": "458b29a4d13978297a8a0a017d17309e7e93e093127bbbd9fe7bb143d7f0bd43",
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "soliumbra_reply",
+          "description": "小猫之神交付完整的本回合游戏回复。",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "think_nya": {
+                "type": "string",
+                "description": "可省略的猫神文学附注。"
+              },
+              "game_content": {
+                "type": "string",
+                "description": "按本回合输出协议给出完整正文及必需标签。"
+              },
+              "comment": {
+                "type": "string",
+                "description": "猫猫悄悄话，可选的场外留言。"
+              }
+            },
+            "required": [
+              "game_content"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "toolChoice": "auto",
+    "model": "fixture",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "desktop",
+    "protocol": "openai",
+    "transport": "SSE",
+    "modelPosts": 1,
+    "httpPath": "/chat/completions",
+    "responseBytes": 502,
+    "providerUsageFixture": {},
+    "requestBytes": 65766,
+    "requestSha256": "d06698848e91c82550a105444e52a4df0d6bba7fdde70239064b2328c732554d",
+    "responseSha256": "c4ae08a9759c16a68b02d97bc3cda567b9817ba04613e8e3fffc9195a6f00ac7",
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "soliumbra_reply",
+          "description": "小猫之神交付完整的本回合游戏回复。",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "think_nya": {
+                "type": "string",
+                "description": "可省略的猫神文学附注。"
+              },
+              "game_content": {
+                "type": "string",
+                "description": "按本回合输出协议给出完整正文及必需标签。"
+              },
+              "comment": {
+                "type": "string",
+                "description": "猫猫悄悄话，可选的场外留言。"
+              }
+            },
+            "required": [
+              "game_content"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "toolChoice": "auto",
+    "model": "fixture",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "desktop",
+    "protocol": "deepseek",
+    "transport": "JSON",
+    "modelPosts": 1,
+    "httpPath": "/chat/completions",
+    "responseBytes": 403,
+    "providerUsageFixture": {},
+    "requestBytes": 65767,
+    "requestSha256": "7f823384270d106bd2b2e16159a15c5d810b9b8e4328b0ddb243578a0e3f27d0",
+    "responseSha256": "38d45756996dd198e894e3612bde9f9bd1927283d914531f61d582ea15358da6",
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "soliumbra_reply",
+          "description": "小猫之神交付完整的本回合游戏回复。",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "think_nya": {
+                "type": "string",
+                "description": "可省略的猫神文学附注。"
+              },
+              "game_content": {
+                "type": "string",
+                "description": "按本回合输出协议给出完整正文及必需标签。"
+              },
+              "comment": {
+                "type": "string",
+                "description": "猫猫悄悄话，可选的场外留言。"
+              }
+            },
+            "required": [
+              "game_content"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "toolChoice": "auto",
+    "model": "fixture",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "desktop",
+    "protocol": "deepseek",
+    "transport": "SSE",
+    "modelPosts": 1,
+    "httpPath": "/chat/completions",
+    "responseBytes": 502,
+    "providerUsageFixture": {},
+    "requestBytes": 65766,
+    "requestSha256": "d06698848e91c82550a105444e52a4df0d6bba7fdde70239064b2328c732554d",
+    "responseSha256": "c4ae08a9759c16a68b02d97bc3cda567b9817ba04613e8e3fffc9195a6f00ac7",
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "soliumbra_reply",
+          "description": "小猫之神交付完整的本回合游戏回复。",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "think_nya": {
+                "type": "string",
+                "description": "可省略的猫神文学附注。"
+              },
+              "game_content": {
+                "type": "string",
+                "description": "按本回合输出协议给出完整正文及必需标签。"
+              },
+              "comment": {
+                "type": "string",
+                "description": "猫猫悄悄话，可选的场外留言。"
+              }
+            },
+            "required": [
+              "game_content"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "toolChoice": "auto",
+    "model": "fixture",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "desktop",
+    "protocol": "gemini",
+    "transport": "JSON",
+    "modelPosts": 1,
+    "httpPath": "/models/fixture:generateContent",
+    "responseBytes": 337,
+    "providerUsageFixture": {},
+    "requestBytes": 65486,
+    "requestSha256": "2abebad90a71a9ab6410db08fbd7225647a94267104fcca2fd7035ffede71928",
+    "responseSha256": "010884f4cc1c8853e5bc6010d352437a8016f0c86130561d94d144b862f677c8",
+    "tools": [
+      {
+        "functionDeclarations": [
+          {
+            "name": "soliumbra_reply",
+            "description": "小猫之神交付完整的本回合游戏回复。",
+            "parametersJsonSchema": {
+              "type": "object",
+              "properties": {
+                "think_nya": {
+                  "type": "string",
+                  "description": "可省略的猫神文学附注。"
+                },
+                "game_content": {
+                  "type": "string",
+                  "description": "按本回合输出协议给出完整正文及必需标签。"
+                },
+                "comment": {
+                  "type": "string",
+                  "description": "猫猫悄悄话，可选的场外留言。"
+                }
+              },
+              "required": [
+                "game_content"
+              ],
+              "additionalProperties": false
+            }
+          }
+        ]
+      }
+    ],
+    "toolChoice": {
+      "functionCallingConfig": {
+        "mode": "AUTO"
+      }
+    },
+    "model": "fixture (URL)",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "gemini-call-0",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "desktop",
+    "protocol": "gemini",
+    "transport": "SSE",
+    "modelPosts": 1,
+    "httpPath": "/models/fixture:streamGenerateContent",
+    "responseBytes": 345,
+    "providerUsageFixture": {},
+    "requestBytes": 65486,
+    "requestSha256": "2abebad90a71a9ab6410db08fbd7225647a94267104fcca2fd7035ffede71928",
+    "responseSha256": "6f0c77d11a3da0c65cdac88799d486f2d68f37c75a1731a49ce66ff0cccbfa40",
+    "tools": [
+      {
+        "functionDeclarations": [
+          {
+            "name": "soliumbra_reply",
+            "description": "小猫之神交付完整的本回合游戏回复。",
+            "parametersJsonSchema": {
+              "type": "object",
+              "properties": {
+                "think_nya": {
+                  "type": "string",
+                  "description": "可省略的猫神文学附注。"
+                },
+                "game_content": {
+                  "type": "string",
+                  "description": "按本回合输出协议给出完整正文及必需标签。"
+                },
+                "comment": {
+                  "type": "string",
+                  "description": "猫猫悄悄话，可选的场外留言。"
+                }
+              },
+              "required": [
+                "game_content"
+              ],
+              "additionalProperties": false
+            }
+          }
+        ]
+      }
+    ],
+    "toolChoice": {
+      "functionCallingConfig": {
+        "mode": "AUTO"
+      }
+    },
+    "model": "fixture (URL)",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "gemini-call-0",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "desktop",
+    "protocol": "anthropic",
+    "transport": "JSON",
+    "modelPosts": 1,
+    "httpPath": "/messages",
+    "responseBytes": 337,
+    "providerUsageFixture": {},
+    "requestBytes": 65206,
+    "requestSha256": "89ce953ec00830f6749fb742dd8810028b6f9951919b766bc27e884aafc6e46f",
+    "responseSha256": "99ec1bcda57ea1f7db40cde43040910aee337f01b026f142bc05bd04fda9a453",
+    "tools": [
+      {
+        "name": "soliumbra_reply",
+        "description": "小猫之神交付完整的本回合游戏回复。",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "think_nya": {
+              "type": "string",
+              "description": "可省略的猫神文学附注。"
+            },
+            "game_content": {
+              "type": "string",
+              "description": "按本回合输出协议给出完整正文及必需标签。"
+            },
+            "comment": {
+              "type": "string",
+              "description": "猫猫悄悄话，可选的场外留言。"
+            }
+          },
+          "required": [
+            "game_content"
+          ],
+          "additionalProperties": false
+        }
+      }
+    ],
+    "toolChoice": {
+      "type": "auto"
+    },
+    "model": "fixture",
+    "temperature": null,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "desktop",
+    "protocol": "anthropic",
+    "transport": "SSE",
+    "modelPosts": 1,
+    "httpPath": "/messages",
+    "responseBytes": 785,
+    "providerUsageFixture": {},
+    "requestBytes": 65205,
+    "requestSha256": "f6f853d1bf4fc0f6a75ee5209f5559dacac0b5fdf8c69ff7b53b33a0e48d6610",
+    "responseSha256": "246a354e90332faf18d148e4a8332bdbf79b7511fdd8df6c1c78ead14adbac9c",
+    "tools": [
+      {
+        "name": "soliumbra_reply",
+        "description": "小猫之神交付完整的本回合游戏回复。",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "think_nya": {
+              "type": "string",
+              "description": "可省略的猫神文学附注。"
+            },
+            "game_content": {
+              "type": "string",
+              "description": "按本回合输出协议给出完整正文及必需标签。"
+            },
+            "comment": {
+              "type": "string",
+              "description": "猫猫悄悄话，可选的场外留言。"
+            }
+          },
+          "required": [
+            "game_content"
+          ],
+          "additionalProperties": false
+        }
+      }
+    ],
+    "toolChoice": {
+      "type": "auto"
+    },
+    "model": "fixture",
+    "temperature": null,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "mobile",
+    "protocol": "openai",
+    "transport": "JSON",
+    "modelPosts": 1,
+    "httpPath": "/chat/completions",
+    "responseBytes": 520,
+    "providerUsageFixture": {
+      "inputTokens": 120,
+      "outputTokens": 30,
+      "totalTokens": 150,
+      "cacheReadTokens": 40
+    },
+    "requestBytes": 65767,
+    "requestSha256": "7f823384270d106bd2b2e16159a15c5d810b9b8e4328b0ddb243578a0e3f27d0",
+    "responseSha256": "458b29a4d13978297a8a0a017d17309e7e93e093127bbbd9fe7bb143d7f0bd43",
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "soliumbra_reply",
+          "description": "小猫之神交付完整的本回合游戏回复。",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "think_nya": {
+                "type": "string",
+                "description": "可省略的猫神文学附注。"
+              },
+              "game_content": {
+                "type": "string",
+                "description": "按本回合输出协议给出完整正文及必需标签。"
+              },
+              "comment": {
+                "type": "string",
+                "description": "猫猫悄悄话，可选的场外留言。"
+              }
+            },
+            "required": [
+              "game_content"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "toolChoice": "auto",
+    "model": "fixture",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "mobile",
+    "protocol": "openai",
+    "transport": "SSE",
+    "modelPosts": 1,
+    "httpPath": "/chat/completions",
+    "responseBytes": 502,
+    "providerUsageFixture": {},
+    "requestBytes": 65766,
+    "requestSha256": "d06698848e91c82550a105444e52a4df0d6bba7fdde70239064b2328c732554d",
+    "responseSha256": "c4ae08a9759c16a68b02d97bc3cda567b9817ba04613e8e3fffc9195a6f00ac7",
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "soliumbra_reply",
+          "description": "小猫之神交付完整的本回合游戏回复。",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "think_nya": {
+                "type": "string",
+                "description": "可省略的猫神文学附注。"
+              },
+              "game_content": {
+                "type": "string",
+                "description": "按本回合输出协议给出完整正文及必需标签。"
+              },
+              "comment": {
+                "type": "string",
+                "description": "猫猫悄悄话，可选的场外留言。"
+              }
+            },
+            "required": [
+              "game_content"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "toolChoice": "auto",
+    "model": "fixture",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "mobile",
+    "protocol": "deepseek",
+    "transport": "JSON",
+    "modelPosts": 1,
+    "httpPath": "/chat/completions",
+    "responseBytes": 403,
+    "providerUsageFixture": {},
+    "requestBytes": 65767,
+    "requestSha256": "7f823384270d106bd2b2e16159a15c5d810b9b8e4328b0ddb243578a0e3f27d0",
+    "responseSha256": "38d45756996dd198e894e3612bde9f9bd1927283d914531f61d582ea15358da6",
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "soliumbra_reply",
+          "description": "小猫之神交付完整的本回合游戏回复。",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "think_nya": {
+                "type": "string",
+                "description": "可省略的猫神文学附注。"
+              },
+              "game_content": {
+                "type": "string",
+                "description": "按本回合输出协议给出完整正文及必需标签。"
+              },
+              "comment": {
+                "type": "string",
+                "description": "猫猫悄悄话，可选的场外留言。"
+              }
+            },
+            "required": [
+              "game_content"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "toolChoice": "auto",
+    "model": "fixture",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "mobile",
+    "protocol": "deepseek",
+    "transport": "SSE",
+    "modelPosts": 1,
+    "httpPath": "/chat/completions",
+    "responseBytes": 502,
+    "providerUsageFixture": {},
+    "requestBytes": 65766,
+    "requestSha256": "d06698848e91c82550a105444e52a4df0d6bba7fdde70239064b2328c732554d",
+    "responseSha256": "c4ae08a9759c16a68b02d97bc3cda567b9817ba04613e8e3fffc9195a6f00ac7",
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "soliumbra_reply",
+          "description": "小猫之神交付完整的本回合游戏回复。",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "think_nya": {
+                "type": "string",
+                "description": "可省略的猫神文学附注。"
+              },
+              "game_content": {
+                "type": "string",
+                "description": "按本回合输出协议给出完整正文及必需标签。"
+              },
+              "comment": {
+                "type": "string",
+                "description": "猫猫悄悄话，可选的场外留言。"
+              }
+            },
+            "required": [
+              "game_content"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "toolChoice": "auto",
+    "model": "fixture",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "mobile",
+    "protocol": "gemini",
+    "transport": "JSON",
+    "modelPosts": 1,
+    "httpPath": "/models/fixture:generateContent",
+    "responseBytes": 337,
+    "providerUsageFixture": {},
+    "requestBytes": 65486,
+    "requestSha256": "2abebad90a71a9ab6410db08fbd7225647a94267104fcca2fd7035ffede71928",
+    "responseSha256": "010884f4cc1c8853e5bc6010d352437a8016f0c86130561d94d144b862f677c8",
+    "tools": [
+      {
+        "functionDeclarations": [
+          {
+            "name": "soliumbra_reply",
+            "description": "小猫之神交付完整的本回合游戏回复。",
+            "parametersJsonSchema": {
+              "type": "object",
+              "properties": {
+                "think_nya": {
+                  "type": "string",
+                  "description": "可省略的猫神文学附注。"
+                },
+                "game_content": {
+                  "type": "string",
+                  "description": "按本回合输出协议给出完整正文及必需标签。"
+                },
+                "comment": {
+                  "type": "string",
+                  "description": "猫猫悄悄话，可选的场外留言。"
+                }
+              },
+              "required": [
+                "game_content"
+              ],
+              "additionalProperties": false
+            }
+          }
+        ]
+      }
+    ],
+    "toolChoice": {
+      "functionCallingConfig": {
+        "mode": "AUTO"
+      }
+    },
+    "model": "fixture (URL)",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "gemini-call-0",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "mobile",
+    "protocol": "gemini",
+    "transport": "SSE",
+    "modelPosts": 1,
+    "httpPath": "/models/fixture:streamGenerateContent",
+    "responseBytes": 345,
+    "providerUsageFixture": {},
+    "requestBytes": 65486,
+    "requestSha256": "2abebad90a71a9ab6410db08fbd7225647a94267104fcca2fd7035ffede71928",
+    "responseSha256": "6f0c77d11a3da0c65cdac88799d486f2d68f37c75a1731a49ce66ff0cccbfa40",
+    "tools": [
+      {
+        "functionDeclarations": [
+          {
+            "name": "soliumbra_reply",
+            "description": "小猫之神交付完整的本回合游戏回复。",
+            "parametersJsonSchema": {
+              "type": "object",
+              "properties": {
+                "think_nya": {
+                  "type": "string",
+                  "description": "可省略的猫神文学附注。"
+                },
+                "game_content": {
+                  "type": "string",
+                  "description": "按本回合输出协议给出完整正文及必需标签。"
+                },
+                "comment": {
+                  "type": "string",
+                  "description": "猫猫悄悄话，可选的场外留言。"
+                }
+              },
+              "required": [
+                "game_content"
+              ],
+              "additionalProperties": false
+            }
+          }
+        ]
+      }
+    ],
+    "toolChoice": {
+      "functionCallingConfig": {
+        "mode": "AUTO"
+      }
+    },
+    "model": "fixture (URL)",
+    "temperature": 1.09,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "gemini-call-0",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "mobile",
+    "protocol": "anthropic",
+    "transport": "JSON",
+    "modelPosts": 1,
+    "httpPath": "/messages",
+    "responseBytes": 337,
+    "providerUsageFixture": {},
+    "requestBytes": 65206,
+    "requestSha256": "89ce953ec00830f6749fb742dd8810028b6f9951919b766bc27e884aafc6e46f",
+    "responseSha256": "99ec1bcda57ea1f7db40cde43040910aee337f01b026f142bc05bd04fda9a453",
+    "tools": [
+      {
+        "name": "soliumbra_reply",
+        "description": "小猫之神交付完整的本回合游戏回复。",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "think_nya": {
+              "type": "string",
+              "description": "可省略的猫神文学附注。"
+            },
+            "game_content": {
+              "type": "string",
+              "description": "按本回合输出协议给出完整正文及必需标签。"
+            },
+            "comment": {
+              "type": "string",
+              "description": "猫猫悄悄话，可选的场外留言。"
+            }
+          },
+          "required": [
+            "game_content"
+          ],
+          "additionalProperties": false
+        }
+      }
+    ],
+    "toolChoice": {
+      "type": "auto"
+    },
+    "model": "fixture",
+    "temperature": null,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  },
+  {
+    "device": "mobile",
+    "protocol": "anthropic",
+    "transport": "SSE",
+    "modelPosts": 1,
+    "httpPath": "/messages",
+    "responseBytes": 785,
+    "providerUsageFixture": {},
+    "requestBytes": 65205,
+    "requestSha256": "f6f853d1bf4fc0f6a75ee5209f5559dacac0b5fdf8c69ff7b53b33a0e48d6610",
+    "responseSha256": "246a354e90332faf18d148e4a8332bdbf79b7511fdd8df6c1c78ead14adbac9c",
+    "tools": [
+      {
+        "name": "soliumbra_reply",
+        "description": "小猫之神交付完整的本回合游戏回复。",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "think_nya": {
+              "type": "string",
+              "description": "可省略的猫神文学附注。"
+            },
+            "game_content": {
+              "type": "string",
+              "description": "按本回合输出协议给出完整正文及必需标签。"
+            },
+            "comment": {
+              "type": "string",
+              "description": "猫猫悄悄话，可选的场外留言。"
+            }
+          },
+          "required": [
+            "game_content"
+          ],
+          "additionalProperties": false
+        }
+      }
+    ],
+    "toolChoice": {
+      "type": "auto"
+    },
+    "model": "fixture",
+    "temperature": null,
+    "topP": 0.71,
+    "customDirection": true,
+    "noteOnWire": true,
+    "customStyle": true,
+    "receipt": {
+      "id": "fixture-tool",
+      "bytes": 122,
+      "result": "{\"ok\":true}"
+    },
+    "finalEnvelope": "<正文>林舟在灯下翻开账册。</正文><短期记忆>翻开账册。</短期记忆><变量规划>[]</变量规划>",
+    "rawAuthorComment": true,
+    "writing": {
+      "source": "preset",
+      "id": "meowssiah",
+      "version": "3.0-Preview-01.301-3d76d24b5bb83f058372d1b55d2d51367182ced3748595c6f76ede5b69192a0b",
+      "configurationVersion": 4,
+      "configuration": "9f407761d8557b59f52366a43ef9701cf178110829d9d4d4c9ca8edbb55be0ad"
+    },
+    "noteAfterSave": null,
+    "candidateRevisionChange": 0,
+    "committedTurnChange": 1,
+    "committedRevisionChange": 1
+  }
+]

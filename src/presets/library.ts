@@ -1,3 +1,5 @@
+import { oracleDefinition, oracleId } from './meowssiah/definition';
+import { checkOracle, oracleEdits } from './meowssiah/config';
 import { definition as prototype, prototypeRequested, readPrototype } from './spreset/definition';
 import { peintureWritingVariables } from './peintureSettings';
 import { parsePresetTemplate } from './macros';
@@ -29,6 +31,8 @@ const registry = new Map<string, PresetRegistration>([
   ],
   [peinture1124.id, { definition: peinture1124, scriptInputs: peintureWritingVariables, readsPresetVariables: false,
     read: async () => (await import('./resources/peinture-1124.json?raw')).default }],
+  [oracleId, { definition: oracleDefinition, readsPresetVariables: false,
+    read: async () => (await import('./meowssiah/literature.json?raw')).default }],
 ]);
 export const builtInPresets = [...registry.values()].map((item) => item.definition);
 function registrationFor(id: string): PresetRegistration<PresetDefinition> | undefined {
@@ -92,6 +96,7 @@ function configurationText(loaded: LoadedPreset, preset: NonNullable<PresetSelec
     return variables === null ? [] : [{ id: script.id, module: script.module, content: script.content, variables }];
   });
   return canonicalJson({ entries, scripts,
+    ...(preset.definition.id === oracleId && { sampling: loaded.sampling }),
     variables: registration.readsPresetVariables === false ? undefined : preset.overrides?.variables ?? {} });
 }
 
@@ -136,9 +141,12 @@ export function captureAssistantSelection(): AssistantSelection {
 export async function resolveStoryPreset(selected: NonNullable<PresetSelection>) {
   const item = registrationFor(selected.definition.id);
   if (!item) throw new Error('所选内置预设不存在');
-  if (import.meta.env.DEV && item.definition.id === prototype.id && item.definition.version !== selected.definition.version)
-    throw new Error('实验预设版本不匹配');
-  return loadPreset(await item.read(), item.definition, selected.overrides);
+  if ((item.definition.id === oracleId || import.meta.env.DEV && item.definition.id === prototype.id) && item.definition.version !== selected.definition.version)
+    throw new Error('文学预设版本不匹配');
+  const pack = loadPreset(await item.read(), item.definition, selected.definition.id === oracleId && selected.overrides
+    ? oracleEdits(selected.overrides) : selected.overrides);
+  if (selected.definition.id === oracleId) checkOracle(pack);
+  return pack;
 }
 
 // Only the audited module text is shared. The standalone host has no literary entries,
