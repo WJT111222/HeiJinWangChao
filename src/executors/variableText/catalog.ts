@@ -8,7 +8,7 @@ import { OpeningInitialStateSchema } from '../../domain/openingInitialization';
 import { ActorRefSchema, GameTimeSchema, MoneySchema, TextSchema } from '../../domain/common';
 import { OrdinaryNpcCreationSchema, SpecialNpcCreationSchema } from '../../domain/npc/schema';
 import { GangOrgSchema, GovernmentOrgSchema, CivilOrgSchema, BusinessOrgSchema, OrganizationChangesSchema, FinancialBasisSchema, organizationChangeFields } from '../../domain/organizations/schema';
-import { AccountSchema, IncomeRecordSchema, DebtRecordSchema, VehicleAssetSchema } from '../../domain/economy/schema';
+import { AccountSchema, IncomeRecordSchema, DebtRecordSchema, OtherAssetSchema, PropertyAssetSchema, VehicleAssetSchema } from '../../domain/economy/schema';
 import { OwnedItemInputSchema } from '../../domain/items/schema';
 import { itemDetailFields, itemCategoryGroup } from '../../domain/items/details';
 import { EquipmentSchema } from '../../domain/protagonist/schema';
@@ -26,6 +26,15 @@ const creationOmit = {id:true,departments:true,members:true,protagonistKnown:tru
 const factionDisplay = z.strictObject({action:z.enum(['bind','update','unbind']),position:TextSchema.optional(),bondText:TextSchema.optional(),departmentId:z.string().nullable().optional()});
 const npcChanges = variableCommandSchemas[1].shape.changes.shape;
 const heroChanges = variableCommandSchemas[0].shape.changes.shape;
+// 直接登记资产与对应购买命令里的资产值结构完全相同；目录只写一次完整结构，这里给出指向说明，控制主角与现场的目录字数。
+const acquiredProperty = PropertyAssetSchema.omit({id:true}), acquiredVehicle = VehicleAssetSchema.omit({id:true}), acquiredOther = OtherAssetSchema.omit({id:true});
+const acquiredAssetSchemas = new Map<z.ZodType, string>([
+  [acquiredProperty, 'economy.properties[id].purchase 的 property'],
+  [acquiredVehicle, 'economy.vehicles[id].purchase 的 vehicle'],
+  [acquiredOther, 'economy.otherAssets[id].purchase 的 asset'],
+]);
+const acquiredAssetSchema = (source: string) => ({ $schema: 'http://json-schema.org/draft-07/schema#', type: 'object',
+  description: `结构与 ${source} 完全相同（完整资产去掉 id）；原本持有或无偿得到，不扣款、不加余额。` });
 interface Entry { operation:VariableOperation; path:string; commandType:DomainCommand['type']; value:z.ZodType }
 const slotFields = ['topItemId','bottomItemId','shoesItemId','primaryWeaponItemId','secondaryWeaponItemId','currentVehicleAssetId'];
 const entries:Entry[] = [
@@ -79,6 +88,11 @@ const entries:Entry[] = [
   ...(['conditionText','locationId','description','referenceValue','itemDetails','category','questItem'] as const).map((field):Entry=>({operation:'set',path:`items[id].${field}`,commandType:'UpdateItem',value:variableCommandSchemas[6].shape.changes.shape[field].unwrap()})),
   {operation:'set',path:'protagonist.currentWear',commandType:'SetEquipment',value:EquipmentSchema},
   {operation:'set',path:'economy.vehicles[id].purchase',commandType:'PurchaseVehicle',value:z.strictObject({account:AccountSchema,price:positive,vehicle:VehicleAssetSchema.omit({id:true})})},
+  {operation:'set',path:'economy.properties[id].purchase',commandType:'PurchaseProperty',value:z.strictObject({account:AccountSchema,price:positive,property:PropertyAssetSchema.omit({id:true})})},
+  {operation:'set',path:'economy.otherAssets[id].purchase',commandType:'PurchaseOtherAsset',value:z.strictObject({account:AccountSchema,price:positive,asset:OtherAssetSchema.omit({id:true})})},
+  {operation:'set',path:'economy.properties[id]',commandType:'AcquireAsset',value:acquiredProperty},
+  {operation:'set',path:'economy.vehicles[id]',commandType:'AcquireAsset',value:acquiredVehicle},
+  {operation:'set',path:'economy.otherAssets[id]',commandType:'AcquireAsset',value:acquiredOther},
 ];
 // The nine operations share IDs, timestamps and reasons. Keep the wire schema
 // resolvable while sending these definitions only once per catalog.
@@ -96,7 +110,7 @@ export function textVariableCatalog(mode: 'opening' | 'regular' = 'regular', pha
   return { protocol:'VARIABLE_TEXT_V1', currencyUnit:'CNY_FEN_INTEGER', limits:variableTextLimits,
     ...(phase !== 'entities' ? { organizationUpdateFields: organizationChangeFields,
     itemDetailsGuide: { categoryGroups: itemCategoryGroup, suggestedStringFields: itemDetailFields } } : {}),
-    entries:activeEntries.map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...(value === HaremChangesSchema ? haremValueSchema : z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'})),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
+    entries:activeEntries.map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...(value === HaremChangesSchema ? haremValueSchema : acquiredAssetSchemas.has(value) ? acquiredAssetSchema(acquiredAssetSchemas.get(value)!) : z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'})),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
     usageExamples: {
       ...(phase !== 'scene' ? {
       addressing: 'set npc[example-npc].addressing = {"npcToPlayer":"老大"}；根据本回合剧情更新适用方向。playerToNpc 是主角称呼该人物，npcToPlayer 是该人物称呼主角。省略的方向保持原值。',
@@ -117,7 +131,7 @@ export function textVariableCatalog(mode: 'opening' | 'regular' = 'regular', pha
       ...(phase !== 'scene' ? ['内联NPC初始记忆保持空；用push记忆路径新增，由程序填充当前回合、人物引用和游戏时间。knownInformation同时记录一条个人记忆。'] : []),
       ...(phase !== 'scene' ? ['所有普通/特殊NPC统一push npc[id].memories；不选择记忆层，不因special强制增加条目，无值得保存的新经历时可不写。knownInformation仍是知晓状态入口，push会同时建立唯一原始记忆，同一事实不要再重复push memories。两入口使用{text,knowledgeKind,knowledgeSource,visibility}四项。存档中的source/learnedAt只读，不是命令格式；不填id/sourceTurnIds/createdAtGameTime/affectedEntityRefs。亲历、转述和推测由模型区分，不由程序猜测补全。'] : []),
       ...(phase !== 'entities' ? ['组织state仅合并白名单当前字段，id/kind及关系历史只读；按组织类型使用organizationUpdateFields。金额仅gang.funds、business.assetsEstimate/liquidityEstimate，需同值内financialBasis={at,note}且不晚于当前时钟；不改变主角余额。leadership公开姓名或null，关联须稳定NPC ID；relations每目标唯一、可空、可单向。无变化不输出更新，不自动创建NPC。'] : []),
-      ...(phase !== 'entities' ? ['只能更新目录内字段。旧资产无交易登记、历史债务无到账登记、房产购买尚无原生命令，写入<说明>，不伪造交易。events[id].sceneState仅更新已存在现场事件的实际状态和结果；所选Story的eventNarration.enter可明确授权该事件实际介入，mention无此权限，提前结案用实际at且保留fixedEndAt，程序保留旧规划并填写来源；set events[id]可记录当场新事件；后台排期、延期、承接及清理由场外阶段处理。tasks仍须截止时间或非空完成条件，不套用事件新规。'] : []),
+      ...(phase !== 'entities' ? ['只能更新目录内字段。历史债务无到账登记、已登记资产的出售与估值变动尚无原生命令，写入<说明>，不伪造交易。events[id].sceneState仅更新已存在现场事件的实际状态和结果；所选Story的eventNarration.enter可明确授权该事件实际介入，mention无此权限，提前结案用实际at且保留fixedEndAt，程序保留旧规划并填写来源；set events[id]可记录当场新事件；后台排期、延期、承接及清理由场外阶段处理。tasks仍须截止时间或非空完成条件，不套用事件新规。'] : []),
       ...(phase !== 'entities' && mode === 'opening' ? ['opening.initialState仅供带openingInitializationPending=true的新游戏开局，一批最多一条set。填写缺失weatherText/environmentText、原有cash/onlineBalance及expectedIncomes，不覆盖明确数据。expectedIncomes内每条需稳定id、source、整数分amount、status=expected、account、scheduleText，可选expectedAt不早于当前候选游戏时间；不是到账，不填receivedAt/sourceTurnId，不增加余额。普通回合及无标记旧档禁用。先初始化再处理真实交易。'] : []),
       '数组set替换、push追加一个元素、delete按当前索引删除；同一数组多个delete按索引从大到小输出，程序按文本顺序执行，不静默重排。NPC整体/原始记忆、账目记录、地点和组织整体删除没有安全领域命令，明确拒绝；不采用任意深合并。',
       ...(phase !== 'entities' ? ['开局程序统一注入Story时间，不重复计时。普通回合set worldClock为合法ISO时间且不倒退；需要推进时明确输出set worldClock，程序会将时钟优先应用，互动、记忆和实际到账使用本批最终时钟；其他命令保持文本顺序。lastInteractionAt不晚于执行时钟且不早于本人已有互动时间；receivedAt不晚于执行时钟。'] : []),

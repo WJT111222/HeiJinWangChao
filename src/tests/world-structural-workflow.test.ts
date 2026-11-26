@@ -11,7 +11,7 @@ import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 
 import { rerollStory, TurnDraftSchema } from '../domain/drafts';
-import { submission } from './fixtures/turn';
+import { saveFixtureStory, submission } from './fixtures/turn';
 import { stageResponses } from '../services/ai/stageResponses';
 import { parseWorld } from '../services/validation/aiOutputs';
 
@@ -22,7 +22,7 @@ async function setup() {
  const repo=await SaveRepository.open(name,factory);resources.push({dispose:()=>repo.close()});
  await repo.create(a.state);
  const initial=createTurnDraft(a.state.saveId,0,a.draft.turnId,'opening','');
- await repo.saveDraft(initial,null);await repo.saveDraft(rerollStory(initial,a.draft.story!),0);
+ await repo.saveDraft(initial,null);await saveFixtureStory(repo,rerollStory(initial,a.draft.story!),0);
  const draft=await persistSceneFixture(repo,a.draft);
  const values=new Map<string,string>(),store={getItem:(k:string)=>values.get(k)??null,setItem:(k:string,v:string)=>{values.set(k,v);},removeItem:(k:string)=>{values.delete(k);}};
  const config=defaultAiConfig(),channel={...newChannel(),defaultModel:'mock-world'};
@@ -78,7 +78,7 @@ describe('合成展览筹备样例经真实Runtime、候选、Commit与重载',(
  it('另一标签页改变Story后，旧World和提交不得覆盖新草稿',async()=>{
   const a=await setup(),candidate=await a.stage.generate({...a.options,draft:a.draft});
   const other=await SaveRepository.open(a.name,a.factory);resources.push({dispose:()=>other.close()});
-  const next=await other.saveDraft(rerollStory(candidate,{...candidate.story!,summary:'新的正文版本'}),candidate.draftRevision);
+  const next=await saveFixtureStory(other,rerollStory(candidate,{...candidate.story!,summary:'新的正文版本'}),candidate.draftRevision);
   await expect(a.repo.commitTurn(submission(candidate,''))).rejects.toMatchObject({code:'DRAFT_CONFLICT'});
   await expect(a.stage.generate({...a.options,draft:candidate})).rejects.toMatchObject({code:'DRAFT_CONFLICT'});
   expect(await other.loadDraft(a.state.saveId)).toEqual(next);expect((await other.load(a.state.saveId)).revision).toBe(0);expect(a.transport).toHaveBeenCalledTimes(1);

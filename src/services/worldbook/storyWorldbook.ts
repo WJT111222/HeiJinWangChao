@@ -1,3 +1,7 @@
+import { logicalMessageCount } from '../../domain/worldbook/timedEffects';
+import type { MainWorldview } from '../../domain/worldbook/mainWorldbook';
+import type { ComposeInput } from '../../prompts/context';
+import type { GenerationType } from '../../presets/tavern/events';
 import { EMPTY_TIMED_STATE } from '../../domain/worldbook/timedEffects';
 import type { ActivatedEntry, InjectionPlan, TriggerMode, TriggerResult } from '../../domain/worldbook/trigger';
 import { clampTimeout, type BookRef } from '../../domain/worldbook/triggerRequest';
@@ -10,8 +14,8 @@ import { WorldbookTriggerHost, type MainThreadFallback, type TriggerOutcome } fr
  * 正文（Story）接入世界书的唯一入口（简化版，接口说明见 docs/WORLDBOOK_STORY_INTERFACE.md）。
  *
  * - 读取全局启用的书（对所有存档生效），交给触发 Worker 扫描，返回插入计划。
- * - **从不抛出、从不阻塞正文**：除 status 'ok' 以外的任何结果，调用方都应照常生成正文、不带玩家世界书。
- * - 不读写游戏主库，不读写存档；两本内置基础世界书不经过这里，照旧由原有提示词装配。
+ * - 扫描失败时跳过补充资料，已捕获的主世界书常驻资料仍随请求发出。
+ * - 两本内置书由提示词选择器按本轮快照装配。
  * - 计时效果（Sticky / Cooldown）简化版不跨回合保存：每次都以空计时状态运行；Delay 照常按 messageCount 判断。
  */
 /**
@@ -21,6 +25,7 @@ import { WorldbookTriggerHost, type MainThreadFallback, type TriggerOutcome } fr
 export const STORY_WORLDBOOK_CONNECTED: boolean = true;
 
 export interface StoryWorldbookInput {
+  mainBooks?: MainWorldview['books'];
   /** 可扫描的逻辑消息，最新的在前（玩家行动、已结算正文；不含隐藏状态）。 */
   messages: readonly string[];
   /** 模型上下文窗口（Token）。 */
@@ -34,10 +39,24 @@ export interface StoryWorldbookInput {
   /** 概率类条目的随机种子，建议“存档 ID + 回合 ID + 第几次尝试”，保证同一次尝试结果可复现。 */
   seed: string;
 }
-/**
- * signal：直接传 Story 请求的 AbortSignal。
- * timeoutMs：整个调用的总预算（默认 5000，范围 200–30000），从调用开始计时，包含打开书库、读取启用列表、排队与扫描。
- */
+/** 正式请求和离线预览共用扫描上下文、种子和回合类型。 */
+export function storyTriggerInput(captured: ComposeInput, type: GenerationType): StoryWorldbookInput {
+  const { state, draft, settings } = captured;
+  const failedAttempts = draft?.failures.filter(failure => failure.stage === 'story') ?? [];
+  const retry = draft?.stageStatus.story === 'failed' || failedAttempts.some(f => f.storyRevision === draft?.storyRevision);
+  return {
+    mainBooks: captured.worldview?.books,
+    messages: [draft?.userInput ?? captured.userInput,
+      ...state.journal.slice(-Math.min(settings.memory.immediateWindowSize, 10)).reverse().map(entry => entry.story.narrative)],
+    // Routes currently have no verified model context window or input allowance.
+    contextTokens: 32_000,
+    storyRemainingTokens: 4_096,
+    trigger: type === 'continue' ? type : retry ? 'normal' : type,
+    messageCount: logicalMessageCount(state.turnNumber),
+    seed: `${state.saveId}:${draft?.turnId ?? state.turnNumber}:${(draft?.storyRevision ?? 0) + failedAttempts.length + 1}`,
+  };
+}
+
 export interface StoryWorldbookRun { signal?: AbortSignal; timeoutMs?: number }
 
 export type StoryWorldbookOutcome =
@@ -158,6 +177,11 @@ export async function prepareStoryWorldbook(
       if (typeof second === 'string') return skipped(second);
       if (!second.value.ok) return skipped(second.value.code);
       books = second.value.books;
+      if (input.mainBooks) {
+        const mainIds = new Set(input.mainBooks.map(book => book.bookId));
+        books = [...books.filter(({ref}) => !ref.keywordsOnly && !mainIds.has(ref.bookId)),
+          ...input.mainBooks.map(({ bookId, versionId, contentHash, title }) => ({ title, ref: { bookId, versionId, contentHash, keywordsOnly: true } }))];
+      }
     } finally { opened.library.close(); }
     if (books.length === 0) return { status: 'off' };
     const outcome = await (deps.host ?? defaultHost()).run({

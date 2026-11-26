@@ -19,7 +19,7 @@ import { runtimeLogEvent } from '../ui/game/runtimeLog';
 import { composePrompt } from '../prompts/composer';
 import { selectVariableDomains } from '../prompts/variableDomains';
 import { variableTextEnvelope } from './fixtures/variableReply';
-import { submission } from './fixtures/turn';
+import { saveFixtureStory, submission } from './fixtures/turn';
 
 const startAt = '2026-10-19T08:00:00+08:00';
 const endAt = '2026-10-19T08:45:00+08:00';
@@ -51,7 +51,7 @@ async function fixture(age = '25', identity = '正式资料确认：女性，社
   // Use the exact creation -> Repository -> opening draft path; no handcrafted NPC or save patch.
   const state = await createProfileSave(repo, form, settings);
   const initial = (await repo.loadDraft(state.saveId))!;
-  const draft = await repo.saveDraft(rerollStory(initial, {
+  const draft = await saveFixtureStory(repo,rerollStory(initial, {
     turnKind: 'opening', narrative: '主角与同伴在早餐店商议今天的工作。', summary: '两人确认今日安排。',
     variableGuide: [{ group: 'time', subjectHint: 'time:opening', observedFact: JSON.stringify({ startAt, endAt }) }],
   }), initial.draftRevision);

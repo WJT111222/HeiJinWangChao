@@ -11,7 +11,7 @@ import {
   parseVariables,
   parseWorld,
 } from '../services/validation/aiOutputs';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import type { Protocol } from '../services/ai/configuration';
@@ -533,9 +533,10 @@ describe('真实命令目录、解析与安全候选验证', () => {
     expect(commandCatalog('variables').commandTypes).toEqual(
       DomainCommandSchema.options.map((option) => option.shape.type.value).filter((type) => !['RetireNpc','DeleteEvent','RecordHistory','ApplyHaremChanges','ApplyHaremBackground','RecordPhoneMessage','SchedulePhoneMessage'].includes(type)),
     );
-    expect(commandCatalog('variables').commandTypes).toHaveLength(28);
+    expect(commandCatalog('variables').commandTypes).toHaveLength(31);
     expect(commandCatalog('world').commandTypes).not.toContain('InitializeOpeningState');
-    expect(commandCatalog('world').commandTypes).not.toContain('PurchaseItem');
+    for (const type of ['PurchaseItem', 'PurchaseProperty', 'PurchaseOtherAsset', 'AcquireAsset'])
+      expect(commandCatalog('world').commandTypes).not.toContain(type);
     const a = input('variables');
     for (const value of [
       {
@@ -773,7 +774,7 @@ describe('真实命令目录、解析与安全候选验证', () => {
       const repo = await SaveRepository.open('m3-read-only', new IDBFactory());
       await repo.create(a.state);
       try {
-        const storyResult = await runStageRequest(
+        const storyResult = await requestFixtureStage(
           { ...a, stage: 'story', cotAllowed: true },
           config,
           vault,
@@ -787,14 +788,14 @@ describe('真实命令目录、解析与安全候选验证', () => {
           createTurnDraft(a.state.saveId, a.state.revision, 'new-turn', a.mode, '行动'),
           StorySchema.parse(storyResult.result),
         );
-        const variables = await runStageRequest(
+        const variables = await requestFixtureStage(
           { ...a, stage: 'variables', draft, domains: ['protagonist'] },
           config,
           vault,
           {},
           client,
         );
-        const world = await runStageRequest(
+        const world = await requestFixtureStage(
           { ...a, stage: 'world', draft, domains: ['npc_ordinary'] },
           config,
           vault,

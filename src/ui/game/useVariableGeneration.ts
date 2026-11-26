@@ -19,6 +19,7 @@ export function useVariableGeneration(
   onSaved: (draft: TurnDraft) => void,
   onRuntimeEvent?: RuntimeLogReporter,
   phaseName: 'variables' | 'entities' = 'variables',
+  expectedInstance?: string | null,
 ) {
   const [phase, setPhase] = useState<'generating' | 'saving' | 'retrying'>();
   const [retry, setRetry] = useState<RetryNotice>();
@@ -75,7 +76,7 @@ export function useVariableGeneration(
               setPhase('retrying');
             },
             run: () => stage.generate({
-              draft: current,
+              draft: current, expectedInstance,
               settings: frozen.settings,
               config: frozen.config,
               vault: frozen.vault,

@@ -398,7 +398,7 @@ describe('小剧场存储和主线结算', () => {
     expect((await repo.theaters.list(other.saveId)).items).toEqual([]);
   });
 
-  it('同一份三段草稿、图片和小剧场通过 v3 恢复；同身份 v2 覆盖保留图片，草稿只结算一次', async () => {
+  it('同一份三段草稿、图片和小剧场通过 v3 恢复；同身份 v2 覆盖保留图片；跨库恢复的草稿须按当前世界观重新生成正文才能结算', async () => {
     const { opened } = await open();
     const episode = await saveBody(opened);
     const draft = await completeDraft(repo, { variables: await elapsedVariables(repo, '馆内停留一分钟', 60) });
@@ -425,12 +425,10 @@ describe('小剧场存储和主线结算', () => {
         expect(exported.images?.files.map(file => file.data)).toEqual([png.toString('base64')]);
         expect((await copy.theaters.open(state.saveId, episode.record.id)).record).toEqual(episode.record);
       }
+      // 回合世界观快照只属于原设备的书库（#249）；导入的草稿没有来源记录，不能直接结算，正式存档保持原样。
       const restored = await copy.loadDraft(state.saveId);
-      const input = submission(restored!);
-      const committed = await copy.commitTurn(input);
-      expect(committed.state.journal.map(entry => entry.turnId)).toEqual([draft.turnId]);
-      expect((await copy.commitTurn(input)).replayed).toBe(true);
-      expect(await copy.load(state.saveId)).toEqual(committed.state);
+      await expect(copy.commitTurn(submission(restored!))).rejects.toMatchObject({ details: { fieldPath: 'worldbook.unbound' } });
+      expect(await copy.load(state.saveId)).toEqual(state);
     } finally { copy.close(); }
   });
 

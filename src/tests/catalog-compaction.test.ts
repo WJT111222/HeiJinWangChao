@@ -56,10 +56,12 @@ describe.each(['world', 'variables'] as const)('%s 命令目录只合并重复�
     for (const node of times) { expect(node).not.toHaveProperty('pattern'); expect(String(node.description)).toMatch(/2026-10-18/); }
     expect(JSON.stringify(commandCatalog(stage))).not.toContain('[2468][048]');
   });
-  it('体积上限：合并后不超过 46000 字符，且比内联目录至少少 40%', () => {
+  it('体积上限：合并后不超过上限（World 46000、Variables 50000 字符），且比内联目录至少少 40%', () => {
     // 加字段使目录超限时，请先确认新结构是否能复用公共定义，而不是直接放宽上限。
+    // 正式请求只发送 World 的 JSON 目录；人物与实体、主角与现场两段使用文本目录，这份 Variables JSON 目录不发给模型。
+    // 资产登记命令（#253）合入后上限调到 50000，World 上限不变。
     const compact = size(commandCatalog(stage)), inline = size(inlineCommandCatalog(stage));
-    expect(compact).toBeLessThan(46000);
+    expect(compact).toBeLessThan(stage === 'world' ? 46000 : 50000);
     expect(compact / inline).toBeLessThan(0.6);
   });
 });

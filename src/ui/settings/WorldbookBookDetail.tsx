@@ -42,6 +42,7 @@ export interface BookDetailProps {
   busy: boolean;
   /** 别的标签页已保存了这本书的新版本，而这里还有未保存的修改：不能保存，只能放弃后读取最新版本。 */
   stale?: boolean;
+  deleted?: boolean;
   /** 保存暂存的修改；返回是否成功（失败时由外层显示原因）。 */
   onSave: (change: BookChange) => Promise<boolean>;
   onToggleBook: (enabled: boolean) => void;
@@ -52,13 +53,13 @@ export interface BookDetailProps {
 }
 
 /** 暂存的修改：书名、改条目、新增条目（界面上排在最前，保存时追加到末尾）、删除条目。 */
-interface Draft { title?: string; entries: Record<string, EntryEdit>; added: Array<{ entryId: string } & EntryEdit>; removed: string[] }
+interface Draft { purpose?: BookChange['purpose']; title?: string; entries: Record<string, EntryEdit>; added: Array<{ entryId: string } & EntryEdit>; removed: string[] }
 const EMPTY_DRAFT: Draft = { entries: {}, added: [], removed: [] };
 interface Row { entry: WorldbookEntry; original: WorldbookEntry | null; index: number; removed: boolean }
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const newEntryId = () => `local-${crypto.randomUUID()}`;
 
-export function WorldbookBookDetail({ item, release, busy, stale = false, onSave, onToggleBook, onDelete, onBack, onDirtyChange }: BookDetailProps) {
+export function WorldbookBookDetail({ item, release, busy, stale = false, deleted = false, onSave, onToggleBook, onDelete, onBack, onDirtyChange }: BookDetailProps) {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
@@ -70,7 +71,7 @@ export function WorldbookBookDetail({ item, release, busy, stale = false, onSave
 
   // 换书（或保存后版本变了）时清空暂存。
   useEffect(() => { setDraft(EMPTY_DRAFT); setShown(PAGE); setOpen(null); setRenaming(false); setConfirmDelete(undefined); setExportNote(null); }, [release.bookId, release.versionId]);
-  const dirty = (draft.title !== undefined ? 1 : 0) + Object.keys(draft.entries).length + draft.added.length + draft.removed.length;
+  const dirty = Number(!!draft.purpose) + (draft.title !== undefined ? 1 : 0) + Object.keys(draft.entries).length + draft.added.length + draft.removed.length;
   useEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
   useEffect(() => () => onDirtyChange(0), [onDirtyChange]);
 
@@ -113,6 +114,7 @@ export function WorldbookBookDetail({ item, release, busy, stale = false, onSave
   }
   function save() {
     const change: BookChange = {};
+    if (draft.purpose) change.purpose = draft.purpose;
     if (draft.title !== undefined) change.title = draft.title;
     if (Object.keys(draft.entries).length) change.entries = draft.entries;
     // 界面上新条目排在最前（最新的在上），保存时按创建先后追加。
@@ -173,17 +175,22 @@ export function WorldbookBookDetail({ item, release, busy, stale = false, onSave
           <small>启用 {counts.enabled} / 共 {counts.total} 条 · 常驻 {counts.constant} 条{local}</small>
         </div>
         <label className="toggle">
-          <input type="checkbox" checked={item.enabled} disabled={busy} aria-label={`启用整本「${release.metadata.title}」`} onChange={(e) => onToggleBook(e.target.checked)} />
+          <input type="checkbox" checked={item.enabled && !deleted} disabled={busy || deleted} aria-label={`启用整本「${release.metadata.title}」`} onChange={(e) => onToggleBook(e.target.checked)} />
           <span className="wb-state">{item.enabled ? '整本已启用' : '整本未启用'}</span>
         </label>
       </div>
+      <label className="wb-purpose">书籍用途 <select value={draft.purpose ?? release.metadata.purpose ?? 'ordinary'} disabled={busy || stale}
+        onChange={e => { const purpose = e.target.value === 'main' ? 'main' : 'ordinary';
+          setDraft(current => ({ ...current, purpose: purpose === (release.metadata.purpose ?? 'ordinary') ? undefined : purpose })); }}>
+        <option value="ordinary">普通世界书</option><option value="main">玩家主世界书</option>
+      </select></label>
       {release.metadata.description && <p className="wb-desc muted">{release.metadata.description}</p>}
       <div className="wb-detail-actions">
         <button disabled={busy || dirty > 0 || stale} onClick={() => exportAs('sillytavern')} title={dirty ? '请先保存或放弃修改' : undefined}>导出酒馆格式</button>
         <button disabled={busy || dirty > 0 || stale} onClick={() => exportAs('heijin')} title={dirty ? '请先保存或放弃修改' : undefined}>导出王朝格式</button>
         {confirmDelete ? (
           <span className="wb-confirm">
-            <button className="danger" disabled={busy} onClick={() => onDelete(confirmDelete)}>确认删除整本</button>
+            <button className="danger" disabled={busy || stale} onClick={() => onDelete(confirmDelete)}>确认删除整本</button>
             <button disabled={busy} onClick={() => setConfirmDelete(undefined)}>取消</button>
           </span>
         ) : <button disabled={busy || stale} onClick={() => setConfirmDelete(item)}>删除整本</button>}
@@ -192,8 +199,8 @@ export function WorldbookBookDetail({ item, release, busy, stale = false, onSave
 
       {dirty > 0 && (stale ? (
         <div className="wb-savebar" role="alert" data-conflict>
-          <span>这本书已在其他标签页保存过新版本。这里的 {dirty} 项修改不能再保存（不会覆盖对方）；需要的内容请先记下。</span>
-          <button className="primary" disabled={busy} onClick={() => { setDraft(EMPTY_DRAFT); setOpen(null); }}>放弃我的修改，读取最新版本</button>
+          <span>{deleted ? '这本书已在其他标签页删除。' : '这本书已在其他标签页保存过新版本。'}这里的 {dirty} 项修改不能再保存（不会覆盖对方）；需要的内容请先记下。</span>
+          <button className="primary" disabled={busy} onClick={() => { setDraft(EMPTY_DRAFT); setOpen(null); }}>{deleted ? '放弃修改并退出详情' : '放弃我的修改，读取最新版本'}</button>
         </div>
       ) : (
         <div className="wb-savebar" role="status">
@@ -349,7 +356,7 @@ function TriggerPreview({ item, release, dirty }: { item: ShelfBook; release: Wo
     const current = new AbortController();
     controller.current = current;
     setRunning(true);
-    const result = await previewWorldbook([{ bookId: release.bookId, versionId: release.versionId, contentHash: release.contentHash }], text, { signal: current.signal });
+    const result = await previewWorldbook([{ bookId: release.bookId, versionId: release.versionId, contentHash: release.contentHash, keywordsOnly: release.metadata.purpose === 'main' }], text, { signal: current.signal });
     if (controller.current !== current) return;
     controller.current = null;
     setOutcome(result); setRunning(false);
@@ -367,6 +374,7 @@ function TriggerPreview({ item, release, dirty }: { item: ShelfBook; release: Wo
       <h4>触发预览</h4>
       <p className="field-hint">
         {'输入一段剧情或玩家行动，看这本书会带入哪些条目。'}
+        {release.metadata.purpose === 'main' && '启用的常驻条目直接进入三阶段。这里预览关键词触发结果。'}
         {dirty ? '预览按已保存的内容运行，未保存的修改不计入。' : ''}
         {item.enabled ? '' : '（这本书目前未启用，预览不受影响。）'}
       </p>

@@ -3,7 +3,7 @@ import { applyHarem, applyHaremBackground } from './harem/apply';
 import type { SceneIntervention } from './events/narration';
 import { validateStageWrite } from './events/stages';
 import { z } from 'zod';
-import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, VehicleAssetSchema } from './economy/schema';
+import { AccountSchema, DebtRecordSchema, IncomeRecordSchema, OtherAssetSchema, PropertyAssetSchema, VehicleAssetSchema } from './economy/schema';
 import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, MoneySchema, TextSchema, GameTimeSchema, requireData } from './common';
 import { EquipmentSchema } from './protagonist/schema';
 import { OwnedItemInputSchema } from './items/schema';
@@ -28,6 +28,10 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('InitializeOpeningState'), changes: OpeningInitialStateSchema }),
   z.strictObject({ ...base, type: z.literal('PurchaseItem'), account: AccountSchema, price: positiveMoney, item: OwnedItemInputSchema }),
   z.strictObject({ ...base, type: z.literal('PurchaseVehicle'), account: AccountSchema, price: positiveMoney, vehicle: VehicleAssetSchema }),
+  z.strictObject({ ...base, type: z.literal('PurchaseProperty'), account: AccountSchema, price: positiveMoney, property: PropertyAssetSchema }),
+  z.strictObject({ ...base, type: z.literal('PurchaseOtherAsset'), account: AccountSchema, price: positiveMoney, asset: OtherAssetSchema }),
+  // 原本持有、继承、受赠等不经本回合付款的资产登记；不改变余额。
+  z.strictObject({ ...base, type: z.literal('AcquireAsset'), asset: z.discriminatedUnion('kind', [PropertyAssetSchema, VehicleAssetSchema, OtherAssetSchema]) }),
   z.strictObject({ ...base, type: z.literal('TransferFunds'), from: AccountSchema, to: AccountSchema, amount: positiveMoney }),
   z.strictObject({ ...base, type: z.literal('ReceiveIncome'), income: IncomeRecordSchema.extend({ amount: positiveMoney, status: z.literal('received'), receivedAt: GameTimeSchema }) }),
   z.strictObject({ ...base, type: z.literal('Borrow'), account: AccountSchema, debt: DebtRecordSchema.extend({ principal: positiveMoney, outstanding: positiveMoney, status: z.literal('active') }) }),
@@ -81,6 +85,14 @@ function balance(s: GameState, account: 'cash' | 'onlineBalance', change: number
 function ownedByProtagonist(s: GameState, ref: z.infer<typeof ActorRefSchema> | undefined) {
   requireData(ref?.kind === 'protagonist' && ref.id === s.protagonist.id, 'OWNERSHIP', '购买对象必须归主角持有');
 }
+/** 本批新登记的房产关联了房贷时，由程序把房产补进该房贷的抵押物；不因模型漏写而拒绝。只处理本批新登记的房产。 */
+function linkMortgages(s: GameState, commands: readonly DomainCommand[]) {
+  for (const c of commands) {
+    const property = c.type === 'PurchaseProperty' ? c.property : c.type === 'AcquireAsset' && c.asset.kind === 'property' ? c.asset : undefined;
+    const debt = property?.mortgageDebtId ? s.economy.debts[property.mortgageDebtId] : undefined;
+    if (property && debt && !debt.collateralAssetIds.includes(property.id)) debt.collateralAssetIds.push(property.id);
+  }
+}
 function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedReceipts: ReadonlySet<string>, pendingSceneClock = false) {
   switch (c.type) {
     case 'ApplyHaremChanges': applyHarem(s,c,turnId,pendingSceneClock); break;
@@ -92,6 +104,18 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
     case 'PurchaseVehicle':
       newEntity(s, c.vehicle.id); ownedByProtagonist(s, c.vehicle.ownerRef);
       balance(s, c.account, -c.price); s.economy.vehicles[c.vehicle.id] = c.vehicle; break;
+    case 'PurchaseProperty':
+      newEntity(s, c.property.id); ownedByProtagonist(s, c.property.ownerRef);
+      balance(s, c.account, -c.price); s.economy.properties[c.property.id] = c.property; break;
+    case 'PurchaseOtherAsset':
+      newEntity(s, c.asset.id); ownedByProtagonist(s, c.asset.ownerRef);
+      balance(s, c.account, -c.price); s.economy.otherAssets[c.asset.id] = c.asset; break;
+    case 'AcquireAsset':
+      newEntity(s, c.asset.id); ownedByProtagonist(s, c.asset.ownerRef);
+      if (c.asset.kind === 'property') s.economy.properties[c.asset.id] = c.asset;
+      else if (c.asset.kind === 'vehicle') s.economy.vehicles[c.asset.id] = c.asset;
+      else s.economy.otherAssets[c.asset.id] = c.asset;
+      break;
     case 'TransferFunds':
       requireData(c.from !== c.to, 'SAME_ACCOUNT', '内部转账需要两个不同账户');
       balance(s, c.from, -c.amount); balance(s, c.to, c.amount); break;
@@ -300,6 +324,7 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
     }
     current.appliedCommands.push({ turnId, commandId: command.commandId, fingerprint: fingerprint(command) });
   }
+  linkMortgages(current, fresh);
   validateTaskTransitions(state, current, fresh.flatMap((c) => c.type === 'SaveTask' ? [c.task] : []));
   completeTaskEventLinks(state, current);
   maintainSceneTransition(state, current, fresh);

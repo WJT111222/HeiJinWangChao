@@ -806,10 +806,12 @@ it('开始请求后停用预设仍按发出时的归属保存；下一次主动�
 
 it('旧断点未确认或配置变化时零请求；确认后保存候选并标记旧片段来源未知', async () => {
   const fixture = setup();
+  // 旧断点本身在本机产生：失败记录随原流程世界观一起保存，续写沿用同一份世界观。
   const old = await repo.saveDraft({
     ...draft, draftRevision: draft.draftRevision + 1, stageStatus: {...draft.stageStatus,story:'failed'},
     storyPartial:{text:'<正文>站台上，电车逐渐靠近。',storyRevision:draft.storyRevision,continuations:0},
-  },draft.draftRevision);
+    failures:[...draft.failures,{stage:'story',attempt:1,storyRevision:draft.storyRevision,errorCode:'output_limit',retryable:false}],
+  },draft.draftRevision,undefined,draft,await repo.prepareWorldview(draft,false));
   const before = await repo.load(old.saveId);
   const transport = vi.fn<typeof fetch>();
   const stage = runner(transport);

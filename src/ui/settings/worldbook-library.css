@@ -1,4 +1,12 @@
 /* 玩家世界书（简化版）：左侧书列表，右侧书详情；手机上列表与详情二选一。只用设置页已有的颜色变量。 */
+.wb-official{display:grid;gap:.6rem}
+.wb-official h3,.worldbook-library>h3{margin:.2rem 0}
+.wb-official-book{display:grid;gap:.4rem;border:1px solid var(--line-2);border-radius:8px;padding:.7rem .9rem;min-width:0}
+.wb-official .wb-detail-head{justify-content:space-between}
+.wb-official-book strong{flex:1;min-width:0;overflow-wrap:anywhere}
+.wb-official-book summary{cursor:pointer}
+.wb-official-book pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:20rem;overflow:auto;font:inherit}
+.wb-purpose{display:flex;align-items:center;gap:.6rem}
 .worldbook-library{display:grid;gap:.8rem;min-width:0}
 .worldbook-library .wb-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem}
 .worldbook-library .wb-count{margin-left:auto;font-size:.78rem}

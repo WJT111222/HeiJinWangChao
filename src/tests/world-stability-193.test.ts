@@ -4,7 +4,7 @@ import { parseWorld } from '../services/validation/aiOutputs';
 import { AiClient } from '../services/ai/client';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { worldNormalizationNotes } from '../services/validation/worldSceneWrites';
 import { runtimeLogEvent } from '../ui/game/runtimeLog';
 import { defaultSettings } from '../ui/settings/model';
@@ -15,7 +15,7 @@ import { GameStateSchema } from '../domain/state';
 import { projectTurn } from '../domain/turnProjection';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
-import { submission } from './fixtures/turn';
+import { saveFixtureStory, submission } from './fixtures/turn';
 
 function echoFixture() {
   const a = stageContext();
@@ -53,7 +53,7 @@ it('正式 Repository 重验终态复述后的候选，只结算真实事件，�
   try {
     await repo.create(state);
     const blank=await repo.saveDraft(createTurnDraft(state.saveId,state.revision,draft.turnId,'opening','',draft.useVariableStage,draft.useWorldStage,draft.useEntityStage),null);
-    const story=await repo.saveDraft(rerollStory(blank,draft.story!),blank.draftRevision);
+    const story=await saveFixtureStory(repo,rerollStory(blank,draft.story!),blank.draftRevision);
     const variables=await repo.saveDraft({...draft,draftRevision:story.draftRevision+1},story.draftRevision);
     const result=parseWorld(JSON.stringify(response),state,variables);
     const prepared=await repo.saveDraft({...variables,draftRevision:variables.draftRevision+1,
@@ -143,7 +143,7 @@ it.each([undefined, 0, 0.35])('World 实际请求沿用路由渠道的 temperatu
   const storage = {getItem: () => 'mock-secret',setItem:()=>{},removeItem:()=>{}};
   const vault = new CredentialVault(storage,storage);
   const transport = vi.fn<typeof fetch>(async () => Response.json({choices:[{message:{content:JSON.stringify(worldResult())},finish_reason:'stop'}]}));
-  await runStageRequest({stage:'world',mode:'regular',state:worldState(),draft:worldDraft(),
+  await requestFixtureStage({stage:'world',mode:'regular',state:worldState(),draft:worldDraft(),
     userInput:'',settings:defaultSettings()},config,vault,{stream:false},new AiClient(transport));
   expect(transport).toHaveBeenCalledTimes(1);
   const body = JSON.parse(String(transport.mock.calls[0][1]?.body));

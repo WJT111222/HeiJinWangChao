@@ -33,6 +33,7 @@ export const MAIN_THREAD_FALLBACK_LIMITS = {
 } as const;
 
 export const BookRefSchema = z.strictObject({
+  keywordsOnly: z.boolean().optional(),
   bookId: IdentifierSchema,
   versionId: IdentifierSchema,
   contentHash: z.string().regex(/^[0-9a-f]{64}$/),

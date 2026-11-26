@@ -90,6 +90,7 @@ export const ImportNoticeSchema = z.strictObject({
 export type ImportNotice = z.infer<typeof ImportNoticeSchema>;
 
 export const WorldbookMetadataSchema = z.strictObject({
+  purpose: z.enum(['ordinary', 'main']).optional(),
   title: z.string().min(1).max(200),
   description: z.string().max(20_000).optional(),
   creator: z.string().max(200).optional(),
