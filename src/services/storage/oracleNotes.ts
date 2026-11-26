@@ -10,7 +10,7 @@ function recentPapers(history: readonly string[]) {
 }
 
 const Sheet = z.strictObject({
-  saveId: IdSchema, version: z.uuid(), note: Note.nullable(), history: z.array(Note.shape.text).max(historyLimit).transform(recentPapers),
+  saveId: IdSchema, version: z.uuid(), note: Note.nullable(), history: z.array(Note.shape.text).transform(recentPapers),
 });
 
 export async function readSheet(tx: IDBTransaction, saveId: string) {

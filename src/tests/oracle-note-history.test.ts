@@ -73,9 +73,14 @@ it('已有 V12 重复历史首次读取即去重，重新保存与清除保留�
       let view = await repo.readOracleNote('paper');
       expect(view).toMatchObject({ version, note, history: ['乙','甲\n乙','甲  乙'] });
       expect(await readStored()).toEqual(original);
+      const crowded = { ...original, history: [...original.history, '三', '四', '五', '六'] };
+      await transaction(db, [oracleStore], 'readwrite', tx => request(tx.objectStore(oracleStore).put(crowded)));
+      view = await repo.readOracleNote('paper');
+      expect(view).toMatchObject({ version, note, history: ['乙','甲\n乙','甲  乙','三','四','五'] });
+      expect(await readStored()).toEqual(crowded);
       view = await repo.writeOracleNote('paper', view, '  甲\n乙　', true);
       expect(view.note?.text).toBe('  甲\n乙　');
-      expect(view.history).toEqual(['甲\n乙','乙','甲  乙']);
+      expect(view.history).toEqual(['甲\n乙','乙','甲  乙','三','四','五']);
       expect(await readStored()).toMatchObject({ history: view.history, note: view.note });
       for (const text of ['三','四','五','六']) view = await repo.writeOracleNote('paper', view, text, true);
       view = await repo.clearOracleNote('paper', view, '  四　');
