@@ -1,31 +1,61 @@
 # SPreset 核心运行时原型（C2）
 
-## 联合复审整改
+## 联合复审整改与正式版合流
 
-**存储隔离已通过双端 Chromium 实测。工具终端完整性仍阻断合流。** 在发布基线 `607ebdb` 上，#252 当前提交 `0c6e1e0` 尚未包含公共解析器修复。下文的首次验收统计来自原型初版。复审另测了同包重复调用及借用其他协议结束原因两类反例。[本轮隔离与真实收据、IndexedDB 证据](spreset-c2-review-evidence.json)
+#251 的代码合流提交为 `a390d9ad55b3778485d2a6e46df1c693f8cb6c60`。它保留了原 C2 开发历史，第二父提交为 `release/1.0@46b1009f06f17ab610aadd4082e25c4d4cbac0c9`，包含 #252 和 #250。#252 的合并提交为 `d4d35f77930992b78821e3966c02588e257542e1`。[合流源码](https://github.com/WJT111222/HeiJinWangChao/commit/a390d9ad55b3778485d2a6e46df1c693f8cb6c60) · [本次双端 HTTP、收据、IndexedDB 与构建证据](spreset-c2-merge-evidence.json)
 
-旧版 Worker 能枚举同源的合成游戏库。新版为每次 Story 建立仅允许脚本的不透明来源 iframe，内部从审核过的本地源码启动独立经典 Worker。处理器的 `self.origin` 为 `null`。桌面与手机上，`indexedDB.open('heijinwangchao')` 和 `indexedDB.databases()` 都抛出 `SecurityError`。Worker 没有 DOM、父窗口、Web Storage、Cache Storage 或 OPFS 入口。iframe 访问游戏 DOM、Cookie 和 Web Storage 被浏览器拒绝。实际 Worker 发起的网络探针在交付前失败，测试端收件为零，合成正式档与草稿逐项相同。
+### 上游响应与正式结算
 
-父页面只向自己创建的窗口移交一次私有 MessagePort。iframe 检查窗口、父来源和本次会话标识，端口按顺序只接受一次 prepare、一次 finish。响应必须匹配会话和序号；桥接层仅返回处理结果或错误。实际请求超时、取消、切档、刷新和卸载均有生命周期探针。C2 版本随审核核心、Worker 与桥接脚本共同变化。生产资源检查覆盖实验标识、入口、工具名称及处理器文件。
+整改前，两端交付的 32 份畸形响应中有 20 份进入本地处理器，取得收据并在显式提交后推进了存档。原始红灯记录保留在前次证据中。[整改前证据](spreset-c2-review-evidence.json)
 
-SPreset 专属入口先完成公共帧校验，再检查本地唯一允许的工具名称、调用 ID 和严格的单字段参数。无工具的完整文本有独立交付路径，收据为空。目前公共帧解析会合并同一 Gemini 响应中的重复同 ID 调用，也会接受跨协议的工具结束原因。双端按四协议和 JSON/SSE 运行 16 个浏览器用例，每个用例都分别测试两个输入。32 个畸形响应中，12 个在进入处理器前被拒绝；其余 20 个实际取得了本地收据、保存了候选，显式提交后回合和 revision 各增加 1。对应单元 16 项中 6 通过、10 失败。上述探针保留严格失败断言。
+合流后，C2 将期望的工具名 `submit_scene` 传给 #252 的 `UpstreamFrames`。共用帧解析、工具调用唯一性、供应商结束原因和 Anthropic 内容块关闭校验全部通过后，C2 才能读取唯一的完整调用并进入 `PrototypeSession.read` 的本地处理器。宿主核对收据中的调用 ID 与 UTF-8 正文字节数。无工具的完整纯文本可以交付，收据为空。公共解析器相对发布分支只增加了 C2 所需的导出及只读调用访问器。[公共校验](../../src/presets/tavern/upstream.ts) · [C2 响应入口](../../src/presets/spreset/response.ts) · [收据核对](../../src/presets/spreset/session.ts)
 
-#252 合入后须继承公共工具完整性实现，保留两个浪潮注册与独立防截断，并将仅限开发环境的 C2 注册放在公共注册查询入口。复跑全部异常用例，逐项核对零 finish、零收据、零候选及零正式状态增量，同时复跑正常工具交付与纯文本。#252 合入前保持 Draft。
+桌面和手机 Chromium 的 16 个终端异常用例共发送 34 份畸形响应。它们覆盖四协议 JSON/SSE 的重复工具、错配结束标记，以及 Anthropic SSE 收到合法 `tool_use` 但关闭块索引为 `null` 的反例。每份均在处理器 `finish` 前失败，实测收据、已保存候选、正式回合及 revision 增量全部为零。正常工具交付共 16 份，每份实测仅一次 Mock HTTP POST，候选保存后正式版本不变，显式提交后回合和版本各增加 1。另用 8 个四协议 JSON/SSE 单测验证正常纯文本交付和空收据。[浏览器断言](../../e2e/spreset-terminal.spec.ts) · [成功样本与重新生成保护](../../e2e/spreset-prototype.spec.ts)
 
-本轮 Node 24 锁定依赖安装成功。全量 Vitest 为 5507 通过、10 失败，全部失败均是上述公共解析反例；因此 `npm run check` 当前返回失败。单独执行的 ESLint、生产构建（含 TypeScript、命令目录检查）与 Prompt 专项 93 项通过。原有 22 项双端 Story 用例和 6 项隔离操作通过。16 个严格浏览器反例用例均保留红灯。统计按范围列出，不能相加。
+### 数据隔离与公共接口
 
-C3 的分发前置条件分别是：开发者在本机运行已审核组件；仓库对修改后的 GPL 组件随源码提供许可、署名、版本和构建方式；若将组合产物分发给玩家，负责人须确认其他组件的授权与整体 GPL 义务相容并确定对应源码交付方式。浏览器隔离只解决执行权限。C3 的工具历史、正则、消息配置及神域控制台仍须逐项完成权限与许可审核。原生、独立防截断、1118 及 1124 的手动重新生成后 TURN_INCOMPLETE 继续独立跟踪，本轮验证限定于 C2。
+在两个 Chromium 项目的真实处理器中，Worker 的来源均为 `null`。打开合成正式库及枚举 IndexedDB 都得到 `SecurityError`。游戏 DOM、Cookie 和 Web Storage 访问被拒绝，Cache Storage 与 OPFS 不可用。主动测试的网络请求被阻止，接收端为零。销毁实例后，合成正式档和草稿与操作前逐项相同。另测了错误或过期会话、重复序号、未授权操作，以及取消、超时、切档和刷新。[沙箱、私有端口与生命周期探针](../../e2e/spreset-isolation.spec.ts)
+
+保留 1118、1124 的公开注册及各自许可署名。仅开发环境的 C2 注册复用正式版 v4 文学归属与配置投影。独立防截断继续使用原生文学设置。共享 runtime 保留 #250 的三段变量生成，`entities`、Variables、World、Memory 和小剧场经原渠道执行。双端各验证五次独立请求，均无 C2 工具或处理器。已有合法 C2 候选时，手动重新生成失败后仍可提交旧候选。其他模式的 `TURN_INCOMPLETE` 保留为全局发布待办。
+
+### 本次验收
+
+| 范围 | 通过 | 失败 | 跳过 |
+| --- | ---: | ---: | ---: |
+| Node 24 完整工程检查内的全量 Vitest（239 文件） | 5624 | 0 | 0 |
+| 五个受影响的 Vitest 套件（上述子集） | 118 | 0 | 0 |
+| Prompt 专项（上述子集） | 93 | 0 | 0 |
+| 原联合审查解析探针 / Anthropic 内容块关闭探针 | 45 / 3 | 0 | 0 |
+| 桌面与手机 Chromium，含 C2、文学归属、续写、1118/1124 控制台与正式版定向门槛 | 144 | 0 | 0 |
+| 单独复跑 C2 双端（原 22 项、隔离 6 项、终端反例 16 项） | 44 | 0 | 0 |
+
+各行有交叠。Chromium 均使用 5174 端口、单 worker、零重试。原联合审查探针分别直接接入合流后的 C2 解析器和实际本地收据生成逻辑。生产构建的 136 个文件保留两套浪潮资源，按文件名和文件内容扫描六个实验标识均为零命中。实验核心、Worker、桥接脚本和许可文件通过固定 SHA-256 清单核验。完整工程检查、生产构建与两侧 Git 差异空白检查均已通过。[联合审查原始探针](1124/anthropic-block-evidence.tar.gz) · [构建及测试分项](spreset-c2-merge-evidence.json)
+
+C3 仍需分别完成原版工具历史权限、正则及消息处理、神域控制台和组合分发许可审核。本地开发实验与当前仓库的 GPL 源码分发保留署名、修改说明、完整许可及对应源码。面向玩家分发组合产物前须核对各组件权利，落实对应源码提供方式。浏览器沙箱的隔离证据仅涉及运行权限。真实模型效果、实际缓存收益及物理手机表现均未测量。
 
 ## 复跑入口
 
-基线为 `release/1.0@607ebdbfc986115ebea5f22fb5759d2b8a2bb1d2`。使用 Node 24、锁定依赖、合成存档和拦截在 HTTP 边界的 Mock 模型。Playwright 会启动端口 5174 的本地开发服务。
+本次合流基线为 `release/1.0@46b1009f06f17ab610aadd4082e25c4d4cbac0c9`。使用 Node 24、锁定依赖、合成存档和拦截在 HTTP 边界的 Mock 模型。Playwright 会启动端口 5174 的本地开发服务。
 
 ```sh
 npm ci
 npm run check
 npm run prompts:check
-CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/spreset-prototype.spec.ts e2e/spreset-isolation.spec.ts e2e/spreset-terminal.spec.ts --workers=1 --retries=0
+npx vitest run src/tests/{spreset-terminal,spreset-prototype,tavern-provider-integrity,tavern-anthropic-blocks,peinture1124}.test.ts
+mapfile -t cases < <(node -e "console.log(require('./docs/tavernhelper-compat/spreset-c2-merge-evidence.json').playwright.selection.join('\n'))")
+CI=1 CHROMIUM_PATH=/usr/bin/chromium npx playwright test "${cases[@]}" --workers=1 --retries=0
+CI=1 CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/spreset-prototype.spec.ts e2e/spreset-isolation.spec.ts e2e/spreset-terminal.spec.ts --workers=1 --retries=0
 git diff --check
+```
+
+独立复跑联合审查原探针时，在已执行 `npm ci` 的仓库根目录运行以下命令。两份 JSON 会写入临时目录的 `evidence/`。
+
+```sh
+probe_dir=$(mktemp -d)
+mkdir "$probe_dir/evidence"
+ln -s "$PWD" "$probe_dir/c2"
+tar -xzf docs/tavernhelper-compat/1124/anthropic-block-evidence.tar.gz -C "$probe_dir" --strip-components=1 probes/parser-probe.mjs probes/c2-close.mjs
+(cd "$probe_dir" && node parser-probe.mjs && node c2-close.mjs)
 ```
 
 开发入口为本机 Vite 上的 `/?spreset=prototype`。它只在未启用其他模式时生效，安全模式始终优先。普通设置不展示此入口。刷新后由页面地址与当前选择重新判定。请求执行的是现有 StoryStage、IndexedDB 候选与 commitTurn。只在测试中注入模型响应。截断、权限、时钟与结算的决定权都在游戏侧。
@@ -35,7 +65,7 @@ git diff --check
 - Meowssiah-2.1.7 原包有 56 条提示词、8 条主正则、SPreset 内 8 条绑定正则，以及 SPreset 加载器、菜单两份 TavernHelper 脚本。菜单版本为 3.0-Preview-01，ID 301。适配许可由项目负责人确认，保留小猫之神署名。
 - 固定网页源码提交 `53bd585da14248ba10baaede7fc7ed0cebe1eeeb`。逐字节比较，附件加载器与该提交的 `regex_bind/index.js` 只差末尾 LF。加载器指向可变地址，原作者当时线上部署过的 inject.js 字节仍无法从附件证明。
 - SPreset 的 `regex_bind/LICENSE` 为 GNU GPL 第三版。实验按 GPL-3.0-only 保留作者署名、修改说明、完整许可、可编辑源码和固定来源。许可证不授予更改其他作品许可的权利。王朝仓库没有整体再许可声明。分支仅以源码提供独立消息式组件，常规生产构建不交付该 Worker。若 C3 计划一起向玩家分发，须核实整套组合作品的权利及对应源码交付方式；独立进程或消息接口本身不能证明许可兼容。 [固定源码树](https://github.com/starowo/starowo.github.io/tree/53bd585da14248ba10baaede7fc7ed0cebe1eeeb/regex_bind) · [上游与本地文件 SHA-256](../../experiments/spreset/SOURCES.json) · [完整许可](../../experiments/spreset/COPYING)
-- 本地 `core.mjs` 保留了 `normalizeSPresetOutputProcessorResult`（916–943 行），适配了 `processSPresetFinalRequest`（1695–1720 行）的请求复制、静态处理、序列化及传输字段保护。`worker.mjs` 是新增的请求级宿主。两者独立于 React、ST、TavernHelper 及第三方包。配置版本中包含核心、Worker 和 frame.mjs 三个文件的组合 SHA-256。提示词与条目顺序继续参与 #247 v3 指纹。
+- 本地 `core.mjs` 保留了 `normalizeSPresetOutputProcessorResult`（916–943 行），适配了 `processSPresetFinalRequest`（1695–1720 行）的请求复制、静态处理、序列化及传输字段保护。`worker.mjs` 是新增的请求级宿主。两者独立于 React、ST、TavernHelper 及第三方包。配置版本中包含核心、Worker 和 frame.mjs 三个文件的组合 SHA-256。提示词与条目顺序参与正式版 v4 指纹，旧摘要沿用各自的兼容核对。
 - 原包 `OutputPreprocessing.toolCallFormatter.script` 第 87–92 行的单字符串 content 分支用于完整工具参数；`OutputPreprocessing.script` 仅采用完整前导兼容思考块的收尾处理及 output/hold/state 契约。保留正文内部的标签。原生公开思考、正文 `<thinking>`、原始文本和正式正文分别处理。
 - 原包 `FinalRequestProcessing.script` 包含 3127 行，依赖酒馆聊天元数据、菜单配置及其他请求变换。本实验使用静态注册的无害文学任务与本地终端工具，不运行该脚本整体、加载器、动态脚本编译器或远程编辑器。
 
@@ -50,7 +80,7 @@ git diff --check
 | 实际执行 | 真正完整的模型调用经原协议帧校验后，Worker 检查名称、ID 和唯一字符串参数，执行本地正文交付并返回关联 ID 与输出 UTF-8 字节数；宿主核对收据。纯文本正常完成亦可交付。整个过程一次请求，无工具回传、自动中转重发或隐藏补全。旧断点玩家显式选定的单次传输仍经过原授权检查。 |
 | 流与完整性 | 复用酒馆的格式识别、四协议帧累积/校验及原生 SSE 读取器。在原始响应上检查取消、拒答、过滤、错误帧、finish reason、工具参数结构及 Anthropic 消息结束。仅有 DONE 或可解析的参数不构成完成。工具分片不进入原文缓存、断点或正式候选；普通文本经现有公开观察接口进入临时阅读与恢复。 |
 | 权限隔离 | 不透明来源及专用 Worker 隔离正式数据，CSP 限制网络。仅允许已审核的本地处理器，独立端口按请求销毁。 |
-| 结算 | 现有解析器校验正文、来源及候选。生成成功只写草稿。显式 commit 后正式档版本和回合各前进一步。Variables、World、Memory、小剧场均继续经过既有路径。 |
+| 结算 | 现有解析器校验正文、来源及候选。生成成功只写草稿。显式 commit 后正式档版本和回合各前进一步。变量阶段（含 entities）、World、Memory、小剧场均继续经过既有路径。 |
 
 ## 模块取舍及 C3 依赖
 
