@@ -290,7 +290,7 @@ describe('正式文本来源与旧架构保留', () => {
     for (const module of promptManifest.modules.filter((m) => m.kind === 'prompt')) {
       const record = sources.resources[module.path as keyof typeof sources.resources];
       expect(record, module.path).toBeDefined();
-      const latest = ['storyDifficultyV1','variableGuideNotes','storyGuideOpeningTime','partialSettlement','issue194LegacyRecovery','issue194NotificationReceipt','issue194EntryHandoff','antiTemplateV1','narrativeLengthTiers','promptCacheOrderingV1','legacyCleanupV10','storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
+      const latest = ['propertyAssetsV1','storyDifficultyV1','variableGuideNotes','storyGuideOpeningTime','partialSettlement','issue194LegacyRecovery','issue194NotificationReceipt','issue194EntryHandoff','antiTemplateV1','narrativeLengthTiers','promptCacheOrderingV1','legacyCleanupV10','storyTagCompatibilityV1','openingNpcEligibility','variablesContractStability','worldCommandStability','worldNpcCreationContract','organizationFinalAcceptance','npcMemoryContentQuality','npcContextTiersV2','npcImportanceV2','npcUnifiedMemoryV2','npcV2Foundation','storyEventArbitrationV2','worldEventStagesV2','worldNarrativeConditions','historyTimelineV2','contextV2','memorySummaryV2']
         .map(key=>Reflect.get(record,key)).find(value=>value && typeof value==='object' && 'sha256' in value);
       if(latest) expect(sha(text(module.path)),module.path).toBe(Reflect.get(latest,'sha256'));
       if (record.treatment === 'verbatim')
@@ -444,7 +444,7 @@ describe('M3-P1 审阅修订与 P2 协议差异记录', () => {
     ).toBe(false);
     const todo = text('docs/OUTPUT_CONTRACT.md');
     expect(todo).toContain('M3-P2 待办');
-    expect(DomainCommandSchema.options).toHaveLength(29);
+    expect(DomainCommandSchema.options).toHaveLength(32);
     for (const option of DomainCommandSchema.options)
       expect(todo).toContain(option.shape.type.value);
     for (const required of [

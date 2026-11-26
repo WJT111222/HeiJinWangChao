@@ -532,9 +532,10 @@ describe('真实命令目录、解析与安全候选验证', () => {
     expect(commandCatalog('variables').commandTypes).toEqual(
       DomainCommandSchema.options.map((option) => option.shape.type.value).filter((type) => !['RetireNpc','DeleteEvent','RecordHistory'].includes(type)),
     );
-    expect(commandCatalog('variables').commandTypes).toHaveLength(27);
+    expect(commandCatalog('variables').commandTypes).toHaveLength(30);
     expect(commandCatalog('world').commandTypes).not.toContain('InitializeOpeningState');
-    expect(commandCatalog('world').commandTypes).not.toContain('PurchaseItem');
+    for (const type of ['PurchaseItem', 'PurchaseProperty', 'PurchaseOtherAsset', 'AcquireAsset'])
+      expect(commandCatalog('world').commandTypes).not.toContain(type);
     const a = input('variables');
     for (const value of [
       {

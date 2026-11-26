@@ -31,7 +31,7 @@
 | `items` | AcquireItem、PurchaseItem、UpdateItem、TransferItem、LoseItem。数量、状态、地点、描述、估值、分类、任务标记及明细有相应操作；归属按移交处理，购买联动扣款 | World 不能更改主角物品；id、来源回合没有普通覆盖命令；失去或耗尽会维护装备 | 已有物品可改 name、description、conditionText、itemDetails、questItem、locationId；数量、估值、归属等只读 |
 | `economy.cash / onlineBalance` | 开局补未定值；普通回合消费、内部转账、收入、借还、购买走专用交易命令 | 余额与交易一起提交；World 的组织金额不能当作主角资金 | 只读 |
 | `economy.incomes / debts` | 开局 expectedIncomes，日常 ReceiveIncome 新建已到账记录；Borrow 新建借款，RepayDebt 减少未偿本金并可结清。没有任意修改旧账的命令 | 到账、扣款与状态联动；旧账 ID 和原始记录保留 | 只读 |
-| `economy.vehicles / properties / otherAssets` | PurchaseVehicle 可购买并登记整辆车；没有旧资产无交易登记、购置房产、其他资产登记或任意重估入口 | 资产估值、产权、位置、抵押／归属引用不是可直接调整的余额；World 不管理个人资产 | 只读 |
+| `economy.vehicles / properties / otherAssets` | PurchaseVehicle／PurchaseProperty／PurchaseOtherAsset 扣款并登记车辆、房产、其他资产；AcquireAsset 登记原本持有或无偿得到的资产（不改余额）；没有出售或任意重估入口 | 资产估值、产权、位置、抵押／归属引用不是可直接调整的余额；World 不管理个人资产 | 只读 |
 | `organizations` | CreateOrganization、UpdateOrganization、RecordOrgRelation。共有 name、description、keyNpcIds、currentTaskIds、leadership、relations，四类组织各有自己的产业、职能、地域及运营字段；资金、资产或流动性估计要求财务依据；关系操作联动 relationHistory | World 可在其权限内建档和更新。Variables 的同轮同字段优先，保留 World 的独立合法更新。id、kind 与旧关系历史不允许任意改写 | 仅已有组织的 name、description 及适用的 internalStatus、missionText、operatingStatus |
 | `tasks` | SaveTask 处理现场任务，字段包括承办人、目标、起止安排、状态、地点、关联事件、前置／阻碍、结果和交接；既有目标、起点与终态受限 | 场外任务归 World，稳定引用和事件反向关联由领域维护 | 只读 |
 | `events` | 仅已有现场事件的 sceneState → SaveEvent，有限更新 status、resolvedAt、resolutionText、outcome、resultKnowledge。不能借此建新事件或改写整个计划 | World 负责新建、后台进展、时限、父子／承接及终结。protagonistEntry 和 protagonistKnowledge 受回执、已知快照与领域权限约束 | 只读 |
@@ -46,6 +46,6 @@
 ## 已有覆盖边界与后续建议
 
 - **明确缺失且本次已补齐**：普通回合有剧情变化时，天气和环境此前只能沿用开局值或由玩家手动改。新增的两条路径独立生效。
-- **经济领域已有明确记录的缺口**：购房和登记既有资产没有对应事务。已有 expected 收入也不能用同 ID 的 ReceiveIncome 转为到账，后者要求新 ID。若要表达这些业务，建议先界定预期与实收的关联、余额影响和幂等条件，再添加专用事务。当前模型可把无法执行的事项写进说明。[经济提示词](../prompts/variableGroups/economy/update.md) · [收入与资产结构](../src/domain/economy/schema.ts) · [交易执行](../src/domain/commands.ts)
+- **经济领域已有明确记录的缺口**：已登记资产的出售和估值变化没有对应事务（购房、其他资产购买及既有资产登记已由 PurchaseProperty／PurchaseOtherAsset／AcquireAsset 补齐）。已有 expected 收入也不能用同 ID 的 ReceiveIncome 转为到账，后者要求新 ID。若要表达这些业务，建议先界定预期与实收的关联、余额影响和幂等条件，再添加专用事务。当前模型可把无法执行的事项写进说明。[经济提示词](../prompts/variableGroups/economy/update.md) · [收入与资产结构](../src/domain/economy/schema.ts) · [交易执行](../src/domain/commands.ts)
 - **需要产品确认的字段**：既有人物的外貌、基础技能及已有地点名等可以由玩家修订，目前没有普通 Variables 更新命令。若产品需要持续追踪这类变化，应逐项确认归属。特殊人物的场外任务仍可通过 task.actorRef 查询，不能仅因 offscreenTaskIds 缺少独立写入口就判定任务丢失。[人物结构](../src/domain/npc/schema.ts) · [人物面板任务读取](../src/ui/panels/NpcPanel.tsx)
 - **保留只读**：正式回合、历史、总结来源、稳定身份、幂等账本、管理版本与回执都有各自的维护流程。覆盖盘点没有发现把它们开放为通用 set 的依据。V10 旧档继续使用原有字段；此前已经不支持的旧主版本仍按仓库既有策略处理。[存档兼容测试](../src/tests/saveRepository.test.ts) · [回合结算](../src/domain/turnCommit.ts)

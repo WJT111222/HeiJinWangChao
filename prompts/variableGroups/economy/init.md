@@ -7,10 +7,11 @@ expectedIncomes是既有IncomeRecord数组，每条带稳定id、source、amount
 <命令>
 set opening.initialState = {"weatherText":"夏日多云","environmentText":"住宅楼下早餐铺刚开门，楼道传来邻居的脚步声。","cash":30000,"onlineBalance":3200000,"expectedIncomes":[{"id":"salary_teaching","source":"教师工资","amount":580000,"status":"expected","account":"onlineBalance","scheduleText":"每月15日发薪"}]}
 </命令>
-初始化不是任意经济对象覆盖；仅新开局一次，普通回合或无标记旧档不能调用。历史债务无到账登记、旧资产无交易登记、房产购买仍未支持，写明缺口，不虚构收入/借款/购买。
+初始化不是任意经济对象覆盖；仅新开局一次，普通回合或无标记旧档不能调用。历史债务无到账登记仍未支持，写明缺口，不虚构收入/借款。
 
 本幕实际交易继续按现有规则：负add economy.cash/onlineBalance为消费；set economy.incomes[id]只接受完整received记录，含source、正整数分amount、status、account、合法receivedAt。它与initialState.expectedIncomes不同，必须确有实际到账，正add余额不是收入。
 push economy.transfers={from,to,amount}只在账户间转账。set economy.debts[id]={account,debt:{creditor,principal,outstanding,status,repaymentTerms,collateralAssetIds,autoPaymentAuthorized,source,...}}为本幕新借款，active且本金等于未偿本金。push economy.debts[id].repayments={account,amount}扣余额、减本金，还清变repaid。
-set economy.vehicles[id].purchase={account,price,vehicle:完整VehicleAsset去掉id}购买扣款登记，不再创建普通物品；不能借此补录早已持有的车。
+set economy.vehicles[id].purchase={account,price,vehicle:完整VehicleAsset去掉id}为本幕购车扣款登记，不再创建普通物品；set economy.properties[id].purchase={account,price,property:完整PropertyAsset去掉id}、set economy.otherAssets[id].purchase={account,price,asset:完整OtherAsset去掉id}分别为本幕购房和购入其他资产。
+玩家设定或Story明确原本持有的房产、车辆和其他资产，用set economy.properties[id]、economy.vehicles[id]或economy.otherAssets[id]=完整资产去掉id登记，不扣款、不当作本幕购买；房产须带locationId（先建居住地点）和ownershipText，ownerRef填主角。不得无依据塞入豪宅豪车，也不抹去玩家明确的富裕背景。
 按交易原顺序执行，不提前透支尚未到账的未来收入。时钟使用开局Story候选，不照抄示例日期。
 只用TEXT_COMMAND_CATALOG列明的set/add/push/delete路径，不输出DomainCommand对象；未支持事项写说明，不伪造成功或另建审批。后台任务与事件交给World。
