@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { createHash } from 'node:crypto';
@@ -29,13 +30,25 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
   for (const stream of [false, true])
     test(protocol + (stream ? ' SSE' : ' JSON') + ' 文学菜单到正式正文', async ({ page }, info) => {
       const wires: string[] = [];
+      const paths: string[] = [];
       const reply = toolReply(
         protocol,
         stream,
         { game_content: body, think_nya: '合成作者附注', comment: '合成猫猫悄悄话' },
         'soliumbra_reply',
       );
-      const responseBody = reply.body ?? JSON.stringify(reply.json);
+      const usageFixture =
+        protocol === 'openai' && !stream
+          ? {
+              usage: {
+                prompt_tokens: 120,
+                completion_tokens: 30,
+                total_tokens: 150,
+                prompt_tokens_details: { cached_tokens: 40 },
+              },
+            }
+          : {};
+      const responseBody = reply.body ?? JSON.stringify({ ...(reply.json as object), ...usageFixture });
       const server = createServer(async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:5174');
         res.setHeader('Access-Control-Allow-Headers', req.headers['access-control-request-headers'] ?? '*');
@@ -51,6 +64,7 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(chunk);
         wires.push(Buffer.concat(chunks).toString('utf8'));
+        paths.push(new URL(req.url!, 'http://127.0.0.1').pathname);
         res.writeHead(200, { 'Content-Type': reply.contentType ?? 'application/json' }).end(responseBody);
       });
       await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -67,6 +81,13 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
         expect(wires).toHaveLength(0);
         if (protocol === 'openai' && !stream) {
           await dialog.getByRole('button', { name: '创作菜单', exact: true }).click();
+          await dialog.getByRole('heading', { name: '角色控制', exact: true }).scrollIntoViewIfNeeded();
+          await page.evaluate(
+            (mode) => {
+              document.documentElement.dataset.appearance = mode;
+            },
+            info.project.name === 'desktop' ? 'day' : 'night',
+          );
           await info.attach('神域控制台', { contentType: 'image/png', body: await page.screenshot() });
         }
         const result = await page.evaluate(
@@ -153,8 +174,12 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
               const after = await repo.load(draft.saveId);
               const { stageResponses } = await import('/src/services/ai/stageResponses.ts' as string);
               const observation = stageResponses.getSnapshot()[0];
+              const { requestInspections } = await import('/src/services/ai/inspection.ts' as string);
+              const sampleUsage = requestInspections.getSnapshot()[0].statistics.actual;
               return {
-                raw: observation.text,
+                sampleUsage,
+                raw: observation.displayText,
+                extracted: observation.text,
                 reasoning: observation.nativeReasoning,
                 deliveries,
                 source: saved.storyWriting,
@@ -177,6 +202,7 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
           { output: body, receipt: { id, bytes: Buffer.byteLength(body), result: '{"ok":true}' } },
         ]);
         expect(result.raw).toContain('合成猫猫悄悄话');
+        expect(result.extracted).toBe(body);
         expect(result.reasoning ?? '').not.toContain('合成作者附注');
         expect(wires).toHaveLength(1);
         const raw = wires[0],
@@ -188,9 +214,9 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
         expect(raw).not.toContain('mock-credential');
         expect(raw).toContain('soliumbra_reply');
         expect(raw).not.toContain('submit_scene');
-        // Some protocols omit sampling when the actual channel is in reasoning mode.
-        if (wire.top_p !== undefined || wire.generationConfig?.topP !== undefined)
-          expect(wire.top_p ?? wire.generationConfig.topP).toBe(0.71);
+        expect(wire.top_p ?? wire.generationConfig?.topP).toBe(0.71);
+        if (protocol === 'openai' && !stream)
+          expect(result.sampleUsage).toMatchObject({ inputTokens: 120, outputTokens: 30, cacheReadTokens: 40 });
         expect(result).toMatchObject({
           source: { source: 'preset', id: 'meowssiah', configurationVersion: 4 },
           body: '林舟在灯下翻开账册。',
@@ -205,6 +231,8 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
             protocol,
             stream,
             request: wire,
+            httpPath: paths[0],
+            responseBytes: Buffer.byteLength(responseBody),
             sha256: createHash('sha256').update(raw).digest('hex'),
             responseSha256: createHash('sha256').update(responseBody).digest('hex'),
             posts: wires.length,
@@ -236,6 +264,9 @@ test('双标签设置冲突、取消与方案回读均为零请求', async ({ pa
   await first.getByRole('button', { name: '我的方案', exact: true }).click();
   await first.getByLabel('方案名称').fill('雨夜');
   await first.getByRole('button', { name: '另存方案' }).click();
+  const download = page.waitForEvent('download');
+  await first.getByRole('button', { name: '导出 JSON' }).click();
+  const exported = await readFile((await (await download).path())!);
   await first.getByRole('button', { name: '保存文学配置' }).click();
   await expect(first.getByText('文学配置已保存', { exact: true })).toBeVisible();
   await second.getByLabel('自定义创作要求').fill('另一个页面');
@@ -250,6 +281,14 @@ test('双标签设置冲突、取消与方案回读均为零请求', async ({ pa
   await expect(reread.getByLabel('自定义创作要求')).toHaveValue('');
   await reread.getByRole('button', { name: '我的方案', exact: true }).click();
   await reread.getByRole('button', { name: '雨夜', exact: true }).click();
+  await reread.getByRole('button', { name: '创作菜单', exact: true }).click();
+  await expect(reread.getByLabel('自定义创作要求')).toHaveValue('保留屋檐的雨声。');
+  await reread.getByRole('button', { name: '恢复发行默认值' }).click();
+  await reread.getByRole('button', { name: '我的方案', exact: true }).click();
+  await reread
+    .getByLabel('导入方案')
+    .setInputFiles({ name: '神域文学方案.json', mimeType: 'application/json', buffer: exported });
+  await expect(reread.getByText('已载入，可编辑后保存', { exact: true })).toBeVisible();
   await reread.getByRole('button', { name: '创作菜单', exact: true }).click();
   await expect(reread.getByLabel('自定义创作要求')).toHaveValue('保留屋檐的雨声。');
   expect(requests).toEqual([]);

@@ -132,7 +132,7 @@ for (const oracle of [false,true]) test((oracle ? '神域 · ' : '') + '失败�
     const message = { tool_calls: [{ id: 'issued', type: 'function', function: { name: kind === 'wrong' ? 'other_tool' : oracle ? 'soliumbra_reply' : 'submit_scene', arguments: args } }] };
     return route.fulfill({ json: { choices: [{ message, finish_reason: kind === 'limited' ? 'length' : 'tool_calls' }] } });
   });
-  const result = await page.evaluate(async count => {
+  const result = await page.evaluate(async ({count,oracle}) => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/talentPrompt.ts', '/src/domain/drafts.ts',
       '/src/workflows/storyStage.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts'];
     const [{ SaveRepository }, { talentPromptInput }, { createTurnDraft }, { StoryStage }, { newChannel, defaultAiConfig }, { CredentialVault }] =
@@ -153,6 +153,7 @@ for (const oracle of [false,true]) test((oracle ? '神域 · ' : '') + '失败�
       const generate = (draft: unknown) => stage.generate({ draft, settings: input.settings, config, vault, onFailureSaved: () => {} });
       await generate(await repo.loadDraft(draft.saveId));
       const candidate = await repo.loadDraft(draft.saveId);
+      const pending = oracle ? await repo.writeOracleNote(draft.saveId,await repo.readOracleNote(draft.saveId),'留给下次成功的候选',true) : null;
       const baseline = JSON.stringify(await repo.load(draft.saveId)), errors = [];
       for (let i = 1; i < count; ++i) {
         let code: string | undefined;
@@ -166,9 +167,10 @@ for (const oracle of [false,true]) test((oracle ? '神域 · ' : '') + '失败�
         await repo.commitTurn({ draft: saved, nextAction: '', useVariableStage: false, useWorldStage: false });
         canCommit = (await repo.load(draft.saveId)).journal.at(-1).story.narrative === candidate.story.narrative;
       }
-      return { errors, narrative: candidate.story.narrative, canCommit, retainedStatus: saved.stageStatus.story };
+      return { errors, notePreserved: !pending || JSON.stringify(pending) === JSON.stringify(await repo.readOracleNote(draft.saveId)), narrative: candidate.story.narrative, canCommit, retainedStatus: saved.stageStatus.story };
     } finally { window.removeEventListener('c2-cancel-request', stop); stage.dispose(); repo.close(); }
-  }, cases.length);
+  }, {count:cases.length,oracle});
+  expect(result.notePreserved).toBe(true);
   expect(result.retainedStatus).toBe('ready');
   expect(posts).toEqual(cases); expect(relays).toEqual([]);
   expect(result.narrative).toBe(narrative);
@@ -201,11 +203,11 @@ test('刷新与预设切换清除实验会话，非正文阶段继续使用原�
     const vault = new CredentialVault(sessionStorage, localStorage); vault.set(channel.id, 'fixture-only');
     for (const stage of ['entities', 'variables', 'world', 'memory', 'theater']) {
       const snapshot = channelSnapshot(channel, vault, channel.defaultModel, stage);
-      await new AiClient().generate(snapshot, [{ role: 'user', content: stage }], { stream: false, spresetPrototype: true });
+      await new AiClient().generate(snapshot, [{ role: 'user', content: stage }], { stream: false, spresetPrototype: true, oracleStory:true });
     }
   });
   expect(wires).toHaveLength(5);
-  for (const body of wires) { expect(JSON.parse(body)).not.toHaveProperty('tools'); expect(body).not.toContain('submit_scene'); }
+  for (const body of wires) { expect(JSON.parse(body)).not.toHaveProperty('tools'); expect(body).not.toContain('submit_scene'); expect(body).not.toContain('soliumbra_reply'); }
   expect(workers).toBe(0);
   await page.goto('/');
   expect(await selection()).toBeNull();

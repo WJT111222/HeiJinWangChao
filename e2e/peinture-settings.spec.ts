@@ -1032,6 +1032,8 @@ test('正式设置选择小猫之神并通过隔离工具交付开局候选', as
   const settings = await runtimeSettings(page);
   await settings.getByLabel('正文预设').selectOption('meowssiah');
   await applyMode(page,settings);
+  await page.goto('/#game/peinture-smoke');
+  await openGameTools(page);
   const next = await runtimeSettings(page);
   await next.getByRole('button',{name:'神域控制台',exact:true}).click();
   const oracle=page.getByRole('dialog',{name:'神域控制台',exact:true});
@@ -1039,11 +1041,20 @@ test('正式设置选择小猫之神并通过隔离工具交付开局候选', as
   await oracle.getByRole('button',{name:'保存文学配置'}).click();
   await expect(oracle.getByRole('status')).toContainText('文学配置已保存');
   await info.attach('production-console',{contentType:'image/png',body:await page.screenshot()});
+  await oracle.getByRole('button',{name:'场外小纸条',exact:true}).click();
+  await oracle.getByLabel('本档下次正文的附加要求').fill('留意岸边白帆。');
+  await oracle.getByRole('button',{name:'保存小纸条',exact:true}).click();
+  await expect(oracle.getByRole('status')).toContainText('场外小纸条已保存');
+  expect(wires).toHaveLength(0);
+  await oracle.getByRole('button',{name:'关闭',exact:true}).click();
+  await expect(oracle).not.toBeVisible();
+  if (await next.isVisible()) { await page.keyboard.press('Escape'); await expect(next).not.toBeVisible(); }
   const workerCreated=page.waitForEvent('worker',worker=>worker.url().startsWith('blob:null/'));
   await generate(page);
   expect((await workerCreated).url()).toContain('blob:null/');
   expect(wires).toHaveLength(1);expect(sent).toEqual([]);
   expect(wires[0]).toContain('沿岸的灯火渐次亮起。');
+  expect(wires[0]).toContain('留意岸边白帆。');
   expect(JSON.parse(wires[0]).tools.map((tool:{function:{name:string}})=>tool.function.name)).toEqual(['soliumbra_reply']);
   const license=await page.request.get('/literature/meowssiah/source/COPYING');
   expect(await license.text()).toContain('GNU GENERAL PUBLIC LICENSE');
