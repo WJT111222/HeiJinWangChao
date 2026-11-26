@@ -18,7 +18,7 @@ async function setup(page: Page, mode: 'variables' | 'world' | 'failed') {
       '/src/domain/drafts.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/ui/settings/model.ts'];
     const [{ SaveRepository }, { worldState }, { completeDraft, elapsedVariables }, { startStageAttempt, TurnDraftSchema },
       { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }, { defaultSettings, settingsKey }] = await Promise.all(paths.map(p => import(p)));
-    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.prompts.minNarrativeChars = 5; settings.prompts.actionOptions = false;
+    const settings = defaultSettings(); settings.runtime.useEntityStage = mode === 'failed'; settings.prompts.minNarrativeChars = 5; settings.prompts.actionOptions = false;
     for (const config of Object.values(settings.memory.summaries) as { automatic: boolean }[]) config.automatic = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel(), config = defaultAiConfig(); channel.baseUrl = 'https://pr162-acceptance.mock.invalid/v1';
@@ -28,8 +28,8 @@ async function setup(page: Page, mode: 'variables' | 'world' | 'failed') {
     const repo = await SaveRepository.open();
     try {
       await repo.create(worldState());
-      await repo.commitTurn({ draft: await completeDraft(repo), nextAction: '', useEntityStage:false, useVariableStage: true, useWorldStage: true });
-      const bound = await repo.bindTurnAction(await repo.loadDraft('save-a'), '继续观察街道', true, true, false);
+      await repo.commitTurn({ draft: await completeDraft(repo), nextAction: '', useEntityStage:settings.runtime.useEntityStage, useVariableStage: true, useWorldStage: true });
+      const bound = await repo.bindTurnAction(await repo.loadDraft('save-a'), '继续观察街道', true, true, settings.runtime.useEntityStage);
       const variables = await elapsedVariables(repo, '观察街道经过十分钟', 600);
       if (mode === 'failed') {
         await repo.saveDraft(TurnDraftSchema.parse({ ...bound, draftRevision: bound.draftRevision + 1,
@@ -139,7 +139,7 @@ test('正文真正保存期间不可取消，失败回填中玩家修改的文�
     await expect.poll(async () => (await stored(page)).draft.stageStatus.story).toBe('ready');
     expect((await stored(page)).state).toEqual(before.state);
     await expect(page.locator('#player-input')).toHaveValue('失败后主动修改且尚未发送的文字');
-    await expect(action(page)).toHaveAccessibleName('继续生成主角与现场'); expect(calls).toBe(1);
+    await expect(action(page)).toHaveAccessibleName('继续生成人物与实体'); expect(calls).toBe(1);
   } finally { await release(page, '__pr162ReleaseStory').catch(() => undefined); }
 });
 

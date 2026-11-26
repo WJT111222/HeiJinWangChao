@@ -126,7 +126,7 @@ test('Variables 非法日期不能保存或启动 World；刷新零请求，主�
   expect(before.draft.variables).toBeUndefined(); expect(before.draft.world).toBeUndefined();
   expect(before.state).toMatchObject({ turnNumber: 0, revision: 0, openingTimePending: true, worldClock: pendingOpeningClock, journal: [] });
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'entities', 'variables']);
-  await page.reload(); await expect(workflow(page).getByRole('status')).toHaveText('三阶段 · 变量生成失败 · 查看详情');
+  await page.reload(); await expect(workflow(page).getByRole('status')).toHaveText('四阶段 · 主角与现场生成失败 · 查看详情');
   expect(await stored(page)).toEqual(before); expect(server.calls).toHaveLength(3);
   server.plan.badDate = false; await openWorkflow(page); await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click(); await ready(page);
   expect(server.calls.map((call) => call.stage)).toEqual(['story', 'entities', 'variables', 'variables', 'world']);

@@ -10,14 +10,14 @@ async function seed(page: Page, mode: Mode) {
     const [{ SaveRepository }, { worldState }, { completeDraft }, { TurnDraftSchema }, { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }, { defaultSettings, settingsKey }] = await Promise.all(paths.map((p) => import(p)));
     const repo = await SaveRepository.open(), state = worldState(); state.openingCityId = 'chongqing'; state.protagonist.name = '沈砚';
     await repo.create(state);
-    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.prompts.minNarrativeChars = 5; localStorage.setItem(settingsKey, JSON.stringify(settings));
+    const settings = defaultSettings(); settings.runtime.useEntityStage = mode === 'storyFailed'; settings.prompts.minNarrativeChars = 5; localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel(), config = defaultAiConfig(); channel.baseUrl = 'https://persistent-button.mock.invalid/v1';
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'mock' }; saveAiConfig(localStorage, config);
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-key');
     const draft = await completeDraft(repo);
-    const done = await repo.commitTurn({ draft, nextAction: '', useEntityStage:false, useVariableStage: true, useWorldStage: true });
+    const done = await repo.commitTurn({ draft, nextAction: '', useEntityStage:settings.runtime.useEntityStage, useVariableStage: true, useWorldStage: true });
     if (mode !== 'settled') {
-      const bound = await repo.bindTurnAction(done.draft, '去码头找老周', true, true, false);
+      const bound = await repo.bindTurnAction(done.draft, '去码头找老周', true, true, settings.runtime.useEntityStage);
       const next = mode === 'storyFailed'
         ? { ...bound, stageStatus: { ...bound.stageStatus, story: 'failed' }, failures: [{ stage: 'story', attempt: 1, storyRevision: 0, errorCode: 'authorization', retryable: false }] }
         : { ...bound, story: { ...draft.story, turnKind: 'regular' }, storyRevision: 1, stageStatus: { ...bound.stageStatus, story: 'ready' } };
@@ -106,5 +106,5 @@ for (const edited of [false, true]) test(`正文重试成功后：${edited ? '�
   const after = await stored(page);
   expect(after.draft?.userInput).toBe('去码头找老周');
   await expect(input).toHaveValue(edited ? '改成去菜市场' : '');
-  await expect(named(page, '继续生成主角与现场')).toBeEnabled();
+  await expect(named(page, '继续生成人物与实体')).toBeEnabled();
 });
