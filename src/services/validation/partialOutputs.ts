@@ -90,6 +90,14 @@ function variablePath(input: VariableStatement) {
   return path[0]?.name === 'gameState' ? path.slice(1) : path;
 }
 
+/** 房产引用同批新借的房贷时，二者是同一笔按揭：购房失败，房贷也不单独结算。 */
+function mortgageLink(name: string | undefined, target: ReturnType<typeof variablePath>[number] | undefined, value: unknown) {
+  if (name !== 'economy' || target?.kind !== 'field' || target.name !== 'properties' || !value || typeof value !== 'object') return [];
+  const property = Reflect.get(value, 'property') ?? value;
+  const debtId = property && typeof property === 'object' ? Reflect.get(property, 'mortgageDebtId') : undefined;
+  return typeof debtId === 'string' ? [debtId] : [];
+}
+
 function variableUnit(input: VariableStatement, commandIndex: number, hasLooseBalanceChange: boolean, state: GameState): UpdateUnit<VariableStatement> {
   const { ast } = input;
   const nodes = variablePath(input);
@@ -112,7 +120,7 @@ function variableUnit(input: VariableStatement, commandIndex: number, hasLooseBa
   const subject = id ?? economyId;
   if (subject && !writes.length) refs.push(subject);
   const atomicRefs = name === 'tasks' || name === 'events'
-    ? workLinks(ast?.value) : [];
+    ? workLinks(ast?.value) : mortgageLink(name, target, ast?.value);
   const category: SkippedUpdate['category'] = name === 'items' ? 'item' : name === 'economy' ? 'economy'
     : name === 'npc' ? 'person' : name === 'tasks' ? 'task' : name === 'events' ? 'event' : 'state';
   const atomicKeys: string[] = [];

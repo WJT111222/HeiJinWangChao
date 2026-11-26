@@ -56,6 +56,23 @@ describe('隔离结构、依赖和事务', () => {
     expect(projected.economy.properties.broken).toBeUndefined();
   });
 
+  it.each([[[]],[['villa']]])('购房失败时，它引用的同批房贷一起跳过（房贷抵押物 %j）', async collateralAssetIds => {
+    const {state,draft}=issue194();
+    state.economy.onlineBalance=20000;
+    const hero={kind:'protagonist',id:state.protagonist.id};
+    const loan=(id:string)=>`set economy.debts[${id}] = ${JSON.stringify({account:'onlineBalance',debt:{creditor:'银行',principal:100000,outstanding:100000,status:'active',repaymentTerms:'按月还款',collateralAssetIds:id==='mortgage'?collateralAssetIds:[],autoPaymentAuthorized:false,source:'本轮借款'}})}`;
+    const result=await parsePartialVariables(wrap([
+      loan('mortgage'),
+      `set economy.properties[villa].purchase = ${JSON.stringify({account:'onlineBalance',price:500000,property:{kind:'property',name:'江景别墅',ownerRef:hero,estimatedValue:500000,source:'购买',statusText:'可入住',locationId:'chongqing',ownershipText:'主角名下',mortgageDebtId:'mortgage'}})}`,
+      loan('friend'), emotion,
+    ].join('\n')),state,draft);
+    expect(result.settlement?.skipped?.map(s=>s.commandIndex)).toEqual([0,1]);
+    const projected=projectTurn(state,withVariables(draft,result));
+    expect(projected.economy.debts.mortgage).toBeUndefined(); expect(projected.economy.properties.villa).toBeUndefined();
+    expect(projected.economy.debts.friend).toBeDefined(); expect(projected.economy.onlineBalance).toBe(120000);
+    expect(projected.protagonist.emotionText).toBe('平静');
+  });
+
   it('包含多行对象的无归属物品和对它的操作一起跳过，人物与正常物品保留', async () => {
     const {state,draft}=issue194();
     const transfer='set items[note].transfer = {"from":{"kind":"protagonist","id":"hero"},"to":{"kind":"organization","id":"org-stage-a"}}';
