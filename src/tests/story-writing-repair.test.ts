@@ -71,7 +71,7 @@ it('有效文学指纹覆盖启用的有序内容及脚本配置；默认、显�
   expect(await canResumeWriting({...initial,id:'other'},initial,selected)).toBe(false);
 });
 
-it('v2 摘要需要当前配置或发行默认值作为见证，重新保存使用 v3', async () => {
+it('v2 摘要需要当前配置或发行默认值作为见证，重新保存使用 v4', async () => {
   const previous = {source:'preset' as const,id:selected.definition.id,version:selected.definition.version,
     configurationVersion:2 as const,configuration:'0c1b84c5f36d3e8fb04d6ac354b592322af7a203563fb6acd8b7a8f99dd6d618'};
   const loaded = await resolveStoryPreset(selected);
@@ -79,7 +79,7 @@ it('v2 摘要需要当前配置或发行默认值作为见证，重新保存使�
   overrides.entries.chatHistory = {content:'旧版本会计入的占位文本'};
   overrides.entries.worldInfoAfter = {content:'实际由长期记忆替换'};
   const edited = {...selected,overrides}, current = await captureStoryWriting(edited,settings.prompts);
-  expect(current).toMatchObject({configurationVersion:3});
+  expect(current).toMatchObject({configurationVersion:4});
   expect(await canResumeWriting(previous,current,edited)).toBe(true);
   expect(await canResumeWriting({...previous,configuration:'0'.repeat(64)},current,edited)).toBe(false);
   const different = {...selected,overrides:toggleEntry(loaded,overrides,'wave-pace-fast',true)};

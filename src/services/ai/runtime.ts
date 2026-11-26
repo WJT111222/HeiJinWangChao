@@ -2,7 +2,8 @@ import { canonicalJson } from '../../domain/worldbook/canonical';
 import { logicalMessageCount } from '../../domain/worldbook/timedEffects';
 import { prepareStoryWorldbook } from '../worldbook/storyWorldbook';
 import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
-import { nativeReferenceRecords } from '../../presets/nativeDelivery';
+import { isPeinture } from '../../presets/peintureSettings';
+import { nativeOutputTool, nativeReferenceRecords } from '../../presets/nativeDelivery';
 import { captureAssistantPreferences, ensureNativeDeliveryHost, withTavernRequest } from '../../presets/tavern/hostState';
 import { promptReady, tavernGeneration, type GenerationType } from '../../presets/tavern/events';
 import { nativeDeliveryId } from '../../presets/settings';
@@ -194,6 +195,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     playerWorldbook,
     presetSampling: prompt.preset?.sampling,
     nativeDeliveryReference,
+    storyDeliveryTool: presetSelection && typeof presetSelection === 'object' && isPeinture(presetSelection.definition.id) ? nativeOutputTool : undefined,
     // Only Story may evaluate a complete limit response; other stages remain strict.
     validateStoryOutputLimit: captured.stage === 'story',
     onResponseDiagnostics: (value) => {

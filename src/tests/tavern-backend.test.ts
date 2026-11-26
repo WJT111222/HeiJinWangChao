@@ -159,11 +159,12 @@ it.each([false, true])('独立交付只接受可核对的上游正文；stream=%
       [undefined, undefined, false], ['other', text, false], ['actual_content', '不同正文', false],
       ['actual_content', undefined, false], ['actual_content', text, true],
     ] as const) {
-      const message = {content: text, ...(name ? {tool_calls: [{...toolCall, index: 0,
+      const message = {content: name ? null : text, ...(name ? {tool_calls: [{...toolCall, index: 0,
         function: {name, arguments: JSON.stringify({content: carried})}}]} : {})};
       const choice = { [stream ? 'delta' : 'message']: message, finish_reason: name ? 'tool_calls' : 'stop' };
       fetcher.mockResolvedValueOnce(stream ? sse(frame({choices: [choice]}) + 'data: [DONE]\n\n') : Response.json({choices: [choice]}));
       if (expected) await expect(run()).resolves.toMatchObject({text});
+      else if (name === 'other' || (name && carried === undefined)) await expect(run()).rejects.toMatchObject({code:'invalid_output'});
       else await expect(run()).rejects.toMatchObject({code: 'unsupported', details: {fieldPath: 'tavern.native_delivery.response'}});
     }
     expect(fetcher).toHaveBeenCalledTimes(5);
@@ -453,7 +454,8 @@ describe('第二批 P2 响应边界', () => {
 
   it('Anthropic 收到正文后、message_stop 前取消', async () => {
     const cancel = vi.fn();
-    const fragment = frame({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } });
+    const fragment = frame({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } })
+      + frame({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } });
     const source = new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(fragment)); }, cancel });
     const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(source));
     const abort = new AbortController();
@@ -477,7 +479,7 @@ describe('第二批 P2 响应边界', () => {
     const repeated = { ...noop, args: {} };
     const source = stream
       ? sse(frame(geminiCandidate([noop], false)) + frame(geminiCandidate([repeated, ...other], true)))
-      : Response.json(geminiCandidate([noop, repeated, ...other], true));
+      : Response.json(geminiCandidate([noop, ...other], true));
     const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(source);
     const observed = vi.fn();
     wrap(async response => {

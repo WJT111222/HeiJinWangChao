@@ -4,7 +4,7 @@ export const StoryWritingSchema = z.discriminatedUnion('source', [
   z.strictObject({ source: z.literal('native'), prefixSource: z.literal('unknown').optional(), min: z.number().int().positive(), max: z.number().int().positive(),
     perspective: z.enum(['first', 'second', 'third']), style: z.enum(STORY_STYLE_IDS), naturalProse: z.boolean() }),
   z.strictObject({ source: z.literal('preset'), id: z.string().min(1), version: z.string().min(1),
-    prefixSource: z.literal('unknown').optional(), configurationVersion: z.union([z.literal(2), z.literal(3)]).optional(), configuration: z.string().regex(/^[a-f0-9]{64}$/) }),
+    prefixSource: z.literal('unknown').optional(), configurationVersion: z.union([z.literal(2), z.literal(3), z.literal(4)]).optional(), configuration: z.string().regex(/^[a-f0-9]{64}$/) }),
 ]);
 export type StoryWriting = z.infer<typeof StoryWritingSchema>;
 

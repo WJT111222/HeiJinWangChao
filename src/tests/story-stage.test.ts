@@ -38,7 +38,7 @@ function sse(text: string, protocol: Protocol = 'openai', nativeReasoning = '') 
     .join('');
   const terminal =
     protocol === 'openai' || protocol === 'deepseek'
-      ? frame({
+      ? frame({ choices: [{ delta: {}, finish_reason: 'stop' }] }) + frame({
           choices: [],
           usage: { prompt_tokens: 42, completion_tokens: 7, total_tokens: 49 },
         }) + 'data: [DONE]\n\n'

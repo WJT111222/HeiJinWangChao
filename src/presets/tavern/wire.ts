@@ -74,5 +74,5 @@ export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeRefere
     }
   }
   wire.init.body = JSON.stringify(body);
-  return { ...wire, stream };
+  return { ...wire, stream, declaredTools: choice === 'none' ? new Set<string>() : names };
 }
