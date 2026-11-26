@@ -1,4 +1,4 @@
-import { withWorldbookLibrary } from '../services/worldbook/mainWorldview';
+import { withWorldbookLibrary, type StoryWorldview } from '../services/worldbook/mainWorldview';
 import { nativeDeliveryId } from '../presets/settings';
 import { StoryClock } from '../presets/tavern/timing';
 import { awaitAssistant, assistantStarting, captureAssistantPreferences } from '../presets/tavern/hostState';
@@ -24,7 +24,8 @@ import { redactInspection } from '../services/ai/inspection';
 import { recordedRetryable } from './stageRetry';
 import { runStageRequest, storyFailureText } from '../services/ai/runtime';
 import { canContinueStory, ContinuationPreview, nextStoryPartial, trimIncompleteTag } from '../domain/storyContinuation';
-import { SettingsSchema } from '../ui/settings/model';
+import { preparationSeconds, withStoryPreparation } from '../services/ai/storyPreparation';
+import { SettingsSchema, storyStreamLimits } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { StoryStream } from './storyStream';
 import { StageGuard } from './stageGuard';
@@ -55,6 +56,9 @@ interface StoryInput {
   continuation?: boolean;
   /** Explicit replacement starts from current settings, including recovery of an unbound draft. */
   freshWorldview?: boolean;
+  automaticRetry?: boolean;
+  /** Shared only by the attempts of one explicit replacement while its stage lock is held. */
+  replacementRetry?: { pending?: StoryWorldview };
   legacyNotificationSelection?: LegacyNotificationSelection;
 }
 
@@ -67,6 +71,7 @@ export function storyPartialAfterFailure(draft: TurnDraft, error: AiError, conti
   return nextStoryPartial(draft, { code: error.code, storyRule }, received, continuation);
 }
 export class StoryStage {
+  private presetAtFirstAttempt?: string;
   constructor(
     private repository: Repository,
     private client = new AiClient(),
@@ -108,11 +113,18 @@ export class StoryStage {
     return this.guard.run(expected.saveId, async (attempt) => {
       const current = attempt.check;
       if (presetSelection && waitingForScripts) {
-        await awaitAssistant(attempt.signal);
+        const runtime = frozen!.settings.runtime;
+        const preparation = preparationSeconds(runtime.timeoutSeconds);
+        const limits = runtime.streamStory ? storyStreamLimits(runtime) : { idle: runtime.timeoutSeconds, total: preparation };
+        await withStoryPreparation(attempt.signal, clock!, limits, preparation, signal => awaitAssistant(signal));
         clock?.first('assistantReadyMs');
         current();
         presetSelection = captureAssistantPreferences(allowNativeDelivery);
       }
+      const presetIdentity = fingerprint(presetSelection ?? null);
+      if (input.automaticRetry && this.presetAtFirstAttempt !== presetIdentity)
+        throw new AiError('configuration', undefined, { fieldPath: 'tavern.retry_changed' });
+      this.presetAtFirstAttempt = presetIdentity;
       const { config, settings, companionProfile, orderPreferences, frozenStoryChannel, secrets } = frozen ?? captureInputs();
       const streaming = settings.runtime.streamStory;
       const [state, draft] = await Promise.all([
@@ -144,7 +156,7 @@ export class StoryStage {
         return shown ? stream.push(shown) : narrative;
       };
       const resume = continuation || retry;
-      const lease = await this.repository.prepareWorldview(draft, resume, input.expectedInstance);
+      const lease = await this.repository.prepareWorldview(draft, resume, input.expectedInstance, input.replacementRetry?.pending);
       const inspectionId = storyInspections.begin({ saveId: draft.saveId, turnId: draft.turnId,
         baseSaveRevision: draft.baseSaveRevision, basedOnStoryRevision: draft.storyRevision });
       let reasoning = '', inspectionReasoning = '', compatibilityReasoning = '';
@@ -252,13 +264,19 @@ export class StoryStage {
         storyInspections.update(inspectionId, { status: 'failed' });
         if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', failureLayer: saving ? 'draft' : 'story_validation',
           ...(!saving && clock ? { validationEndMs: clock.elapsed() } : {}), normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
-        if (!saving && !recovery && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
+        if (!saving && draft.story && draft.stageStatus.story === 'ready' && input.replacementRetry &&
+            error instanceof AiError && recordedRetryable(error, input.settings)) {
+          input.replacementRetry.pending = lease;
+        }
+        if (!saving && !recovery && !(draft.story && draft.stageStatus.story === 'ready') &&
+            input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)
             .reduce((last, failure) => Math.max(last, failure.attempt), 0);
           const failed = TurnDraftSchema.parse({
             ...draft, draftRevision: draft.draftRevision + 1,
-            storyPartial: storyPartialAfterFailure(draft, error, continuation, secrets),
+            storyPartial: storyPartialAfterFailure(draft, error, continuation, secrets) ??
+              (input.automaticRetry && draft.storyPartial?.storyRevision === draft.storyRevision ? draft.storyPartial : undefined),
             stageStatus: { ...draft.stageStatus, story: 'failed' },
             failures: [...draft.failures, { stage: 'story', attempt: previousAttempt + 1,
               storyRevision: draft.storyRevision, errorCode: error.code, retryable: recordedRetryable(error, input.settings) }],
@@ -274,7 +292,8 @@ export class StoryStage {
         }
         throw error;
       } finally {
-        if (!resume && !published) {
+        if (published && input.replacementRetry) delete input.replacementRetry.pending;
+        if (!resume && !published && input.replacementRetry?.pending !== lease) {
           await withWorldbookLibrary(lib => lib.forgetGeneration(lease.saveId, lease.owner, lease.generation)).catch(() => {});
         }
       }

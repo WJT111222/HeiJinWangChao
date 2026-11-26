@@ -157,7 +157,7 @@ export async function waitForRetry(ms: number, signal: AbortSignal, onTick: (rem
 export async function executeWithAutoRetry<T>(options: {
   settings: Settings;
   signal: AbortSignal;
-  run: () => Promise<T>;
+  run: (attempt: number) => Promise<T>;
   onFailure: (error: unknown) => void;
   onRetry: (notice: RetryNotice) => void;
 }): Promise<T> {
@@ -167,7 +167,7 @@ export async function executeWithAutoRetry<T>(options: {
     if (options.signal.aborted) throw new AiError('cancelled');
     if (previousFailure) markRetryIssued(previousFailure);
     try {
-      return await options.run();
+      return await options.run(attempt);
     } catch (error) {
       if (options.signal.aborted || (error instanceof AiError && error.code === 'cancelled')) {
         throw error instanceof AiError ? error : new AiError('cancelled');

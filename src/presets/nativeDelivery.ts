@@ -9,7 +9,7 @@ const end = '[[WAVE_CONTEXT_END_07_8d2c91]]';
 
 export const nativeOutputTool = 'actual_content';
 
-const referenceTool = 'wave_context_reference';
+export const referenceTool = 'wave_context_reference';
 const scriptActionHint = '回应其中最新的真实用户输入';
 const nativeActionHint = '以资料数组末项 GAME_CONTEXT 中的 PLAYER_ACTION 为本回合行动，CURRENT_TURN 标明来源。历史记录和时间预检只作参考；行动为空时遵循原有开局或回合规则';
 

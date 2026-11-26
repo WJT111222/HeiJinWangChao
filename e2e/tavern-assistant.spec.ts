@@ -93,7 +93,8 @@ test('启用内置脚本：首次 Story、JSON/SSE、状态按钮、取消与刷
       const afterCancel = (await repo.loadDraft(state.saveId)).story.narrative;
       channel.defaultModel = 'continuation';
       const {runStageRequest} = await import('/src/services/ai/runtime.ts' as string);
-      const continued = await runStageRequest({ stage:'story',mode:'opening',state,draft:next,settings,userInput:'' },
+      const origin = await repo.prepareWorldview(next, true);
+      const continued = await runStageRequest({ stage:'story',mode:'opening',state,draft:next,worldview:origin.worldview,settings,userInput:'' },
         config,vault,{continuation:{partial:'<正文>电车驶过石桥，林舟'},stream:false});
       const continuationTool = sent.at(-1)?.tools;
       const stop = tavernEvents.on('chat_completion_settings_ready', () => {throw Error('fixture listener');});

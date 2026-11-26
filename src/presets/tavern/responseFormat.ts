@@ -89,3 +89,26 @@ export async function identifyBody(body: ReadableStream<Uint8Array>, signal: Abo
     throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.upstream.format' });
   } catch (error) { release(); throw error; }
 }
+
+// Wrappers can return a synthetic Response whose body is independent of the fetch signal.
+export async function readStoryJson(response: Response, signal: AbortSignal): Promise<unknown> {
+  if (!response.body) return response.json();
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const cancel = () => { void reader.cancel().catch(() => {}); };
+  signal.addEventListener('abort', cancel, { once: true });
+  try {
+    let value = '';
+    while (true) {
+      signal.throwIfAborted();
+      const chunk = await reader.read();
+      signal.throwIfAborted();
+      if (chunk.done) return JSON.parse(value + decoder.decode());
+      value += decoder.decode(chunk.value, { stream: true });
+    }
+  } finally {
+    signal.removeEventListener('abort', cancel);
+    cancel();
+    reader.releaseLock();
+  }
+}

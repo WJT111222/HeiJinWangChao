@@ -1,3 +1,5 @@
+import { StoryClock } from '../../presets/tavern/timing';
+import { preparationSeconds, withStoryPreparation } from './storyPreparation';
 import { prepareStoryWorldbook, storyTriggerInput } from '../worldbook/storyWorldbook';
 import { loadMainWorldview, missingWorldview } from '../worldbook/mainWorldview';
 import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
@@ -8,7 +10,7 @@ import { nativeDeliveryId } from '../../presets/settings';
 import type { AssistantSelection } from '../../presets/library';
 import { parsePartialVariables, parsePartialWorld } from '../validation/partialOutputs';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
-import { narrativeRange } from '../../ui/settings/model';
+import { narrativeRange, storyStreamLimits } from '../../ui/settings/model';
 import { DataError } from '../../domain/common';
 import { historicalPerspective } from '../../domain/timePreflight';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
@@ -51,11 +53,23 @@ export async function runStageRequest(
   options: StageRequestOptions = {},
   client = new AiClient(),
 ) {
-  try { return await runStageRequestUnchecked(input, config, vault, options, client); }
+  try {
+    if (input.stage !== 'story') return await runStageRequestUnchecked(input, config, vault, options, client);
+    const selection = options.presetSelection === undefined
+      ? captureAssistantPreferences(!options.continuation && !input.legacyNotificationRecovery) : options.presetSelection;
+    const storyOptions = { ...options, presetSelection: selection };
+    if (options.stream === false && !selection) return await runStageRequestUnchecked(input, config, vault, storyOptions, client);
+    const clock = options.storyClock ?? new StoryClock();
+    const timeout = options.timeoutSeconds ?? input.settings.runtime.timeoutSeconds;
+    const preparation = preparationSeconds(timeout);
+    const limits = options.stream === false ? { idle: timeout, total: preparation } : storyStreamLimits(input.settings.runtime);
+    return await withStoryPreparation(options.signal, clock, limits, preparation, (signal, prepared) =>
+      runStageRequestUnchecked(input, config, vault, { ...storyOptions, storyClock: clock, signal }, client, prepared));
+  }
   catch (error) { throw input.stage === 'variables' ? variableFailure(error, 'context') : error; }
 }
 async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }, config: AiConfig,
-  vault: CredentialVault, stageOptions: StageRequestOptions, client: AiClient) {
+  vault: CredentialVault, stageOptions: StageRequestOptions, client: AiClient, prepared?: () => void) {
   const { continuation: requestedContinuation, frozenStoryChannel, presetSelection: suppliedSelection, ...options } = stageOptions;
   if (requestedContinuation && input.stage !== 'story') throw new AiError('configuration');
   if (input.orderOverrides && input.orderPreferences) throw new AiError('configuration');
@@ -80,7 +94,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   if (!captured.worldview && (requestedContinuation || captured.stage !== 'story')) throw missingWorldview();
   captured.worldview ??= await loadMainWorldview();
   if (options.signal?.aborted) throw new AiError('cancelled');
-  const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation);
+  const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation, prepared);
   if (!presetSelection || captured.stage !== 'story') return run();
   if (presetSelection === nativeDeliveryId) await ensureNativeDeliveryHost(options.signal);
   const recent = captured.state.journal.slice(-captured.settings.memory.immediateWindowSize);
@@ -94,7 +108,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
 
 async function executePrepared(captured: ComposeInput & { stage: AiStage }, snapshot: RequestSnapshot,
   presetSelection: AssistantSelection | undefined, type: GenerationType, config: AiConfig, vault: CredentialVault,
-  options: RequestOptions, requestedContinuation: StageRequestOptions['continuation'], client: AiClient, generation: number) {
+  options: RequestOptions, requestedContinuation: StageRequestOptions['continuation'], client: AiClient, generation: number, prepared?: () => void) {
   const prompt = captured.stage === 'variables'
     ? await composeTextVariablesPrompt({ ...captured, stage: 'variables', cotAllowed: snapshot.useCot })
     : await composePrompt({ ...captured, cotAllowed: snapshot.useCot }, presetSelection);
@@ -109,6 +123,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
         partial: continuation.partial }) }]
     : composed;
   const merged = (text: string) => continuation ? mergeContinuation(continuation.partial, text) : text;
+  if (options.signal?.aborted) throw new AiError('cancelled');
   const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision, protocol: snapshot.channel.protocol, baseSaveRevision: captured.state.revision,
     draftRevision: captured.draft?.draftRevision, executionRevision: captured.draft?.executionRevision,
     stageRequestRevision: captured.stage === 'story' ? undefined : captured.draft?.stageRequestRevisions[captured.stage],
@@ -163,9 +178,14 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   if (presetSelection === nativeDeliveryId && !captured.draft)
     throw new AiError('configuration', undefined, { fieldPath: 'tavern.native_delivery.action' });
   const nativeDeliveryReference = presetSelection === nativeDeliveryId ? nativeReferenceRecords(messages) : undefined;
-  const responseResult = await client.generate(snapshot, scripted ? await promptReady(messages, false) : messages, {
+  const outbound = scripted ? await promptReady(messages, false) : messages;
+  if (options.signal?.aborted) throw new AiError('cancelled');
+  prepared?.();
+  const responseResult = await client.generate(snapshot, outbound, {
     ...options,
     tavernType: scripted ? type : undefined,
+    retryableTavernHost: presetSelection === nativeDeliveryId || presetSelection?.definition.id === 'peinture-1118',
+    streamTimeouts: captured.stage === 'story' ? storyStreamLimits(captured.settings.runtime) : undefined,
     playerWorldbook,
     presetSampling: prompt.preset?.sampling,
     nativeDeliveryReference,

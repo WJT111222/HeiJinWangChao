@@ -1,10 +1,10 @@
-import { checkFinish, splitLeadingThink } from '../../services/ai/compat';
+import { checkFinish, normalTextFinish, splitLeadingThink } from '../../services/ai/compat';
 import { isOpenAiCompatible, type Protocol } from '../../services/ai/configuration';
 import { AiError, safeAiError } from '../../services/ai/errors';
 import { attachFailureDiagnostic, classifyUpstreamPayload } from '../../services/ai/failureDiagnostic';
 import { array, nativeReasoning, record, usageFrom, type Usage } from '../../services/ai/protocols';
 import { responseContent, responseDiagnostics } from '../../services/ai/responseContent';
-import { readSse } from '../../services/ai/sse';
+import { FINISH_TAIL_MS, readSse } from '../../services/ai/sse';
 
 import { identifyBody, safeMime } from './responseFormat';
 
@@ -13,6 +13,7 @@ import { StoryClock } from './timing';
 export interface UpstreamTrace {
   clock: StoryClock;
   requestedStream?: boolean;
+  retryableHost?: boolean;
   contentType?: string | null;
   formatEvidence?: 'json_object' | 'sse_field' | 'sse_comment';
   readerEof?: boolean;
@@ -28,7 +29,7 @@ export interface UpstreamTrace {
   bytes: number;
   complete: boolean;
   status?: number;
-  boundary?: 'json' | 'done' | 'message_stop' | 'eof';
+  boundary?: 'json' | 'done' | 'message_stop' | 'eof' | 'finish_reason';
   finish?: string;
   usage?: Usage;
   error?: AiError;
@@ -57,7 +58,7 @@ class Frames {
   private hasText = false;
   private preToolPaddingLength = 0;
   boundary = false;
-  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string) {}
+  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null, private literaryDelivery = false) {}
   private track(index: number, id: unknown, name: unknown, args: unknown) {
     if (!Number.isSafeInteger(index) || index < 0) invalid();
     const tool = this.tools.get(index) ?? { id: '', name: '', args: '' };
@@ -107,6 +108,8 @@ class Frames {
       this.trace.clock.progress('firstContentMs');
     }
     if (reasoning.trim()) this.trace.clock.progress('firstReasoningMs');
+    if (streaming && isOpenAiCompatible(p) && this.trace.finish &&
+      (text || reasoning || array(msg.tool_calls).length || msg.function_call != null)) invalid();
     const calls = [];
     if (isOpenAiCompatible(p)) {
       if (msg.function_call != null || (msg.tool_calls != null && !Array.isArray(msg.tool_calls))) invalid();
@@ -195,24 +198,29 @@ class Frames {
     if (streaming && this.protocol === 'anthropic' && !this.boundary) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.message_stop' });
     if (streaming && this.protocol === 'anthropic' && this.blocks.size) invalid();
     if (this.tools.size || finish === 'tool_use' || finish === 'tool_calls') {
-      if (!this.tools.size || !(finish === 'tool_use' || finish === 'tool_calls' || (this.protocol === 'gemini' && finish === 'STOP'))) {
+      if (!this.tools.size || !(isOpenAiCompatible(this.protocol) ? finish === 'tool_calls'
+          : this.protocol === 'anthropic' ? finish === 'tool_use' : finish === 'STOP')) {
         throw new AiError(finish === 'length' || finish === 'max_tokens' ? 'output_limit' : 'invalid_output');
       }
+      if (this.expectedContentTool !== undefined && (this.tools.size !== 1 || (this.hasText && this.trace.boundary === 'finish_reason'))) invalid();
       const ids = new Set<string>();
       for (const tool of this.tools.values()) {
         if (!tool.id || !tool.name || ids.has(tool.id)) invalid();
         const args = parse(tool.args);
         if (!objectArgs(args)) invalid();
+        if (this.expectedContentTool !== undefined && this.expectedContentTool !== tool.name) {
+          if (this.literaryDelivery) invalid();
+          throw new AiError('unsupported', undefined, { fieldPath: 'tavern.native_delivery.response' });
+        }
         if (this.expectedContentTool === tool.name && this.tools.size === 1) {
           const content = record(args).content;
           // The wrapper can prefer a competing plain answer. Check what the client actually received.
-          if (typeof content === 'string' && content.trim()) {
-            const padding = this.preToolPaddingLength;
-            this.trace.matchesDelivery = restored => restored === content || restored === splitLeadingThink(content).content ||
-              // A wrapper can already have forwarded whitespace-only SSE deltas before seeing the tool.
-              (padding > 0 && restored.length === padding + content.length && restored.endsWith(content) &&
-                !/[^ \t\r\n]/u.test(restored.slice(0, padding)));
-          }
+          if (typeof content !== 'string' || !content.trim() || Object.keys(record(args)).length !== 1)
+            throw new AiError('unsupported', undefined, { fieldPath: 'tavern.native_delivery.response' });
+          const padding = this.preToolPaddingLength;
+          this.trace.matchesDelivery = restored => restored === content || restored === splitLeadingThink(content).content ||
+            (padding > 0 && restored.length === padding + content.length && restored.endsWith(content) &&
+              !/[^ \t\r\n]/u.test(restored.slice(0, padding)));
         }
         ids.add(tool.id);
       }
@@ -223,11 +231,11 @@ class Frames {
     this.trace.clock.first('upstreamCompleteMs');
   }
 }
-export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace, expectedContentTool?: string) {
+export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace, expectedContentTool?: string | null, literaryDelivery = false) {
   trace.status = response.status;
   trace.contentType = safeMime(response.headers);
   trace.requestedStream = stream;
-  const frames = new Frames(protocol, trace, expectedContentTool);
+  const frames = new Frames(protocol, trace, expectedContentTool, literaryDelivery);
   if (!response.body) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_body' });
   const stopped = new AbortController();
   const reading = AbortSignal.any([signal, stopped.signal]);
@@ -243,7 +251,9 @@ export async function normalizeUpstream(response: Response, protocol: Protocol, 
     frames.finish(false);
     return Response.json(json);
   }
-  const iterator = readSse(counted, reading, { utf8: 'tavern.upstream.utf8', tail: 'tavern.upstream.sse_tail', onComment: () => { trace.clock.marks.comments++; } });
+  let tailDeadline: number | undefined;
+  const iterator = readSse(counted, reading, { tailDeadline: () => tailDeadline,
+    onTail: () => { trace.boundary = 'finish_reason'; }, utf8: 'tavern.upstream.utf8', tail: 'tavern.upstream.sse_tail', onComment: () => { trace.clock.marks.comments++; } });
   const encoder = new TextEncoder();
   const done = encoder.encode('data: [DONE]\n\n');
   let downstreamCancelled = false;
@@ -268,6 +278,11 @@ export async function normalizeUpstream(response: Response, protocol: Protocol, 
             trace.boundary = 'done';
           } else {
             const frame = frames.project(parse(next.value.data), true);
+            if (tailDeadline === undefined && isOpenAiCompatible(protocol) &&
+                (normalTextFinish(trace.finish) || trace.finish === 'tool_calls')) {
+              tailDeadline = performance.now() + FINISH_TAIL_MS;
+              trace.clock.beginTail();
+            }
             controller.enqueue(encoder.encode('data: ' + JSON.stringify(frame) + '\n\n'));
             // Anthropic can leave the HTTP body open after its terminal message_stop.
             if (!frames.boundary) return;
