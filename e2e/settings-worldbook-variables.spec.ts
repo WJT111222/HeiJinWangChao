@@ -23,7 +23,7 @@ test('世界书与变量设置保护未保存修改，保存后同时进入下�
     }
     return url.hostname === '127.0.0.1' || url.hostname === 'localhost' ? route.continue() : route.abort();
   });
-  await seedSummary(page, { count: 3, npcCount: 2, automatic: false });
+  await seedSummary(page, { count: 3, npcCount: 2, automatic: false, entities:true });
   await page.evaluate(async action => {
     const modelPath = '/src/ui/settings/model.ts', repoPath = '/src/services/storage/saveRepository.ts', draftsPath = '/src/domain/drafts.ts';
     const { settingsKey } = await import(modelPath);
@@ -34,7 +34,7 @@ test('世界书与变量设置保护未保存修改，保存后同时进入下�
     const repo = await SaveRepository.open();
     try {
       const { state } = await repo.loadGame('save-a');
-      await repo.saveDraft(createTurnDraft(state.saveId, state.revision, 'worldbook-variable-turn', 'regular', action, false, false, false), null);
+      await repo.saveDraft(createTurnDraft(state.saveId, state.revision, 'worldbook-variable-turn', 'regular', action), null);
     } finally { repo.close(); }
   }, action);
   await page.reload();
