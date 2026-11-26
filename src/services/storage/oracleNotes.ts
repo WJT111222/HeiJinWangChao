@@ -4,8 +4,13 @@ import { request } from './idb';
 
 export const oracleStore = 'oracleNotes';
 const Note = z.strictObject({ id: z.uuid(), text: z.string().max(100000), once: z.boolean() });
+const historyLimit = 6;
+function recentPapers(history: readonly string[]) {
+  return [...new Set(history.map(text => text.trim()).filter(Boolean))].slice(0, historyLimit);
+}
+
 const Sheet = z.strictObject({
-  saveId: IdSchema, version: z.uuid(), note: Note.nullable(), history: z.array(Note.shape.text).max(6),
+  saveId: IdSchema, version: z.uuid(), note: Note.nullable(), history: z.array(Note.shape.text).max(historyLimit).transform(recentPapers),
 });
 
 export async function readSheet(tx: IDBTransaction, saveId: string) {
@@ -13,8 +18,7 @@ export async function readSheet(tx: IDBTransaction, saveId: string) {
   return raw === undefined ? { saveId, version: null, note: null, history: [] as string[] } : Sheet.parse(raw);
 }
 export function rememberPaper(history: string[], text: string) {
-  const item = text.trim();
-  return item ? [item, ...history.filter(previous => previous !== item)].slice(0, 6) : history;
+  return recentPapers([text, ...history]);
 }
 export async function writeSheet(tx: IDBTransaction, sheet: Awaited<ReturnType<typeof readSheet>>) {
   const next = Sheet.parse({ ...sheet, version: crypto.randomUUID() });

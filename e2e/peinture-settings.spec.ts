@@ -1030,6 +1030,26 @@ test('正式设置选择小猫之神并通过隔离工具交付开局候选', as
       id:'production-oracle',type:'function',function:{name:'soliumbra_reply',arguments:JSON.stringify({game_content:envelope.replace('船靠岸了，林舟沿着石阶往上走。', narrative)})},
     }] } }] } });
   });
+  const paper = '  留意岸边白帆。　';
+  await page.evaluate(async text => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const open = indexedDB.open('heijinwangchao');
+      open.onsuccess = () => resolve(open.result);
+      open.onerror = () => reject(open.error);
+    });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('oracleNotes', 'readwrite');
+        tx.objectStore('oracleNotes').put({
+          saveId: 'peinture-smoke', version: crypto.randomUUID(),
+          note: { id: crypto.randomUUID(), text, once: true },
+          history: [text, text.trim(), '  较早的一条  '],
+        });
+        tx.oncomplete = () => resolve();
+        tx.onabort = () => reject(tx.error);
+      });
+    } finally { db.close(); }
+  }, paper);
   const settings = await runtimeSettings(page);
   await settings.getByLabel('正文预设').selectOption('meowssiah');
   await applyMode(page,settings);
@@ -1044,7 +1064,8 @@ test('正式设置选择小猫之神并通过隔离工具交付开局候选', as
   await expect(oracle.getByRole('status')).toContainText('文学配置已保存');
   await info.attach('production-console',{contentType:'image/png',body:await page.screenshot()});
   await oracle.getByRole('button',{name:'场外小纸条',exact:true}).click();
-  await oracle.getByLabel('本档下次正文的附加要求').fill('留意岸边白帆。');
+  await expect(oracle.getByLabel('本档下次正文的附加要求')).toHaveValue(paper);
+  await expect(oracle.getByRole('button',{name:/回填第\d+条纸条/})).toHaveCount(2);
   await oracle.getByRole('button',{name:'保存小纸条',exact:true}).click();
   await expect(oracle.getByRole('status')).toContainText('场外小纸条已保存');
   await expect(oracle).toContainText('场外小纸条及其历史仅保存在本机当前存档中，不包含在游戏备份内。');
@@ -1052,6 +1073,7 @@ test('正式设置选择小猫之神并通过隔离工具交付开局候选', as
   await expect(oracle.getByLabel('本档下次正文的附加要求')).toHaveValue('');
   await oracle.getByRole('button',{name:'回填第1条纸条',exact:true}).click();
   await expect(oracle.getByLabel('本档下次正文的附加要求')).toHaveValue('留意岸边白帆。');
+  await oracle.getByLabel('本档下次正文的附加要求').fill(paper);
   await oracle.getByRole('button',{name:'保存小纸条',exact:true}).click();
   await expect(oracle.getByRole('status')).toContainText('场外小纸条已保存');
   await info.attach('本机纸条与历史',{contentType:'image/png',body:await page.screenshot()});
@@ -1064,7 +1086,7 @@ test('正式设置选择小猫之神并通过隔离工具交付开局候选', as
   expect((await workerCreated).url()).toContain('blob:null/');
   expect(wires).toHaveLength(1);expect(sent).toEqual([]);
   expect(wires[0]).toContain('沿岸的灯火渐次亮起。');
-  expect(wires[0]).toContain('留意岸边白帆。');
+  expect(JSON.parse(wires[0]).messages.some((m: { content: string }) => m.content.includes('场外小纸条（本次文学创作要求）\n' + paper))).toBe(true);
   expect(JSON.parse(wires[0]).tools.map((tool:{function:{name:string}})=>tool.function.name)).toEqual(['soliumbra_reply']);
   const license=await page.request.get('/literature/meowssiah/source/COPYING');
   expect(await license.text()).toContain('GNU GENERAL PUBLIC LICENSE');

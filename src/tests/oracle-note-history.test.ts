@@ -1,6 +1,8 @@
 import { previousOracleVersion, oracleDefinition, upgradeOraclePreferences } from '../presets/meowssiah/definition';
 import { expect, it } from 'vitest';
 import { SaveRepository } from '../services/storage/saveRepository';
+import { request, transaction } from '../services/storage/idb';
+import { createOracleStore, oracleStore, readSheet } from '../services/storage/oracleNotes';
 import { game } from './fixtures/game';
 import { observedToolString } from '../presets/spreset/toolObservation';
 
@@ -31,6 +33,53 @@ it('近六条去重、回填、草稿消费与清空历史分别受实例和版�
     await repo.delete(state.saveId, state.revision, replaced.instance);
     await repo.create(state);
     await expect(repo.clearOracleHistory(state.saveId, replaced)).rejects.toMatchObject({ code: 'REVISION_CONFLICT' });
+  } finally { repo.close(); }
+});
+
+it('从旧存储迁入的历史按 trim 去重，当前纸条逐字保留', async () => {
+  const name = crypto.randomUUID();
+  const note = { id: crypto.randomUUID(), text: '　开头留白\n第二行  ', once: true };
+  const old = indexedDB.open(name, 11);
+  old.onupgradeneeded = () => old.result.createObjectStore('saveControls', { keyPath: 'saveId' });
+  const db = await request(old);
+  await transaction(db, ['saveControls'], 'readwrite', tx =>
+    request(tx.objectStore('saveControls').put({ saveId: 'paper', oracleNote: note })));
+  db.close();
+  const upgrade = indexedDB.open(name, 12);
+  upgrade.onupgradeneeded = () => createOracleStore(upgrade.result, upgrade.transaction!);
+  const migrated = await request(upgrade);
+  try {
+    const raw = await transaction(migrated, [oracleStore], 'readonly', tx => request(tx.objectStore(oracleStore).get('paper')));
+    expect(raw).toMatchObject({ note, history: [note.text.trim()] });
+    expect(await transaction(migrated, [oracleStore], 'readonly', tx => readSheet(tx, 'paper'))).toEqual(raw);
+  } finally { migrated.close(); }
+});
+
+it('已有 V12 重复历史首次读取即去重，重新保存与清除保留最近六条且逐档隔离', async () => {
+  const name = crypto.randomUUID(), repo = await SaveRepository.open(name);
+  try {
+    await repo.create(game('paper'));
+    await repo.create(game('other'));
+    const other = await repo.writeOracleNote('other', await repo.readOracleNote('other'), '　另一档原文  ', false);
+    const note = { id: crypto.randomUUID(), text: '  当前纸条\n末行　', once: true };
+    const version = crypto.randomUUID();
+    const db = await request(indexedDB.open(name));
+    try {
+      await transaction(db, [oracleStore], 'readwrite', tx => request(tx.objectStore(oracleStore).put({
+        saveId: 'paper', version, note, history: ['　乙', '  甲\n乙 ', '乙 ', '甲\n乙', '甲  乙', '　'],
+      })));
+      let view = await repo.readOracleNote('paper');
+      expect(view).toMatchObject({ version, note, history: ['乙','甲\n乙','甲  乙'] });
+      view = await repo.writeOracleNote('paper', view, '  甲\n乙　', true);
+      expect(view.note?.text).toBe('  甲\n乙　');
+      expect(view.history).toEqual(['甲\n乙','乙','甲  乙']);
+      const stored = await transaction(db, [oracleStore], 'readonly', tx => request(tx.objectStore(oracleStore).get('paper')));
+      expect(stored).toMatchObject({ history: view.history, note: view.note });
+      for (const text of ['三','四','五','六']) view = await repo.writeOracleNote('paper', view, text, true);
+      view = await repo.clearOracleNote('paper', view, '  四　');
+      expect(view).toMatchObject({ note: null, history: ['四','六','五','三','甲\n乙','乙'] });
+      expect(await repo.readOracleNote('other')).toEqual(other);
+    } finally { db.close(); }
   } finally { repo.close(); }
 });
 
