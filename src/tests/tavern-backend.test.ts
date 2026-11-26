@@ -454,7 +454,8 @@ describe('第二批 P2 响应边界', () => {
 
   it('Anthropic 收到正文后、message_stop 前取消', async () => {
     const cancel = vi.fn();
-    const fragment = frame({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } });
+    const fragment = frame({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } })
+      + frame({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } });
     const source = new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(fragment)); }, cancel });
     const transport = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(source));
     const abort = new AbortController();

@@ -52,7 +52,8 @@ function normalizedUsage(u?: Usage) {
 }
 class Frames {
   private tools = new Map<number, { id: string; name: string; args: string }>();
-  private blocks = new Map<number, number>();
+  // A closed index remains reserved for the rest of this message.
+  private blocks = new Map<number, { type: string; toolIndex?: number } | null>();
   private snapshots = new Map<string, { name: string; args: unknown }>();
   private anonymousGeminiCalls = new Set<string>();
   private hasText = false;
@@ -73,6 +74,50 @@ class Frames {
     if (tool.args.length > 8_000_000) invalid();
     this.tools.set(index, tool);
     return { index, type: 'function', id, function: { name, arguments: args } };
+  }
+  private startAnthropicTool(block: Record<string, unknown>, streaming: boolean) {
+    if (!objectArgs(block.input)) invalid();
+    const hasInput = !streaming || Object.keys(record(block.input)).length > 0;
+    if (hasInput) this.trace.clock.progress('firstArgumentsMs');
+    return this.track(this.tools.size, block.id, block.name, hasInput ? JSON.stringify(block.input) : '');
+  }
+  private anthropicBlockEvent(event: Record<string, unknown>) {
+    const { type, index } = event;
+    if (type !== 'content_block_start' && type !== 'content_block_delta' && type !== 'content_block_stop') return;
+    if (typeof index !== 'number' || !Number.isSafeInteger(index) || index < 0 || this.trace.finish) invalid();
+
+    if (type === 'content_block_start') {
+      const block = record(event.content_block);
+      if (this.blocks.has(index) || typeof block.type !== 'string' || !block.type) invalid();
+      const call = block.type === 'tool_use' ? this.startAnthropicTool(block, true) : undefined;
+      this.blocks.set(index, { type: block.type, toolIndex: call?.index });
+      return call;
+    }
+    const block = this.blocks.get(index);
+    if (!block) invalid();
+    if (type === 'content_block_stop') {
+      this.blocks.set(index, null);
+      if (block.toolIndex !== undefined && !this.tools.get(block.toolIndex)?.args)
+        return this.track(block.toolIndex, undefined, undefined, '{}');
+      return;
+    }
+    const delta = record(event.delta);
+    switch (delta.type) {
+      case 'input_json_delta':
+        if (block.toolIndex === undefined || typeof delta.partial_json !== 'string') invalid();
+        if (delta.partial_json) this.trace.clock.progress('firstArgumentsMs');
+        return this.track(block.toolIndex, undefined, undefined, delta.partial_json);
+      case 'text_delta':
+      case 'citations_delta':
+        if (block.type !== 'text') invalid();
+        return;
+      case 'thinking_delta':
+      case 'signature_delta':
+        if (block.type !== 'thinking') invalid();
+        return;
+      default:
+        invalid();
+    }
   }
   project(value: unknown, streaming: boolean) {
     const d = record(value), p = this.protocol;
@@ -162,31 +207,14 @@ class Frames {
         calls.push(this.track(index, id ?? 'gemini-call-' + index, name, encoded));
       }
       for (const identity of anonymousThisFrame) this.anonymousGeminiCalls.add(identity);
-    } else {
+    } else if (streaming) {
+      const call = this.anthropicBlockEvent(d);
+      if (call) calls.push(call);
       if (d.type === 'message_stop') { this.boundary = true; this.trace.boundary = 'message_stop'; }
-      const blocks = streaming ? d.type === 'content_block_start' ? [d.content_block] : [] : array(d.content);
-      for (const block of blocks) {
-        const b = record(block);
-        if (b.type !== 'tool_use') continue;
-        const index = this.tools.size;
-        if (streaming) {
-          if (!Number.isSafeInteger(d.index) || Number(d.index) < 0 || this.blocks.has(Number(d.index))) invalid();
-          this.blocks.set(Number(d.index), index);
-        }
-        const args = b.input;
-        if (!objectArgs(args)) invalid();
-        if (!streaming || Object.keys(record(args)).length) this.trace.clock.progress('firstArgumentsMs');
-        calls.push(this.track(index, b.id, b.name, streaming && !Object.keys(record(args)).length ? '' : JSON.stringify(args)));
-      }
-      const index = this.blocks.get(Number(d.index));
-      if (d.type === 'content_block_delta' && record(d.delta).type === 'input_json_delta') {
-        if (index === undefined || typeof record(d.delta).partial_json !== 'string') invalid();
-        if (record(d.delta).partial_json) this.trace.clock.progress('firstArgumentsMs');
-        calls.push(this.track(index, undefined, undefined, record(d.delta).partial_json));
-      }
-      if (d.type === 'content_block_stop' && index !== undefined) {
-        if (!this.tools.get(index)?.args) calls.push(this.track(index, undefined, undefined, '{}'));
-        this.blocks.delete(Number(d.index));
+    } else {
+      for (const item of array(d.content)) {
+        const block = record(item);
+        if (block.type === 'tool_use') calls.push(this.startAnthropicTool(block, false));
       }
     }
     if (reason != null && reason !== '') {
@@ -209,8 +237,10 @@ class Frames {
   finish(streaming: boolean) {
     const finish = this.trace.finish;
     if (!finish) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_finish' });
-    if (streaming && this.protocol === 'anthropic' && !this.boundary) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.message_stop' });
-    if (streaming && this.protocol === 'anthropic' && this.blocks.size) invalid();
+    if (streaming && this.protocol === 'anthropic') {
+      if (!this.boundary) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.message_stop' });
+      for (const block of this.blocks.values()) if (block !== null) invalid();
+    }
     if (this.tools.size || finish === 'tool_use' || finish === 'tool_calls') {
       if (!this.tools.size || !providerToolFinish(this.protocol, finish)) {
         throw new AiError(['length', 'max_tokens'].includes(finish.toLowerCase()) ? 'output_limit' : 'invalid_output', undefined, { fieldPath: 'tavern.upstream.tool' });
