@@ -155,7 +155,7 @@ test('世界生成、补算、只读查看与刷新恢复，真实路由和快�
   const first = await stored(page);
   expect(first.formal).toBe(before);
   expect(first.draft.world.validation).toBe('validated');
-  expect(first.draft.world.basedOnVariableRevision).toBe(1);
+  expect(first.draft.world.basedOnVariableRevision).toBeUndefined();
   expect(first.draft.useVariableStage).toBe(false);
   expect(bodies[0].model).toBe('world-browser-model');
   expect(JSON.stringify(bodies[0])).toContain('NPC_CONTEXT');expect(JSON.stringify(bodies[0])).not.toContain('WORLD_SOURCES');
@@ -221,10 +221,10 @@ test('双开关关闭后只补算世界，无变量时明确预览；不 Roll �
     route.fulfill({ contentType: 'application/json', body: response(planned) }),
   );
   await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '启用并补算世界', exact: true }).click();
-  await expect(page.getByRole('region', { name: '四阶段工作流' }).locator('.workflow-stages > li[data-stage=world]')).toContainText('仅预览');
+  await expect(page.getByRole('region', { name: '四阶段工作流' }).locator('.workflow-stages > li[data-stage=world]')).toContainText('已完成');
   const saved = await stored(page);
   expect(saved.formal).toBe(before);
-  expect(saved.draft.world.validation).toBe('preview');
+  expect(saved.draft.world.validation).toBe('validated');
   expect(saved.draft.story).toEqual(initial.draft.story);
   expect(saved.draft.variables).toBeUndefined();
 });

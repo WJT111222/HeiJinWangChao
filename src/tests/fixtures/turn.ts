@@ -7,6 +7,7 @@ import { worldDraft, worldResult, worldNarrative } from './world';
 export async function completeDraft(
   repo: SaveRepository,
   options: {
+    useEntityStage?: boolean;
     variables?: NonNullable<TurnDraft['variables']>['result'];
     world?: NonNullable<TurnDraft['world']>['result'];
     narrative?: string;
@@ -24,7 +25,7 @@ export async function completeDraft(
       state.revision,
       `initial-${state.saveId}`,
       state.turnNumber ? 'regular' : 'opening',
-      '',
+      '', true, true, options.useEntityStage ?? true,
     );
   if (!existing) await repo.saveDraft(initial, null);
   const selected = await repo.saveDraft(

@@ -194,9 +194,8 @@ export function effectiveEntityCandidate(state: GameState, draft: TurnDraft, sce
     ? { ...command, memory: { ...command.memory, createdAtGameTime:clock } } : command), settlement, removedIds, lostWorldActors };
 }
 
-export function sceneAndEntityCommands(state: GameState, draft: TurnDraft, scene: readonly DomainCommand[]) {
+export function sceneAndEntityCommands(draft: TurnDraft, scene: readonly DomainCommand[], effective: ReturnType<typeof effectiveEntityCandidate>) {
   if (!draft.entities) return [...scene];
-  const effective = effectiveEntityCandidate(state, draft, scene);
   const created = new Map(draft.entities.result.commands.flatMap(command => command.type === 'CreateOrganization'
     ? [[command.organization.id, command.organization] as const] : []));
   for (const command of scene) {

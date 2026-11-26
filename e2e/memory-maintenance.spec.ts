@@ -34,7 +34,7 @@ async function seed(page: Page, count = 31, automatic = false, ready = false) {
     });
     if (ready) {
       const storage = await SaveRepository.open();
-      try { await completeDraft(storage, { variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); }
+      try { await completeDraft(storage, { useEntityStage:false, variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); }
       finally { storage.close(); }
     }
     const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.memory.automaticMaintenance = automatic;

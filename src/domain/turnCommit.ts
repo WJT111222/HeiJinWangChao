@@ -1,10 +1,9 @@
-import { effectiveEntityCandidate } from './entityCandidate';
 import { commandsForPhase } from './stageCommands';
 import { hasVisibleNarrative } from './storyContent';
 import { validateStageSettlement } from './events/stages';
 import { historicalPerspective } from './timePreflight';
 import { z } from 'zod';
-import { projectTurn, preparedVariableCommands, variableCommandsForTurn } from './turnProjection';
+import { projectTurn, projectTurnCandidates, preparedVariableCommands, variableCommandsForTurn } from './turnProjection';
 import { requireData } from './common';
 import type { DomainCommand } from './commands';
 import { TurnDraftSchema } from './drafts';
@@ -106,12 +105,12 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     '回合已有独立命令记录',
   );
   const world = draft.world?.result;
-  const projected = projectTurn(current, draft, world ? [...world.worldCommands, ...world.taskCommands, ...world.eventCommands] : []);
+  const { state:projected, entities } = projectTurnCandidates(current, draft, world ? [...world.worldCommands, ...world.taskCommands, ...world.eventCommands] : []);
   if (world && !historicalPerspective(current, draft)) {
     const beforeWorld = projectTurn(current, draft);
     validateStageSettlement(beforeWorld, projected, draft.turnId, world.deferredEvents?.filter(id => beforeWorld.events[id]?.eventKind === 'sub'));
   }
-  const entitySettlement = effectiveEntityCandidate(current, draft, draft.variables?.result.commands ?? []).settlement;
+  const entitySettlement = entities?.settlement;
   const variableSettlement = draft.variables?.result.settlement;
   const worldSettlement = world?.settlement;
   const deferred = world?.deferredEvents?.length;

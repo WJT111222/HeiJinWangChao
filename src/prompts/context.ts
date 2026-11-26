@@ -1,4 +1,4 @@
-import { checkEntityCommands, effectiveEntityCandidate } from '../domain/entityCandidate';
+import { checkEntityCommands, EntityDependencyError } from '../domain/entityCandidate';
 import { historyCatalogReason } from './historyCatalog';
 import { storyEventIndex } from '../domain/events/narration';
 import { stageResults } from '../domain/events/stages';
@@ -14,7 +14,7 @@ import type { TurnDraft } from '../domain/drafts';
 import { authorizeLegacyNotificationRecovery } from '../domain/legacyNotificationRecovery';
 import type { LegacyNotificationRecovery } from '../domain/events/legacyNotification';
 import { fingerprint } from '../domain/commands';
-import { projectTurn } from '../domain/turnProjection';
+import { projectTurnCandidates } from '../domain/turnProjection';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { initialCompanionProfile, matchesCompanion } from '../services/local/companionProfile';
@@ -176,14 +176,16 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       throw new AiError('time_data', undefined, { storyRule: 'opening_missing', fieldPath: 'worldClock' });
     const variablePending = Boolean(draft?.useVariableStage && draft.variables?.validation !== 'validated');
     const worldVariables = variablePending ? undefined : draft!.variables;
-    let temporary = original.openingTimePending ? projectTurn(original, draft!) : state;
-    if (!variablePending) {
+    let projection: ReturnType<typeof projectTurnCandidates> | undefined;
+    if (!variablePending || original.openingTimePending) {
       try {
-        temporary = projectTurn(original, draft!);
-      } catch {
+        projection = projectTurnCandidates(original, draft!);
+      } catch (error) {
+        if (error instanceof EntityDependencyError) throw new AiError('candidate_conflict');
         throw new AiError('invalid_output');
       }
     }
+    const temporary = projection?.state ?? state;
     return {
       TURN_CONTEXT: {
         turnId: draft!.turnId,
@@ -204,7 +206,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       variablePending,
       PLAYER_ACTION: draft!.userInput,
       STORY_RESULT: { ...storyForSubsequentStages(draft!.story!), eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction), eventNarrations: draft!.story!.variableGuide.filter(guide=>guide.eventNarration) },
-      ENTITY_CANDIDATE: draft!.entities && effectiveEntityCandidate(original, draft!, worldVariables?.result.commands ?? []).commands,
+      ENTITY_CANDIDATE: draft!.entities && projection?.entities?.commands,
       VARIABLE_RESULT: worldVariables,
       // 投影提供候选内容，不产生新的正式版本；模型的expectedRevision仍须使用正式基线。
       ...sharedContext({ ...temporary, revision: original.revision }, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {

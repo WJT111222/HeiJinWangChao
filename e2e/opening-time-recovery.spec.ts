@@ -132,7 +132,7 @@ test('关闭 Variables 排除其时钟，重新启用并主动继续时零请求
   await openStageSwitches(page);
   await page.locator('#workflow-runtime-switches input[data-stage="variables"]').uncheck();
   await closeWorkflowSheet(page);
-  await expect(recovery(page)).toContainText('重新启用变量管理，继续时重新校验并尝试复用已有候选');
+  await expect(recovery(page)).toContainText('重新启用主角与现场，继续时重新校验并尝试复用已有候选');
   expect(mock.calls).toEqual(['story', 'variables']);
   await recovery(page).getByRole('button', { name: '前往变量开关' }).click();
   await page.locator('#workflow-runtime-switches input[data-stage="variables"]').check();
@@ -154,7 +154,7 @@ test('关闭 Variables 排除其时钟，重新启用并主动继续时零请求
 test('缺少时钟且没有候选时，启用设置不发请求，主动补算只调用 Variables', async ({ page }) => {
   const mock = await prepare(page);
   await action(page).click();
-  await expect(recovery(page)).toContainText('启用变量管理后主动补算时间');
+  await expect(recovery(page)).toContainText('启用主角与现场后主动补算时间');
   const before = await stored(page);
   await recovery(page).getByRole('button', { name: '前往变量开关' }).click();
   await page.locator('#workflow-runtime-switches input[data-stage="variables"]').check();

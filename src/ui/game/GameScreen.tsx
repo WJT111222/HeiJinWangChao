@@ -375,11 +375,11 @@ export function GameScreen({
     try { return openingTimeSelection(state, effectiveOpening); } catch { return undefined; }
   }, [state, effectiveOpening, openingIssue]);
   const canCommit = Boolean(validDraft && draft && !stageSettingsChanged && !openingIssue && completeTurnDraft(draft));
-  const retainedOpeningVariables = draft?.variables?.validation === 'validated';
+  const retainedOpeningVariables = (draft?.variables ?? draft?.inactiveCandidates?.variables)?.validation === 'validated';
   const openingGuidance = openingIssue && `${storyRuleNames[openingIssue.reason]}，正文已保留。可重新 Roll 开局正文，或${useVariableStage
     ? '在主角与现场重新生成候选。'
     : retainedOpeningVariables ? '重新启用主角与现场，继续时重新校验并尝试复用已有候选。' : '启用主角与现场后主动补算时间。'}`;
-  const openingReuse = Boolean(openingTime && useVariableStage && retainedOpeningVariables);
+  const openingReuse = Boolean(openingTime && useVariableStage && effectiveOpening?.variables?.validation === 'validated');
   const awaitingAction = awaitingPlayerAction(state, draft);
   // 正文失败或被取消、尚无候选时：原行动放回输入框，玩家可原样或修改后直接重新发送。
   const rebindAction = !busy && rebindableAfterStoryStop(state, draft);

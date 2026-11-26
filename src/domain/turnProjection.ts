@@ -29,7 +29,8 @@ export function prepareVariableProjection(state: GameState, draft: TurnDraft, co
   // 开局一律孤身一人：正式候选入口同样拒绝开局绑定主势力，不只依赖文本编译。
   requireData(draft.turnKind === 'regular' || commands.every(c => c.type !== 'RecordOrgRelation' || !c.faction),
     'FACTION_BINDING', '开局回合不能绑定主势力');
-  commands = sceneAndEntityCommands(state, draft, commands);
+  const entities = effectiveEntityCandidate(state, draft, commands);
+  commands = sceneAndEntityCommands(draft, commands, entities);
   validateTimeCommands(state,draft,commands);
   let variables = variableCommandsForTurn(state, draft, commands);
   if(draft.story?.variableGuideRaw === undefined && draft.turnKind==='regular' && draft.story?.variableGuide.some(g=>g.group==='time'&&g.subjectHint==='time:pause')) {
@@ -54,7 +55,7 @@ export function prepareVariableProjection(state: GameState, draft: TurnDraft, co
     ...receipts.filter(command=>command.type==='SaveEvent' && !lastWrite.has(command.event.id))];
   // Only commands derived by eventInteractionCommands from the selected Story receive this
   // in-memory permission. Candidate JSON cannot create it, and it is never persisted.
-  return { commands: prepared, acknowledgedReceipts: new Set(prepared.flatMap(command =>
+  return { entities, commands: prepared, acknowledgedReceipts: new Set(prepared.flatMap(command =>
     command.type === 'SaveEvent' && acknowledged.has(command.event) ? [command.commandId] : [])) };
 }
 export function preparedVariableCommands(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]) {
@@ -62,15 +63,18 @@ export function preparedVariableCommands(state: GameState, draft: TurnDraft, com
 }
 // 每份内存投影都从同一正式基线开始。不能把模拟产生的 revision 当作新正式版本。
 export function projectTurn(state: GameState, draft: TurnDraft, worldCommands: readonly DomainCommand[] = []) {
+  return projectTurnCandidates(state, draft, worldCommands).state;
+}
+
+export function projectTurnCandidates(state: GameState, draft: TurnDraft, worldCommands: readonly DomainCommand[] = []) {
   const validated = draft.variables?.validation === 'validated';
   const variables = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
-  if (worldCommands.length && draft.entities)
-    assertWorldEntityDependencies(effectiveEntityCandidate(state, draft, variables), worldCommands);
   const prepared = validated || draft.entities ? prepareVariableProjection(state,draft,variables)
-    : { commands:variableCommandsForTurn(state,draft,variables), acknowledgedReceipts:undefined };
+    : { commands:variableCommandsForTurn(state,draft,variables), acknowledgedReceipts:undefined, entities:undefined };
+  if (prepared.entities) assertWorldEntityDependencies(prepared.entities, worldCommands);
   const projected = commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision,
     [...prepared.commands, ...worldCommands], state.updatedAt, validated ? storySceneAuthority(state,draft,variables) : undefined,
     prepared.acknowledgedReceipts);
   if(validated) validateNarrationClock(state,draft,projected.worldClock);
-  return projected;
+  return { state:projected, entities:prepared.entities };
 }
