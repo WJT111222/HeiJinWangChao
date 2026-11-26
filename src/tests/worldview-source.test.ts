@@ -71,3 +71,24 @@ it('正文哈希检测本机候选被替换，即使回合、修订与实例都�
     repo.close();
   }
 });
+
+it('替换正文的临时来源只可由原仓库在同一有效草稿恢复', async () => {
+  const repo = await SaveRepository.open('replacement-retry-source', new IDBFactory());
+  try {
+    const state = await repo.create(worldState());
+    const blank = await repo.saveDraft(createTurnDraft(state.saveId, state.revision, 'replacement', 'opening', ''), null);
+    const original = await repo.prepareWorldview(blank, false);
+    const ready = await repo.saveDraft(rerollStory(blank, { turnKind: 'opening', narrative: '抵达码头。', summary: '到达', variableGuide: [] }),
+      blank.draftRevision, undefined, blank, original);
+    const pending = await repo.prepareWorldview(ready, false);
+    expect(pending.generation).not.toBe(original.generation);
+    expect((await repo.prepareWorldview(ready, true)).generation).toBe(original.generation);
+    await expect(repo.prepareWorldview(ready, false, undefined, { ...pending })).rejects.toMatchObject({ code: 'DRAFT_CONFLICT' });
+    const retry = await repo.prepareWorldview(ready, false, undefined, pending);
+    expect(retry).toEqual(pending);
+    expect(await repo.loadDraft(state.saveId)).toEqual(ready);
+    await withWorldbookLibrary(lib => lib.forgetGeneration(state.saveId, pending.owner, pending.generation));
+    await expect(repo.prepareWorldview(ready, false, undefined, retry)).rejects.toMatchObject({ code: 'storage' });
+    expect((await repo.prepareWorldview(ready, true)).generation).toBe(original.generation);
+  } finally { repo.close(); }
+});
