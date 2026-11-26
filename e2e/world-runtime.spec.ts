@@ -78,7 +78,7 @@ async function seed(page: Page, variables = true, disabled = false, school = fal
       await repo.saveDraft(initial, null);
       const d = context?.draft ?? worldDraft(variables),
         ready = rerollStory(initial, d.story);
-      await repo.saveDraft(ready, 0);
+      await repo.saveDraft(ready, 0, undefined, initial, await repo.prepareWorldview(initial,false));
       if (variables) await repo.saveDraft({ ...d, draftRevision: 2 }, 1);
       repo.close();
       return JSON.stringify(state);

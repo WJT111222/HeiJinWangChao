@@ -1,5 +1,7 @@
+import { WorldbookLibrary } from '../services/storage/worldbookLibrary';
+import { officialIds } from '../domain/worldbook/mainWorldbook';
 import { issue194 } from './fixtures/issue194';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { variableTextEnvelope } from './fixtures/variableReply';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
@@ -81,6 +83,43 @@ function transport(reply:(context:Record<string,unknown>)=>string, world:(contex
 function coordinator(repo:SaveRepository,fetcher:typeof fetch) {const runner=new TurnCoordinator(repo,new AiClient(fetcher));runners.push(runner);return runner;}
 
 describe('正式协调器 → 文本编译 → World JSON → 原子Commit → 重载',()=>{
+  it.each(['opening','regular'] as const)('%s 正文发出后修改世界观，变量与动态世界继续原配置，提交后新回合切换', async mode => {
+    const a = await fixture(mode), opened = await WorldbookLibrary.open();
+    if (!opened.ok) throw Error('fixture library');
+    const lib = opened.library;
+    try {
+      const blank = await lib.createBook('潮历');
+      if (!blank.ok) throw Error('fixture book');
+      const id = blank.release.bookId;
+      const changed = await lib.reviseBook(id, {purpose:'main', add:[{entryId:'rule',constant:true,content:'月海潮历样本'}]}, {baseVersionId:blank.release.versionId});
+      if (!changed.ok) throw Error('fixture version');
+      await lib.setEnabled(id,true);
+      await lib.setOfficial(officialIds[0],false);
+      const t = transport(() => block(set('worldClock', mode === 'opening' ? openingEnd : '2026-10-18T08:10:00+08:00')));
+      const runner = coordinator(a.repo,async (url,init) => {
+        const response = await t.fetcher(url,init);
+        if (t.calls.length === 1) {
+          await lib.deleteBook(id);
+          await lib.setOfficial();
+        }
+        return response;
+      });
+      const done = await runner.generate(a);
+      expect(done.status).toBe('complete');
+      expect(t.calls.map(c => c.stage)).toEqual(['story','variables','world']);
+      for (const call of t.calls) {
+        expect(JSON.stringify(call.body).split('月海潮历样本')).toHaveLength(2);
+        expect(JSON.stringify(call.body)).not.toContain('中国城市与地域差异');
+      }
+      const next = await a.repo.commitTurn(submission(done.draft,'记录潮汐'));
+      expect(JSON.stringify(next.state)).not.toContain('月海潮历样本');
+      const fresh = transport(() => block());
+      await coordinator(a.repo,fresh.fetcher).generate({...a,draft:next.draft});
+      expect(JSON.stringify(fresh.calls[0].body)).toContain('中国城市与地域差异');
+      expect(JSON.stringify(fresh.calls[0].body)).not.toContain('月海潮历样本');
+    } finally { lib.close(); }
+  });
+
   it.each(['opening','regular'] as const)('%s 多组文本能力保留并正确投影，正式状态只在提交后改变',async(mode)=>{
     const a=await fixture(mode), before=await a.repo.load('save-a');
     const end=mode==='opening'?openingEnd:'2026-10-18T08:10:00+08:00';
@@ -559,7 +598,7 @@ it('旧通知恢复保留其他事件裁定，当轮坏项原文只进入 Variab
     narrative: selected.narrative + receipt.textEvidence, guide: [decision, receipt],
   }));
   const client = new AiClient(t.fetcher);
-  await runStageRequest({ state: current.state, draft: current.draft!, settings: route.settings, stage: 'variables', mode: 'regular', userInput: draft.userInput },
+  await requestFixtureStage({ state: current.state, draft: current.draft!, settings: route.settings, stage: 'variables', mode: 'regular', userInput: draft.userInput },
     route.config, route.vault, {}, client);
   expect(t.calls[0].context.VARIABLE_GUIDE_REFERENCES).toEqual(references);
   const stage = new StoryStage(repo, client);

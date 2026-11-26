@@ -1,3 +1,4 @@
+import { withWorldbookLibrary, restoreWorldview, worldviewDigest, missingWorldview, storySourceHash, type StoryWorldview } from '../worldbook/mainWorldview';
 import { HistoryRepository } from './history/repository';
 import { clearManualHistory, historyStores } from './history/model';
 import { setNpcImportance } from '../../domain/npc/profiles';
@@ -204,6 +205,27 @@ async function variableSnapshot(tx: IDBTransaction, saveId: string): Promise<Var
   return { state, draft, instance: control?.instanceId, epoch: control?.epoch };
 }
 
+async function checkStoryLease(tx: IDBTransaction, saveId: string, lease: StoryWorldview) {
+  const control = await readControl(tx, saveId);
+  requireData(control && lease.saveId === saveId && lease.instance === controlInstance(control) && lease.epoch === control.epoch,
+    'DRAFT_CONFLICT', '正文请求所属存档实例已经变化，请重新读取。');
+  return control;
+}
+
+async function checkStoryPublication(base: TurnDraft, next: TurnDraft, lease: StoryWorldview) {
+  requireData(base.saveId === lease.saveId && base.turnId === lease.turnId && base.baseSaveRevision === lease.baseRevision &&
+    base.storyRevision === lease.storyRevision && base.draftRevision === lease.draftRevision,
+    'DRAFT_CONFLICT', '正文生成依据与草稿不符，请重新读取。');
+  await restoreWorldview(base.saveId,lease.owner,lease.generation,lease.worldviewHash);
+  return storySourceHash(next);
+}
+
+async function publishStoryOrigin(tx: IDBTransaction, saveId: string, lease: StoryWorldview, sourceHash: string) {
+  const control = await checkStoryLease(tx, saveId, lease);
+  control.storyOrigin = { owner:lease.owner, generation:lease.generation, instance:lease.instance, worldviewHash:lease.worldviewHash, sourceHash };
+  await writeControl(tx,control);
+}
+
 export class SaveRepository {
   readonly history: HistoryRepository;
   private constructor(private readonly database: IDBDatabase) { this.history = new HistoryRepository(database); }
@@ -239,6 +261,43 @@ export class SaveRepository {
 
   close(): void { this.database.close(); }
 
+  /** Called under the workflow lock. Read the live draft and its local witness together. */
+  async prepareWorldview(draft: TurnDraft, resume: boolean, expectedInstance?: string | null): Promise<StoryWorldview> {
+    const hash = resume ? await storySourceHash(draft) : undefined;
+    const scope = await transaction(this.database, ['saves','drafts','saveControls'], resume ? 'readonly' : 'readwrite', async tx => {
+      const state = readState(await request(tx.objectStore('saves').get(draft.saveId)),draft.saveId);
+      const current = TurnDraftSchema.parse(await request(tx.objectStore('drafts').get(draft.saveId)));
+      requireData(state.revision === draft.baseSaveRevision && fingerprint(current) === fingerprint(draft),
+        'DRAFT_CONFLICT', '草稿或存档已变化，请重新读取。');
+      let control = await readControl(tx,draft.saveId);
+      const instance = controlInstance(control);
+      requireData(expectedInstance === undefined || expectedInstance === instance, 'DRAFT_CONFLICT',replacedMessage);
+      if (resume && (!control?.storyOrigin || control.storyOrigin.owner !== this.database.name || control.storyOrigin.instance !== instance || control.storyOrigin.sourceHash !== hash))
+        throw missingWorldview();
+      if (!control) { control = newSaveControl(draft.saveId); await writeControl(tx, control); }
+      return { saveId:draft.saveId, instance, epoch:control.epoch, origin:control.storyOrigin };
+    });
+    const { origin, ...identity } = scope;
+    const owner = this.database.name;
+    const basis = { ...identity, owner, turnId: draft.turnId, baseRevision: draft.baseSaveRevision,
+      draftRevision: draft.draftRevision, storyRevision: draft.storyRevision };
+    if (resume) {
+      if (!origin) throw missingWorldview();
+      const worldview = await restoreWorldview(draft.saveId, owner, origin.generation, origin.worldviewHash);
+      return { ...basis, worldview, generation: origin.generation, worldviewHash: origin.worldviewHash };
+    }
+    const generation = crypto.randomUUID();
+    const worldview = await withWorldbookLibrary(lib =>
+      lib.captureWorldview(draft.saveId, owner, generation, origin?.generation));
+    return { ...basis, generation, worldview, worldviewHash: await worldviewDigest(worldview) };
+  }
+
+  // Cleanup follows a successful formal CAS while its save lock is still held. If the library
+  // is unavailable, a future capture compacts this namespace; correctness only relies on the witness.
+  private async retireWorldviews(saveId: string) {
+    await withWorldbookLibrary(lib => lib.forgetWorldviews(saveId,this.database.name)).catch(() => {});
+  }
+
   /** Management CAS is separate from narrative revision: retain the entire draft,
    * increment its CAS revision, and invalidate pre-management summary/phase responses. */
   /** expectedInstance：载入时拿到的实例身份（原存档省略或 null）；存档被导入替换后，旧页面的管理操作一律拒绝。 */
@@ -269,6 +328,7 @@ export class SaveRepository {
           draftRevision: old.draftRevision + 1,
         });
         const control = await readControl(tx,saveId) ?? newSaveControl(saveId);
+        delete control.storyOrigin;
         control.epoch = `epoch-${crypto.randomUUID()}`;
         delete control.lastUndo;
         delete control.lastNpcManagement;
@@ -579,21 +639,24 @@ export class SaveRepository {
       ? '本机已有这份存档，需要确认覆盖后才能导入。' : '本机留有这份存档的残留记录，需要确认覆盖后才能导入。');
     const session = reserveStageSession(state.saveId);
     try {
-      return await withBrowserLock(state.saveId, () => transaction(this.database, timelineStores, 'readwrite', async (tx) => {
-        session.check();
-        const current = await readSnapshot(tx, state.saveId);
-        requireData(sameSnapshot(current, confirmed.snapshot), 'IMPORT_CONFLICT',
-          '本机存档在确认后发生了变化，本次没有导入，本机数据保持原样。请重新选择文件导入。');
-        const localRevision = (current.drafts[0]?.value as { draftRevision?: unknown } | undefined)?.draftRevision;
-        const floor = Number.isSafeInteger(localRevision) && (localRevision as number) >= 0 ? localRevision as number : -1;
-        await deleteRecords(tx, state.saveId);
-        await request(tx.objectStore('saves').add(state));
-        // 新实例身份：此前载入的旧页面凭旧身份发起的删除、人物管理都会被拒绝；新 epoch 同时使旧记忆 lineage 失效。
-        await writeControl(tx, { ...newSaveControl(state.saveId), instanceId: `instance-${crypto.randomUUID()}` });
-        if (draft) await request(tx.objectStore('drafts').put(TurnDraftSchema.parse({
-          ...draft, draftRevision: Math.max(draft.draftRevision, floor) + 1 })));
+      return await withBrowserLock(state.saveId, async () => {
+        await transaction(this.database, timelineStores, 'readwrite', async (tx) => {
+          session.check();
+          const current = await readSnapshot(tx, state.saveId);
+          requireData(sameSnapshot(current, confirmed.snapshot), 'IMPORT_CONFLICT',
+            '本机存档在确认后发生了变化，本次没有导入，本机数据保持原样。请重新选择文件导入。');
+          const localRevision = (current.drafts[0]?.value as { draftRevision?: unknown } | undefined)?.draftRevision;
+          const floor = Number.isSafeInteger(localRevision) && (localRevision as number) >= 0 ? localRevision as number : -1;
+          await deleteRecords(tx, state.saveId);
+          await request(tx.objectStore('saves').add(state));
+          // 新实例身份：此前载入的旧页面凭旧身份发起的删除、人物管理都会被拒绝；新 epoch 同时使旧记忆 lineage 失效。
+          await writeControl(tx, { ...newSaveControl(state.saveId), instanceId: `instance-${crypto.randomUUID()}` });
+          if (draft) await request(tx.objectStore('drafts').put(TurnDraftSchema.parse({
+            ...draft, draftRevision: Math.max(draft.draftRevision, floor) + 1 })));
+        });
+        await this.retireWorldviews(state.saveId);
         return state;
-      }));
+      });
     } finally { session.release(); }
   }
 
@@ -628,6 +691,7 @@ export class SaveRepository {
       if (next.revision !== current.revision) {
         const control = await readControl(tx, saveId) ?? newSaveControl(saveId);
         await clearUndoRecords(tx, saveId); control.records = []; control.notice = 'legacy_write';
+        delete control.storyOrigin;
         control.epoch = `epoch-${crypto.randomUUID()}`; delete control.lastUndo; control.input = '';
         await writeControl(tx, control); await request(store.put(next));
       }
@@ -636,7 +700,7 @@ export class SaveRepository {
   }
 
   // 完整回合唯一入口；摘要计算在事务外，事务中只等待同一 IDB 的请求。
-  async commitTurn(input: TurnSubmission): Promise<TurnCommitResult> {
+  async commitTurn(input: TurnSubmission, expectedInstance?: string | null): Promise<TurnCommitResult> {
     const parsed = TurnSubmissionSchema.parse(input);
     const session = reserveStageSession(parsed.draft.saveId);
     try {
@@ -648,6 +712,14 @@ export class SaveRepository {
         const requestHash = Array.from(new Uint8Array(digest), (byte) =>
           byte.toString(16).padStart(2, '0'),
         ).join('');
+        const sourceHash = await storySourceHash(parsed.draft);
+        // Receipt replays never need a retired world's snapshot. Recheck the witness inside the write transaction.
+        const origin = await transaction(this.database,['turnReceipts','saveControls'],'readonly',async tx => {
+          if (await request(tx.objectStore('turnReceipts').get([parsed.draft.saveId,parsed.draft.turnId]))) return;
+          return (await readControl(tx,parsed.draft.saveId))?.storyOrigin;
+        });
+        if (origin && origin.sourceHash === sourceHash)
+          await restoreWorldview(parsed.draft.saveId,origin.owner,origin.generation,origin.worldviewHash);
         const nextTurnId = `turn-${crypto.randomUUID()}`;
         const commit = (quotaFallback: boolean) => transaction(
           this.database,
@@ -661,6 +733,8 @@ export class SaveRepository {
             const state = await readStoredState(tx, parsed.draft.saveId);
             const rawDraft: unknown = await request(drafts.get(parsed.draft.saveId));
             const current = TurnDraftSchema.parse(rawDraft);
+            if (expectedInstance !== undefined)
+              requireData(await storedInstance(tx,state.saveId) === expectedInstance,'DRAFT_CONFLICT',replacedMessage);
             const prior: unknown = await request(receipts.get([state.saveId, parsed.draft.turnId]));
             if (prior !== undefined) {
               const receipt = ReceiptSchema.parse(prior);
@@ -693,6 +767,10 @@ export class SaveRepository {
               '正式版本已改变',
             );
             validateTurnCandidates(state, current);
+            const control = await readControl(tx, state.saveId);
+            if (!origin || origin.owner !== this.database.name || !control?.storyOrigin || controlInstance(control) !== origin.instance ||
+                fingerprint(control.storyOrigin) !== fingerprint(origin) || origin.sourceHash !== sourceHash)
+              throw missingWorldview();
             const next = settleTurn(state, current, new Date().toISOString());
             requireData(!next.journal.some((entry) => entry.turnId === nextTurnId), 'DUPLICATE_TURN', '下一回合 ID 重复');
             const draft = createTurnDraft(
@@ -718,12 +796,15 @@ export class SaveRepository {
             return { state: next, draft, replayed: false };
           },
         );
-        try { return await commit(false); } catch (error) {
+        let result: TurnCommitResult;
+        try { result = await commit(false); } catch (error) {
           if (!(error instanceof DOMException) || error.name !== 'QuotaExceededError') throw error;
           // The entire first transaction aborted. Revalidate everything, keep the formal
           // save first, and explicitly record that this turn has no undo point. No AI retry.
-          return commit(true);
+          result = await commit(true);
         }
+        if (!result.replayed) await this.retireWorldviews(parsed.draft.saveId);
+        return result;
       });
     } finally {
       session.release();
@@ -734,7 +815,10 @@ export class SaveRepository {
   async delete(saveId: string, expectedRevision: number, expectedInstance: string | null = null, expectedManagementRevision = 0): Promise<void> {
     IdSchema.parse(saveId); CountSchema.parse(expectedRevision);
     if (expectedInstance !== null) IdSchema.parse(expectedInstance);
-    return transaction(this.database, [...timelineStores, ...historyStores], 'readwrite', async (tx) => {
+    // Deletion may interrupt an active stage. Cleanup only the immutable keys observed
+    // before deletion, even if another tab immediately recreates the same save.
+    const keys = await withWorldbookLibrary(lib => lib.worldviewKeys(saveId, this.database.name)).catch(() => []);
+    await transaction(this.database, [...timelineStores, ...historyStores], 'readwrite', async (tx) => {
       const current = await readStoredState(tx, saveId);
       requireData(await storedInstance(tx, saveId) === expectedInstance, 'REVISION_CONFLICT', replacedMessage);
       requireData(current.revision === expectedRevision && (current.npcManagementRevision ?? 0) === expectedManagementRevision,
@@ -742,11 +826,12 @@ export class SaveRepository {
       await clearManualHistory(tx, saveId);
       await deleteRecords(tx, saveId);
     });
+    if (keys.length) await withWorldbookLibrary(lib => lib.forgetWorldviewKeys(keys)).catch(() => {});
   }
 
   // 唯一允许绑定行动的入口：空待输入草稿，或正文失败/取消且尚无任何候选的已绑定草稿（重新绑定为全新草稿）。
   // 输入绑定后仍不可由saveDraft改写；不提升正式revision。
-  async bindTurnAction(expected: TurnDraft, action: string, useVariableStage: boolean, useWorldStage: boolean): Promise<TurnDraft> {
+  async bindTurnAction(expected: TurnDraft, action: string, useVariableStage: boolean, useWorldStage: boolean, expectedInstance?: string | null): Promise<TurnDraft> {
     const snapshot = TurnDraftSchema.parse(expected), userInput = z.string().trim().min(1).max(100000).parse(action);
     const session = reserveStageSession(snapshot.saveId);
     try {
@@ -755,10 +840,11 @@ export class SaveRepository {
         const state = await readStoredState(tx, snapshot.saveId);
         const store = tx.objectStore('drafts'), current = TurnDraftSchema.parse(await request(store.get(snapshot.saveId)));
         requireData(fingerprint(current) === fingerprint(snapshot), 'DRAFT_CONFLICT', '行动草稿已被其他操作更新');
+        if (expectedInstance !== undefined) requireData(await storedInstance(tx,state.saveId) === expectedInstance,'DRAFT_CONFLICT',replacedMessage);
         requireData(awaitingPlayerAction(state, current) || rebindableAfterStoryStop(state, current), 'DRAFT_CONFLICT', '只能为未生成的待输入回合绑定行动');
         const next = TurnDraftSchema.parse({ ...createTurnDraft(current.saveId, state.revision, current.turnId, 'regular', userInput, useVariableStage, useWorldStage), draftRevision: current.draftRevision + 1 });
         const control = await readControl(tx, state.saveId) ?? newSaveControl(state.saveId);
-        control.input = ''; control.memoryPaused = false; delete control.lastUndo;
+        control.input = ''; control.memoryPaused = false; delete control.lastUndo; delete control.storyOrigin;
         await writeControl(tx, control);
         await request(store.put(next)); return next;
       }), { required: true });
@@ -768,9 +854,10 @@ export class SaveRepository {
   // StoryStage holds the browser execution lock. This transaction only replaces the
   // selected draft after the full CAS and eligibility check, and never writes GameState.
   async saveRecoveredStory(basedOn: TurnDraft, story: NonNullable<TurnDraft['story']>,
-    selection: LegacyNotificationSelection, signal?: AbortSignal): Promise<TurnDraft> {
+    selection: LegacyNotificationSelection, signal?: AbortSignal, lease?: StoryWorldview): Promise<TurnDraft> {
     const base = TurnDraftSchema.parse(basedOn);
-    return transaction(this.database, ['saves','drafts'], 'readwrite', async tx => {
+    const hash = lease && await checkStoryPublication(base,rerollStory(base,story),lease);
+    return transaction(this.database, ['saves','drafts','saveControls'], 'readwrite', async tx => {
       const state = await readStoredState(tx,base.saveId);
       const store = tx.objectStore('drafts');
       const current = TurnDraftSchema.parse(await request(store.get(base.saveId)));
@@ -780,6 +867,7 @@ export class SaveRepository {
       validateRecoveredStory(state,current.story!,replacement.story!,recovery);
       validateDraftUpdate(current,replacement);
       const next = TurnDraftSchema.parse({ ...replacement, legacyNotificationRecovery:recovery });
+      if (lease && hash) await publishStoryOrigin(tx, base.saveId, lease, hash);
       await request(store.put(next));
       return next;
     },signal);
@@ -789,10 +877,15 @@ export class SaveRepository {
    * basedOn：调用方据以构造 next 的草稿。提供时要求库中草稿与它逐项相同，
    * 不只看 draftRevision 数字，防止时间线被替换（如导入备份）后迟到的旧响应恰好对上版本号。
    */
-  async saveDraft(draft: TurnDraft, expectedDraftRevision: number | null, signal?: AbortSignal, basedOn?: TurnDraft): Promise<TurnDraft> {
+  async saveDraft(draft: TurnDraft, expectedDraftRevision: number | null, signal?: AbortSignal, basedOn?: TurnDraft, lease?: StoryWorldview): Promise<TurnDraft> {
     const next = TurnDraftSchema.parse(draft);
     const base = basedOn === undefined ? undefined : TurnDraftSchema.parse(basedOn);
-    return transaction(this.database, ['saves', 'drafts'], 'readwrite', async (tx) => {
+    if (lease) requireData(lease.turnId === next.turnId && lease.baseRevision === next.baseSaveRevision,
+      'DRAFT_CONFLICT', '请求来源与当前回合不符。');
+    const publish = lease && base && (next.storyRevision !== base.storyRevision ||
+      next.failures.length > base.failures.length && next.failures.at(-1)?.stage === 'story');
+    const hash = publish ? await checkStoryPublication(base,next,lease) : undefined;
+    return transaction(this.database, ['saves', 'drafts', 'saveControls'], 'readwrite', async (tx) => {
       const current = await readStoredState(tx, next.saveId);
       requireData(current.revision === next.baseSaveRevision, 'REVISION_CONFLICT', '草稿依赖的正式版本已失效');
       const store = tx.objectStore('drafts');
@@ -807,6 +900,14 @@ export class SaveRepository {
         requireData(old.draftRevision === expectedDraftRevision, 'DRAFT_CONFLICT', '草稿已被其他操作更新');
         requireData(!base || fingerprint(old) === fingerprint(base), 'DRAFT_CONFLICT', '草稿已被其他操作更新');
         validateDraftUpdate(old, next);
+      }
+      if (lease) {
+        if (hash) await publishStoryOrigin(tx, next.saveId, lease, hash);
+        else {
+          const control = await checkStoryLease(tx, next.saveId, lease);
+          if (control.storyOrigin?.generation !== lease.generation || control.storyOrigin.worldviewHash !== lease.worldviewHash)
+            throw missingWorldview();
+        }
       }
       await request(store.put(next));
       return next;
@@ -827,10 +928,16 @@ export class SaveRepository {
 
   async deleteDraft(saveId: string, expectedDraftRevision: number): Promise<void> {
     IdSchema.parse(saveId); CountSchema.parse(expectedDraftRevision);
-    return transaction(this.database, ['drafts'], 'readwrite', async (tx) => {
+    return transaction(this.database, ['drafts','saveControls'], 'readwrite', async (tx) => {
       const store = tx.objectStore('drafts');
       const old = TurnDraftSchema.parse(await request(store.get(saveId)));
       requireData(old.draftRevision === expectedDraftRevision, 'DRAFT_CONFLICT', '草稿版本冲突');
+      const control = await readControl(tx, saveId);
+      if (control) {
+        delete control.storyOrigin;
+        control.epoch = `epoch-${crypto.randomUUID()}`;
+        await writeControl(tx, control);
+      }
       await request(store.delete(saveId));
     });
   }

@@ -5,6 +5,7 @@ import { AiError } from '../services/ai/errors';
 import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { AiStage } from '../services/ai/configuration';
+import * as runtime from '../services/ai/runtime';
 import { storyFailureText } from '../services/ai/runtime';
 import { partialNarrative } from '../domain/storyContinuation';
 import { DataError } from '../domain/common';
@@ -63,7 +64,8 @@ beforeEach(async () => {
   draft = TurnDraftSchema.parse({ ...base, stageStatus: { ...base.stageStatus, story: 'failed' },
     failures: [{ stage: 'story', attempt: 1, storyRevision: 0, errorCode: 'output_limit', retryable: false }],
     storyPartial: { text: head, storyRevision: 0, continuations: 2 } });
-  draft = await repo.saveDraft(draft, null);
+  await repo.saveDraft(base, null);
+  draft = await repo.saveDraft({...draft,draftRevision:1},0,undefined,base,await repo.prepareWorldview(base,false));
 });
 afterEach(() => {
   runners.splice(0).forEach((r) => r.dispose());
@@ -110,7 +112,7 @@ describe('续写与自动重试', () => {
 
   it('续写返回了内容后遇到可重试错误、次数因此用完：停下并保留已写部分，不再发起任何正文请求', async () => {
     const longer = `${head}${worldNarrative.slice(12, 20)}`;
-    const generate = vi.spyOn(StoryStage.prototype, 'generate').mockImplementation(async () => {
+    const generate = vi.spyOn(runtime, 'runStageRequest').mockImplementation(async () => {
       const error = new AiError('server', 500);
       storyFailureText.set(error, { text: longer, produced: true });
       throw error;
@@ -118,7 +120,7 @@ describe('续写与自动重试', () => {
     const transport = vi.fn<typeof fetch>(async () => new Response('', { status: 500 }));
     await expect(runner(transport).generate({ ...setup(), draft })).rejects.toThrow();
     expect(generate).toHaveBeenCalledTimes(1);
-    expect(generate.mock.calls[0]![0].continuation).toBe(true);
+    expect(generate.mock.calls[0]![3]?.continuation?.partial).toBe(head);
     expect(transport).not.toHaveBeenCalled();
     const saved = await current();
     // 服务器错误不属于「没写完」：保留原来的已写部分，只记下这次消耗。
@@ -169,7 +171,8 @@ describe('正文已闭合但字数不足', () => {
   const chars = partialNarrative(closed).chars;
   async function closedDraft() {
     const latest = await current();
-    return repo.saveDraft({ ...latest, draftRevision: latest.draftRevision + 1, storyPartial: { text: closed, storyRevision: 0, continuations: 0 } }, latest.draftRevision, undefined, latest);
+    return repo.saveDraft({ ...latest, draftRevision: latest.draftRevision + 1, storyPartial: { text: closed, storyRevision: 0, continuations: 0 },
+      failures:[...latest.failures,{...latest.failures[0],attempt:2}] }, latest.draftRevision, undefined, latest,await repo.prepareWorldview(latest,true));
   }
   it('最低字数高于已写字数：拒绝续写，不发出任何请求，已写部分不变', async () => {
     const saved = await closedDraft();

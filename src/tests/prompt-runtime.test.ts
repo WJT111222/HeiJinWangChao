@@ -10,7 +10,7 @@ import {
   parseVariables,
   parseWorld,
 } from '../services/validation/aiOutputs';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import type { Protocol } from '../services/ai/configuration';
@@ -772,7 +772,7 @@ describe('真实命令目录、解析与安全候选验证', () => {
       const repo = await SaveRepository.open('m3-read-only', new IDBFactory());
       await repo.create(a.state);
       try {
-        const storyResult = await runStageRequest(
+        const storyResult = await requestFixtureStage(
           { ...a, stage: 'story', cotAllowed: true },
           config,
           vault,
@@ -786,14 +786,14 @@ describe('真实命令目录、解析与安全候选验证', () => {
           createTurnDraft(a.state.saveId, a.state.revision, 'new-turn', a.mode, '行动'),
           StorySchema.parse(storyResult.result),
         );
-        const variables = await runStageRequest(
+        const variables = await requestFixtureStage(
           { ...a, stage: 'variables', draft, domains: ['protagonist'] },
           config,
           vault,
           {},
           client,
         );
-        const world = await runStageRequest(
+        const world = await requestFixtureStage(
           { ...a, stage: 'world', draft, domains: ['npc_ordinary'] },
           config,
           vault,

@@ -14,7 +14,7 @@ import { composePrompt } from '../prompts/composer';
 import { contextV2Fixture } from './fixtures/contextV2';
 import { expectWorldWithNpcProjection, sentContext } from './fixtures/contextAssertions';
 import { variableReply } from './fixtures/variableReply';
-import { submission } from './fixtures/turn';
+import { saveFixtureStory, submission } from './fixtures/turn';
 import { worldResult } from './fixtures/world';
 
 const resources: { dispose: () => void }[] = [];
@@ -58,7 +58,7 @@ const response = (text: string) => Response.json({ choices: [{ message: { conten
 describe('上下文 V2经真实Coordinator、Runtime、Mock传输与原子提交', () => {
   it('正式revision8的离场与时钟投影仍提供revision8，模型据此生成UpdateNpc可验证并Commit', async () => {
     const a = await setup(); expect(a.state.revision).toBe(8);
-    const ready = await a.repo.saveDraft(rerollStory(a.initial, {
+    const ready = await saveFixtureStory(a.repo,rerollStory(a.initial, {
       ...a.draft.story!, narrative: `${a.draft.story!.narrative}scene-ordinary姓名随后离开现场。`,
     }), a.initial.draftRevision);
     const variables = await a.repo.saveDraft({
@@ -150,7 +150,7 @@ describe('上下文 V2经真实Coordinator、Runtime、Mock传输与原子提交
 
   it.each(['missing', 'preview'] as const)('Variables为%s时实际World请求读取正式基线，只保存preview且不能Commit', async validation => {
     const a = await setup();
-    let ready = await a.repo.saveDraft(rerollStory(a.initial, a.draft.story!), a.initial.draftRevision);
+    let ready = await saveFixtureStory(a.repo,rerollStory(a.initial, a.draft.story!), a.initial.draftRevision);
     if (validation === 'preview') ready = await a.repo.saveDraft({
       ...ready, draftRevision: ready.draftRevision + 1,
       variables: { ...a.draft.variables!, validation: 'preview', result: { ...a.draft.variables!.result, commands: [

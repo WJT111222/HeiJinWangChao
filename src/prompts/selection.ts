@@ -1,3 +1,4 @@
+import { type OfficialId } from '../domain/worldbook/mainWorldbook';
 import { promptManifest } from './manifest';
 import type { PromptModule } from './manifest';
 import type { ComposeInput } from './context';
@@ -5,7 +6,7 @@ import { AiError } from '../services/ai/errors';
 
 export type SelectionInput = Pick<
   ComposeInput,
-  'stage' | 'mode' | 'settings' | 'domains' | 'memoryTask' | 'cotAllowed'
+  'stage' | 'mode' | 'settings' | 'domains' | 'memoryTask' | 'cotAllowed' | 'worldview'
 >;
 export function moduleActivation(module: PromptModule, input: SelectionInput) {
   if (module.activation === 'never')
@@ -19,6 +20,10 @@ export function moduleActivation(module: PromptModule, input: SelectionInput) {
   if (module.activation === 'always') {
     enabled = true;
     reason = '在所属阶段常驻，无关闭开关';
+  }
+  if (module.activation === 'main-worldbook') {
+    enabled = input.worldview?.official[module.id as OfficialId] ?? true;
+    reason = '设置 → 世界书 → 内置主世界书';
   }
   if (module.activation === 'relevant-domain') {
     enabled = (input.domains ?? []).includes(module.domain!);

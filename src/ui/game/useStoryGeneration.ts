@@ -22,6 +22,7 @@ export function useStoryGeneration(
   companionProfile: CompanionProfile | undefined,
   onSaved: (draft: TurnDraft) => void,
   onRuntimeEvent?: RuntimeLogReporter,
+  expectedInstance?: string | null,
 ) {
   const [progress, setProgress] = useState<StoryProgress>();
   const [retry, setRetry] = useState<RetryNotice>();
@@ -43,8 +44,8 @@ export function useStoryGeneration(
     },
     [],
   );
-  async function generate(selection?: LegacyNotificationSelection) {
-    if (!draft || running.current || (!selection && !mayStartStory(draft))) return;
+  async function generate(selection?: LegacyNotificationSelection, replaceWorldview = false) {
+    if (!draft || running.current || (!selection && !replaceWorldview && !mayStartStory(draft))) return;
     running.current = true;
     errorTurn.current = turnKey(draft);
     const id = ++token.current;
@@ -89,7 +90,8 @@ export function useStoryGeneration(
               }));
             },
             run: () => stage.generate({
-              draft: current,
+              draft: current, expectedInstance,
+              freshWorldview: (replaceWorldview || !!selection) && current === draft,
               legacyNotificationSelection: selection,
               settings: frozen.settings,
               companionProfile: frozen.companionProfile,

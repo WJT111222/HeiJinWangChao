@@ -1,3 +1,4 @@
+import { saveFixtureStory } from './fixtures/turn';
 import { actionTime } from './fixtures/world';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
@@ -72,7 +73,7 @@ beforeEach(async () => {
   await repo.saveDraft(initial, null);
   const ready = worldDraft();
   const story = rerollStory(initial, ready.story!);
-  await repo.saveDraft(story, 0);
+  await saveFixtureStory(repo, story, 0);
   draft = await repo.saveDraft({ ...ready, draftRevision: 2 }, 1);
   requestInspections.clear();
 });
@@ -129,7 +130,7 @@ describe('世界阶段实际 Runtime → 候选，不提交正式状态', () => 
     const initial = createTurnDraft('save-a', 0, 'turn-a', 'regular', '', false, false);
     await repo.saveDraft(initial, null);
     const ready = rerollStory(initial, draft.story!);
-    await repo.saveDraft(ready, 0);
+    await saveFixtureStory(repo, ready, 0);
     const options = setup();
     options.settings.runtime.useVariableStage = false;
     const result = worldResult([
@@ -151,7 +152,7 @@ describe('世界阶段实际 Runtime → 候选，不提交正式状态', () => 
     const init = createTurnDraft('save-a', 0, 'turn-a', 'opening', '');
     await repo.saveDraft(init, null);
     const ready = rerollStory(init, { ...draft.story!, turnKind: 'opening' });
-    await repo.saveDraft(ready, 0);
+    await saveFixtureStory(repo, ready, 0);
     await runner(async () => wire(worldResult())).generate({ ...setup(), draft: ready });
     expect(
       requestInspections
@@ -195,6 +196,7 @@ describe('世界阶段实际 Runtime → 候选，不提交正式状态', () => 
     await expect(
       runner(transport, {
         load: repo.load.bind(repo),
+        prepareWorldview: repo.prepareWorldview.bind(repo),
         loadDraft: async () => corrupted,
         saveDraft: repo.saveDraft.bind(repo),
       }).generate({ ...setup(), draft: corrupted }),
@@ -285,7 +287,7 @@ describe('世界并发、迟到与取消', () => {
     async (mode) => {
       const old = await pending();
       if (mode === 'story')
-        await repo.saveDraft(rerollStory(old.active, old.active.story!), old.active.draftRevision);
+        await saveFixtureStory(repo,rerollStory(old.active, old.active.story!), old.active.draftRevision);
       if (mode === 'variables')
         await repo.saveDraft(
           startStageAttempt(old.active, ['variables']),
@@ -338,6 +340,7 @@ describe('世界并发、迟到与取消', () => {
       save = repo.saveDraft.bind(repo);
     const stage = runner(async () => wire(), {
       load: repo.load.bind(repo),
+      prepareWorldview: repo.prepareWorldview.bind(repo),
       loadDraft: repo.loadDraft.bind(repo),
       saveDraft: async (next, revision, signal) => {
         if (next.world) throw new Error('模拟配额失败');
@@ -365,7 +368,7 @@ describe('A5 取消候选的真实保存边界', () => {
     await repo.saveDraft(initial, null);
     const ready = worldDraft(),
       story = rerollStory(initial, ready.story!);
-    await repo.saveDraft(story, 0);
+    await saveFixtureStory(repo, story, 0);
     draft = await repo.saveDraft({ ...ready, draftRevision: 2 }, 1);
     const before = await repo.load('save-a');
     const response = (valid: boolean) => {

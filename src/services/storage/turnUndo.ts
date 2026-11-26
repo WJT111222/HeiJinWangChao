@@ -24,6 +24,11 @@ const ControlSchema = z.strictObject({
   lastUndo: z.strictObject({ operationId: IdSchema, revision: CountSchema, draftTurnId: IdSchema }).optional(),
   /** 存档实例身份：导入备份或确认历史回溯替换整条时间线时生成；缺省表示原存档。其他写入一律原样保留。 */
   instanceId: IdSchema.optional(),
+  // Local to this live timeline. Backups and history nodes carry neither this witness nor its snapshot.
+  storyOrigin: z.strictObject({
+    owner: IdSchema, generation: z.uuid(), instance: IdSchema.nullable(), sourceHash: z.string().regex(/^[0-9a-f]{64}$/),
+    worldviewHash: z.string().regex(/^[0-9a-f]{64}$/),
+  }).optional().catch(undefined),
 });
 export type SaveControl = z.infer<typeof ControlSchema>;
 /** 调用方据以操作的实例身份；null 表示从未被替换的原存档。 */
@@ -85,7 +90,7 @@ export async function recordUndo(tx: IDBTransaction, state: GameState, draft: Tu
   if (control.records.length && (await inspectUndo(tx, state)).unavailable === 'chain') {
     await clearUndoRecords(tx, state.saveId); control.records = [];
   }
-  control.input = ''; delete control.lastUndo; delete control.notice;
+  control.input = ''; delete control.lastUndo; delete control.notice; delete control.storyOrigin;
   if (quotaFallback || !previousTurn || state.turnNumber === 0 || state.openingTimePending || state.openingInitializationPending) {
     await clearUndoRecords(tx, state.saveId); control.records = [];
     if (quotaFallback) control.notice = 'quota';
@@ -124,6 +129,7 @@ export async function restoreSnapshot(tx: IDBTransaction, state: GameState, cont
     revision: state.revision + 1, updatedAt: new Date().toISOString() });
   await request(tx.objectStore('turnUndo').delete([state.saveId, head!.turnId]));
   control.records.pop();
+  delete control.storyOrigin;
   control.epoch = `epoch-${crypto.randomUUID()}`;
   control.memoryPaused = true;
   control.input = record.input;

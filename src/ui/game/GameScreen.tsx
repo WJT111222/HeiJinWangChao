@@ -213,10 +213,10 @@ export function GameScreen({
     progress: manualProgress,
     error,
     retry: storyRetry,
-  } = useStoryGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent);
-  const variables = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
-  const world = useWorldGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent);
-  const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent, handleSettled);
+  } = useStoryGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent, instance ?? null);
+  const variables = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent, instance ?? null);
+  const world = useWorldGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent, instance ?? null);
+  const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent, handleSettled, instance ?? null);
   // 延后一微任务，让 StrictMode 的首次 effect 清理先完成。消费的是创角或历史覆盖确认的单次事件授权，
   // 而不是“草稿没有正文”；刷新、读档和重新挂载没有新的授权。
   useEffect(() => {
@@ -378,7 +378,7 @@ export function GameScreen({
     setConcurrencyBlocked(false);
     try {
       if (bindAction) {
-        const bound = await repository.bindTurnAction(draft, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage);
+        const bound = await repository.bindTurnAction(draft, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage,instance ?? null);
         if (submitToken.current !== token) return;
         onDraftSaved(bound); setInput(''); setSubmitting(false);
         await automatic.generate(bound);
@@ -391,7 +391,7 @@ export function GameScreen({
         nextAction: input,
         useVariableStage: settings.runtime.useVariableStage,
         useWorldStage: settings.runtime.useWorldStage,
-      });
+      },instance ?? null);
       if (submitToken.current !== token) return;
       reportRuntimeEvent('commit', 'completed');
       onCommitted(result);
@@ -726,6 +726,8 @@ export function GameScreen({
             onClick={() => setDismissedError(errorSignature)}>×</button>
         </div>
       )}
+      {validDraft && currentFailure?.fieldPath === 'worldbook.unbound' &&
+        <button type="button" disabled={busy} onClick={() => void generate(undefined,true)}>按当前世界观重新生成正文</button>}
       {legacyRecoveryOptions.length > 0 && (
         <div className="wf-banner" data-level="warn" role="note">
           <span className="wf-banner-tag" aria-hidden="true">复</span>

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { createTurnDraft, rerollStory, VariableResultSchema } from '../domain/drafts';
 import { AiClient } from '../services/ai/client';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { Protocol } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
@@ -39,7 +39,7 @@ describe('正式单请求、完整性与协议隔离', () => {
     const a = setup(protocol), state = worldState(), draft = rerollStory(createTurnDraft(state.saveId, 0, 'source-api', 'opening', ''), { ...story, turnKind: 'opening' });
     const text = variableText('set protagonist.skills = ["驾驶","急救"]\npush protagonist.skills = "烹饪"\nadd economy.cash = -3000\ndelete protagonist.skills[0]');
     const transport = vi.fn<typeof fetch>(async () => response(text, protocol));
-    const result = await runStageRequest({ settings: a.settings, state, draft, stage: 'variables', mode: 'opening', userInput: '' }, a.config, a.vault, {}, new AiClient(transport));
+    const result = await requestFixtureStage({ settings: a.settings, state, draft, stage: 'variables', mode: 'opening', userInput: '' }, a.config, a.vault, {}, new AiClient(transport));
     expect(VariableResultSchema.parse(result.result).commands.some(c => c.type === 'UpdateProtagonist' && c.changes.skills?.join(',') === '急救,烹饪')).toBe(true);
     expect(transport).toHaveBeenCalledTimes(1); const body = record(JSON.parse(String(transport.mock.calls[0][1]?.body)));
     expect(body).not.toHaveProperty('response_format'); expect(record(body.generationConfig)).not.toHaveProperty('responseMimeType');
@@ -50,7 +50,7 @@ describe('正式单请求、完整性与协议隔离', () => {
     const a = setup(), state = worldState(), draft = rerollStory(createTurnDraft(state.saveId, 0, 'cut-source', 'opening', ''), { ...story, turnKind: 'opening' });
     const text = variableText('add economy.cash = -3000');
     const transport = vi.fn<typeof fetch>(async () => new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`, { headers: { 'content-type': 'text/event-stream' } }));
-    await expect(runStageRequest({ settings: a.settings, state, draft, stage: 'variables', mode: 'opening', userInput: '' }, a.config, a.vault, { stream: true }, new AiClient(transport)))
+    await expect(requestFixtureStage({ settings: a.settings, state, draft, stage: 'variables', mode: 'opening', userInput: '' }, a.config, a.vault, { stream: true }, new AiClient(transport)))
       .rejects.toMatchObject({ code: 'stream_interrupted', details: { variableStep: 'response' } });
     expect(transport).toHaveBeenCalledTimes(1); expect(state.economy.cash).toBe(10000);
     expect(stageResponses.getSnapshot().find(entry => entry.stage === 'variables')).toMatchObject({ status: 'failed', text });
@@ -58,7 +58,7 @@ describe('正式单请求、完整性与协议隔离', () => {
   it.each(['openai', 'gemini', 'anthropic'] as const)('%s输出Token截断不接纳合法命令子集', async protocol => {
     const a = setup(protocol), state = worldState(), draft = rerollStory(createTurnDraft(state.saveId, 0, 'limit-source', 'opening', ''), { ...story, turnKind: 'opening' });
     const transport = vi.fn<typeof fetch>(async () => response(variableText('add economy.cash = -3000'), protocol, 'length'));
-    await expect(runStageRequest({ settings: a.settings, state, draft, stage: 'variables', mode: 'opening', userInput: '' }, a.config, a.vault, {}, new AiClient(transport)))
+    await expect(requestFixtureStage({ settings: a.settings, state, draft, stage: 'variables', mode: 'opening', userInput: '' }, a.config, a.vault, {}, new AiClient(transport)))
       .rejects.toMatchObject({ code: 'output_limit', details: { variableStep: 'response' } });
     expect(transport).toHaveBeenCalledTimes(1); expect(state.economy.cash).toBe(10000);
   });

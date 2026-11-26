@@ -12,7 +12,7 @@ import { generateAndSettleTurn } from '../workflows/automaticTurn';
 import { buildCreationState, newCreation } from '../ui/creation/model';
 import { defaultSettings } from '../ui/settings/model';
 import { worldState, worldResult } from './fixtures/world';
-import { completeDraft } from './fixtures/turn';
+import { saveFixtureStory, completeDraft } from './fixtures/turn';
 import { variableReply } from './fixtures/variableReply';
 
 let repo: SaveRepository;
@@ -102,7 +102,7 @@ it('已有合法三阶段候选关闭后仍保存以供复用，纯小说结算�
 });
 
 it('已保存正文/失败下游切为纯小说，通过合法CAS完成，无再次Story请求', async () => {
-  const { draft } = await seed(), selected = await repo.saveDraft(rerollStory(draft, { turnKind: 'opening', narrative: body, summary: '观察', variableGuide: [] }), 0);
+  const { draft } = await seed(), selected = await saveFixtureStory(repo,rerollStory(draft, { turnKind: 'opening', narrative: body, summary: '观察', variableGuide: [] }), 0);
   const failed = await repo.saveDraft({ ...selected, draftRevision: selected.draftRevision + 1, stageStatus: { ...selected.stageStatus, variables: 'failed' } }, selected.draftRevision);
   const transport = vi.fn<typeof fetch>(); const result = await run(runner(transport), failed);
   expect(transport).not.toHaveBeenCalled(); expect(result.committed?.state.turnNumber).toBe(1);

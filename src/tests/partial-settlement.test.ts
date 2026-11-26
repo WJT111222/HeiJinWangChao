@@ -13,7 +13,7 @@ import { defaultSettings } from '../ui/settings/model';
 import { stageCommand } from './fixtures/eventStages';
 import { handoffDeadline, issue194 } from './fixtures/issue194';
 import { event, task } from './fixtures/game';
-import { submission } from './fixtures/turn';
+import { seedFixtureTurn, submission } from './fixtures/turn';
 import { worldResult } from './fixtures/world';
 import {
   assign, correctPlace, isolationClock, isolationNpcIds, locationIsolationCommands, locationsForIsolation,
@@ -118,7 +118,7 @@ describe('隔离结构、依赖和事务', () => {
     const variables=await parsePartialVariables(wrap([`set worldClock = "${handoffDeadline}"`,makeItem,emotion].join('\n')),state,draft);
     const input={state,draft:withVariables(draft,variables)};
     try {
-      await repo.importBackup(input,(await repo.compareBackup(input)).confirmation);
+      await seedFixtureTurn(repo,input);
       const before=await repo.loadGame(state.saveId), selected=before.draft!;
       const prompt=await composePrompt({stage:'world',mode:'regular',state,draft:selected,userInput:'',settings:defaultSettings()});
       expect(prompt.context.VARIABLE_RESULT).toMatchObject({result:{settlement:{skipped:[{commandIndex:1,category:'item'}]}}});
@@ -335,7 +335,7 @@ describe('地点写入精确隔离', () => {
     const factory = new IDBFactory(), repo = await SaveRepository.open('location-isolation',factory);
     try {
       const input = {state,draft:readyVariables};
-      await repo.importBackup(input,(await repo.compareBackup(input)).confirmation);
+      await seedFixtureTurn(repo,input);
       const imported = (await repo.loadGame(state.saveId)).draft!;
       const ready = await repo.saveDraft(saveWorld(imported,world),imported.draftRevision);
       const commit = submission(ready,'收录合成更新');
