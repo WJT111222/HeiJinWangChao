@@ -2,12 +2,25 @@ import { fingerprint } from '../domain/commands';
 import type { TurnDraft } from '../domain/drafts';
 import { captureAssistantSelection, writingWitness } from '../presets/library';
 import { captureAssistantPreferences } from '../presets/tavern/hostState';
+import { readAiConfig } from '../services/ai/configuration';
+import { compatibleBase } from '../services/ai/compatibleEndpoints';
+import { relayAttempt, relayMode, type ContinuationRoute } from '../services/ai/corsRelay';
+import { relayTarget } from '../services/ai/relayTarget';
+import { resolveModelRoute } from '../services/ai/snapshot';
 import { AiError } from '../services/ai/errors';
 import type { SaveRepository } from '../services/storage/saveRepository';
 import type { Settings } from '../ui/settings/model';
 
 type Repository = Pick<SaveRepository, 'load' | 'loadDraft'>;
 const changed = () => new AiError('configuration', undefined, { fieldPath: 'tavern.confirmation_expired' });
+
+export function canRelayLegacyStory() {
+  try {
+    const { channel } = resolveModelRoute(readAiConfig(localStorage), 'story');
+    const { origin } = relayAttempt(channel.protocol);
+    return !!origin && !!relayTarget(compatibleBase(channel.baseUrl) + '/chat/completions', origin, 'POST');
+  } catch { return false; }
+}
 
 /** One page operation. The exact draft includes its revisions, bound action and complete partial. */
 export async function prepareLegacyContinuation(draft: TurnDraft, repository: Repository,
@@ -44,7 +57,7 @@ export async function prepareLegacyContinuation(draft: TurnDraft, repository: Re
   checkWriting();
   return {
     writing: effective.writing,
-    confirm() {
+    confirm(route: ContinuationRoute = 'direct') {
       checkPage();
       checkWriting();
       if (phase !== 'offered') throw changed();
@@ -54,6 +67,7 @@ export async function prepareLegacyContinuation(draft: TurnDraft, repository: Re
         if (phase !== 'confirmed' || fingerprint(expected) !== identity) throw changed();
       }
       return {
+        route,
         check,
         writing: effective.writing,
         get sent() { return phase === 'sent'; },
@@ -68,6 +82,8 @@ export async function prepareLegacyContinuation(draft: TurnDraft, repository: Re
           checkPage();
           signal.throwIfAborted();
           checkWriting();
+          if (route === 'relay' && relayMode() !== 'auto')
+            throw new AiError('configuration', undefined, { fieldPath: 'channel.confirmed_relay_unavailable' });
           phase = 'sent';
           return send();
         },

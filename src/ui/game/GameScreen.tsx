@@ -1,4 +1,5 @@
-import { prepareLegacyContinuation } from '../../workflows/legacyContinuation';
+import type { ContinuationRoute } from '../../services/ai/corsRelay';
+import { canRelayLegacyStory, prepareLegacyContinuation } from '../../workflows/legacyContinuation';
 import { readDocument } from '../../services/local/documents';
 import { continuationMinimum } from '../../domain/storyWriting';
 import { FeedbackCorrelation, linkMemoryFeedback } from '../../services/feedback/report';
@@ -687,7 +688,7 @@ export function GameScreen({
     confirmation.current = undefined;
     return generateStory(...args);
   }
-  async function continueWorkflow() {
+  async function continueWorkflow(transport: ContinuationRoute = 'direct') {
     if (!draft || busy) return;
     if (storyContinuable && !draft.storyPartial?.writing) {
       if (confirmation.current) return;
@@ -702,8 +703,9 @@ export function GameScreen({
         if (!active()) return;
         const writing = offer.writing;
         const label = writing.source === 'native' ? '王朝原生文学设置' : `${writing.id}（${writing.version}）`;
-        if (!window.confirm(`旧版断点没有记录文学来源。保留已写内容，使用${label}续写？仅新续写部分使用此来源。取消可继续阅读、复制或重新生成。`)) return;
-        const failure = await automatic.generate(draft, offer.confirm());
+        const path = transport === 'relay' ? '通过本站中转' : '直连模型服务';
+        if (!window.confirm(`旧版断点没有记录文学来源。保留已写内容，使用${label}续写？本次${path}，游戏只发起一次请求。仅新续写部分使用此来源。取消可继续阅读、复制或重新生成。`)) return;
+        const failure = await automatic.generate(draft, offer.confirm(transport));
         if (active() && failure) setConfirmationError({draft, message:failure});
       } catch (error) {
         if (active()) setConfirmationError({draft, message:storyError(error)});
@@ -756,16 +758,16 @@ export function GameScreen({
       title: runningCancel.saving ? '正在保存，稍候即可' : '取消正在进行的生成', onClick: runningCancel.onClick }
     : awaitingAction ? { kind: 'idle', label: '本回合已完成', short: '完', disabled: true, title: '本回合已结算；发送新行动后继续' }
     : nextStage === 'story' && storyContinuable ? { kind: 'continue', label: '续写正文', short: '续', disabled: !validDraft || busy,
-        title: !validDraft ? staleDraftMessage : '从中断处接着写正文，写完后完成已启用阶段并正式结算', onClick: continueWorkflow }
+        title: !validDraft ? staleDraftMessage : '从中断处接着写正文，写完后完成已启用阶段并正式结算', onClick: () => void continueWorkflow() }
     : nextStage === 'story' ? { kind: 'continue', label: storyLabel, short: '续', disabled: !validDraft || busy || !mayStartStory(draft),
         title: !validDraft ? staleDraftMessage : '生成本回合正文（使用已绑定的行动）', onClick: continueStory }
     : !validDraft ? { kind: 'idle', label: '继续', short: '续', disabled: true, title: staleDraftMessage }
     : openingIssue ? { kind: 'continue', label: '重新 Roll 开局正文', short: '重', disabled: busy,
         title: '重新生成开局正文。当前正文保留到新正文保存成功。', onClick: () => void generate(undefined, true) }
-    : canCommit && !nextStage ? { kind: 'continue', label: '完成本回合结算', short: '结', disabled: busy, title: '候选已完成，保存本回合结果', onClick: continueWorkflow }
-    : stageSettingsChanged && !nextStage ? { kind: 'continue', label: '应用阶段设置并继续', short: '续', disabled: busy, title: '在执行锁内保存本次阶段选择，再校验并结算', onClick: continueWorkflow }
+    : canCommit && !nextStage ? { kind: 'continue', label: '完成本回合结算', short: '结', disabled: busy, title: '候选已完成，保存本回合结果', onClick: () => void continueWorkflow() }
+    : stageSettingsChanged && !nextStage ? { kind: 'continue', label: '应用阶段设置并继续', short: '续', disabled: busy, title: '在执行锁内保存本次阶段选择，再校验并结算', onClick: () => void continueWorkflow() }
     : nextStage && canGenerate ? { kind: 'continue', label: nextStage === 'variables' ? '继续生成变量' : '继续生成世界', short: '续', disabled: busy,
-        title: '从当前环节继续，完成后自动结算', onClick: continueWorkflow }
+        title: '从当前环节继续，完成后自动结算', onClick: () => void continueWorkflow() }
     : { kind: 'idle', label: '继续', short: '续', disabled: true, title: workflowGuidance || '当前没有可继续的环节' };
   const actionGuidance = submitting || automatic.settling || runningCancel?.saving
     ? '正在保存，请稍候；保存期间不能取消或发送新行动。'
@@ -971,6 +973,9 @@ export function GameScreen({
                   onClick={() => void copyPartial(partialNarrative)} title="把已写出的正文复制到剪贴板">
                   <span className="partial-seal" aria-hidden="true">{partialCopy?.text === partialNarrative && partialCopy.ok ? '✓' : '抄'}</span>
                   {partialCopy?.text !== partialNarrative ? '复制已写内容' : partialCopy.ok ? '已复制' : '复制失败，请手动选中'}</button>}
+                {storyContinuable && !draft?.storyPartial?.writing && canRelayLegacyStory() &&
+                  <button type="button" className="partial-action" disabled={busy}
+                    onClick={() => void continueWorkflow('relay')}>通过本站中转续写</button>}
                 {!draft?.storyPartial?.writing && <button type="button" className="partial-action" disabled={busy}
                   onClick={() => void generate()} title="使用当前文学设置重新生成；成功前保留旧片段">重新生成正文</button>}
                 <button type="button" className="partial-action partial-discard" disabled={busy} onClick={() => void discardPartial()}

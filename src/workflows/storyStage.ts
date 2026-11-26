@@ -19,7 +19,7 @@ import { AiConfigSchema } from '../services/ai/configuration';
 import { storyInspections } from '../services/ai/storyInspection';
 import type { AiConfig } from '../services/ai/configuration';
 import type { CredentialVault } from '../services/ai/credentials';
-import { AiError, safeAiError } from '../services/ai/errors';
+import { AiError, isContinuationDeliveryUnknown, safeAiError } from '../services/ai/errors';
 import { redactInspection } from '../services/ai/inspection';
 import { recordedRetryable } from './stageRetry';
 import { runStageRequest, storyFailureText } from '../services/ai/runtime';
@@ -254,6 +254,7 @@ export class StoryStage {
         // An unsuccessful explicit rewrite of an uncredited V10 fragment must leave its only copy intact.
         const keepLegacyPartial = !continuation && draft.storyPartial && !draft.storyPartial.writing;
         if ((!consent || consent.sent) && !recovery && !keepLegacyPartial && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled'
+          && !isContinuationDeliveryUnknown(error)
           && !(draft.story && error.details?.storyRule === 'narrative_empty')) {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)

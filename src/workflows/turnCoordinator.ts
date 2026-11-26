@@ -10,7 +10,7 @@ import { AiClient } from '../services/ai/client';
 import { AiConfigSchema } from '../services/ai/configuration';
 import type { AiConfig, AiStage } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
-import { AiError } from '../services/ai/errors';
+import { AiError, isContinuationDeliveryUnknown } from '../services/ai/errors';
 import { freeze, requestSnapshot } from '../services/ai/snapshot';
 import type { CompanionProfile } from '../services/local/companionProfile';
 import type { SaveRepository } from '../services/storage/saveRepository';
@@ -243,6 +243,7 @@ export class TurnCoordinator {
                 noteRetryDecision(error, settings, number, plan, settings.runtime.failureAutoRetry ? extendedStageRetryable(error) : transientStageError(error));
                 input.onAttemptFailure?.(stage, error);
               }
+              if (stage === 'story' && input.consent && isContinuationDeliveryUnknown(error)) throw error;
               if (stage === 'story' && error instanceof AiError && error.code !== 'cancelled') {
                 // 原 StoryStage 只保存成功正文；协调器额外记录安全失败码，刷新后仍可恢复。
                 await reread();

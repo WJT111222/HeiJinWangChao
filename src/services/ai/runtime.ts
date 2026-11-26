@@ -189,7 +189,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const nativeDeliveryReference = presetSelection === nativeDeliveryId ? nativeReferenceRecords(messages) : undefined;
   const responseResult = await client.generate(snapshot, scripted ? await promptReady(messages, false) : messages, {
     ...options,
-    dispatch: requestedContinuation?.consent?.dispatch,
+    confirmedTransmission: requestedContinuation?.consent,
     tavernType: scripted ? type : undefined,
     playerWorldbook,
     presetSampling: prompt.preset?.sampling,

@@ -12,7 +12,7 @@ import type { Settings } from '../settings/model';
 import type { RuntimeLogReporter } from './runtimeLog';
 import { generateAndSettleTurn } from '../../workflows/automaticTurn';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
-import { AiError } from '../../services/ai/errors';
+import { AiError, isContinuationDeliveryUnknown } from '../../services/ai/errors';
 import { readFailureDiagnostic } from '../../services/ai/failureDiagnostic';
 import { chimeForFailure, chimeForTurn, chimeIfWanted, primeChime } from './completionChime';
 
@@ -129,7 +129,7 @@ export function useTurnGeneration(
           `${stage ? { story: '正文生成', variables: '变量管理', world: '动态世界', commit: '正式结算' }[stage] + '：' : ''}${storyError(failure)}`,
         );
         chimeIfWanted(chimeMode(), chimeForFailure(failure));
-        if (consent && !consent.sent) return storyError(failure);
+        if (consent && (!consent.sent || isContinuationDeliveryUnknown(failure))) return storyError(failure);
       }
     } finally {
       if (token.current === id) {
