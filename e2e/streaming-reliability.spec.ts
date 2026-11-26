@@ -25,7 +25,7 @@ for (const literary of [false, true]) for (const scenario of scenarios) {
       const tool = body.tools?.some((t: { function?: { name: string } }) => t.function?.name === 'actual_content') === true;
       const seen: (typeof posts)[number] = { stream: body.stream === true, tool, originalWorld: raw.includes('stream-test-world-A'), changedWorld: raw.includes('stream-test-world-B') };
       const started = performance.now();
-      posts.push(seen); active = res;
+      posts.push(seen); server.emit('model-post'); active = res;
       res.on('close', () => { seen.closed = true; seen.closeMs = Math.round(performance.now() - started); });
       const text = (snippet: string) => res.write(frame({ content: snippet }));
       const finish = () => {
@@ -64,6 +64,7 @@ for (const literary of [false, true]) for (const scenario of scenarios) {
         else res.end('data: [DONE]\n\n');
       }
     });
+    const firstPost = once(server, 'model-post');
     server.listen(0, '127.0.0.1'); await once(server, 'listening');
     const baseUrl = 'http://127.0.0.1:' + (server.address() as AddressInfo).port;
     try {
@@ -83,7 +84,7 @@ for (const literary of [false, true]) for (const scenario of scenarios) {
           let edit: Promise<void> | undefined;
           if (scenario === 'source-retry') await (await import(fixturePath)).book('stream-test-world-A');
           const { state, settings } = talentPromptInput('story', 'regular');
-          Object.assign(settings.runtime, { streamStory: scenario !== 'json', streamIdleSeconds: 1, streamTotalSeconds: 12,
+          Object.assign(settings.runtime, { streamStory: scenario !== 'json', streamIdleSeconds: scenario === 'cancel' ? 12 : 1, streamTotalSeconds: 12,
             timeoutSeconds: 5, useVariableStage: false, useWorldStage: false, failureAutoRetry: scenario !== 'retry-off', maxAutoRetries: 1 });
           const draft = createTurnDraft(state.saveId, state.revision, 'stream-review', 'regular', '阅读资料', false, false);
           const entry = { state, draft }; await repo.importBackup(entry, (await repo.compareBackup(entry)).confirmation);
@@ -116,7 +117,7 @@ for (const literary of [false, true]) for (const scenario of scenarios) {
         } finally { coordinator.dispose(); repo.close(); }
       }, { baseUrl, scenario });
       if (scenario === 'cancel') {
-        await expect.poll(() => posts.length).toBe(1);
+        await firstPost;
         await page.evaluate(() => window.dispatchEvent(new Event('review-cancel')));
       }
       const result = await run;

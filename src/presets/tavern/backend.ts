@@ -36,7 +36,8 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
         trace.calls++;
         const response = await send(wire, actual);
         return await normalizeUpstream(response, snapshot.channel.protocol, wire.stream, actual, trace,
-          nativeReference !== undefined ? nativeOutputTool : trace.retryableHost ? wire.storyDeliveryTool : undefined);
+          nativeReference !== undefined ? nativeOutputTool : trace.retryableHost ? wire.storyDeliveryTool : undefined,
+          nativeReference === undefined && trace.retryableHost);
       } catch (error) {
         trace.error = actual.aborted ? new AiError('cancelled') : error instanceof AiError ? error : new AiError('network');
         trace.status ??= trace.error.status;

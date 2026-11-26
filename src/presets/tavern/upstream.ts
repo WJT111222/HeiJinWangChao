@@ -58,7 +58,7 @@ class Frames {
   private hasText = false;
   private preToolPaddingLength = 0;
   boundary = false;
-  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null) {}
+  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null, private literaryDelivery = false) {}
   private track(index: number, id: unknown, name: unknown, args: unknown) {
     if (!Number.isSafeInteger(index) || index < 0) invalid();
     const tool = this.tools.get(index) ?? { id: '', name: '', args: '' };
@@ -209,7 +209,7 @@ class Frames {
         const args = parse(tool.args);
         if (!objectArgs(args)) invalid();
         if (this.expectedContentTool !== undefined && this.expectedContentTool !== tool.name) {
-          if (isOpenAiCompatible(this.protocol)) invalid();
+          if (this.literaryDelivery) invalid();
           throw new AiError('unsupported', undefined, { fieldPath: 'tavern.native_delivery.response' });
         }
         if (this.expectedContentTool === tool.name && this.tools.size === 1) {
@@ -231,11 +231,11 @@ class Frames {
     this.trace.clock.first('upstreamCompleteMs');
   }
 }
-export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace, expectedContentTool?: string | null) {
+export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace, expectedContentTool?: string | null, literaryDelivery = false) {
   trace.status = response.status;
   trace.contentType = safeMime(response.headers);
   trace.requestedStream = stream;
-  const frames = new Frames(protocol, trace, expectedContentTool);
+  const frames = new Frames(protocol, trace, expectedContentTool, literaryDelivery);
   if (!response.body) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_body' });
   const stopped = new AbortController();
   const reading = AbortSignal.any([signal, stopped.signal]);
