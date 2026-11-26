@@ -25,7 +25,7 @@ async function prepare(page: Page, retained = false) {
       '/src/domain/drafts.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/workflows/turnCoordinator.ts'];
     const [{ SaveRepository }, { defaultSettings, settingsKey }, { newCreation, buildCreationState }, { createTurnDraft },
       { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }, { TurnCoordinator }] = await Promise.all(paths.map(path => import(path)));
-    const settings = defaultSettings();
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false;
     settings.prompts.minNarrativeChars = 1;
     settings.prompts.actionOptions = false;
     settings.runtime.streamStory = false;
@@ -44,7 +44,7 @@ async function prepare(page: Page, retained = false) {
     const state = buildCreationState({ ...newCreation(), saveId, person: { name: '林舟', age: '30', gender: '女性', appearance: '', personality: '' }, profession: '教师' }, settings);
     try {
       await repo.create(state);
-      const draft = createTurnDraft(saveId, 0, 'synthetic-opening', 'opening', '', retained, false);
+      const draft = createTurnDraft(saveId, 0, 'synthetic-opening', 'opening', '', retained, false, false);
       await repo.saveDraft(draft, null);
       if (retained) {
         const runner = new TurnCoordinator(repo);

@@ -68,7 +68,7 @@ test('三阶段独立选择在启用跟随、保存和刷新后仍能恢复，�
 test('旧跟随配置没有独立选择时明确留空，不默默使用正文渠道默认模型',async({page})=>{
   const posts=await seed(page,false);
   for(const [,label] of tasks){await setFollow(page,label,false);await selected(page,`${label}渠道`,'');await selected(page,`${label}模型`,'');}
-  await expect(saveBar(page).getByRole('status')).toContainText('变量管理选了「单独指定」但还没选模型');
+  await expect(saveBar(page).getByRole('status')).toContainText('主角与现场选了「单独指定」但还没选模型');
   await expect(settingsOf(page).getByRole('button',{name:'保存 AI 配置',exact:true})).toBeDisabled();
   expect(posts).toHaveLength(0);
 });
@@ -132,7 +132,16 @@ test('恢复后四路真实Mock请求使用各自渠道模型，默认模型及�
     const {readAiConfig}=await import(cp),{CredentialVault}=await import(vp),{runStageRequest}=await import(rp),{worldState,worldDraft}=await import(fp),{defaultSettings}=await import(sp),{AiClient}=await import(ap),{requestSnapshot}=await import(sn);
     const config=readAiConfig(localStorage),vault=new CredentialVault(sessionStorage,localStorage),settings=defaultSettings(),state=worldState(),before=JSON.stringify(state);
     settings.prompts.minNarrativeChars=1;settings.prompts.actionOptions=false;
-    for(const stage of ['story','entities','variables','world'])await runStageRequest({stage,mode:'opening',state,draft:worldDraft(true,'opening'),settings,userInput:'观察'},config,vault,{stream:false});
+    for(const stage of ['story','entities','variables','world']) {
+      const draft=worldDraft(true,'opening');
+      if(stage==='entities') {
+        draft.useEntityStage=true;
+        draft.stageStatus.entities='pending';
+        draft.stageStatus.variables='pending';
+        delete draft.variables;
+      }
+      await runStageRequest({stage,mode:'opening',state,draft,settings,userInput:'观察'},config,vault,{stream:false});
+    }
     await new AiClient().generate(requestSnapshot(config,'memory',vault),[{role:'user',content:'验证Mock路由'}],{stream:false});
     return {unchanged:before===JSON.stringify(state),models:config.channels.map((c:{defaultModel:string})=>c.defaultModel)};
   });
@@ -152,7 +161,7 @@ test('保存栏在长路由页面可触达且无横向溢出，窄屏也能保�
 test('删除单独指定用的渠道后该阶段改回跟随正文，其他渠道和选择不受影响',async({page})=>{
   const posts=await seed(page),settings=settingsOf(page);await openChannel(settings,'variables渠道');
   await settings.getByRole('button',{name:'删除渠道',exact:true}).click();
-  await expect(page.getByRole('dialog',{name:'删除「variables渠道」？',exact:true})).toContainText('它正被「变量」使用');
+  await expect(page.getByRole('dialog',{name:'删除「variables渠道」？',exact:true})).toContainText('它正被「主角与现场」使用');
   await page.getByRole('button',{name:'确认删除渠道',exact:true}).click();
   await backToList(settings);await following(page,'主角与现场');
   await selected(page,'场外与网络模型','world-model');await selected(page,'记忆维护模型','memory-model');

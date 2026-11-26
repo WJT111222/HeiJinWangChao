@@ -41,13 +41,13 @@ test('真实Chromium持久用户目录关闭重启，星标/休眠七字段不�
     await closeNpcRoster(page); await page.getByLabel('你的行动', { exact: true }).fill('重新开始工作交流'); await page.getByRole('button', { name: '发送', exact: true }).click();
     try { await expect.poll(async () => (await rosterGame(page)).state.turnNumber, { timeout: 20000 }).toBe(before.state.turnNumber + 1); }
     catch { await openGameTools(page); throw new Error(JSON.stringify({ calls: mock.calls, workflow: await page.getByRole('region', { name: '四阶段工作流', exact: true }).innerText() })); }
-    expect(mock.calls).toEqual(['story', 'variables', 'world']);
+    expect(mock.calls).toEqual(['story', 'entities', 'variables', 'world']);
     await openNpcRoster(page); detail = await selectNpc(page, '林澄'); await expect(detail).not.toContainText('特殊人物资料待完善'); await expect(detail).toContainText('从社区成长为设计师');
     await closeNpcRoster(page); await page.getByRole('button', { name: /^撤回（1）$/ }).click();
     await page.getByRole('dialog', { name: '撤回上一回合', exact: true }).getByRole('button', { name: '确认撤回', exact: true }).click();
     await expect.poll(async () => (await rosterGame(page)).state.turnNumber).toBe(before.state.turnNumber);
     const undone = await rosterGame(page); expect(undone.state.npc.person).toMatchObject({ kind: 'special', importancePreference: 'special', profilePending: true });
     expect(undone.state.npc.special.privateProfile).toEqual(fullPrivateProfile); expect(undone.state.memories).toEqual(before.state.memories);
-    await expect(page.getByLabel('你的行动', { exact: true })).toHaveValue('重新开始工作交流'); expect(mock.calls).toHaveLength(3);
+    await expect(page.getByLabel('你的行动', { exact: true })).toHaveValue('重新开始工作交流'); expect(mock.calls).toHaveLength(4);
   } finally { await context.close(); rmSync(directory, { recursive: true, force: true }); }
 });

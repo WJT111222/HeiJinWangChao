@@ -106,6 +106,14 @@ describe('三段依赖与权限', () => {
     const both = await parseEntities(envelope('set npc[scene].onScene = true\nset npc[scene].locationId = null'),state,draft);
     const ambiguous = {...ready,entities:{...ready.entities!,contactedNpcIds:both.contactedNpcIds,result:both}};
     expect(() => effectiveEntityCandidate(state,ambiguous,[])).toThrow();
+    const takeover = {...worldResult(),worldCommands:[{type:'CreateNpc',commandId:'takeover',evidence:'登记',npc:person}]};
+    await expect(parsePartialWorld(JSON.stringify(takeover),state,ready)).rejects.toMatchObject({code:'ENTITY_DEPENDENCY'});
+    const departure = {...ready,entities:{...ready.entities!,contactedNpcIds:['scene'],result:{...result,commands:[{
+      type:'UpdateNpc' as const,npcId:'scene',commandId:'late-departure',evidence:'离场',expectedRevision:state.revision,
+      changes:{onScene:false,lastInteractionAt:person.lastInteractionAt},
+    }]}}};
+    const errand = {...worldResult(),taskCommands:[{...world.taskCommands[0],task:{...task(),actorRef:{kind:'npc',id:'scene'}}}]};
+    await expect(parsePartialWorld(JSON.stringify(errand),state,departure)).rejects.toMatchObject({code:'ENTITY_DEPENDENCY'});
     expect(ready.entities?.result.commands).toHaveLength(1);
     expect(state.npc[id]).toBeUndefined();
   });

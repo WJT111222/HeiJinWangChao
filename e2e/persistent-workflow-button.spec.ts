@@ -10,7 +10,7 @@ async function seed(page: Page, mode: Mode) {
     const [{ SaveRepository }, { worldState }, { completeDraft }, { TurnDraftSchema }, { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }, { defaultSettings, settingsKey }] = await Promise.all(paths.map((p) => import(p)));
     const repo = await SaveRepository.open(), state = worldState(); state.openingCityId = 'chongqing'; state.protagonist.name = '沈砚';
     await repo.create(state);
-    const settings = defaultSettings(); settings.prompts.minNarrativeChars = 5; localStorage.setItem(settingsKey, JSON.stringify(settings));
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.prompts.minNarrativeChars = 5; localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel(), config = defaultAiConfig(); channel.baseUrl = 'https://persistent-button.mock.invalid/v1';
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'mock' }; saveAiConfig(localStorage, config);
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-key');

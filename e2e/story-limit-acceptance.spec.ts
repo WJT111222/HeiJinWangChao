@@ -31,7 +31,7 @@ for(const stream of [true,false]){
   const current=await load(page);expect(current.state.journal.at(-1).story.narrative).toBe(body);expect(current.state.revision).toBe(2);
   expect(current.draft.storyPartial).toBeUndefined();expect(calls).toEqual(['story','entities','variables','world']);
   await expect(page.locator('.workflow-summary')).toContainText('本回合已结算');await expect(page.getByRole('button',{name:'续写正文',exact:true})).toHaveCount(0);
-  await shot(page,`${info.project.name}-${stream}-limit-settled`);await page.reload();expect((await load(page)).state.turnNumber).toBe(2);expect(calls).toHaveLength(3);
+  await shot(page,`${info.project.name}-${stream}-limit-settled`);await page.reload();expect((await load(page)).state.turnNumber).toBe(2);expect(calls).toHaveLength(4);
  });
  test(`手动失败→自动续写成功Commit后旧错误不再显示 stream=${stream}`,async({page},info)=>{
   await seed(page,stream);let stories=0;const calls:string[]=[];

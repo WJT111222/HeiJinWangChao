@@ -1,3 +1,4 @@
+import { worldTaskNpcAllowed } from './npc/worldAccess';
 import { structuredRefs } from './commandRefs';
 import { maintainSceneTransition, SceneLocationError } from './sceneTransitions';
 import type { SkippedUpdate } from './updateSettlement';
@@ -96,7 +97,23 @@ function sourceIndex(command: DomainCommand, index: number, skipped: readonly Sk
   return original;
 }
 
-export function assertEntityDependencies(removedIds: ReadonlySet<string>, commands: readonly unknown[]) {
+function assertTaskActors(lost: ReadonlySet<string>, commands: readonly unknown[]) {
+  if (!lost.size) return;
+  for (const command of commands) {
+    if (!command || typeof command !== 'object' || !('type' in command) || command.type !== 'SaveTask' ||
+        !('task' in command) || !command.task || typeof command.task !== 'object' || !('actorRef' in command.task)) continue;
+    const actor = command.task.actorRef;
+    if (actor && typeof actor === 'object' && 'kind' in actor && actor.kind === 'npc' &&
+        'id' in actor && typeof actor.id === 'string' && lost.has(actor.id)) throw new EntityDependencyError();
+  }
+}
+
+export function assertWorldEntityDependencies(effective: ReturnType<typeof effectiveEntityCandidate>, commands: readonly unknown[]) {
+  assertEntityDependencies(effective.removedIds, commands);
+  assertTaskActors(effective.lostWorldActors, commands);
+}
+
+function assertEntityDependencies(removedIds: ReadonlySet<string>, commands: readonly unknown[]) {
   if (!removedIds.size) return;
   for (const command of commands) {
     if (structuredRefs(command).some(id => removedIds.has(id))) throw new EntityDependencyError();
@@ -112,11 +129,12 @@ export function assertEntityDependencies(removedIds: ReadonlySet<string>, comman
 export function effectiveEntityCandidate(state: GameState, draft: TurnDraft, scene: readonly DomainCommand[]) {
   const candidate = draft.entities;
   const removedIds = new Set<string>();
-  if (!candidate) return { commands: [] as DomainCommand[], settlement: undefined, removedIds };
+  const lostWorldActors = new Set<string>();
+  if (!candidate) return { commands: [] as DomainCommand[], settlement: undefined, removedIds, lostWorldActors };
   const { result, contactedNpcIds } = candidate;
   const original = result.commands;
   const before = checkEntityCommands(state, draft, contactedNpcIds, original);
-  if (!original.length) return { commands: original, settlement: result.settlement, removedIds };
+  if (!original.length) return { commands: original, settlement: result.settlement, removedIds, lostWorldActors };
   const clocks = scene.filter(command => command.type === 'SetWorldClock');
   const clock = clocks.at(-1)?.worldClock ?? openingTimeSelection(state, draft, scene)?.endAt ?? state.worldClock;
   const skipped = new Map<DomainCommand, SkippedUpdate>();
@@ -150,7 +168,21 @@ export function effectiveEntityCandidate(state: GameState, draft: TurnDraft, sce
       if (!(error instanceof SceneLocationError)) throw error;
       invalid = error.npcId;
     }
-    if (!invalid) break;
+    if (!invalid) {
+      if (skipped.size) {
+        const prior = { ...before, protagonist: projection.protagonist, npc: structuredClone(before.npc) };
+        try { maintainSceneTransition(state, prior, original); }
+        catch (error) { if (!(error instanceof SceneLocationError)) throw error; }
+        const lostSceneActors = new Set<string>();
+        for (const person of Object.values(prior.npc)) {
+          if (worldTaskNpcAllowed(prior, draft, person.id) && !worldTaskNpcAllowed(projection, draft, person.id))
+            lostWorldActors.add(person.id);
+          if (person.onScene && !projection.npc[person.id]?.onScene) lostSceneActors.add(person.id);
+        }
+        assertTaskActors(lostSceneActors, scene);
+      }
+      break;
+    }
     const sources = commands.filter(command => command.type === 'CreateNpc' && command.npc.id === invalid ||
       command.type === 'UpdateNpc' && command.npcId === invalid && (command.changes.locationId !== undefined || command.changes.onScene === true));
     if (sources.length !== 1) throw new EntityDependencyError();
@@ -159,7 +191,7 @@ export function effectiveEntityCandidate(state: GameState, draft: TurnDraft, sce
   const settlement = skipped.size ? { ...result.settlement, accepted: commands.length,
     skipped: [...previous, ...skipped.values()].sort((a,b) => a.commandIndex - b.commandIndex) } : result.settlement;
   return { commands: commands.map(command => command.type === 'RecordNpcMemory'
-    ? { ...command, memory: { ...command.memory, createdAtGameTime:clock } } : command), settlement, removedIds };
+    ? { ...command, memory: { ...command.memory, createdAtGameTime:clock } } : command), settlement, removedIds, lostWorldActors };
 }
 
 export function sceneAndEntityCommands(state: GameState, draft: TurnDraft, scene: readonly DomainCommand[]) {

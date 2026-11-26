@@ -40,7 +40,7 @@ const trigger=(page:Page)=>page.locator('.workflow-toggle');
 const panel=(page:Page)=>page.getByRole('region',{name:'四阶段详情',exact:true});
 async function stage(page:Page,name:string){
  const back=page.getByRole('button',{name:'返回四阶段列表'});if(await back.isVisible())await back.click();
- await panel(page).getByRole('navigation',{name:'三阶段导航'}).getByRole('button',{name:new RegExp(name)}).click();
+ await panel(page).getByRole('navigation',{name:'四阶段导航'}).getByRole('button',{name:new RegExp(name)}).click();
 }
 test('整合：双层导航、候选/原文/诊断、非模态输入边界与四尺寸真实截图',async({page},info)=>{
  test.setTimeout(60000);let calls=0;await page.route('https://workflow.mock.invalid/**',route=>{calls++;return route.abort();});

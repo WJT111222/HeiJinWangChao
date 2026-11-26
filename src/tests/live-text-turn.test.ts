@@ -386,14 +386,6 @@ it.each(['knowledge-shape', 'timeline-object', 'organization-history', 'interact
       ...(!corrected && failure === 'timeline-object' ? { timelineCandidates: [{eventId:'routine-finished'}] } : {}),
     }));
     const runner = coordinator(a.repo, t.fetcher);
-    if (failure === 'interaction-time') {
-      await expect(runner.generate(a)).rejects.toMatchObject({code:'time_data'});
-      const stored=await a.repo.loadDraft('save-a');
-      expect(stored?.entities?.validation).toBe('structural');
-      expect(stored?.world).toBeUndefined();
-      expect(await a.repo.load('save-a')).toEqual(before);
-      return;
-    }
     if (failure === 'timeline-object') {
       await expect(runner.generate(a)).rejects.toMatchObject({ code: 'schema_fields' });
       const failed = (await a.repo.loadDraft('save-a'))!;
@@ -410,11 +402,18 @@ it.each(['knowledge-shape', 'timeline-object', 'organization-history', 'interact
     const outcome = await runner.generate(a);
     expect(outcome.status).toBe('complete');
     const report = failure === 'organization-history' ? outcome.draft.world?.result.settlement : outcome.draft.entities?.result.settlement;
-    expect(report?.skipped).toHaveLength(failure === 'organization-history' ? 2 : 1);
+    if (failure === 'interaction-time') {
+      expect(outcome.draft.entities?.validation).toBe('structural');
+      expect(outcome.draft.entities?.result.commands.some(command => command.type === 'UpdateNpc' && command.changes.lastInteractionAt)).toBe(true);
+    } else expect(report?.skipped).toHaveLength(failure === 'organization-history' ? 2 : 1);
     expect(t.calls.map(call => call.stage)).toEqual(['story','entities', 'variables','world']);
     expect(await a.repo.load('save-a')).toEqual(before);
     const partial = await a.repo.commitTurn(submission(outcome.draft, '继续工作'));
     expect(partial.state.protagonist.emotionText).toBe('从容');
+    if (failure === 'interaction-time') {
+      expect(partial.state.journal.at(-1)?.settlement?.entities?.skipped).toMatchObject([{commandIndex:0,field:'lastInteractionAt',reason:'time'}]);
+      expect(partial.state.npc.scene.lastInteractionAt).toBe(before!.npc.scene.lastInteractionAt);
+    }
     if (failure === 'knowledge-shape') expect(partial.state.npc.scene.knownInformation).toEqual([]);
     if (failure === 'organization-history') {
       expect(partial.state.organizations['org-community']).toBeUndefined();

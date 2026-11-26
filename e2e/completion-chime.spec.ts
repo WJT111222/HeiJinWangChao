@@ -158,21 +158,15 @@ test('自动重试：中间的服务失败不提醒，最终成功只响一次�
   await page.waitForTimeout(300); expect(await chimes(page)).toEqual(DONE);
 });
 
-test('世界预览只响需要处理的提示；补开变量后继续，结算成功再响完成提示', async ({ page, isMobile }) => {
+test('现场关闭后场外以已有时钟结算，只响完成提示提示', async ({ page, isMobile }) => {
   test.skip(isMobile, '阶段开关在电脑端工作台；手机端由前面的通用场景覆盖');
   await fakeAudio(page); await seed(page); await useChime(page, 'always'); const server = await mock(page);
   await openStageSwitches(page);
   await page.getByLabel('主角与现场', { exact: true }).uncheck();
   await startOpening(page);
-  await expect(workflowRegion(page).getByRole('status')).toContainText('世界仅为预览');
-  expect((await stored(page)).draft.world.validation).toBe('preview');
-  expect(server.calls).toEqual(['story', 'world']);
-  await expect.poll(() => chimes(page)).toEqual(ATTENTION);
-  expect((await stored(page)).state.turnNumber).toBe(0);
-  await page.getByLabel('主角与现场', { exact: true }).check();
-  await page.getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(1);
-  await expect.poll(() => chimes(page)).toEqual([...ATTENTION, ...DONE]);
+  expect(server.calls).toEqual(['story', 'world']);
+  await expect.poll(() => chimes(page)).toEqual(DONE);
 });
 
 test('手动阶段与自动结算衔接：失败提醒一次，手动补变量不响，继续后结算成功响完成提示', async ({ page, isMobile }) => {

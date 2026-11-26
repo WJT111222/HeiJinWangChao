@@ -122,7 +122,7 @@ for (const stream of [false, true]) {
     expect(saved.state).toEqual(before.state);
     expect(saved.draft?.variables?.result.commands).toMatchObject([{ type: 'SpendFunds', account: 'cash', amount: 3000 }]);
     const panel = await openStageRaw(page, 'variables');
-    await expect(panel.getByRole('textbox', { name: '变量模型完整原文', exact: true })).toHaveValue(envelope);
+    await expect(panel.getByRole('textbox', { name: '主角与现场模型完整原文', exact: true })).toHaveValue(envelope);
     await panel.getByLabel('变量原文内容', { exact: true }).selectOption('reasoning');
     await expect(panel.getByRole('textbox')).toHaveCount(0);
     await page.screenshot({ path: info.outputPath('deepseek-variables.png') });

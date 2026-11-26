@@ -18,7 +18,7 @@ async function setup(page: Page, mode: 'variables' | 'world' | 'failed') {
       '/src/domain/drafts.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/ui/settings/model.ts'];
     const [{ SaveRepository }, { worldState }, { completeDraft, elapsedVariables }, { startStageAttempt, TurnDraftSchema },
       { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }, { defaultSettings, settingsKey }] = await Promise.all(paths.map(p => import(p)));
-    const settings = defaultSettings(); settings.prompts.minNarrativeChars = 5; settings.prompts.actionOptions = false;
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.prompts.minNarrativeChars = 5; settings.prompts.actionOptions = false;
     for (const config of Object.values(settings.memory.summaries) as { automatic: boolean }[]) config.automatic = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel(), config = defaultAiConfig(); channel.baseUrl = 'https://pr162-acceptance.mock.invalid/v1';

@@ -1,3 +1,4 @@
+import { stageFixtureReply } from '../src/tests/fixtures/variableReply';
 import { test,expect } from './helpers/test';
 import { seedSummary,summaryState } from './helpers/memorySummary';
 
@@ -24,18 +25,20 @@ test('真实三阶段四级唯一注入、合法离返场与后台任务、Commi
    await route.fulfill({contentType:'text/event-stream',body:`data: ${JSON.stringify({choices:[{delta:{content:text}}]})}\n\ndata: [DONE]\n\n`});return;
   }
   let content:string;
-  if(stage==='variables'){
+  if(stage==='entities'){
    expect(c.NPC_CONTEXT.groups.sceneOrdinary).toContain('scene-ordinary');expect(c.NPC_IMPORTANCE).toEqual(expect.arrayContaining([expect.objectContaining({npcId:'scene-ordinary'})]));
-   content='<thinking>记录实际离返场。</thinking><说明></说明><命令>\nset npc[scene-ordinary].onScene = false\nset npc[off-special].locationId = "chongqing"\nset npc[off-special].onScene = true\n</命令>';
+   content=stageFixtureReply(stage,'<thinking>记录实际离返场。</thinking><说明></说明><命令>\nset npc[scene-ordinary].onScene = false\nset npc[off-special].locationId = "chongqing"\nset npc[off-special].onScene = true\n</命令>');
+  }else if(stage==='variables'){
+   content=stageFixtureReply(stage,'<命令></命令>');
   }else{
    expect(stage).toBe('world');expect(c.NPC_CONTEXT.groups.offsceneOrdinary).toContain('scene-ordinary');expect(c.NPC_CONTEXT.groups.sceneSpecial).toContain('off-special');
-   expect(c.PROTECTED_SCENE.sceneNpcIds).toContain('off-special');expect(c.OFFSCREEN_STATE.npcIds).toContain('scene-ordinary');expect(c.OFFSCREEN_STATE).not.toHaveProperty('npc');
+   expect(c.PROTECTED_SCENE.sceneNpcIds).toContain('off-special');expect(c.OFFSCREEN_STATE.taskNpcIds).toContain('scene-ordinary');expect(c.OFFSCREEN_STATE).not.toHaveProperty('npc');
    expect(data.revision).toBe(c.BASE_SAVE_REVISION);expect(data.revision).toBe(c.TURN_CONTEXT.baseSaveRevision);
    content=JSON.stringify({worldCommands:[],taskCommands:[{type:'SaveTask',commandId:'new-independent-task',evidence:'离场后处理合作事务',task:{id:'new-independent-task',actorRef:{kind:'npc',id:'scene-ordinary'},goal:'继续处理合作事务',startAt:data.worldClock,dueAt:new Date(Date.parse(data.worldClock)+3600000).toISOString(),status:'active',locationId:'chongqing',prerequisites:[],blockers:[]}}],eventCommands:[],visibleHooks:[],unresolved:[]});
   }
   await route.fulfill({json:{choices:[{message:{content},finish_reason:'stop'}]}});
  });
- await seedSummary(page,{count:10,automatic:false});
+ await seedSummary(page,{entities:true,count:10,automatic:false});
  const before=await page.evaluate(async()=>{
   const paths=['/src/tests/fixtures/npcContextTiers.ts','/src/services/storage/saveRepository.ts','/src/domain/drafts.ts'];
   const [{npcContextFixture},{SaveRepository},{createTurnDraft}]=await Promise.all(paths.map(p=>import(p))),a=npcContextFixture(),repo=await SaveRepository.open();
@@ -50,6 +53,6 @@ test('真实三阶段四级唯一注入、合法离返场与后台任务、Commi
  const saved=await summaryState(page,before.saveId);expect(saved.npc['scene-ordinary'].onScene).toBe(false);expect(saved.npc['off-special'].onScene).toBe(true);
  expect(saved.tasks['new-independent-task'].actorRef).toEqual({kind:'npc',id:'scene-ordinary'});
  expect(saved.npc['tier-npc-6']).toEqual(before.npc['tier-npc-6']);expect(saved.npc['tier-npc-6'].memories).toHaveLength(40);expect(saved.memories.npcSummaries).toEqual(before.memories.npcSummaries);
- expect(calls).toEqual(['story','variables','world']);expect(received).toHaveLength(3);
- await page.reload();await expect(page.locator('.game-layout')).toBeVisible();expect(await summaryState(page,before.saveId)).toEqual(saved);expect(calls).toHaveLength(3);
+ expect(calls).toEqual(['story','entities','variables','world']);expect(received).toHaveLength(4);
+ await page.reload();await expect(page.locator('.game-layout')).toBeVisible();expect(await summaryState(page,before.saveId)).toEqual(saved);expect(calls).toHaveLength(4);
 });

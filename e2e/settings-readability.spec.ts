@@ -135,7 +135,7 @@ test('只读离线预览的高级设置仍可读，不改变存档或发送模�
   const { root, before, posts } = await prepare(page, true);
   await tab(root, '提示词管理'); await root.getByRole('button', { name: /高级/ }).first().click();
   await root.getByRole('combobox', { name: /回合模式/ }).selectOption('regular');
-  await root.getByRole('button', { name: '生成三阶段组装预览（不联网）', exact: true }).click();
+  await root.getByRole('button', { name: '生成四阶段组装预览（不联网）', exact: true }).click();
   await expect(root.getByText('预览已组装；未发送 API 请求、未执行回合、未写入正式存档。', { exact: true })).toBeVisible({ timeout: 20_000 });
   await readable(root, testInfo, 'offline-preview'); await capture(page, testInfo, 'offline-preview');
   expect(await storedArchives(page)).toEqual(before); expect(posts()).toBe(0);

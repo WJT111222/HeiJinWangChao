@@ -30,8 +30,8 @@ test('#125 兼容：车票主按钮进入存档，#120 双层非模态工作流�
   await expect(drawer).toBeVisible(); await expect(drawer).toHaveAttribute('aria-modal','false');
   expect(await drawer.evaluate(element=>element.tagName==='DIALOG'||element.matches(':modal'))).toBe(false);
   await expect(panel).toHaveAttribute('data-level','home');
-  await expect(panel.getByRole('navigation',{name:'三阶段导航'}).locator('.workflow-stages').getByRole('button')).toHaveCount(3);
-  await panel.getByRole('navigation',{name:'三阶段导航'}).getByRole('button',{name:/正文生成/}).click();
+  await expect(panel.getByRole('navigation',{name:'四阶段导航'}).locator('.workflow-stages').getByRole('button')).toHaveCount(4);
+  await panel.getByRole('navigation',{name:'四阶段导航'}).getByRole('button',{name:/正文生成/}).click();
   await expect(panel).toHaveAttribute('data-level','detail');
   await panel.getByRole('button',{name:'返回四阶段列表',exact:true}).click();
   await expect(panel).toHaveAttribute('data-level','home');

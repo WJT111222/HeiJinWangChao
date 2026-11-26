@@ -23,9 +23,9 @@ async function seed(page: Page, visitor = false, disabled = false, action = '睡
     await new Promise<void>((resolve, reject) => {
       const req = indexedDB.open('heijinwangchao'); req.onsuccess = () => { const db = req.result, tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(state); tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); }; }; req.onerror = () => reject(req.error);
     });
-    const storage = await SaveRepository.open(); await storage.saveDraft(createTurnDraft(state.saveId, state.revision, 'sleep-turn', 'regular', action, !disabled, !disabled), null); storage.close();
+    const storage = await SaveRepository.open(); await storage.saveDraft(createTurnDraft(state.saveId, state.revision, 'sleep-turn', 'regular', action, !disabled, !disabled, false), null); storage.close();
     const settings = defaultSettings(); settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
-    settings.runtime.useVariableStage = !disabled; settings.runtime.useWorldStage = !disabled; localStorage.setItem(settingsKey, JSON.stringify(settings));
+    settings.runtime.useEntityStage = false; settings.runtime.useVariableStage = !disabled; settings.runtime.useWorldStage = !disabled; localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = 'https://time.mock.invalid/v1'; config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: 'story' };
     config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' }; config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };

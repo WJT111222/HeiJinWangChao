@@ -24,7 +24,7 @@ async function seed(page: Page, remoteLocation = false, organization = false) {
 }
 async function stored(page: Page) { return page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try { return await repo.loadGame('save-a'); } finally { repo.close(); } }); }
 async function mock(page: Page) {
-  const calls: string[] = [], responses: { variables: string; world: string } = { variables: '', world: '' };
+  const calls: string[] = [], responses = { entities: '', variables: '', world: '' };
   const control: { bad?: boolean; hold?: Promise<void>; variables?: string; world?: string } = {};
   await page.route('https://auto-settlement.mock.invalid/**', async route => {
     const stage = String(route.request().postDataJSON().model); calls.push(stage);
@@ -34,7 +34,7 @@ async function mock(page: Page) {
       : '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [], "visibleHooks": [], "unresolved": []\n}');
     const worldText = world.replace('"evidence":"{}"', `"evidence":${JSON.stringify(JSON.stringify({ version: 1, kind: 'planned', at: '2026-10-18T08:05:00+08:00', sources: ['npc:npc-a'], fact: '计划进行内部清点。', rationale: '根据日常工作安排准备清点。' }))}`);
     const text = stage === 'story' ? `<thinking>保持当前行动连续。</thinking>\n<正文>第${turn}幕：主角在街边用餐，观察来往行人。</正文>\n<短期记忆>在街边用餐。</短期记忆>\n<变量规划>[]</变量规划>` : (stage === 'entities' || stage === 'variables') ? stageFixtureReply(stage,variables) : worldText;
-    if (stage === 'variables') responses.variables = text;
+    if (stage === 'variables' || stage === 'entities') responses[stage] = text;
     if (stage === 'world') { responses.world = text; if (control.hold) await control.hold; }
     await route.fulfill({ contentType: stage === 'story' ? 'text/event-stream' : 'application/json', body: stage === 'story'
       ? `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`
@@ -60,8 +60,8 @@ test('完整原文可读，开局与下一条行动各自动结算一次，刷�
   await page.getByRole('button', { name: '自动生成开局', exact: true }).click(); await settled(page);
   let data = await stored(page); expect(data.state.turnNumber).toBe(1); expect(data.state.economy.cash).toBe(7000); expect(data.draft.userInput).toBe(''); expect(server.calls).toEqual(['story','entities','variables','world']);
   await openStageRaw(page, 'variables');
-  await expect(page.getByLabel('变量模型完整原文')).toHaveText(server.responses.variables, { useInnerText: false });
-  expect(await page.getByLabel('变量模型完整原文').textContent()).toBe(server.responses.variables);
+  await expect(page.getByLabel('主角与现场模型完整原文')).toHaveText(server.responses.variables, { useInnerText: false });
+  expect(await page.getByLabel('主角与现场模型完整原文').textContent()).toBe(server.responses.variables);
   await openStageRaw(page, 'world'); expect(await page.getByLabel('场外与网络模型完整原文').textContent()).toBe(server.responses.world);
   await page.getByLabel('你的行动', { exact: true }).fill('继续在街边用餐'); await page.getByRole('button', { name: '发送', exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
@@ -75,7 +75,7 @@ test('World字段错误定位为跳过，临时原文可读，合规更新一次
   await seed(page); const server = await mock(page); server.control.bad = true;
   await page.getByRole('button', {name:'自动生成开局',exact:true}).click();
   await expandSettlementSummary(page,1);
-  await expect(page.getByText(/动态世界第 1 条.*eventCommands\.0/u)).toBeVisible();
+  await expect(page.getByText(/场外与网络第 1 条.*eventCommands\.0/u)).toBeVisible();
   const storedGame = await stored(page);
   expect(storedGame.state.events.review).toBeUndefined();
   expect(storedGame.state.turnNumber).toBe(1);
@@ -121,8 +121,8 @@ test('NPC场景位置与World字段错误各自隔离，独立主角状态照常
   server.control.bad=true;
   await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
   await expandSettlementSummary(page,2);
-  await expect(page.getByText(/变量第 2 条.*人物/u)).toBeVisible();
-  await expect(page.getByText(/动态世界第 1 条.*事件/u)).toBeVisible();
+  await expect(page.getByText(/人物与实体第 1 条.*人物/u)).toBeVisible();
+  await expect(page.getByText(/场外与网络第 1 条.*事件/u)).toBeVisible();
   const settledGame=await stored(page);
   expect(settledGame.state.npc.scene).toEqual(before.state.npc.scene);
   expect(settledGame.state.protagonist.emotionText).toBe('安心');
@@ -143,9 +143,9 @@ test('源三标签截断保留正文；明确恢复后四操作自动结算并�
   const data = await stored(page); expect(data.state.turnNumber).toBe(1); expect(data.state.economy.cash).toBe(7000); expect(data.state.protagonist.skills).toEqual(['急救','烹饪']);
   expect(server.calls).toEqual(['story','entities','variables','variables','world']); expect(data.draft.userInput).toBe('');
   await openStageRaw(page, 'variables');
-  expect(await page.getByLabel('变量模型完整原文').textContent()).toBe(server.control.variables);
+  expect(await page.getByLabel('主角与现场模型完整原文').textContent()).toBe(server.responses.variables);
   await page.screenshot({ path: info.outputPath('source-variable-protocol.png') });
-  await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(data); expect(server.calls).toHaveLength(4);
+  await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(data); expect(server.calls).toHaveLength(5);
 });
 
 test('候选写库配额失败显示具体步骤而非unknown，保留正文后只补失败阶段', async ({ page, isMobile }) => {
@@ -177,12 +177,12 @@ test('时间诊断保留重排前文本编号，原文可读，独立更新刷�
   server.control.variables='<命令>\nset protagonist.emotionText = "从容"\nset npc[scene].lastInteractionAt = "2026-10-18T09:00:00+08:00"\nset worldClock = "2026-10-18T08:10:00+08:00"\n</命令>';
   await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
   const summary=await expandSettlementSummary(page,1);
-  await expect(page.getByText(/变量第 2 条.*人物.*时间/u)).toBeVisible();
+  await expect(page.getByText(/人物与实体第 1 条.*人物.*时间/u)).toBeVisible();
   const committed=await stored(page);
   expect(committed.state.npc.scene.lastInteractionAt).toBe(before.state.npc.scene.lastInteractionAt);
   expect(committed.state.protagonist.emotionText).toBe('从容');
-  await openStageRaw(page,'variables');
-  expect(await page.getByLabel('变量模型完整原文').textContent()).toBe(server.responses.variables);
+  await openStageRaw(page,'entities');
+  expect(await page.getByLabel('人物与实体模型完整原文').textContent()).toBe(server.responses.entities);
   await page.reload(); await expect(summary).toBeVisible(); expect(await stored(page)).toEqual(committed);
   expect(server.calls).toEqual(['story','entities','variables','world']);
 });
@@ -199,7 +199,7 @@ test('认知与组织字段错误各自隔离，World外层不合法时只重试
   await expect.poll(async()=>(await stored(page)).draft.stageStatus.world).toBe('failed');
   const failed=await stored(page);
   expect(failed.state).toEqual(before.state);
-  expect(failed.draft.variables.result.settlement.skipped).toMatchObject([{commandIndex:0,category:'person'}]);
+  expect(failed.draft.entities.result.settlement.skipped).toMatchObject([{commandIndex:0,category:'person'}]);
   const dialog=page.getByRole('dialog',{name:'重试与变更详情',exact:true});
   if(await dialog.isVisible()) await dialog.getByRole('button',{name:'关闭资料界面',exact:true}).click();
   server.control.world=JSON.stringify(world);
@@ -229,7 +229,7 @@ test('#186 World重复写入Variables本轮组织字段：以Variables为准剔�
   await openStageTab(page, 'world', '校验结果');
   const notes = page.locator('.wf-stage .stage-notes');
   await expect(notes).toContainText('程序处理说明'); await expect(notes).toContainText('operatingStatus 的值与变量阶段不同，以变量阶段为准');
-  await expect(page.getByLabel('动态世界规范化结果')).not.toContainText('模型另写');
+  await expect(page.getByLabel('场外与网络规范化结果')).not.toContainText('模型另写');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('world-scene-write-notes.png') });
 });
@@ -291,7 +291,7 @@ test('#193 刷新后只重试World，取消、重复点击与跨标签竞争不�
   expect(server.calls).toHaveLength(8);
   const hint = page.locator(isMobile ? '.wf-ft .workflow-fee' : '.workflow-primary small');
   await expect(hint).toBeVisible();
-  await expect(hint).toHaveText('本次仅重试动态世界，保留已通过的正文和变量。重新请求可能产生模型费用。');
+  await expect(hint).toHaveText('本次仅重试场外与网络，保留已通过的正文和变量。重新请求可能产生模型费用。');
   await page.screenshot({path:info.outputPath('world-only-retry.png')});
   const retry = page.getByRole('button',{name:'继续未完成阶段',exact:true});
   const other = await context.newPage();

@@ -14,7 +14,7 @@ async function seed(page: Page, baseUrl = 'https://continuation.mock.invalid/v1'
   await page.evaluate(async ({ baseUrl, minChars }) => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/world.ts', '/src/tests/fixtures/turn.ts', '/src/ui/settings/model.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts'];
     const [{ SaveRepository }, { worldState }, { completeDraft }, { defaultSettings, settingsKey }, { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }] = await Promise.all(paths.map((p) => import(p)));
-    const settings = defaultSettings(); settings.prompts.minNarrativeChars = minChars; settings.prompts.actionOptions = false;
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.prompts.minNarrativeChars = minChars; settings.prompts.actionOptions = false;
     settings.runtime.streamStory = true;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel(), config = defaultAiConfig(); channel.baseUrl = baseUrl; channel.compatibility.jsonMode = true;

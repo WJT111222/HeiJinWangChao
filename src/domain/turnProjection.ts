@@ -1,4 +1,4 @@
-import { assertEntityDependencies, effectiveEntityCandidate, sceneAndEntityCommands } from './entityCandidate';
+import { assertWorldEntityDependencies, effectiveEntityCandidate, sceneAndEntityCommands } from './entityCandidate';
 import { storySceneAuthority, validateNarrationClock } from './events/narration';
 import { timeOutcome, validateTimeCommands } from './timePreflight';
 import { eventInteractionCommands } from './events/interactions';
@@ -65,7 +65,7 @@ export function projectTurn(state: GameState, draft: TurnDraft, worldCommands: r
   const validated = draft.variables?.validation === 'validated';
   const variables = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
   if (worldCommands.length && draft.entities)
-    assertEntityDependencies(effectiveEntityCandidate(state, draft, variables).removedIds, worldCommands);
+    assertWorldEntityDependencies(effectiveEntityCandidate(state, draft, variables), worldCommands);
   const prepared = validated || draft.entities ? prepareVariableProjection(state,draft,variables)
     : { commands:variableCommandsForTurn(state,draft,variables), acknowledgedReceipts:undefined };
   const projected = commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision,

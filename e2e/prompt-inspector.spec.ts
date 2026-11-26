@@ -105,7 +105,7 @@ test('无存档浏览真实模块、过滤与全文，缺少阶段请求时不�
   await expect(page.getByRole('region', { name: '回合模式差异' })).toContainText(
     'stages.regular.story',
   );
-  await expect(page.getByRole('button', { name: '生成三阶段组装预览（不联网）' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '生成四阶段组装预览（不联网）' })).toBeDisabled();
   await expect(
     page.getByText('没有已选存档，无法组装游戏上下文。模块资源仍可浏览。'),
   ).toBeVisible();
@@ -175,7 +175,7 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
   await expect(order.first()).toContainText('identity.fusheng');
   await expect(page.locator('[data-module-id="identity.fusheng"]')).toContainText('固定');
   await page.getByRole('button', { name: '保存提示词排序' }).click();
-  await page.getByRole('button', { name: '生成三阶段组装预览（不联网）' }).click();
+  await page.getByRole('button', { name: '生成四阶段组装预览（不联网）' }).click();
   await expect(
     page.getByText('预览已组装；未发送 API 请求、未执行回合、未写入正式存档。'),
   ).toBeVisible();
@@ -204,7 +204,7 @@ test('真实存档六种模式预览、内部内容主动揭示、合法排序�
   await page.getByRole('button', { name: '主动查看完整内部上下文' }).click();
   await expect(page.getByLabel('完整内部上下文', { exact: true })).toContainText('秘密计划不可见');
   await page.getByRole('combobox', { name: '回合模式', exact: true }).selectOption('opening');
-  await page.getByRole('button', { name: '生成三阶段组装预览（不联网）' }).click();
+  await page.getByRole('button', { name: '生成四阶段组装预览（不联网）' }).click();
   await expect(
     page.getByText('预览已组装；未发送 API 请求、未执行回合、未写入正式存档。'),
   ).toBeVisible();
@@ -365,7 +365,7 @@ test('无正文草稿的阶段预览诚实失败，七项写作偏好不因管�
   await seed(page, false);
   await page.reload();
   await inspector(page);
-  await page.getByRole('button', { name: '生成三阶段组装预览（不联网）' }).click();
+  await page.getByRole('button', { name: '生成四阶段组装预览（不联网）' }).click();
   await expect(
     page.getByText('预览已组装；未发送 API 请求、未执行回合、未写入正式存档。'),
   ).toBeVisible();
@@ -544,7 +544,7 @@ test('四开关取消旧组装：列表与原文修改立即失效，迟到成�
   await page.reload();
   await inspector(page);
   await page.getByRole('combobox', { name: '预览存档', exact: true }).selectOption('ui-test');
-  const assemble = page.getByRole('button', { name: '生成三阶段组装预览（不联网）', exact: true });
+  const assemble = page.getByRole('button', { name: '生成四阶段组装预览（不联网）', exact: true });
   await assemble.click();
   await expect(page.getByText('已按此配置组装预览，尚未发送。', { exact: true })).toBeVisible();
   await screenshot(page, 'advanced');

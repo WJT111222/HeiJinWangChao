@@ -51,13 +51,13 @@ test('整合：日间失败后恢复旧建议，主动继续正文与剩余阶�
   const story = await data(page); expect(story.state).toEqual(original.state); expect(story.draft?.stageStatus.variables).toBe('pending');
   expect((await calls(page)).map(x => x.stage)).toEqual(['story', 'story']);
   expect((await calls(page))[1].action).toBe(oldOptions[0]);
-  await expect(page.locator('#action-recovery-guidance')).toContainText('继续生成变量');
+  await expect(page.locator('#action-recovery-guidance')).toContainText('继续生成人物与实体');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
   await button(page).click();
-  await expect.poll(async () => (await data(page)).state.turnNumber).toBe(original.state.turnNumber + 1);
+  await expect.poll(async () => (await data(page)).state.turnNumber,{timeout:15000}).toBe(original.state.turnNumber + 1);
   const done = await data(page);
   expect(done.state.revision).toBe(original.state.revision + 1); expect(done.state.journal).toHaveLength(original.state.journal.length + 1);
-  expect((await calls(page)).map(x => x.stage)).toEqual(['story', 'story', 'variables', 'world']);
+  expect((await calls(page)).map(x => x.stage)).toEqual(['story', 'story', 'entities', 'variables', 'world']);
   await expect(button(page)).toHaveAttribute('data-kind', 'idle');
   await expect(page.locator('html')).toHaveAttribute('data-appearance', 'day');
   await page.screenshot({ path: info.outputPath('day-recovery-settled.png'), animations: 'disabled' });

@@ -46,7 +46,7 @@ async function seed(page: Page, ready = true, disabled = false, text = narrative
       const { defaultSettings, settingsKey } = await import(settingsPath);
       const { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath);
       const { CredentialVault } = await import(vaultPath);
-      const settings = defaultSettings();
+      const settings = defaultSettings(); settings.runtime.useEntityStage = false;
       settings.prompts.minNarrativeChars = 10;
       localStorage.setItem(settingsKey, JSON.stringify(settings));
       const config = defaultAiConfig(),
@@ -77,6 +77,7 @@ async function seed(page: Page, ready = true, disabled = false, text = narrative
           '已绑定输入',
           !disabled,
           !disabled,
+          false,
         );
         await repo.saveDraft(initial, null);
         if (ready)

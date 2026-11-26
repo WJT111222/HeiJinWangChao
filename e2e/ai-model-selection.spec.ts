@@ -80,14 +80,14 @@ test('旧配置恢复、换渠道清除旧模型、跟随显示真实继承，�
   const { ids, settings } = await seed(page);
   await backToList(settings);
   await selected(page, '正文生成模型', 'legacy-story');
-  await expect(settings.getByText('同正文 · 都市渠道 / legacy-story', { exact: true })).toHaveCount(3);
+  await expect(settings.getByText('同正文 · 都市渠道 / legacy-story', { exact: true })).toHaveCount(4);
   await choose(page, '正文生成渠道', ids[1]);
   // 换渠道后旧模型不再沿用，显示新渠道的默认模型。
   await selected(page, '正文生成模型', 'backup-default');
-  await expect(settings.getByText('同正文 · 备用渠道 / backup-default', { exact: true })).toHaveCount(3);
+  await expect(settings.getByText('同正文 · 备用渠道 / backup-default', { exact: true })).toHaveCount(4);
   await expect.poll(() => backup).toBe(1);
   await searchChoose(page, '正文生成模型', 'custom', 'backup-custom');
-  await expect(settings.getByText('同正文 · 备用渠道 / backup-custom', { exact: true })).toHaveCount(3);
+  await expect(settings.getByText('同正文 · 备用渠道 / backup-custom', { exact: true })).toHaveCount(4);
   await saveAi(settings);
   const before = await storedConfig(page);
   fail = true; await settings.getByRole('button', { name: '刷新正文生成模型', exact: true }).click();

@@ -53,7 +53,7 @@ async function seed(page: Page, variables = true, disabled = false, school = fal
         { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath),
         { CredentialVault } = await import(vaultPath),
         { defaultSettings, settingsKey } = await import(settingsPath);
-      const settings = defaultSettings();
+      const settings = defaultSettings(); settings.runtime.useEntityStage = false;
       settings.prompts.minNarrativeChars = 10;
       settings.runtime.useVariableStage = !disabled;
       settings.runtime.useWorldStage = !disabled;
@@ -74,7 +74,7 @@ async function seed(page: Page, variables = true, disabled = false, school = fal
       const context = school ? (await import(schoolFixturePath)).schoolContext() : undefined;
       const repo = await SaveRepository.open(),
         state = await repo.create({ ...(context?.state ?? worldState()), title: '世界阶段测试（隔离）' }),
-        initial = createTurnDraft('save-a', 0, 'turn-a', 'regular', '', !disabled, !disabled);
+        initial = createTurnDraft('save-a', 0, 'turn-a', 'regular', '', !disabled, !disabled, false);
       await repo.saveDraft(initial, null);
       const d = context?.draft ?? worldDraft(variables),
         ready = rerollStory(initial, d.story);

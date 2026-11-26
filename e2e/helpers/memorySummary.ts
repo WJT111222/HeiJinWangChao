@@ -2,7 +2,7 @@ import { openStoredSave } from './home';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openSettings } from './gameLayout';
-export async function seedSummary(page: Page, options: { count?: number; publicLayer?: 'short' | 'medium'; npcCount?: number; automatic?: boolean; allKinds?: boolean; secondNpc?: boolean; ready?: boolean } = {}) {
+export async function seedSummary(page: Page, options: { entities?: boolean; count?: number; publicLayer?: 'short' | 'medium'; npcCount?: number; automatic?: boolean; allKinds?: boolean; secondNpc?: boolean; ready?: boolean } = {}) {
   await page.goto('/');
   await page.evaluate(async options => {
     const cp = '/src/tests/fixtures/compression.ts', np = '/src/tests/fixtures/npcMemory.ts', rp = '/src/services/storage/saveRepository.ts',
@@ -24,12 +24,12 @@ export async function seedSummary(page: Page, options: { count?: number; publicL
     });
     if (options.ready) { const storage = await SaveRepository.open(); const { completeDraft, elapsedVariables } = await import(tp);
       try { await completeDraft(storage, { variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); } finally { storage.close(); } }
-    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
+    const settings = defaultSettings(); settings.runtime.useEntityStage = options.entities ?? false; settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
     if (options.automatic === false) for (const item of Object.values(settings.memory.summaries) as { automatic: boolean }[]) item.automatic = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = 'https://summary.mock.invalid/v1'; channel.defaultModel = 'story'; config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: 'story' };
-    for (const stage of ['variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
+    for (const stage of ['entities', 'variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-summary-secret');
   }, options);
   await page.reload(); await openStoredSave(page);
