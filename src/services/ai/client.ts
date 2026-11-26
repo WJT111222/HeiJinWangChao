@@ -59,10 +59,11 @@ export interface RequestOptions {
   /** Read-only observations before compatibility extraction; not a second request. */
   onRawTextDelta?: (text: string) => void;
   onNativeReasoningDelta?: (text: string) => void;
-  /** Read-only event observation; never used as accepted model text. */
   /** Ephemeral Story reader. Only onDelta receives the final processor delivery. */
   onLiteraryPreview?: (delta: string) => void;
+  /** Lazily snapshot partial arguments for the diagnostic viewer. Clear after successful verification. */
   onUnverifiedTool?: (read?: () => string) => void;
+  /** Read-only event observation; never used as accepted model text. */
   onRawResponse?: (event: RawResponseObservation) => void;
   /** Only public text actually extracted from a leading <think> block. */
   onCompatibilityReasoningDelta?: (text: string) => void;
