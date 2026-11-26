@@ -863,7 +863,7 @@ export function GameScreen({
     <small className="wf-idle">{awaitingAction ? "发送新行动后开始下一回合" : busy ? "正在处理，请稍候" : "当前没有可执行的自动操作"}</small>
   );
   const renderWorkflow = (layout: 'desktop' | 'sheet') => (
-                      <DesktopWorkflowPanel layout={layout}
+                      <DesktopWorkflowPanel layout={layout} formalState={state}
                         label={workflowLabel}
                         state={workflowState}
                         onClose={closeWorkflow}

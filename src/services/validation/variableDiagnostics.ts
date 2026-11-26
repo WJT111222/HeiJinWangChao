@@ -13,7 +13,7 @@ const fields = new Set(['commands', 'type', 'commandId', 'evidence', 'changes', 
   'quantity', 'ownerRef', 'locationId', 'memory', 'rejectedSuggestions', 'unresolved']);
 const moneyCodes = new Set(['UNKNOWN_BALANCE', 'INSUFFICIENT_FUNDS', 'DEBT_AMOUNT', 'SAME_ACCOUNT', 'FUTURE_INCOME']);
 const timeCodes = new Set(['OPENING_TIME', 'TIME_PREFLIGHT', 'TIME_REVERSED', 'NPC_TIME', 'WORK_TIME', 'EVENT_TIME']);
-const conflictCodes = new Set(['STORY_BUSY', 'REVISION_CONFLICT', 'ENTITY_CONFLICT', 'DRAFT_CONFLICT', 'COMMAND_CONFLICT', 'DUPLICATE_COMMAND']);
+const conflictCodes = new Set(['ENTITY_DEPENDENCY', 'STORY_BUSY', 'REVISION_CONFLICT', 'ENTITY_CONFLICT', 'DRAFT_CONFLICT', 'COMMAND_CONFLICT', 'DUPLICATE_COMMAND']);
 export function variableValidationError(error: unknown, input?: unknown): AiError {
   if (error instanceof AiError) return error;
   if (error instanceof z.ZodError) {

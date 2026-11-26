@@ -1,3 +1,4 @@
+import type { SkippedUpdate } from '../../domain/updateSettlement';
 import type { GameState } from '../../domain/state';
 
 const names = { entities: '人物与实体', variables: '主角与现场', world: '场外与网络' };
@@ -16,17 +17,21 @@ export function SettlementNotice({ settlement }: { settlement: GameState['journa
   if (!skipped.length && !deferred && !warnings) return null;
   return <details className="readout">
     <summary>本回合已结算{skipped.length ? `，跳过 ${skipped.length} 项更新` : ''}{deferred ? `，${deferred} 个到期阶段待处理` : ''}</summary>
-    {skipped.length > 0 && <ul>{skipped.map(update =>
-      <li key={`${update.group}:${update.commandIndex}`}>
-        {names[update.group === 'entities' || update.group === 'variables' ? update.group : 'world']}第 {update.commandIndex + 1} 条
-        （{categories[update.category]}）未执行 · {reasons[update.reason]}
-        {update.group !== 'entities' && update.group !== 'variables' && ` · ${update.group}.${update.groupIndex}`}{update.field && ` · ${update.field}`}
-      </li>,
-    )}</ul>}
+    <SkippedUpdates skipped={skipped} />
     {(['entities','variables', 'world'] as const).map(stage => settlement[stage] && <p key={stage}>
       {names[stage]}已应用 {settlement[stage].accepted} 项
     </p>)}
     {deferred > 0 && <p>待处理阶段保留原定时间和已有入场安排。</p>}
     {warnings && <p>模型的规划或说明格式不完整，可执行命令已单独检查。</p>}
   </details>;
+}
+
+export function SkippedUpdates({ skipped }: { skipped: readonly SkippedUpdate[] }) {
+  return skipped.length ? <ul>{skipped.map(update =>
+      <li key={`${update.group}:${update.commandIndex}`}>
+        {names[update.group === 'entities' || update.group === 'variables' ? update.group : 'world']}第 {update.commandIndex + 1} 条
+        （{categories[update.category]}）未执行 · {reasons[update.reason]}
+        {update.group !== 'entities' && update.group !== 'variables' && ` · ${update.group}.${update.groupIndex}`}{update.field && ` · ${update.field}`}
+      </li>,
+    )}</ul> : null;
 }

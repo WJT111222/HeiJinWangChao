@@ -1,4 +1,4 @@
-import { checkEntityCommands } from '../domain/entityCandidate';
+import { checkEntityCommands, effectiveEntityCandidate } from '../domain/entityCandidate';
 import { historyCatalogReason } from './historyCatalog';
 import { storyEventIndex } from '../domain/events/narration';
 import { stageResults } from '../domain/events/stages';
@@ -204,7 +204,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       variablePending,
       PLAYER_ACTION: draft!.userInput,
       STORY_RESULT: { ...storyForSubsequentStages(draft!.story!), eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction), eventNarrations: draft!.story!.variableGuide.filter(guide=>guide.eventNarration) },
-      ENTITY_CANDIDATE: draft!.entities?.result.commands,
+      ENTITY_CANDIDATE: draft!.entities && effectiveEntityCandidate(original, draft!, worldVariables?.result.commands ?? []).commands,
       VARIABLE_RESULT: worldVariables,
       // 投影提供候选内容，不产生新的正式版本；模型的expectedRevision仍须使用正式基线。
       ...sharedContext({ ...temporary, revision: original.revision }, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
@@ -216,11 +216,12 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         protagonistId: state.protagonist.id,
         initialCompanionId: state.initialCompanionId,
         sceneNpcIds: [
-          ...new Set(
-            Object.values(temporary.npc)
+          ...new Set([
+            ...(draft!.entities?.contactedNpcIds ?? []),
+            ...Object.values(temporary.npc)
               .filter((npc) => !worldNpcAllowed(temporary, draft!, npc.id, original))
               .map((npc) => npc.id),
-          ),
+          ]),
         ],
       },
       NPC_LIFECYCLE: { contactNpcIds: temporary.contactNpcIds, initialCompanionId: temporary.initialCompanionId,

@@ -1,3 +1,4 @@
+import { effectiveEntityCandidate } from './entityCandidate';
 import { commandsForPhase } from './stageCommands';
 import { hasVisibleNarrative } from './storyContent';
 import { validateStageSettlement } from './events/stages';
@@ -110,7 +111,7 @@ export function settleTurn(state: GameState, input: TurnDraft, now: string): Gam
     const beforeWorld = projectTurn(current, draft);
     validateStageSettlement(beforeWorld, projected, draft.turnId, world.deferredEvents?.filter(id => beforeWorld.events[id]?.eventKind === 'sub'));
   }
-  const entitySettlement = draft.entities?.result.settlement;
+  const entitySettlement = effectiveEntityCandidate(current, draft, draft.variables?.result.commands ?? []).settlement;
   const variableSettlement = draft.variables?.result.settlement;
   const worldSettlement = world?.settlement;
   const deferred = world?.deferredEvents?.length;

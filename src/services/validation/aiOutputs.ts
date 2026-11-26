@@ -1,4 +1,4 @@
-import { checkEntityCommands } from '../../domain/entityCandidate';
+import { checkEntityCommands, effectiveEntityCandidate } from '../../domain/entityCandidate';
 import { IdSchema } from '../../domain/common';
 import { commandsForPhase } from '../../domain/stageCommands';
 import { hasVisibleNarrative } from '../../domain/storyContent';
@@ -94,6 +94,7 @@ export async function validateVariableStatements(ast: readonly ParsedVariableCom
   }
   try { validateTimeCommands(state, draft, compiled.value.commands); }
   catch (error) { throw variableFailure(error, 'simulation'); }
+  if (draft.entities) effectiveEntityCandidate(state, draft, compiled.value.commands);
   const simulated = await simulateVariablePlan(compiled.value, state, context);
   if (!simulated.ok) throw textExecutionError(simulated.error, 'simulation');
   for (const [index, command] of compiled.value.commands.entries()) {

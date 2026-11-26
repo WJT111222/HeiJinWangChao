@@ -1,3 +1,4 @@
+import { assertEntityDependencies, effectiveEntityCandidate } from '../../domain/entityCandidate';
 import { z } from 'zod';
 import { DomainCommandSchema } from '../../domain/commands';
 import { WorldResultSchema } from '../../domain/drafts';
@@ -59,6 +60,10 @@ export async function parsePartialWorld(text: string, state: GameState, draft: T
   try { raw = worldJson(envelope?.commands ?? text); } catch (error) { throw worldValidationError(error); }
   const parsed = rawWorldSchema.safeParse(raw);
   if (!parsed.success) throw worldValidationError(parsed.error, {}, raw);
+  if (draft.entities) {
+    const effective = effectiveEntityCandidate(state, draft, draft.variables?.result.commands ?? []);
+    assertEntityDependencies(effective.removedIds, worldGroups.flatMap(group => parsed.data[group]));
+  }
   const existingLocations = new Set(Object.keys(state.locations));
   for (const command of draft.entities?.result.commands ?? [])
     if (command.type === 'CreateLocation') existingLocations.add(command.location.id);
@@ -255,6 +260,6 @@ export async function parseVariableBatch(text: string, state: GameState, draft: 
       });
   });
   if (skipped.length || envelope.formatWarning)
-    result.settlement = { skipped, accepted: result.commands.filter(command => command.commandId.startsWith('text-v1:')).length, ...(envelope.formatWarning ? { formatWarning: true } : {}) };
+    result.settlement = { skipped, accepted: result.commands.filter(command => command.commandId.startsWith(contacts ? 'entity-v1:' : 'text-v1:')).length, ...(envelope.formatWarning ? { formatWarning: true } : {}) };
   return result;
 }

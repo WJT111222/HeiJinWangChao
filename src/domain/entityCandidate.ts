@@ -1,4 +1,7 @@
-import { requireData } from './common';
+import { structuredRefs } from './commandRefs';
+import { maintainSceneTransition, SceneLocationError } from './sceneTransitions';
+import type { SkippedUpdate } from './updateSettlement';
+import { DataError, requireData } from './common';
 import { projectEntityChanges, type DomainCommand } from './commands';
 import type { TurnDraft } from './drafts';
 import type { GameState } from './state';
@@ -81,11 +84,88 @@ export function checkEntityCommands(state: GameState, draft: TurnDraft, declared
   return entities;
 }
 
+export class EntityDependencyError extends DataError {
+  constructor() { super('ENTITY_DEPENDENCY', '已隔离的人物命令存在依赖或无法唯一定位，请检查人物与实体候选'); }
+}
+
+function sourceIndex(command: DomainCommand, index: number, skipped: readonly SkippedUpdate[]) {
+  const match = /^entity-v1:s\d+:c(\d+)$/.exec(command.commandId);
+  if (!match) return index;
+  let original = Number(match[1]) - 1;
+  for (const prior of skipped) if (prior.commandIndex <= original) original++;
+  return original;
+}
+
+export function assertEntityDependencies(removedIds: ReadonlySet<string>, commands: readonly unknown[]) {
+  if (!removedIds.size) return;
+  for (const command of commands) {
+    if (structuredRefs(command).some(id => removedIds.has(id))) throw new EntityDependencyError();
+    if (!command || typeof command !== 'object') continue;
+    for (const [field, value] of Object.entries(command)) {
+      if (['npc','location','organization','memory','event','task'].includes(field) && value && typeof value === 'object' &&
+          'id' in value && typeof value.id === 'string' && removedIds.has(value.id)) throw new EntityDependencyError();
+    }
+  }
+}
+
+/** Recompute from immutable candidates and the formal save. Only attributable entity failures may be isolated. */
+export function effectiveEntityCandidate(state: GameState, draft: TurnDraft, scene: readonly DomainCommand[]) {
+  const candidate = draft.entities;
+  const removedIds = new Set<string>();
+  if (!candidate) return { commands: [] as DomainCommand[], settlement: undefined, removedIds };
+  const { result, contactedNpcIds } = candidate;
+  const original = result.commands;
+  const before = checkEntityCommands(state, draft, contactedNpcIds, original);
+  if (!original.length) return { commands: original, settlement: result.settlement, removedIds };
+  const clocks = scene.filter(command => command.type === 'SetWorldClock');
+  const clock = clocks.at(-1)?.worldClock ?? openingTimeSelection(state, draft, scene)?.endAt ?? state.worldClock;
+  const skipped = new Map<DomainCommand, SkippedUpdate>();
+  const previous = result.settlement?.skipped ?? [];
+  function isolate(command: DomainCommand, field: SkippedUpdate['field'], reason: SkippedUpdate['reason']) {
+    const index = sourceIndex(command, original.indexOf(command), previous);
+    skipped.set(command, { group: 'entities', commandIndex:index, groupIndex:index, category:'person', field, reason });
+    if (command.type === 'CreateNpc') removedIds.add(command.npc.id);
+    if (command.type === 'RecordNpcMemory') removedIds.add(command.memory.id);
+  }
+  for (const command of original) {
+    const time = command.type === 'CreateNpc' ? command.npc.lastInteractionAt
+      : command.type === 'UpdateNpc' ? command.changes.lastInteractionAt
+      : command.type === 'RecordNpcMemory' ? command.memory.createdAtGameTime : undefined;
+    if (time && Date.parse(time) > Date.parse(clock))
+      isolate(command, command.type === 'RecordNpcMemory' ? 'createdAtGameTime' : 'lastInteractionAt', 'time');
+  }
+  const location = scene.reduce((id, command) =>
+    command.type === 'UpdateProtagonist' ? command.changes.locationId ?? id : id, state.protagonist.locationId);
+  let commands: DomainCommand[];
+  for (;;) {
+    commands = original.filter(command => !skipped.has(command));
+    assertEntityDependencies(removedIds, [...commands, ...scene]);
+    const entities = skipped.size ? checkEntityCommands(state, draft, contactedNpcIds.filter(id => !removedIds.has(id)), commands) : before;
+    const projection = { ...entities, protagonist: { ...entities.protagonist, locationId:location }, npc: structuredClone(entities.npc) };
+    let invalid: string | undefined;
+    try {
+      maintainSceneTransition(state, projection, commands);
+      invalid = Object.values(projection.npc).find(person => person.onScene && person.locationId && person.locationId !== location)?.id;
+    } catch (error) {
+      if (!(error instanceof SceneLocationError)) throw error;
+      invalid = error.npcId;
+    }
+    if (!invalid) break;
+    const sources = commands.filter(command => command.type === 'CreateNpc' && command.npc.id === invalid ||
+      command.type === 'UpdateNpc' && command.npcId === invalid && (command.changes.locationId !== undefined || command.changes.onScene === true));
+    if (sources.length !== 1) throw new EntityDependencyError();
+    isolate(sources[0], 'locationId', 'constraint');
+  }
+  const settlement = skipped.size ? { ...result.settlement, accepted: commands.length,
+    skipped: [...previous, ...skipped.values()].sort((a,b) => a.commandIndex - b.commandIndex) } : result.settlement;
+  return { commands: commands.map(command => command.type === 'RecordNpcMemory'
+    ? { ...command, memory: { ...command.memory, createdAtGameTime:clock } } : command), settlement, removedIds };
+}
+
 export function sceneAndEntityCommands(state: GameState, draft: TurnDraft, scene: readonly DomainCommand[]) {
   if (!draft.entities) return [...scene];
-  const { result, contactedNpcIds } = draft.entities;
-  checkEntityCommands(state, draft, contactedNpcIds, result.commands);
-  const created = new Map(result.commands.flatMap(command => command.type === 'CreateOrganization'
+  const effective = effectiveEntityCandidate(state, draft, scene);
+  const created = new Map(draft.entities.result.commands.flatMap(command => command.type === 'CreateOrganization'
     ? [[command.organization.id, command.organization] as const] : []));
   for (const command of scene) {
     if (command.type === 'UpdateOrganization') {
@@ -98,13 +178,5 @@ export function sceneAndEntityCommands(state: GameState, draft: TurnDraft, scene
         'STAGE_PERMISSION', '现场阶段不能覆盖本回合新组织已记录的主角关系');
   }
   const clocks = scene.filter(c => c.type === 'SetWorldClock');
-  const clock = clocks.at(-1)?.worldClock ?? openingTimeSelection(state, draft, scene)?.endAt ?? state.worldClock;
-  const entities = result.commands.map(command => {
-    if (command.type === 'CreateNpc' && command.npc.lastInteractionAt)
-      requireData(Date.parse(command.npc.lastInteractionAt) <= Date.parse(clock), 'NPC_TIME', '新人物互动时间超出本回合');
-    if (command.type !== 'RecordNpcMemory') return command;
-    requireData(Date.parse(command.memory.createdAtGameTime) <= Date.parse(clock), 'NPC_TIME', '人物记忆时间超出本回合');
-    return { ...command, memory: { ...command.memory, createdAtGameTime: clock } };
-  });
-  return [...clocks, ...entities, ...scene.filter(c => c.type !== 'SetWorldClock')];
+  return [...clocks, ...effective.commands, ...scene.filter(c => c.type !== 'SetWorldClock')];
 }

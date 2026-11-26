@@ -1,3 +1,6 @@
+import type { GameState } from '../../domain/state';
+import { effectiveEntityCandidate } from '../../domain/entityCandidate';
+import { SkippedUpdates } from './SettlementNotice';
 import './mobile-workflow-content.css';
 import { useRef, useState, useSyncExternalStore } from 'react';
 import type { KeyboardEvent } from 'react';
@@ -55,6 +58,7 @@ export function DesktopWorkflowPanel(props: {
   actions: Record<'entities' | 'variables' | 'world', StageAction>;
   draft?: TurnDraft;
   saveId: string;
+  formalState: GameState;
   rawTurnId?: string;
   summary?: { hanCharacters: number; status: string };
   runtimeLogs: RuntimeLogEntry[];
@@ -248,7 +252,10 @@ function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage
       </div>
       <div className="wf-dt-body" role="tabpanel" id={panelId} aria-labelledby={tabId(tab)} tabIndex={0}>
         {tab === 'raw' ? <StageRaw saveId={props.saveId} turnId={props.rawTurnId} stage={stage} draft={draft} />
-          : tab === 'normalized' ? <StageNormalized saveId={props.saveId} turnId={props.rawTurnId} stage={stage} draft={draft} />
+          : tab === 'normalized' ? <>
+            {stage === 'entities' && draft?.entities && <EntityValidation state={props.formalState} draft={draft} />}
+            <StageNormalized saveId={props.saveId} turnId={props.rawTurnId} stage={stage} draft={draft} />
+          </>
               : stage === 'story' ? <StoryOverview {...props} state={state} step={step} />
                 : stage === 'entities' || stage === 'variables' ? (draft && variables ? (tab === 'candidates' ? <VariableList stage={stage} draft={draft} /> : <VariableOverview stage={stage} draft={draft} onAll={() => selectTab('candidates')} saveId={props.saveId} />) : <StageEmpty step={step} state={state} />)
                   : draft && world ? (tab === 'candidates' ? <WorldList draft={draft} /> : <WorldOverview draft={draft} onAll={() => selectTab('candidates')} saveId={props.saveId} />)
@@ -260,6 +267,19 @@ function StageDetail(props: Parameters<typeof DesktopWorkflowPanel>[0] & { stage
 
 function Empty({ children }: { children: ReactNode }) {
   return <p className="wf-empty">{children}</p>;
+}
+
+function EntityValidation({state,draft}: {state:GameState; draft:TurnDraft}) {
+  if (draft.useVariableStage && draft.variables?.validation !== 'validated') return <p>人物候选已通过结构校验，等待现场候选确认本回合时间和地点。</p>;
+  try {
+    const effective = effectiveEntityCandidate(state, draft, draft.variables?.result.commands ?? []);
+    return <section aria-label="有效人物命令">
+      <p>本回合有效人物命令 {effective.commands.length} 条。</p>
+      <SkippedUpdates skipped={effective.settlement?.skipped ?? []} />
+    </section>;
+  } catch {
+    return <p role="alert">人物候选与本回合的引用或位置冲突，无法安全隔离。请查看阶段诊断并重新生成人物候选。</p>;
+  }
 }
 
 function StageEmpty({ step, state }: { step: WorkflowStep; state: string }) {
