@@ -1005,8 +1005,8 @@ test('复审：1118 原控制台方案导入、保存、刷新，散文进入下
   await page.reload();
   panel = await editPreset(page);
   await sectionButton(panel,'篇幅与文风').click();
-  await expect(panel.locator('[value="wave-style-essay"]')).toHaveAttribute('aria-pressed','true');
-  await expect(panel.locator('[value="wave-style-stream-of-consciousness"]')).toHaveAttribute('aria-pressed','false');
+  await expect(panel.getByRole('button',{name:'散文随笔',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(panel.getByRole('button',{name:'意识流',exact:true})).toHaveAttribute('aria-pressed','false');
   expect(sent).toHaveLength(0);
   await page.goto('/');
   await generate(page,'peinture-smoke',undefined,'生成本回合正文');
