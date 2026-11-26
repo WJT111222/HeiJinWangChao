@@ -393,3 +393,39 @@ test('后宫 Variables 开局登记、下一轮非法双正宫拒绝；刷新保
   await page.reload();expect((await stored(page)).state.harem).toEqual(before);
   expect(server.calls).toEqual(['story','variables','world','story','variables','world']);
 });
+
+test('文生图等待不阻断正式结算，跨标签重复通知和关闭开关不重发付费请求',async({page,context})=>{
+  test.setTimeout(80000);
+  await seed(page);
+  const server=await mock(page);
+  let count=0,release!:()=>void;
+  const held=new Promise<void>(resolve=>{release=resolve;});
+  await context.route('**/mock-settlement-image',async route=>{
+    count++;await held;await route.fulfill({status:503,body:'mock failure'}).catch(()=>{});
+  });
+  await page.evaluate(async()=>{
+    const path='/src/services/images/config.ts',{config,saveConfig}=await import(path),c=config();
+    c.enabled=true;c.auto.story=true;c.connections.openai.base=location.origin;c.connections.openai.path='mock-settlement-image';saveConfig(c);
+  });
+  try{
+    await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
+    await expect.poll(()=>count).toBe(1);
+    const saved=await stored(page);expect(saved.state.journal).toHaveLength(1);expect(server.calls).toEqual(['story','variables','world']);
+    const second=await context.newPage();await second.goto('/#game/save-a');await expect(second.locator('.game-layout')).toBeVisible();
+    await second.evaluate(async()=>{
+      const qp='/src/services/images/queue.ts',rp='/src/services/storage/saveRepository.ts',cp='/src/services/images/config.ts';
+      const {afterSettlement}=await import(qp),{SaveRepository}=await import(rp),{config,saveConfig}=await import(cp);
+      const repo=await SaveRepository.open(),loaded=await repo.loadGame('save-a');
+      try{
+        afterSettlement(repo.images,{...loaded.state,journal:[]},loaded.state,loaded.instance);
+        saveConfig({...config(),enabled:false});
+      }finally{repo.close();}
+    });
+    await expect.poll(()=>page.evaluate(async()=>{
+      const rp='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(rp),repo=await SaveRepository.open();
+      try{return (await repo.images.read('save-a')).jobs.map((j:{phase:string})=>j.phase);}finally{repo.close();}
+    })).toEqual(['取消']);
+    expect(count).toBe(1);expect(await stored(page)).toEqual(saved);
+    await second.close();
+  }finally{release();}
+});

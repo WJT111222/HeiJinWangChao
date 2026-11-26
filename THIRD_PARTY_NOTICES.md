@@ -106,3 +106,7 @@ Files located in the node_modules and vendor directories are externally
 maintained libraries used by this software which have their own
 licenses; we recommend you read them, as their terms may differ from the
 terms above.
+
+## 正式版文生图
+
+文生图技术源自墨染江湖 1.0.698，适用本页的 MikuLXK MIT 声明。感谢 MikuLXK 的原项目与基础架构、Bacon 的文生图贡献与技术支持。黑金王朝负责迁移适配、地点图片、人生相册和界面设计。文件与依赖对照见 [迁移审计](docs/image-generation/审计.md)。

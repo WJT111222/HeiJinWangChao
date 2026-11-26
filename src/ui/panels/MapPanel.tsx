@@ -1,3 +1,4 @@
+import { ImageEntry } from '../images/ImageGallery';
 import type {ReactNode} from 'react';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import type {PlayerView} from './playerView';
@@ -83,7 +84,8 @@ export function MapPanel({view,initialId,uiState,onUiStateChange,onNpc,onEvent,m
     </section>):<Empty>该地点尚无下级地点记录</Empty>}{more('diagram',districts.length,20)}</div>
    </section>}
    <article className="place-card"><nav className="pc-crumb" aria-label="地点路径">{path.map((p,i)=><span key={p.id}>{i>0&&' › '}{i===path.length-1?<span aria-current="location">{p.name}</span>:<button onClick={()=>choose(p.id)}>{p.name}</button>}</span>)}</nav>
-    <div className="pc-title"><h3 ref={heading} tabIndex={-1}>{place.name}</h3><span className="lv">{path.length===1?'层级根地点':map.children.has(place.id)?`区域 · 第 ${path.length} 级`:'具体地点'}</span></div>
+    <ImageEntry kind="place" id={place.id}/>
+          <div className="pc-title"><h3 ref={heading} tabIndex={-1}>{place.name}</h3><span className="lv">{path.length===1?'层级根地点':map.children.has(place.id)?`区域 · 第 ${path.length} 级`:'具体地点'}</span></div>
     {me.has(place.id)&&<span className="pc-here">{place.id===view.protagonist.locationId?'你 · 主角当前所在':'主角在此区域内'}</span>}
     {map.issues.has(place.id)&&<p className="map-issue" role="note">{map.issues.get(place.id)}</p>}
     {Boolean(map.children.get(place.id)?.length)&&<section className="sec"><h4>下级地点</h4><div className="kids">{(map.children.get(place.id)??[]).slice(0,limits['kids']??50).map(p=><button key={p.id} onClick={()=>mobile?drill(p.id):choose(p.id)}>{p.name}<small>{map.descendants.get(p.id)??0}</small></button>)}</div>{!map.children.get(place.id)?.length&&<Empty>暂无下级地点</Empty>}{more('kids',(map.children.get(place.id)??[]).length)}</section>}

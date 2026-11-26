@@ -1,3 +1,4 @@
+import { ImageAvatar, ImageEntry } from '../images/ImageGallery';
 import type { GameState } from '../../domain/state';
 import { openingCityIdentity } from '../../domain/openingCity';
 import { Detail } from '../Dialog';
@@ -23,12 +24,13 @@ export function ProfilePanel({ state, equipment, candidateTime, onEconomy, onNpc
   ];
   return <div className="pf">
     <section className="pf-id">
-      <div className="pf-photo" aria-hidden="true">{Array.from(hero.name)[0]}</div>
+      <div className="pf-photo" aria-hidden="true"><ImageAvatar kind="player" id={hero.id}>{Array.from(hero.name)[0]}</ImageAvatar></div>
       <div className="pf-name"><h3>{hero.name}</h3><p className="line">{hero.age} 岁 · {hero.gender} · {hero.profession}</p>
         <p className="no">PROTAGONIST · {place.city || '城市未确认'} · 第 {state.turnNumber} 回合</p></div>
       <span className="pf-stamp" aria-hidden="true">主角</span>
       <div className="pf-entry profile-entrypoints">
-        <button onClick={onEconomy}>经济与资产 <span aria-hidden="true">→</span></button>
+        <ImageEntry kind="player" id={hero.id}/>
+          <button onClick={onEconomy}>经济与资产 <span aria-hidden="true">→</span></button>
         <button onClick={onNpc}>NPC 人物资料 <span aria-hidden="true">→</span></button>
         <button onClick={onSaves}>切换存档 <span aria-hidden="true">↗</span></button>
       </div>

@@ -1,3 +1,4 @@
+import { config } from '../../services/images/config';
 import { useRef, useState } from 'react';
 import { PRODUCT_VERSION } from '../../app/product';
 import { backupFileName, serializeBackup } from '../../services/storage/backup';
@@ -34,12 +35,12 @@ export function useBackupExport(repository: SaveRepository | undefined) {
     if (!repository || lock.current || !saveIds.length) throw new Error('导出暂不可用');
     lock.current = true; setExporting(true);
     try {
-      const entries = await repository.exportBackup(saveIds);
+      const entries = await repository.exportBackup(saveIds,config().includeImages);
       const now = new Date();
       const name = backupFileName(entries, now);
       const file = new File([await serializeBackup(entries, PRODUCT_VERSION, now)], name, { type: 'application/json' });
       download(file);
-      recordBackup(entries.map(({ state, theaterVersion }) => ({ ...state, theaterVersion })), now);
+      recordBackup(entries.map(({ state, theaterVersion,imageVersion }) => ({ ...state, theaterVersion,imageVersion })), now);
       const text = entries.length === 1
         ? `已导出「${entries[0].summary.title}」第 ${entries[0].summary.turnNumber} 回合的备份：${name}`
         : `已导出 ${entries.length} 份存档的备份：${name}`;

@@ -1,0 +1,92 @@
+.image-tools {
+  display: grid;
+  gap: 0.8rem;
+  min-width: 0;
+}
+.image-tools label {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.image-tools :is(input:not([type='checkbox']), textarea, select) {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}
+.image-tools textarea {
+  min-height: 4.5rem;
+}
+.image-tools small,
+.image-record small {
+  display: block;
+  opacity: 0.8;
+}
+.image-tools fieldset {
+  min-width: 0;
+  display: grid;
+  gap: 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 0.35rem;
+}
+.image-tools .image-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: end;
+}
+.image-actions a {
+  color: inherit;
+  text-decoration: underline;
+}
+.image-record {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem;
+  align-items: start;
+  overflow-wrap: anywhere;
+}
+.image-record > div {
+  min-width: 0;
+}
+.image-entry img,
+.image-preview img {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  vertical-align: middle;
+  border-radius: 0.25rem;
+}
+.image-preview img {
+  width: 5rem;
+  height: 5rem;
+}
+.image-full {
+  display: block;
+  max-width: 100%;
+  max-height: 70dvh;
+  margin: auto;
+  object-fit: contain;
+}
+.image-tools summary {
+  cursor: pointer;
+}
+
+.dossier-image-avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+.settings-content .image-tools label.image-check {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+}

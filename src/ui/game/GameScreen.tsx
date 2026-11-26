@@ -33,6 +33,10 @@ import { TurnUndoControl } from './TurnUndoControl';
 import type { TurnUndoResult } from '../../services/storage/saveRepository';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { TalentProfile } from '../components/TalentProfile';
+import { ImageEntry } from '../images/ImageGallery';
+import { ImageScope } from '../images/ImageScope';
+import { config as imageConfig } from '../../services/images/config';
+import { afterSettlement } from '../../services/images/queue';
 import { StoryReading } from './StoryReadingView';
 import { TheaterPanel } from './TheaterPanel';
 import type { TheaterLeaveGuard } from './TheaterPanel';
@@ -256,7 +260,10 @@ export function GameScreen({
     memoryState.revision >= state.revision ? memoryState : state;
   function handleSettled(result: TurnCommitResult) {
     onCommitted(result);
-    if (!result.replayed) void memory.run(true);
+    if (!result.replayed) {
+      void memory.run(true);
+      if(imageConfig().enabled) queueMicrotask(()=>afterSettlement(repository.images,state,result.state,instance));
+    }
   }
   const progress =
     automatic.progress?.stage === 'story' && automatic.progress.phase !== 'retrying'
@@ -427,8 +434,7 @@ export function GameScreen({
       });
       if (submitToken.current !== token) return;
       reportRuntimeEvent('commit', 'completed');
-      onCommitted(result);
-      if (!result.replayed) void memory.run(true);
+      handleSettled(result);
       setInput('');
       setSubmitting(false);
       // 发送明确授权下一轮请求；重复回执只恢复数据库真值，不再次发起付费生成。
@@ -842,7 +848,7 @@ export function GameScreen({
                       />
   );
   return (
-    <main className="game-layout city-night" data-city={atmosphere.city} data-time={atmosphere.time} data-wx={atmosphere.weather}
+    <ImageScope key={JSON.stringify([state.saveId,state.createdAt,instance])} lib={repository.images} state={state} instance={instance}><main className="game-layout city-night" data-city={atmosphere.city} data-time={atmosphere.time} data-wx={atmosphere.weather}
       onKeyDown={event => {
         if (compactSidebars || desktopArchive || desktopSettings || theaterActive || event.nativeEvent.isComposing || event.repeat || (event.target as HTMLElement).closest('dialog, .archive')) return;
         if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.altKey) {
@@ -892,6 +898,7 @@ export function GameScreen({
               <CityChapter number={index + 1} state={state} scene={state.journal[index]?.scene} desktop={!compactSidebars} />
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
               <SettlementNotice settlement={state.journal[index]?.settlement} />
+              <ImageEntry kind="story" id={entry.turnId}/>
               {index===view.journal.length-1&&showChanges&&<TurnChanges state={state} comparison={turnComparison} mobile={compactSidebars} onOpen={openChange}/>}
             </article>
           ))}
@@ -1161,6 +1168,7 @@ export function GameScreen({
                 </Detail>
               ))}
             </dl>
+            <ImageEntry kind="player" id={hero.id}/>
             <ProfessionProfile hero={hero} />
             <TalentProfile talentId={hero.talentId} />
             <h3>当前穿戴与装备</h3>
@@ -1227,6 +1235,6 @@ export function GameScreen({
           </div>
         </Dialog>
       )}
-    </main>
+    </main></ImageScope>
   );
 }
