@@ -1,4 +1,5 @@
 import type { LegacyContinuationConsent } from './legacyContinuation';
+import { selectedPrototype } from '../presets/spreset/definition';
 import { withWorldbookLibrary } from '../services/worldbook/mainWorldview';
 import { nativeDeliveryId } from '../presets/settings';
 import { StoryClock } from '../presets/tavern/timing';
@@ -265,7 +266,8 @@ export class StoryStage {
         const keepLegacyPartial = !continuation && draft.storyPartial && !draft.storyPartial.writing;
         if (!saving && (!consent || consent.sent) && !recovery && !keepLegacyPartial && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled'
           && !isContinuationDeliveryUnknown(error)
-          && !(draft.story && (error.details?.storyRule === 'narrative_empty' || error.details?.fieldPath?.startsWith('tavern.upstream.')))) {
+          && !(draft.story && (selectedPrototype(presetSelection) || error.details?.storyRule === 'narrative_empty'
+            || error.details?.fieldPath?.startsWith('tavern.upstream.')))) {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)
             .reduce((last, failure) => Math.max(last, failure.attempt), 0);

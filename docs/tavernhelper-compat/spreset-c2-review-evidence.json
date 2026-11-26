@@ -1,0 +1,444 @@
+{
+  "pr251Reviewed": "24e6134c7adf5d21f5cb8bd4df276021748b5eb7",
+  "releaseTested": "607ebdbfc986115ebea5f22fb5759d2b8a2bb1d2",
+  "pr252Observed": "0c6e1e0931f98ad1484a3bb8bf92425a24e82839",
+  "chromium": "154.0.8037.57",
+  "node": "24.19.0",
+  "workers": 1,
+  "retries": 0,
+  "model": "mock",
+  "before": {
+    "processorOrigin": "same as host",
+    "seesSyntheticGameDatabase": true
+  },
+  "after": [
+    {
+      "project": "desktop",
+      "origin": "null",
+      "document": "undefined",
+      "parent": "undefined",
+      "local": "undefined",
+      "session": "undefined",
+      "indexedDB": "SecurityError",
+      "databases": "SecurityError",
+      "cache": "unavailable",
+      "files": "unavailable",
+      "network": "TypeError",
+      "networkRequests": 0,
+      "saveAndDraftUnchanged": true
+    },
+    {
+      "project": "mobile",
+      "origin": "null",
+      "document": "undefined",
+      "parent": "undefined",
+      "local": "undefined",
+      "session": "undefined",
+      "indexedDB": "SecurityError",
+      "databases": "SecurityError",
+      "cache": "unavailable",
+      "files": "unavailable",
+      "network": "TypeError",
+      "networkRequests": 0,
+      "saveAndDraftUnchanged": true
+    }
+  ],
+  "terminalBoundaries": [
+    {
+      "project": "desktop",
+      "protocol": "openai",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "openai",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "deepseek",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "deepseek",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "gemini",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "gemini",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "anthropic",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "anthropic",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "openai",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "openai",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "deepseek",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "deepseek",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "gemini",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "gemini",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "anthropic",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "anthropic",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "processorFinishes": 1,
+          "receipts": 1,
+          "candidate": true,
+          "revisionDelta": 1,
+          "turnDelta": 1
+        }
+      ]
+    }
+  ]
+}

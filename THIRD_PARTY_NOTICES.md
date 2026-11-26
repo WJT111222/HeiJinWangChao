@@ -114,3 +114,11 @@ terms above.
 ## 正式版文生图
 
 文生图技术源自墨染江湖 1.0.698，适用本页的 MikuLXK MIT 声明。感谢 MikuLXK 的原项目与基础架构、Bacon 的文生图贡献与技术支持。黑金王朝负责迁移适配、地点图片、人生相册和界面设计。文件与依赖对照见 [迁移审计](docs/image-generation/审计.md)。
+
+## SPreset 本地运行时实验（C2）
+
+SPreset 发行源码来自 SoliUmbra / starowo 的 `starowo/starowo.github.io` 仓库。
+C2 在 `experiments/spreset/` 提供修改后的可编辑组件、完整 GPL 第三版许可及对应源码清单。
+小猫之神的 Meowssiah 预设按作者提供的适配许可研究，其署名和原包指纹见清单。
+本地开发实验的入口、分发边界及验证记录见
+[SPreset 运行时原型](docs/tavernhelper-compat/SPRESET_C2.md)。

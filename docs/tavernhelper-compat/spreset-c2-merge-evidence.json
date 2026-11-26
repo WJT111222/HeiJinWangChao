@@ -1,0 +1,1099 @@
+{
+  "codeCommit": "a390d9ad55b3778485d2a6e46df1c693f8cb6c60",
+  "c2Previous": "db434208df64f863188fd1e32078707335714a42",
+  "release": "46b1009f06f17ab610aadd4082e25c4d4cbac0c9",
+  "upstream252": "d4d35f77930992b78821e3966c02588e257542e1",
+  "environment": {
+    "node": "24.19.0",
+    "playwright": "1.64.1",
+    "chromium": "154.0.8037.57",
+    "port": 5174,
+    "workers": 1,
+    "retries": 0,
+    "models": "synthetic"
+  },
+  "vitest": {
+    "full": {
+      "passed": 5624,
+      "files": 239
+    },
+    "promptSubset": 93,
+    "focusedSubset": 118,
+    "plainTextWithoutReceiptSubset": 8
+  },
+  "originalReviewProbes": {
+    "c2-parser": {
+      "probes": 45,
+      "dispositions": {
+        "deliver": 9,
+        "reject": 36
+      },
+      "rejectedWithReceipt": 0
+    },
+    "c2-close": {
+      "probes": 3,
+      "dispositions": {
+        "deliver": 1,
+        "reject": 2
+      },
+      "rejectedWithReceipt": 0
+    }
+  },
+  "production": {
+    "scannedFiles": 136,
+    "literalHits": {
+      "spreset=prototype": [],
+      "spreset-c2": [],
+      "/experiments/spreset/": [],
+      "submit_scene": [],
+      "normalizeSPresetOutputProcessorResult": [],
+      "SPreset 实验处理器": []
+    },
+    "productionPresetAssets": [
+      "peinture-1118-BTJ4LJkw.js",
+      "peinture-1124-CmnKZAjJ.js"
+    ],
+    "verifiedGplComponentFiles": [
+      "core.mjs",
+      "worker.mjs",
+      "COPYING",
+      "frame.mjs"
+    ]
+  },
+  "playwright": {
+    "combined": {
+      "passed": 144,
+      "failed": 0,
+      "flaky": 0,
+      "skipped": 0
+    },
+    "groups": {
+      "backup-ui.spec.ts": {
+        "expected": 2
+      },
+      "city-expansion.spec.ts": {
+        "expected": 2
+      },
+      "completion-chime.spec.ts": {
+        "expected": 2
+      },
+      "continuous-turns.spec.ts": {
+        "expected": 6
+      },
+      "dynasty-theater.spec.ts": {
+        "expected": 2
+      },
+      "faction-panel.spec.ts": {
+        "expected": 2
+      },
+      "harem.spec.ts": {
+        "expected": 2
+      },
+      "narrative-length.spec.ts": {
+        "expected": 2
+      },
+      "opening-time-recovery.spec.ts": {
+        "expected": 6
+      },
+      "peinture-settings.spec.ts": {
+        "expected": 8
+      },
+      "settings-readability.spec.ts": {
+        "expected": 4
+      },
+      "settings-stage-sync.spec.ts": {
+        "expected": 2
+      },
+      "spreset-isolation.spec.ts": {
+        "expected": 6
+      },
+      "spreset-prototype.spec.ts": {
+        "expected": 22
+      },
+      "spreset-terminal.spec.ts": {
+        "expected": 16
+      },
+      "story-continuation-consent.spec.ts": {
+        "expected": 36
+      },
+      "story-legacy-writing.spec.ts": {
+        "expected": 8
+      },
+      "story-literary-ownership.spec.ts": {
+        "expected": 8
+      },
+      "tavern-assistant.spec.ts": {
+        "expected": 6
+      },
+      "worldbook-library-tabs.spec.ts": {
+        "expected": 2
+      }
+    },
+    "selection": [
+      "e2e/spreset-terminal.spec.ts",
+      "e2e/spreset-prototype.spec.ts",
+      "e2e/spreset-isolation.spec.ts",
+      "e2e/story-literary-ownership.spec.ts",
+      "e2e/story-legacy-writing.spec.ts",
+      "e2e/story-continuation-consent.spec.ts",
+      "e2e/peinture-settings.spec.ts:888",
+      "e2e/peinture-settings.spec.ts:982",
+      "e2e/backup-ui.spec.ts:207",
+      "e2e/city-expansion.spec.ts:83",
+      "e2e/completion-chime.spec.ts:75",
+      "e2e/continuous-turns.spec.ts:204",
+      "e2e/continuous-turns.spec.ts:302",
+      "e2e/continuous-turns.spec.ts:353",
+      "e2e/dynasty-theater.spec.ts:212",
+      "e2e/faction-panel.spec.ts:31",
+      "e2e/harem.spec.ts:91",
+      "e2e/narrative-length.spec.ts:142",
+      "e2e/opening-time-recovery.spec.ts:128",
+      "e2e/opening-time-recovery.spec.ts:154",
+      "e2e/opening-time-recovery.spec.ts:87",
+      "e2e/peinture-settings.spec.ts:448",
+      "e2e/peinture-settings.spec.ts:643",
+      "e2e/settings-readability.spec.ts:161",
+      "e2e/settings-readability.spec.ts:181",
+      "e2e/settings-stage-sync.spec.ts:18",
+      "e2e/tavern-assistant.spec.ts:252",
+      "e2e/tavern-assistant.spec.ts:274",
+      "e2e/tavern-assistant.spec.ts:476",
+      "e2e/worldbook-library-tabs.spec.ts:56"
+    ],
+    "additionalC2Run": {
+      "passed": 44,
+      "failed": 0,
+      "flaky": 0,
+      "skipped": 0
+    },
+    "additionalC2Groups": {
+      "spreset-isolation.spec.ts": {
+        "expected": 6
+      },
+      "spreset-prototype.spec.ts": {
+        "expected": 22
+      },
+      "spreset-terminal.spec.ts": {
+        "expected": 16
+      }
+    },
+    "failedIdentities": []
+  },
+  "terminalFailures": [
+    {
+      "project": "desktop",
+      "protocol": "openai",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "openai",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "deepseek",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "deepseek",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "gemini",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "gemini",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "anthropic",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "desktop",
+      "protocol": "anthropic",
+      "stream": true,
+      "posts": 3,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "null-block-stop",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "openai",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "openai",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "deepseek",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "deepseek",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "gemini",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "gemini",
+      "stream": true,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "anthropic",
+      "stream": false,
+      "posts": 2,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    },
+    {
+      "project": "mobile",
+      "protocol": "anthropic",
+      "stream": true,
+      "posts": 3,
+      "results": [
+        {
+          "fault": "duplicate",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "foreign-end",
+          "error": "stream_interrupted",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        },
+        {
+          "fault": "null-block-stop",
+          "error": "invalid_output",
+          "processorFinishes": 0,
+          "receipts": 0,
+          "candidate": false,
+          "revisionDelta": 0,
+          "turnDelta": 0
+        }
+      ]
+    }
+  ],
+  "successWires": [
+    {
+      "project": "desktop",
+      "protocol": "openai",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 62193,
+      "sha256": "35efea1ec6cec06babf762890853756ef4700e65aa91f12522961fae8d73f2b0",
+      "responseBytes": 362,
+      "responseSha256": "44394cba2ea2ba34bc57eeb0ad60e6e2465c1ac4fff59bae725cf4dbb1362d34",
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_calls"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "desktop",
+      "protocol": "openai",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 62192,
+      "sha256": "d714f2234fed8d356c8f146ce93151cba71c2517fcda4bdbc107605018fbc528",
+      "responseBytes": 461,
+      "responseSha256": "cf939a658dda8a2839e6a5e83692d87e5dbd7c028ac5c634400dd8ecddbb1829",
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_calls"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "desktop",
+      "protocol": "deepseek",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 62193,
+      "sha256": "35efea1ec6cec06babf762890853756ef4700e65aa91f12522961fae8d73f2b0",
+      "responseBytes": 362,
+      "responseSha256": "44394cba2ea2ba34bc57eeb0ad60e6e2465c1ac4fff59bae725cf4dbb1362d34",
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_calls"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "desktop",
+      "protocol": "deepseek",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 62192,
+      "sha256": "d714f2234fed8d356c8f146ce93151cba71c2517fcda4bdbc107605018fbc528",
+      "responseBytes": 461,
+      "responseSha256": "cf939a658dda8a2839e6a5e83692d87e5dbd7c028ac5c634400dd8ecddbb1829",
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_calls"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "desktop",
+      "protocol": "gemini",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "AUTO",
+      "posts": 1,
+      "bytes": 61893,
+      "sha256": "33547c13386b93d2e8df70a8cac1ba1d511162a974b8a015c86f89329c393f03",
+      "responseBytes": 304,
+      "responseSha256": "8b9c2c5b269b5f2dd5d0ff64fd28c35c3164b4d76a7d1cb235a160ba3f36cb92",
+      "requestEstimate": {
+        "estimatedTokens": 28455,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 82,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "STOP"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "desktop",
+      "protocol": "gemini",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "AUTO",
+      "posts": 1,
+      "bytes": 61893,
+      "sha256": "33547c13386b93d2e8df70a8cac1ba1d511162a974b8a015c86f89329c393f03",
+      "responseBytes": 312,
+      "responseSha256": "55aa4174ba82594c3aed90d755a7d349b9f127051df7b207f809d42dc107ba44",
+      "requestEstimate": {
+        "estimatedTokens": 28455,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 82,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "STOP"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "desktop",
+      "protocol": "anthropic",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 61749,
+      "sha256": "176da022196538c797aac8be17882e6909d619b8308af9bf321cd3c2add0af77",
+      "responseBytes": 304,
+      "responseSha256": "b4c8ae72b49ac412a6e65f46c9c98f4d601639f3b2e13eb5cc3f019e04e4f359",
+      "requestEstimate": {
+        "estimatedTokens": 28419,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 73,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_use"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "desktop",
+      "protocol": "anthropic",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 61748,
+      "sha256": "31d5ddd9726b388a78865af963d88d2fb90829a363d995ace8788ee2d9bac074",
+      "responseBytes": 744,
+      "responseSha256": "03ad96fffe4259cec2de686d15fb23437cfb1100469f1f8643d4fa3b1c613525",
+      "requestEstimate": {
+        "estimatedTokens": 28419,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 73,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_use"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "mobile",
+      "protocol": "openai",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 62193,
+      "sha256": "35efea1ec6cec06babf762890853756ef4700e65aa91f12522961fae8d73f2b0",
+      "responseBytes": 362,
+      "responseSha256": "44394cba2ea2ba34bc57eeb0ad60e6e2465c1ac4fff59bae725cf4dbb1362d34",
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_calls"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "mobile",
+      "protocol": "openai",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 62192,
+      "sha256": "d714f2234fed8d356c8f146ce93151cba71c2517fcda4bdbc107605018fbc528",
+      "responseBytes": 461,
+      "responseSha256": "cf939a658dda8a2839e6a5e83692d87e5dbd7c028ac5c634400dd8ecddbb1829",
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_calls"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "mobile",
+      "protocol": "deepseek",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 62193,
+      "sha256": "35efea1ec6cec06babf762890853756ef4700e65aa91f12522961fae8d73f2b0",
+      "responseBytes": 362,
+      "responseSha256": "44394cba2ea2ba34bc57eeb0ad60e6e2465c1ac4fff59bae725cf4dbb1362d34",
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_calls"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "mobile",
+      "protocol": "deepseek",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 62192,
+      "sha256": "d714f2234fed8d356c8f146ce93151cba71c2517fcda4bdbc107605018fbc528",
+      "responseBytes": 461,
+      "responseSha256": "cf939a658dda8a2839e6a5e83692d87e5dbd7c028ac5c634400dd8ecddbb1829",
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_calls"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "mobile",
+      "protocol": "gemini",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "AUTO",
+      "posts": 1,
+      "bytes": 61893,
+      "sha256": "33547c13386b93d2e8df70a8cac1ba1d511162a974b8a015c86f89329c393f03",
+      "responseBytes": 304,
+      "responseSha256": "8b9c2c5b269b5f2dd5d0ff64fd28c35c3164b4d76a7d1cb235a160ba3f36cb92",
+      "requestEstimate": {
+        "estimatedTokens": 28455,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 82,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "STOP"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "mobile",
+      "protocol": "gemini",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "AUTO",
+      "posts": 1,
+      "bytes": 61893,
+      "sha256": "33547c13386b93d2e8df70a8cac1ba1d511162a974b8a015c86f89329c393f03",
+      "responseBytes": 312,
+      "responseSha256": "55aa4174ba82594c3aed90d755a7d349b9f127051df7b207f809d42dc107ba44",
+      "requestEstimate": {
+        "estimatedTokens": 28455,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 82,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "STOP"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "mobile",
+      "protocol": "anthropic",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 61749,
+      "sha256": "176da022196538c797aac8be17882e6909d619b8308af9bf321cd3c2add0af77",
+      "responseBytes": 304,
+      "responseSha256": "b4c8ae72b49ac412a6e65f46c9c98f4d601639f3b2e13eb5cc3f019e04e4f359",
+      "requestEstimate": {
+        "estimatedTokens": 28419,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 73,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_use"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    },
+    {
+      "project": "mobile",
+      "protocol": "anthropic",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "bytes": 61748,
+      "sha256": "31d5ddd9726b388a78865af963d88d2fb90829a363d995ace8788ee2d9bac074",
+      "responseBytes": 744,
+      "responseSha256": "03ad96fffe4259cec2de686d15fb23437cfb1100469f1f8643d4fa3b1c613525",
+      "requestEstimate": {
+        "estimatedTokens": 28419,
+        "method": "unicode-heuristic-v1"
+      },
+      "toolSchemaEstimate": {
+        "estimatedTokens": 73,
+        "method": "unicode-heuristic-v1"
+      },
+      "finish": [
+        "tool_use"
+      ],
+      "candidateSaved": true,
+      "candidateFormalRevisionDelta": 0,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "configurationVersion": 4
+    }
+  ],
+  "opaqueWorker": {
+    "desktop": {
+      "origin": "null",
+      "document": "undefined",
+      "parent": "undefined",
+      "local": "undefined",
+      "session": "undefined",
+      "indexedDB": "SecurityError",
+      "databases": "SecurityError",
+      "cache": "unavailable",
+      "files": "unavailable",
+      "network": "TypeError",
+      "networkRequests": 0,
+      "saveAndDraftUnchanged": true
+    },
+    "mobile": {
+      "origin": "null",
+      "document": "undefined",
+      "parent": "undefined",
+      "local": "undefined",
+      "session": "undefined",
+      "indexedDB": "SecurityError",
+      "databases": "SecurityError",
+      "cache": "unavailable",
+      "files": "unavailable",
+      "network": "TypeError",
+      "networkRequests": 0,
+      "saveAndDraftUnchanged": true
+    }
+  }
+}
