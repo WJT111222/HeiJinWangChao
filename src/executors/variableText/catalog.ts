@@ -1,3 +1,4 @@
+import { StoryPhoneInput } from '../../domain/phone';
 import { commandsForPhase } from '../../domain/stageCommands';
 import { describeTimeFormats } from '../../services/validation/catalogCompaction';
 import { HaremChangesSchema } from '../../domain/harem/schema';
@@ -28,6 +29,7 @@ const heroChanges = variableCommandSchemas[0].shape.changes.shape;
 interface Entry { operation:VariableOperation; path:string; commandType:DomainCommand['type']; value:z.ZodType }
 const slotFields = ['topItemId','bottomItemId','shoesItemId','primaryWeaponItemId','secondaryWeaponItemId','currentVehicleAssetId'];
 const entries:Entry[] = [
+  {operation:'push',path:'npc[id].phoneMessages',commandType:'RecordPhoneMessage',value:StoryPhoneInput},
   {operation:'set',path:'harem.changes',commandType:'ApplyHaremChanges',value:HaremChangesSchema},
   {operation:'set',path:'opening.initialState',commandType:'InitializeOpeningState',value:OpeningInitialStateSchema},
   {operation:'set',path:'protagonist',commandType:'UpdateProtagonist',value:variableCommandSchemas[0].shape.changes},

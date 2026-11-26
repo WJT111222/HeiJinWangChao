@@ -102,7 +102,7 @@ describe.each(['opening', 'regular'] as const)('%s 实际发送的 World 上下�
     const state = worldState(), draft = worldDraft(true, mode);
     const prompt = await composePrompt({ stage: 'world', mode, state, draft, settings: defaultSettings(), userInput: '' });
     const catalog = prompt.context.COMMAND_CATALOG as ReturnType<typeof commandCatalog>;
-    expect(catalog).toEqual(commandCatalog('world'));
+    expect(catalog).toEqual(commandCatalog('world',true,mode==='regular'));
     expect(Object.keys(catalog.schema.definitions)).toEqual(expect.arrayContaining(['游戏时间', '稳定ID', '实体引用']));
     // Zod/贪心提取可以命名为 time 或各精度子结构；验证正式纪事结构而非依赖某个别名。
     const resolved = resolveCatalogRefs(catalog.schema);

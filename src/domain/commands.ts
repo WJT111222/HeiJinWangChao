@@ -19,6 +19,8 @@ import { maintainSceneTransition } from './sceneTransitions';
 import { completeTaskEventLinks } from './events/taskLinks';
 import { OpeningInitialStateSchema, initializeOpeningState } from './openingInitialization';
 
+import { recordPhone, schedulePhone, ScheduledPhoneInput, StoryPhoneInput } from './phone';
+
 const base = { commandId: IdSchema, evidence: TextSchema };
 const positiveMoney = MoneySchema.refine((amount) => amount > 0, '金额必须为正');
 export const SceneDescriptionField = z.enum(['weatherText', 'environmentText']);
@@ -43,6 +45,8 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('UpdateOrganization'), organizationId: IdSchema, expectedRevision: CountSchema, changes: OrganizationChangesSchema, financialBasis: FinancialBasisSchema.optional() }),
   z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema, faction: FactionBindingSchema.optional() }),
   z.strictObject({ ...base, type: z.literal('RecordOrgKnowledge'), organizationId: IdSchema, entry: ProtagonistOrgKnowledgeSchema }),
+  z.strictObject({ ...base, type: z.literal('RecordPhoneMessage'), npcId: IdSchema, ...StoryPhoneInput.shape }),
+  z.strictObject({ ...base, type: z.literal('SchedulePhoneMessage'), ...ScheduledPhoneInput.shape }),
   z.strictObject({ ...base, type: z.literal('RegisterContact'), npcId: IdSchema, reason: TextSchema }),
   // Parse historical drafts/receipts, but never authorize a fresh deletion.
   ...variableCommandSchemas,
@@ -121,6 +125,8 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
         'AMBIGUOUS_NPC', '别名或初始同伴身份重叠，需先确认已有稳定 ID');
       s.npc[c.npc.id] = NpcSchema.parse(c.npc.kind === 'special'
         ? { ...c.npc, memories: [...c.npc.memories, ...(c.npc.longTermMemories ?? [])], longTermMemories: [] } : c.npc); break;
+    case 'RecordPhoneMessage': recordPhone(s, c.npcId, c, turnId, pendingSceneClock); break;
+    case 'SchedulePhoneMessage': schedulePhone(s, c, turnId); break;
     case 'RegisterContact':
       requireData(s.npc[c.npcId], 'NOT_FOUND', '联系人不存在');
       if (!s.contactNpcIds.includes(c.npcId)) s.contactNpcIds.push(c.npcId);

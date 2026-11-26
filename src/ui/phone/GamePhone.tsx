@@ -3,12 +3,13 @@ import type { GameState } from '../../domain/state';
 import { chinaCalendar } from '../../domain/openingTime';
 import { locationText } from '../game/atmosphere';
 import type { PlayerView } from '../panels/playerView';
+import { PhoneChats, PhoneThread } from './PhoneChats';
 import { PhoneAssets } from './PhoneAssets';
-import { contactGroups, phoneDate, phoneMoney } from './phoneView';
+import { contactGroups, phoneDate, phoneDateTime, phoneMoney } from './phoneView';
 import type { usePhoneReminders } from './usePhoneReminders';
 import './phone.css';
 
-type Page = '锁屏' | '主屏' | '资产' | '信息' | '通知';
+type Page = '锁屏' | '主屏' | '资产' | '信息' | '通知' | '会话';
 function Badge({ count }: { count: number }) {
   return count > 0 ? (
     <span className="ph-badge" aria-label={count + ' 条未读'}>
@@ -43,7 +44,15 @@ export function PhoneEntry({
     </button>
   );
 }
-function Contacts({ view, showNpc }: { view: PlayerView; showNpc: (id: string) => void }) {
+function Contacts({
+  view,
+  showNpc,
+  open,
+}: {
+  view: PlayerView;
+  open: (id: string) => void;
+  showNpc: (id: string) => void;
+}) {
   const groups = useMemo(() => contactGroups(view), [view]);
   return (
     <>
@@ -56,10 +65,14 @@ function Contacts({ view, showNpc }: { view: PlayerView; showNpc: (id: string) =
                 <span className="ph-avatar" aria-hidden="true">
                   {Array.from(p.name)[0]}
                 </span>
-                <span>
+                <button
+                  className="ph-peer"
+                  onClick={() => open(p.id)}
+                  aria-label={'打开与' + p.name + '的会话'}
+                >
                   <b>{p.name}</b>
                   <small>{p.phoneContact?.status === 'invalid' ? '号码已失效' : '有号码'}</small>
-                </span>
+                </button>
                 <button type="button" aria-label={'查看' + p.name + '的档案'} onClick={() => showNpc(p.id)}>
                   查看档案 ›
                 </button>
@@ -90,8 +103,25 @@ export function GamePhone({
   close: (action?: boolean) => void;
   showNpc: (id: string) => void;
 }) {
-  const [page, go] = useState<Page>(() => (data.unread.length ? '锁屏' : '主屏'));
+  const [page, go] = useState<Page>(() => (data.unreadCount ? '锁屏' : '主屏'));
   const [contacts, setContacts] = useState(false);
+  const [peer, setPeer] = useState('');
+  const [previous, setPrevious] = useState<Page>('信息');
+  const openThread = (id: string) => {
+    setPrevious(page);
+    setPeer(id);
+    go('会话');
+  };
+  const npc = Object.hasOwn(state.npc, peer) ? state.npc[peer] : undefined;
+  const relation = useMemo(
+    () => Object.entries(contactGroups(view)).find(([, people]) => people.some((p) => p.id === peer))?.[0],
+    [view, peer],
+  );
+  useEffect(() => {
+    if (page !== '会话') return;
+    const keys = data.unreadMessages.filter((m) => m.npcId === peer).map((m) => m.key);
+    if (keys.length) data.markRead(...keys);
+  }, [page, peer, data]);
   const [selected, setSelected] = useState<{ id: string }>();
   const select = (id: string) => setSelected({ id });
   const dialog = useRef<HTMLDialogElement>(null);
@@ -158,6 +188,24 @@ export function GamePhone({
       </span>
     </button>
   );
+  const notification = ({ npcId, message }: (typeof data.messages)[number]) => (
+    <button key={message.id} className="ph-note" onClick={() => openThread(npcId)}>
+      <span className="ph-icon" aria-hidden="true">
+        信
+      </span>
+      <span>
+        <b>
+          {state.npc[npcId].name} ·{' '}
+          {message.source === 'offscreen' ? '场外来信' : message.medium === 'call' ? '通话' : '新消息'}
+        </b>
+        <time dateTime={message.at}>{phoneDateTime(message.at)}</time>
+        <small className="ph-preview">{message.text}</small>
+      </span>
+    </button>
+  );
+  const turnMessages = data.messages.filter(
+    (row) => row.message.deliveredTurnId === state.journal.at(-1)?.turnId,
+  );
   const nearest = data.loans[0];
   return (
     <dialog
@@ -187,11 +235,20 @@ export function GamePhone({
         </div>
         {page !== '锁屏' && page !== '主屏' && (
           <header className="ph-appbar">
-            <button aria-label="返回手机主屏" onClick={() => go('主屏')}>
+            <button
+              aria-label={page === '会话' ? '返回上一页' : '返回手机主屏'}
+              onClick={() => go(page === '会话' ? previous : '主屏')}
+            >
               ‹
             </button>
             <h3 ref={heading} tabIndex={-1}>
-              {page}
+              {page === '会话' && npc ? (
+                <>
+                  {npc.name} <small>{relation && relation !== '其他' ? relation : '私聊'}</small>
+                </>
+              ) : (
+                page
+              )}
             </h3>
           </header>
         )}
@@ -205,6 +262,7 @@ export function GamePhone({
                 {cal ? phoneDate(state.worldClock) + ' ' + cal.weekday : '开局时间待确认'} ·{' '}
                 {location.city || location.name} · 游戏时间
               </p>
+              {data.unreadMessages.map(notification)}
               {data.unread.map(note)}
               <button className="ph-unlock" onClick={() => go('主屏')}>
                 点按进入
@@ -230,7 +288,8 @@ export function GamePhone({
                       {['资', '信', '书', '通', '程'][i]}
                     </span>
                     {app}
-                    {app === '通知' && <Badge count={data.unread.length} />}
+                    {app === '信息' && <Badge count={data.unreadMessages.length} />}
+                    {app === '通知' && <Badge count={data.unreadCount} />}
                   </button>
                 ))}
               </div>
@@ -270,14 +329,19 @@ export function GamePhone({
                   </button>
                 ))}
               </div>
-              {contacts ? <Contacts view={view} showNpc={showNpc} /> : <p className="ph-foot">暂无聊天</p>}
+              {contacts ? (
+                <Contacts view={view} showNpc={showNpc} open={openThread} />
+              ) : (
+                <PhoneChats state={state} view={view} unread={data.unreadMessages} open={openThread} />
+              )}
             </>
           )}
+          {page === '会话' && npc && <PhoneThread state={state} npcId={npc.id} />}
           {page === '通知' && (
             <>
               <section className="ph-group">
                 <h4>本回合</h4>
-                <small>暂无</small>
+                {turnMessages.length ? turnMessages.map(notification) : <small>暂无</small>}
               </section>
               <section className="ph-group">
                 <h4>提醒</h4>

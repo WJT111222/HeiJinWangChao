@@ -16,7 +16,7 @@ import type { TurnDraft } from '../../domain/drafts';
 import type { GameState } from '../../domain/state';
 import { projectTurn } from '../../domain/turnProjection';
 import { protagonistKnownEvent } from '../../domain/events/knowledge';
-import { worldTypes } from './commandCatalog';
+import { allowedOffscreenCommand } from '../../domain/stageCommands';
 import { requireWorld, safeWorldPath, worldValidationError } from './worldDiagnostics';
 import { worldProjectionError } from './worldProjectionDiagnostics';
 import { worldNpcAllowed, worldTaskNpcAllowed } from '../../domain/npc/worldAccess';
@@ -52,13 +52,10 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     command, {fieldPath,commandIndex,commandType:command.type},
   ]));
   const scope = (command: DomainCommand) => scopes.get(command)!;
-  const allowed = new Set<string>(worldTypes);
   // Validate the original groups before any normalization can remove commands.
   for (const {command,group} of entries) {
     try {
-      requireWorld(group === 'worldCommands' ? allowed.has(command.type)
-        : group === 'taskCommands' ? command.type === 'SaveTask'
-          : ['SaveEvent', 'DeleteEvent'].includes(command.type), 'permission', 'command_structure');
+      requireWorld(allowedOffscreenCommand(group,command.type,draft.turnKind), 'permission', 'command_structure');
     } catch (error) {
       throw worldValidationError(error, scope(command));
     }
@@ -119,6 +116,10 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   for (const command of orderWorldCommands(commands)) {
     try {
       switch (command.type) {
+        case 'SchedulePhoneMessage':
+          requireWorld(!historicalPerspective(state,draft) && causal.npc[command.npcId] && !causal.npc[command.npcId].onScene,
+            'permission','actor_permission','npcId');
+          break;
         case 'UpdateNpc': {
           // 身份、关系、互动与重新入场字段不属于 World；冲突剔除不会处理这些字段，越权仍在此拒绝。
           const forbidden = Object.entries(command.changes).find(([key, value]) => worldForbiddenNpcChange(key, value));

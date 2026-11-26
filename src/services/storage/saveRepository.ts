@@ -46,8 +46,8 @@ import type { BackupEntry } from './backup';
  * V4 closes deployed V3 clients via their existing versionchange handler before
  * imports become available. Old V3 code cannot reopen and bypass instance CAS.
  * That V4 upgrade required no store, index or saved payload changes. */
-// V9 closes V8 writers before a V11 GameState is read or persisted. No phone object store.
-export const saveDatabaseVersion = 9;
+// V10 closes older writers before they encounter populated phone conversations in a V11 save.
+export const saveDatabaseVersion = 10;
 
 declare const confirmationBrand: unique symbol;
 /**
@@ -123,7 +123,7 @@ async function readStoredState(tx: IDBTransaction, saveId: string): Promise<Game
   const store = tx.objectStore('saves');
   const raw = await request(store.get(saveId));
   const state = readState(raw, saveId);
-  if (raw.schemaVersion !== state.schemaVersion || raw.openingCityId === undefined)
+  if (raw.schemaVersion !== state.schemaVersion || raw.openingCityId === undefined || raw.phone?.version !== state.phone.version)
     await request(store.put(state));
   return state;
 }

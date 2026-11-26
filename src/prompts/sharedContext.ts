@@ -26,7 +26,7 @@ export function storyForSubsequentStages(story: GameState['journal'][number]['st
  * 阅读范围不参与任何命令授权。永久 journal 保持现有窗口/检索，幂等凭据不注入。 */
 export function sharedContext(state: GameState, windowSize: number, query: string, recall: boolean, cues: RecallCues = { stage: 'story', playerInput: query }) {
   const { phone, harem, journal, appliedCommands, dormantNpcProfiles, npc, memories, openingCityProfile, ...snapshot } = state;
-  void phone; // Read-only phone UI has no model context in this step.
+  void phone; // Stage-specific phone history is selected separately. Never send the raw queue.
   void npc;
   void openingCityProfile; // 由 OPENING_CITY 统一提供，不在 SAVE_STATE 重复。
   void appliedCommands;

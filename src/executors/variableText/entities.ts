@@ -1,3 +1,4 @@
+import { StoryPhoneInput } from '../../domain/phone';
 import { z } from 'zod';
 import { DomainCommandSchema } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
@@ -22,6 +23,12 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
   expectedRevision: number, identityKey?: string): ExecutionResult<DomainCommand> | undefined {
   const [root, id, field] = command.path.nodes;
   if (id?.kind !== 'id' || !IdSchema.safeParse(id.id).success) return;
+  if (command.path.nodes.length === 3 && root.name === 'npc' && field?.kind === 'field' && field.name === 'phoneMessages') {
+    if (command.operation !== 'push') return failed('unsupported_operation');
+    const input = StoryPhoneInput.safeParse(command.value);
+    return input.success ? { ok:true, value:{ ...common, type:'RecordPhoneMessage', npcId:id.id, ...input.data } }
+      : failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
+  }
   const creation = command.path.nodes.length === 2 && ['npc', 'organizations', 'tasks'].includes(root.name);
   const relation = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'protagonistRelation';
   const organizationState = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'state';

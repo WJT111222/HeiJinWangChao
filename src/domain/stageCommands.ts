@@ -5,7 +5,7 @@ type CommandType = DomainCommand['type'];
 export const offscreenGroups = {
   worldCommands: [
     'CreateNpc', 'UpdateNpc', 'RecordNpcMemory', 'CreateLocation', 'CreateOrganization',
-    'UpdateOrganization', 'RecordOrgRelation', 'RecordHistory', 'ApplyHaremBackground',
+    'UpdateOrganization', 'RecordOrgRelation', 'RecordHistory', 'SchedulePhoneMessage', 'ApplyHaremBackground',
   ],
   taskCommands: ['SaveTask'],
   eventCommands: ['SaveEvent', 'DeleteEvent'],
@@ -13,7 +13,7 @@ export const offscreenGroups = {
 
 export const stageCommands = {
   entities: [
-    'CreateNpc', 'UpdateNpc', 'RecordNpcMemory', 'PromoteNpc', 'RegisterContact',
+    'CreateNpc', 'UpdateNpc', 'RecordNpcMemory', 'PromoteNpc', 'RegisterContact', 'RecordPhoneMessage',
     'CreateOrganization', 'CreateLocation', 'ApplyHaremChanges',
   ],
   scene: [
@@ -25,11 +25,17 @@ export const stageCommands = {
   offscreen: Object.values(offscreenGroups).flat(),
 } as const satisfies Record<string, readonly CommandType[]>;
 
+export function allowedOffscreenCommand(group: keyof typeof offscreenGroups, type: CommandType, mode:'opening'|'regular') {
+  const allowed: readonly CommandType[] = offscreenGroups[group];
+  return allowed.includes(type) && (type !== 'SchedulePhoneMessage' || mode === 'regular');
+}
+
 export type VariablePhase = keyof typeof stageCommands;
 
 export function commandsForPhase(phase: VariablePhase, mode: 'opening' | 'regular', historical = false) {
   const registered: readonly CommandType[] = stageCommands[phase];
   return registered.filter(type =>
+    (type !== 'SchedulePhoneMessage' || mode === 'regular') &&
     (type !== 'InitializeOpeningState' || mode === 'opening') &&
     (type !== 'RecordHistory' || historical));
 }

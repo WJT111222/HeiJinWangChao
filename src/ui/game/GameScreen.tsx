@@ -174,7 +174,7 @@ export function GameScreen({
   }
   const phone = usePhoneReminders(state);
   const phoneOpen = panel === '手机' && !desktopSettings;
-  const phoneButton = (mobile: boolean) => <PhoneEntry mobile={mobile} count={phone.unread.length} open={phoneOpen}
+  const phoneButton = (mobile: boolean) => <PhoneEntry mobile={mobile} count={phone.unreadCount} open={phoneOpen}
     onClick={() => outsideSettings(() => setPanel(phoneOpen ? undefined : '手机'))}/>;
   const theaterActive = panel === '小剧场' && !desktopSettings;
   const desktopArchive = !compactSidebars && !desktopSettings && (panel === 'NPC' || panel === '势力组织' || panel === '我的势力' || panel === '人物档案' || panel === '物品栏' || panel === '经济与资产' || panel === '世界事件' || panel === '历史时间轴' || panel === '记忆' || panel === '地图' || panel === '后宫') ? panel : undefined;

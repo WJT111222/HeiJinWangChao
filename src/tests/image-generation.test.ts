@@ -146,7 +146,7 @@ describe('存档附属资源', () => {
     expect((await repo.images.read(other.saveId)).library.pictures).toEqual([]);
     const [entry] = await repo.exportBackup([s.saveId]);
     const text = await serializeBackup([entry], 'mock');
-    expect(JSON.parse(text).version).toBe(4);
+    expect(JSON.parse(text).version).toBe(5);
     expect(text).not.toContain('imageJobs');
     expect(text).not.toContain('fixture-secret');
     const [parsed] = (await parseBackup(text)).entries;

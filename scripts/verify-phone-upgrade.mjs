@@ -7,16 +7,13 @@ import { URL, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 const [baseArg, candidateArg] = process.argv.slice(2);
 if (!baseArg || !candidateArg)
-  throw new Error('Usage: node scripts/verify-phone-upgrade.mjs PR248_MERGE_CHECKOUT PHONE_CHECKOUT');
+  throw new Error('Usage: node scripts/verify-phone-upgrade.mjs ACCEPTED_V8_OR_V9_CHECKOUT PHONE_CHECKOUT');
 const base = resolve(baseArg),
   candidate = resolve(candidateArg);
 const sha = (dir) => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' }).trim();
-assert.equal(
-  sha(base),
-  '3be381f64808b16d46ed54c6cf1fb0065555c0ed',
-  'Use the accepted #248 merge as the V8 writer',
-);
-assert.notEqual(base, candidate, 'Use separate V8 and V9 checkouts');
+const oldDb = {'3be381f64808b16d46ed54c6cf1fb0065555c0ed':8,'75e8abc2dee53078d126886058acbc2a0dce70de':9}[sha(base)];
+assert.ok(oldDb, 'Use the accepted #248 or #254 merge as the old writer');
+assert.notEqual(base, candidate, 'Use separate old and new checkouts');
 
 const { chromium } = await import(pathToFileURL(join(candidate, 'node_modules/playwright/index.mjs')));
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
@@ -154,21 +151,21 @@ try {
         }
       }, dbName);
       if (!previous) {
-        assert.equal(data.version, 8);
+        assert.equal(data.version, oldDb);
         previous = data;
       } else {
         const { version: newVersion, backup: newPackage, ...after } = data,
           { version: oldVersion, backup: oldPackage, ...before } = previous;
-        assert.deepEqual([oldVersion, newVersion], [8, 9]);
+        assert.deepEqual([oldVersion, newVersion], [oldDb, 10]);
         for (const state of [before.game.state, before.manualState]) {
-          assert.equal(state.schemaVersion, 10);
+          assert.equal(state.schemaVersion, oldDb === 8 ? 10 : 11);
           state.schemaVersion = 11;
-          state.phone = { threads: {}, scheduled: [], topics: [] };
+          state.phone = { version:1, threads: {}, scheduled: [], topics: [] };
           for (const person of Object.values(state.npc)) person.appearedInStory = true;
         }
         assert.deepEqual(after, before);
-        assert.equal(oldPackage.version, 3);
-        assert.equal(newPackage.version, 4);
+        assert.equal(oldPackage.version, oldDb === 8 ? 3 : 4);
+        assert.equal(newPackage.version, 5);
         assert.equal(after.images.pictures.length, 1);
         for (const file of [oldPackage, newPackage]) {
           const restored = await page.evaluate(
@@ -249,9 +246,9 @@ try {
             device,
             base: sha(base),
             candidate: sha(candidate),
-            from: 8,
-            to: 9,
-            backup: [3, 4],
+            from: oldDb,
+            to: 10,
+            backup: [oldPackage.version, 5],
             images: 1,
             storedTurns: 2,
             historyNodes: after.nodes.length,

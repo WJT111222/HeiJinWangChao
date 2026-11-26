@@ -15,13 +15,19 @@ export function contactIds(state: GameState, declared: readonly string[]) {
   return new Set([...Object.values(state.npc).filter(person => person.onScene).map(person => person.id), ...declared]);
 }
 
+export function markStoryPeople(state:GameState, declared:readonly string[], commands:readonly DomainCommand[]) {
+  for (const id of [...declared, ...commands.flatMap(c => c.type === 'CreateNpc' ? [c.npc.id] : 'npcId' in c ? [c.npcId] : [])]) {
+    if (Object.hasOwn(state.npc,id)) state.npc[id].appearedInStory = true;
+  }
+}
+
 export function checkEntityCommands(state: GameState, draft: TurnDraft, declared: readonly string[], commands: readonly DomainCommand[]) {
   const ids = contactIds(state, declared);
   const allowed = new Set(commandsForPhase('entities', draft.turnKind));
   const people = new Set(Object.keys(state.npc));
   for (const command of commands)
     requireData(allowed.has(command.type), 'STAGE_PERMISSION', '人物与实体阶段命令越权');
-  const entities = commands.length ? projectEntityChanges(state, draft.turnId, commands) : state;
+  const entities = commands.length ? projectEntityChanges(state, draft.turnId, commands) : declared.length ? structuredClone(state) : state;
   const checkPerson = (id: string) => requireData(Object.hasOwn(entities.npc, id), 'NOT_FOUND', '人物引用不存在');
   const checkLocation = (id: string) => requireData(Object.hasOwn(entities.locations, id), 'NOT_FOUND', '地点引用不存在');
   requireData(new Set(commands.map(command => command.commandId)).size === commands.length, 'DUPLICATE_COMMAND', '候选命令 ID 重复');
@@ -31,7 +37,9 @@ export function checkEntityCommands(state: GameState, draft: TurnDraft, declared
       people.add(command.npc.id);
       requireData(ids.has(command.npc.id), 'STAGE_PERMISSION', '新人物须列入本回合接触名单');
     } else if ('npcId' in command) {
-      requireData(people.has(command.npcId) && ids.has(command.npcId), 'STAGE_PERMISSION', '人物引用或接触名单无效');
+      const mentionOnly = command.type === 'UpdateNpc' && command.changes.appearedInStory === true &&
+        Object.keys(command.changes).length === 1 && !command.affinityChange && !command.activeGoals;
+      requireData(people.has(command.npcId) && (ids.has(command.npcId) || mentionOnly), 'STAGE_PERMISSION', '人物引用或接触名单无效');
     }
     if (command.type === 'CreateNpc') {
       const person = entities.npc[command.npc.id];
@@ -84,6 +92,7 @@ export function checkEntityCommands(state: GameState, draft: TurnDraft, declared
     }
   }
   for (const id of declared) requireData(people.has(id), 'NOT_FOUND', '接触名单中的人物不存在');
+  markStoryPeople(entities, declared, commands);
   return entities;
 }
 
@@ -180,9 +189,9 @@ export function effectiveEntityCandidate(state: GameState, draft: TurnDraft, sce
   for (const command of original) {
     const time = command.type === 'CreateNpc' ? command.npc.lastInteractionAt
       : command.type === 'UpdateNpc' ? command.changes.lastInteractionAt
-      : command.type === 'RecordNpcMemory' ? command.memory.createdAtGameTime : undefined;
+      : command.type === 'RecordPhoneMessage' ? command.at : command.type === 'RecordNpcMemory' ? command.memory.createdAtGameTime : undefined;
     if (time && Date.parse(time) > Date.parse(clock))
-      isolate(command, command.type === 'RecordNpcMemory' ? 'createdAtGameTime' : 'lastInteractionAt', 'time');
+      isolate(command, command.type === 'RecordPhoneMessage' ? 'at' : command.type === 'RecordNpcMemory' ? 'createdAtGameTime' : 'lastInteractionAt', 'time');
   }
   const location = scene.reduce((id, command) =>
     command.type === 'UpdateProtagonist' ? command.changes.locationId ?? id : id, state.protagonist.locationId);
