@@ -244,3 +244,17 @@ it('正式世界私密七字段和休眠档案压缩往返完全一致；未知�
   expect(await decodeHistory(await encodeHistory(dormant))).toEqual(dormant);
   await expect(decodeHistory({ ...payload, version: 2 } as unknown as typeof payload)).rejects.toThrow();
 });
+
+it('历史回溯重新核对本档纸条，只有仍有效的确认能清理旧实例', async () => {
+  await turns(2);
+  const node = await oldest();
+  const previous = await repo.history.preview('save-a', node);
+  let sheet = await repo.readOracleNote('save-a');
+  sheet = await repo.writeOracleNote('save-a', sheet, '回溯之前的纸条', true);
+  await expect(repo.history.restore(previous.confirmation, '恢复', true, true)).rejects.toMatchObject({ code: 'HISTORY_CONFLICT' });
+  expect(await repo.readOracleNote('save-a')).toEqual(sheet);
+  const fresh = await repo.history.preview('save-a', node);
+  await repo.history.restore(fresh.confirmation, '恢复', true, true);
+  expect(await repo.readOracleNote('save-a')).toMatchObject({ note: null, history: [] });
+  await expect(repo.clearOracleHistory('save-a', sheet)).rejects.toMatchObject({ code: 'REVISION_CONFLICT' });
+});
