@@ -77,7 +77,19 @@ export function browserCredentials(): string[] {
   try {
     const config = readAiConfig(window.localStorage);
     const vault = new CredentialVault(window.sessionStorage, window.localStorage);
-    return config.channels.map((channel) => vault.get(channel.id)).filter(Boolean);
+    const secrets = new Set(config.channels.map(channel => vault.get(channel.id)).filter(Boolean));
+    // Include independently scoped image credentials in diagnostic/feedback redaction,
+    // even after switching away from their endpoint or disabling image generation.
+    for (const storage of [window.sessionStorage, window.localStorage]) {
+      for (let i = 0; i < storage.length; i++) {
+        const key = storage.key(i);
+        if (key?.startsWith(keyFor('image.'))) {
+          const value = storage.getItem(key);
+          if (value) secrets.add(value);
+        }
+      }
+    }
+    return [...secrets];
   } catch {
     return [];
   }

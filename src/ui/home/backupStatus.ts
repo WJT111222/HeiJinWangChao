@@ -10,7 +10,7 @@ export const backupStatusKey = 'heijin.backup.status.v1';
 /** 从未备份且已玩到这个回合数，存档馆顶部才提示，不弹窗。 */
 export const backupReminderTurns = 5;
 
-type Stored = Record<string, { revision: number; turnNumber: number; managementRevision: number; theaterVersion?: string; at: string }>;
+type Stored = Record<string, { revision: number; turnNumber: number; managementRevision: number; imageVersion?:string; theaterVersion?: string; at: string }>;
 type StorageAccess = () => Pick<Storage, 'getItem' | 'setItem'>;
 const browserStorage: StorageAccess = () => localStorage;
 export type BackupTone = 'ok' | 'warn' | 'none';
@@ -26,12 +26,12 @@ function read(storage: StorageAccess): Stored {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
     const result: Stored = {};
     for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
-      const item = value as { revision?: unknown; turnNumber?: unknown; managementRevision?: unknown; theaterVersion?: unknown; at?: unknown } | null;
+      const item = value as { revision?: unknown; turnNumber?: unknown; managementRevision?: unknown; imageVersion?:unknown; theaterVersion?: unknown; at?: unknown } | null;
       const count = (n: unknown): n is number => Number.isSafeInteger(n) && (n as number) >= 0;
       if (item && count(item.revision) && count(item.turnNumber) && (item.managementRevision === undefined || count(item.managementRevision))
         && typeof item.at === 'string' && !Number.isNaN(Date.parse(item.at)))
         result[id] = { revision: item.revision, turnNumber: item.turnNumber, managementRevision: item.managementRevision ?? 0,
-          theaterVersion: typeof item.theaterVersion === 'string' ? item.theaterVersion : undefined, at: item.at };
+          imageVersion: typeof item.imageVersion==='string'?item.imageVersion:undefined, theaterVersion: typeof item.theaterVersion === 'string' ? item.theaterVersion : undefined, at: item.at };
     }
     return result;
   } catch { return {}; }
@@ -43,11 +43,11 @@ function write(storage: StorageAccess, update: (stored: Stored) => void) {
 }
 
 /** 导出或导入成功后记录：这些存档在这个正式版本上已有备份文件。at 为备份文件的生成时间。 */
-type Version = Pick<ReadableSaveSummary, 'saveId' | 'revision' | 'turnNumber' | 'npcManagementRevision' | 'theaterVersion'>;
+type Version = Pick<ReadableSaveSummary, 'saveId' | 'revision' | 'turnNumber' | 'npcManagementRevision' | 'theaterVersion' | 'imageVersion'>;
 export function recordBackup(saves: ReadonlyArray<Version>, at = new Date(), storage = browserStorage) {
   write(storage, stored => {
     for (const save of saves) stored[save.saveId] = { revision: save.revision, turnNumber: save.turnNumber,
-      managementRevision: save.npcManagementRevision ?? 0, theaterVersion: save.theaterVersion, at: at.toISOString() };
+      managementRevision: save.npcManagementRevision ?? 0, imageVersion:save.imageVersion, theaterVersion: save.theaterVersion, at: at.toISOString() };
   });
 }
 export function forgetBackup(saveId: string, storage = browserStorage) {
@@ -65,6 +65,7 @@ function dayLabel(at: Date, now: Date) {
 export function backupStatus(save: Version, now = new Date(), storage = browserStorage): BackupStatus {
   const record = read(storage)[save.saveId];
   if (!record) return { tone: 'none', text: '从未备份' };
+  if (record.imageVersion !== save.imageVersion) return {tone:'warn',text:'图片资源尚未备份或已变动'};
   if (record.theaterVersion !== save.theaterVersion) return { tone: 'warn', text: '备份后小剧场有变动' };
   if (record.revision === save.revision && record.managementRevision === (save.npcManagementRevision ?? 0)) return { tone: 'ok', text: `已备份 · ${dayLabel(new Date(record.at), now)}` };
   if (save.revision > record.revision && save.turnNumber > record.turnNumber)

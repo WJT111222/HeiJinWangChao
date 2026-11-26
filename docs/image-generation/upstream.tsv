@@ -1,0 +1,345 @@
+基线内路径	范围	行数	直接模块依赖
+__tests__/apiConfigImagePresets.test.ts	专项	125	../utils/apiConfig, vitest
+__tests__/comfyKrea2SamplerDefaults.test.ts	专项	98	../services/ai/imageTasks, vitest
+__tests__/comfySeedRandomization.test.ts	专项	43	../services/ai/imageTasks, vitest
+__tests__/comfyUnavailableBackend.test.ts	专项	261	../services/ai/image, ../services/ai/imageBackendRegistry, vitest
+__tests__/comfyWorkflowTools.test.ts	专项	98	../services/ai/comfyWorkflowTools, vitest
+__tests__/comfyWorkflowValidation.test.ts	专项	126	../services/ai/comfyWorkflowValidation, vitest
+__tests__/dataUrlImage.test.ts	专项	43	../utils/dataUrlImage, vitest
+__tests__/defaultComfyWorkflow.test.ts	专项	332	../data/defaultComfyWorkflow, ../services/ai/imageTasks, ../utils/apiConfig, vitest
+__tests__/grok2ApiImageGeneration.test.ts	专项	343	../services/ai/image, ../utils/apiConfig, vitest
+__tests__/imageAssets.test.ts	专项	86	../hooks/useImageAssetPrefetch, ../utils/imageAssets, vitest
+__tests__/imageBackendCloudStudio.test.ts	专项	98	../functions/api/image-backend/cnb-sync, ../functions/api/image-backend/comfyui-proxy/[[path]], vitest
+__tests__/imageBackendRegistry.test.ts	专项	53	../services/ai/imageBackendRegistry, vitest
+__tests__/imageFeatureConfig.test.ts	专项	67	../types, ../utils/imageFeatureConfig, vitest
+__tests__/imageGenerationDiagnostics.test.ts	专项	145	../services/ai/imageGenerationDiagnostics, vitest
+__tests__/imageHostProxy.test.ts	专项	248	../functions/api/image-host/download, ../functions/api/image-host/upload, vitest
+__tests__/imageHostService.test.ts	专项	113	../services/imageHostService, vitest
+__tests__/imageManagerQueue.test.ts	专项	81	node:fs, node:path, vitest
+__tests__/imagePromptAge.test.ts	专项	36	../services/ai/image, vitest
+__tests__/imageProxyDecision.test.ts	专项	91	../services/ai/imageGenerationDiagnostics, vitest
+__tests__/imageRpmRateLimiter.test.ts	专项	137	../services/ai/image, vitest
+__tests__/itemImage.test.ts	专项	657	../services/ai/image, ../services/ai/itemImageGeneration, ../utils/itemImage, vitest
+__tests__/itemImagePromptClean.test.ts	专项	66	../services/ai/itemImageGeneration, vitest
+__tests__/itemImageWeakSubject.test.ts	专项	47	../services/ai/itemImageGeneration, vitest
+__tests__/manualImageActionsWorkflow.test.ts	专项	252	../hooks/useGame/image/manualImageActionsWorkflow, vitest
+__tests__/nodeImageCacheProxy.test.ts	专项	60	../functions/api/nodeimage-cache, vitest
+__tests__/novelAiProxyNative.test.ts	专项	40	../services/ai/imageTasks, vitest
+__tests__/novelAiZipResponse.test.ts	专项	165	../services/ai/imageTasks, fflate, vitest
+__tests__/npcImageWorkflow.test.ts	专项	245	../hooks/useGame/npcImageWorkflow, vitest
+__tests__/nsfwImageGeneration.test.ts	专项	762	../models/system, ../prompts/runtime/nsfw, ../utils/apiConfig, vitest
+__tests__/openaiImageProxy.test.ts	专项	129	../functions/api/image-backend/fetch-image, ../functions/api/image-backend/openai-image-proxy/[[path]], vitest
+__tests__/openaiImageTest.test.ts	专项	65	../services/ai/openaiImageTest, vitest
+__tests__/playerImageNormalization.test.ts	专项	43	../hooks/useGame/stateTransforms, vitest
+__tests__/playerImageWorkflow.test.ts	专项	325	../hooks/useGame/playerImageWorkflow, vitest
+__tests__/presetImageProxy.test.ts	专项	118	../functions/api/preset-image/[[path]], vitest
+__tests__/visualAge.test.ts	专项	157	../utils/visualAge, vitest
+components/features/Settings/ImageGenerationSettings.tsx	专项	3215	../../../data/creativeWorkshopModules, ../../../data/defaultComfyWorkflow, ../../../data/releaseInfo, ../../../services/ai/comfyWorkflowTools, ../../../services/ai/comfyWorkflowValidation, ../../../services/ai/image, ../../../services/ai/imageBackendRegistry, ../../../services/ai/imageGenerationDiagnostics, ../../../services/ai/openaiImageTest, ../../../services/appUpdate, ../../../services/creativeWorkshop, ../../../types, ../../../utils/apiConfig, ../../../utils/imageSizeOptions, ../../ui/GameButton, ../../ui/InlineSelect, ../../ui/ToggleSwitch, react
+components/features/Social/ImageManagerModal.tsx	专项	5817	../../../hooks/useImageAssetPrefetch, ../../../services/dbService, ../../../types, ../../../utils/apiConfig, ../../../utils/characterAnchorOptions, ../../../utils/imageAssets, ../../../utils/imageSizeOptions, ../../../utils/modelRuleEditorSelection, ../../../utils/npcGenderFlags, ../../ui/DataUrlSafeImage, ../../ui/Icons, ../../ui/ToggleSwitch, ./ImageMigrationStatusPanel, react
+components/features/Social/ImageMigrationStatusPanel.tsx	专项	159	../../../services/dbService, react
+components/features/Social/mobile/MobileCustomSelect.tsx	间接依赖	99	react
+components/features/Social/mobile/MobileFileUploader.tsx	间接依赖	57	react
+components/features/Social/mobile/MobileImageManagerModal.tsx	专项	3386	../../../../hooks/useImageAssetPrefetch, ../../../../services/dbService, ../../../../types, ../../../../utils/apiConfig, ../../../../utils/characterAnchorOptions, ../../../../utils/imageAssets, ../../../../utils/imageSizeOptions, ../../../../utils/npcGenderFlags, ../../../ui/DataUrlSafeImage, ../../../ui/ToggleSwitch, ../ImageMigrationStatusPanel, ./MobileCustomSelect, ./MobileFileUploader, react
+components/ui/DataUrlSafeImage.tsx	专项	54	../../services/dbService, ../../utils/dataUrlImage, ../../utils/objectUrlLifecycle, react
+components/ui/GameButton.tsx	间接依赖	64	react
+components/ui/Icons.tsx	间接依赖	557	react
+components/ui/InlineSelect.tsx	间接依赖	132	react
+components/ui/ToggleSwitch.tsx	间接依赖	39	react
+data/creativeWorkshopModules.ts	间接依赖	1328	../types, ../utils/modeRuntimeProfile, ../utils/workshopEngine, ../utils/worldbookFeatureLinkage, ./defaultComfyWorkflow, ./newGamePresets, ./presets
+data/defaultAuctionItemImages.ts	专项	51	../models/imageGeneration
+data/defaultComfyWorkflow.ts	专项	439	—
+data/newGamePresets.ts	间接依赖	464	../types
+data/presetItemImages.ts	专项	976	./structuredItemLibrary
+data/presets.ts	间接依赖	589	../models/system, ../types
+data/releaseInfo.ts	间接依赖	1358	—
+data/structuredItemLibrary.ts	间接依赖	566	../models/item, ../models/system, ./workshopThemes/topicModeThemeData.ts
+data/workshopThemes/defaultWorkshopTheme.ts	间接依赖	169	../../models/system
+data/workshopThemes/topicModeThemeData.ts	间接依赖	488	../../models/system
+e2e/data-url-safe-image-ios.pw.mjs	专项	50	@playwright/test
+functions/api/_shared/dbStore.ts	间接依赖	367	—
+functions/api/apk/_shared.ts	间接依赖	643	—
+functions/api/image-backend/cnb-sync.ts	专项	445	—
+functions/api/image-backend/comfyui-proxy/[[path]].ts	专项	111	—
+functions/api/image-backend/fetch-image.ts	专项	130	—
+functions/api/image-backend/openai-image-proxy/[[path]].ts	专项	123	—
+functions/api/image-backend/probe.ts	专项	129	—
+functions/api/image-backend/sync.ts	专项	5	./cnb-sync
+functions/api/image-host/download.ts	专项	250	—
+functions/api/image-host/upload.ts	专项	351	—
+functions/api/item-preset-contribution-image.ts	专项	83	./_shared/dbStore
+functions/api/nodeimage-cache.ts	专项	111	./apk/_shared
+functions/api/novelai/[[path]].ts	专项	69	—
+functions/api/preset-image/[[path]].ts	专项	344	../apk/_shared
+functions/api/pucoding-image/[[path]].ts	专项	71	—
+hooks/useGame/historyUtils.ts	间接依赖	44	../../types, ./thinkingContext
+hooks/useGame/image/manualImageActionsWorkflow.ts	专项	389	../../../services/diagnosticLog, ../../../types, ../../../utils/npcGenderFlags, ../../../utils/visualAge
+hooks/useGame/imagePresetWorkflow.ts	专项	746	../../types, ../../utils/apiConfig, ../../utils/visualAge, ./npcContext
+hooks/useGame/inventoryCommandGuard.ts	间接依赖	71	../../utils/stateHelpers
+hooks/useGame/memoryUtils.ts	间接依赖	425	../../prompts/runtime/defaults, ../../types, ./timeUtils
+hooks/useGame/npcContext.ts	间接依赖	811	../../prompts/runtime/fandom, ../../types, ../../utils/visualAge, ./memoryUtils, ./npcMemorySummary, ./timeUtils
+hooks/useGame/npcImageQueue.ts	专项	23	—
+hooks/useGame/npcImageStateWorkflow.ts	专项	1029	../../services/diagnosticLog, ../../types, ../../utils/imageAssets
+hooks/useGame/npcImageWorkflow.ts	专项	917	../../models/system, ../../services/ai/image, ../../types, ../../utils/apiConfig, ../../utils/imageGenerationRetry, ../../utils/visualAge, ./npcImageQueue
+hooks/useGame/npcMemorySummary.ts	间接依赖	223	../../models/social, ../../models/system, ./memoryUtils, ./timeUtils
+hooks/useGame/npcSecretImageWorkflow.ts	专项	606	../../models/system, ../../services/ai/image, ../../services/diagnosticLog, ../../types, ../../utils/apiConfig, ../../utils/imageGenerationRetry, ../../utils/visualAge
+hooks/useGame/playerImageWorkflow.ts	专项	660	../../models/imageGeneration, ../../types, ../../utils/apiConfig, ../../utils/imageAssets, ../../utils/visualAge, ./imagePresetWorkflow, ./npcImageStateWorkflow
+hooks/useGame/responseCommandProcessor.ts	间接依赖	2211	../../services/auctionHouse, ../../types, ../../utils/apiConfig, ../../utils/chineseName, ../../utils/dialogueSpeakerGuard, ../../utils/economyRules, ../../utils/npcDeathGuard, ../../utils/npcName, ../../utils/npcRealmRegressionGuard, ../../utils/npcRetentionGuard, ../../utils/npcTemplateNamePolicy, ../../utils/planningConsistency, ../../utils/realmConfig, ../../utils/reproduction, ../../utils/scriptedMoneyReconciler, ../../utils/stateHelpers, ../../utils/taskCompat, ../../utils/taskRewards, ./inventoryCommandGuard, ./stateTransforms, ./variableCalibration, ./variableCommandValidation, ./variableReviewCleanup, ./variableReviewEquipment, ./variableReviewTimeEvidence
+hooks/useGame/sceneImageArchiveWorkflow.ts	专项	277	../../services/diagnosticLog, ../../types, ../../utils/imageAssets, ../../utils/visualSettings
+hooks/useGame/sceneImageTriggerWorkflow.ts	专项	321	../../services/diagnosticLog, ../../types
+hooks/useGame/sceneImageWorkflow.ts	专项	448	../../models/system, ../../services/ai/image, ../../types, ../../utils/apiConfig, ../../utils/imageGenerationRetry
+hooks/useGame/stateTransforms.ts	间接依赖	4188	../../models/system, ../../types, ../../utils/apiConfig, ../../utils/attributeBudget, ../../utils/autoConsumables, ../../utils/chineseName, ../../utils/currencyDisplay, ../../utils/debugFlags, ../../utils/dialogueSpeakerGuard, ../../utils/equipmentActions, ../../utils/imageAssets, ../../utils/itemEffects, ../../utils/npcDeathGuard, ../../utils/npcName, ../../utils/realmConfig, ../../utils/reproduction, ../../utils/skillDefaults, ../../utils/stateHelpers, ../../utils/storageCarry, ../../utils/topicModeProfiles, ./timeUtils
+hooks/useGame/storyState.ts	间接依赖	2699	../../models/sect, ../../models/task, ../../services/ai/storyTasks, ../../types, ../../utils/attributeBudget, ../../utils/currencyDisplay, ../../utils/mapSpatial, ../../utils/newGameDiy, ../../utils/npcName, ../../utils/openingCompanion, ../../utils/realmConfig, ../../utils/skillDefaults, ../../utils/taskCompat, ../../utils/templateNameBlacklist, ../../utils/topicModeProfiles, ./stateTransforms, ./timeUtils
+hooks/useGame/streamIntegrity.ts	间接依赖	182	—
+hooks/useGame/thinkingContext.ts	间接依赖	63	../../types
+hooks/useGame/timeUtils.ts	间接依赖	94	—
+hooks/useGame/variableCalibration.ts	间接依赖	134	../../types, ./storyState
+hooks/useGame/variableCommandValidation.ts	间接依赖	239	../../types, ../../utils/femaleNameSelector, ../../utils/npcDeathGuard, ../../utils/npcName, ../../utils/npcRealmRegressionGuard, ../../utils/npcRetentionGuard, ../../utils/npcTemplateNamePolicy, ../../utils/realmConfig, ../../utils/stateHelpers, ../../utils/templateNameBlacklist, ../../utils/variableRegistry, ./responseCommandProcessor
+hooks/useGame/variableReviewCleanup.ts	间接依赖	24	../../types, ../../utils/skillDefaults, ../../utils/stateHelpers, ./variableCommandValidation
+hooks/useGame/variableReviewEconomy.ts	间接依赖	107	../../types, ../../utils/currencyDisplay, ../../utils/npcName, ./stateTransforms, ./variableReviewCleanup, ./variableReviewSnapshot
+hooks/useGame/variableReviewEquipment.ts	间接依赖	135	../../models/social, ../../types, ../../utils/equipmentActions, ../../utils/stateHelpers
+hooks/useGame/variableReviewNotes.ts	间接依赖	137	../../types, ../../utils/stateHelpers, ./variableReviewSnapshot
+hooks/useGame/variableReviewResult.ts	间接依赖	199	../../types, ../../utils/npcName, ../../utils/stateHelpers, ./variableCommandValidation, ./variableReviewCleanup, ./variableReviewSnapshot, ./variableReviewWorkflow
+hooks/useGame/variableReviewSnapshot.ts	间接依赖	86	../../types, ../../utils/npcName, ./responseCommandProcessor, ./variableReviewWorkflow
+hooks/useGame/variableReviewTimeEvidence.ts	间接依赖	58	—
+hooks/useGame/variableReviewWorkflow.ts	间接依赖	319	../../prompts, ../../prompts/runtime/variableReview, ../../prompts/runtime/variableReviewRules, ../../services/ai/text, ../../services/npcTemplateNameContext, ../../types, ../../utils/apiConfig, ../../utils/gameRequestTimeouts, ../../utils/npcDeathGuard, ../../utils/npcName, ../../utils/realmConfig, ../../utils/stateHelpers, ../../utils/variableRegistry, ../../utils/variableReviewBudget, ../../utils/variableReviewSettings, ./responseCommandProcessor, ./stateTransforms, ./storyState, ./streamIntegrity, ./variableCommandValidation, ./variableReviewCleanup, ./variableReviewEconomy, ./variableReviewEquipment, ./variableReviewNotes, ./variableReviewResult, ./variableReviewSnapshot
+hooks/useImageAssetPrefetch.ts	专项	104	../services/dbService, ../utils/imageAssets, ../utils/nativeRuntime, react
+models/battle.ts	间接依赖	26	—
+models/character.ts	间接依赖	181	../types, ./imageGeneration, ./item, ./kungfu, ./social, ./system
+models/environment.ts	间接依赖	37	—
+models/fandomPlanning/heroinePlan.ts	间接依赖	68	—
+models/fandomPlanning/story.ts	间接依赖	91	—
+models/heroinePlan.ts	间接依赖	58	—
+models/imageGeneration.ts	专项	270	./social
+models/item.ts	间接依赖	114	./imageGeneration
+models/kungfu.ts	间接依赖	72	—
+models/novelDecomposition.ts	间接依赖	247	—
+models/sect.ts	间接依赖	137	—
+models/social.ts	间接依赖	297	./imageGeneration, ./system
+models/story.ts	间接依赖	48	—
+models/storyPlan.ts	间接依赖	73	—
+models/system.ts	间接依赖	1537	./battle, ./character, ./environment, ./fandomPlanning/heroinePlan, ./fandomPlanning/story, ./heroinePlan, ./imageGeneration, ./sect, ./social, ./story, ./storyPlan, ./task, ./world, ./worldbook
+models/task.ts	间接依赖	66	—
+models/world.ts	间接依赖	281	—
+models/worldbook.ts	间接依赖	101	—
+prompts/core/actionOptions.ts	间接依赖	56	../../types
+prompts/core/ancientRealism.ts	间接依赖	64	../../types
+prompts/core/cot.ts	间接依赖	207	../../types, ../../utils/promptFeatureToggles, ./cotShared
+prompts/core/cotCombat.ts	间接依赖	96	../../types, ../../utils/promptFeatureToggles
+prompts/core/cotHeroine.ts	间接依赖	246	../../types, ../../utils/promptFeatureToggles, ./cotShared
+prompts/core/cotJudge.ts	间接依赖	114	../../types, ../../utils/promptFeatureToggles
+prompts/core/cotPolish.ts	间接依赖	129	../../types
+prompts/core/cotShared.ts	间接依赖	37	../../utils/promptFeatureToggles
+prompts/core/data.ts	间接依赖	307	../../types, ../../utils/promptFeatureToggles
+prompts/core/format.ts	间接依赖	147	../../types
+prompts/core/heroinePlan.ts	间接依赖	95	../../types
+prompts/core/heroinePlanCot.ts	间接依赖	147	../../types
+prompts/core/memory.ts	间接依赖	55	../../types, ../../utils/promptFeatureToggles
+prompts/core/realm.ts	间接依赖	18	../../types
+prompts/core/rules.ts	间接依赖	57	../../types
+prompts/core/story.ts	间接依赖	58	../../types
+prompts/core/timeProgress.ts	间接依赖	83	../../types
+prompts/core/world.ts	间接依赖	13	../../types
+prompts/difficulty/check.ts	间接依赖	286	../../types, ../../utils/promptFeatureToggles
+prompts/difficulty/game.ts	间接依赖	209	../../types, ../../utils/promptFeatureToggles
+prompts/difficulty/physiology.ts	间接依赖	215	../../types, ../../utils/promptFeatureToggles
+prompts/index.ts	间接依赖	90	../types, ./core/actionOptions, ./core/ancientRealism, ./core/cot, ./core/cotCombat, ./core/cotJudge, ./core/data, ./core/format, ./core/memory, ./core/realm, ./core/rules, ./core/timeProgress, ./core/world, ./difficulty/check, ./difficulty/game, ./difficulty/physiology, ./stats/body, ./stats/character, ./stats/combat, ./stats/cultivation, ./stats/drop, ./stats/experience, ./stats/itemWeight, ./stats/items, ./stats/kungfu, ./stats/npc, ./stats/others, ./stats/recovery, ./writing/antiOmniscient, ./writing/conflictPacing, ./writing/emotionGuard, ./writing/noControl, ./writing/perspective, ./writing/requirements, ./writing/style
+prompts/providers/glmStablePreset.ts	间接依赖	23	—
+prompts/providers/xiaomiMiMoStablePreset.ts	间接依赖	26	—
+prompts/runtime/currencyReference.ts	间接依赖	143	../../models/system
+prompts/runtime/defaults.ts	间接依赖	297	—
+prompts/runtime/fandom.ts	间接依赖	1090	../../types
+prompts/runtime/fandomPlanningAnalysis.ts	间接依赖	37	—
+prompts/runtime/fandomRealmGeneration.ts	间接依赖	124	../../types, ./fandom
+prompts/runtime/fandomWorldEvolution.ts	间接依赖	29	—
+prompts/runtime/imageAnchorExtractionCot.ts	专项	2	—
+prompts/runtime/imageTokenizerCharacterCot.ts	专项	2	—
+prompts/runtime/imageTokenizerSceneCot.ts	专项	2	—
+prompts/runtime/imageTokenizerSecretPartCot.ts	专项	2	—
+prompts/runtime/mapRegenerate.ts	间接依赖	54	—
+prompts/runtime/mapRegenerateCot.ts	间接依赖	49	—
+prompts/runtime/memoryRefine.ts	间接依赖	37	—
+prompts/runtime/novelDecomposition.ts	间接依赖	322	—
+prompts/runtime/novelDecompositionCot.ts	间接依赖	96	—
+prompts/runtime/novelModePackCompletion.ts	间接依赖	254	../../models/novelDecomposition, ../../models/system
+prompts/runtime/novelSegmentFieldCompletion.ts	间接依赖	183	../../models/novelDecomposition
+prompts/runtime/nsfw.ts	间接依赖	93	../../types
+prompts/runtime/opening.ts	间接依赖	189	../../types, ../../utils/promptFeatureToggles
+prompts/runtime/openingConfig.ts	间接依赖	85	../../types, ../../utils/effectiveTopicProfile, ../../utils/modeRuntimeProfile, ../../utils/openingConfig, ../../utils/promptFeatureToggles, ../../utils/topicModeProfiles
+prompts/runtime/openingVariableGenerationInit.ts	间接依赖	109	../../utils/promptFeatureToggles
+prompts/runtime/planUpdateReference.ts	间接依赖	145	./storyPlanSchema
+prompts/runtime/planningAnalysis.ts	间接依赖	211	../core/heroinePlan, ../core/heroinePlanCot, ../core/story
+prompts/runtime/pngParseCot.ts	专项	2	—
+prompts/runtime/realWorldMode.ts	间接依赖	48	../../models/system
+prompts/runtime/recall.ts	间接依赖	30	—
+prompts/runtime/roleIdentity.ts	间接依赖	43	—
+prompts/runtime/storyPlanSchema.ts	间接依赖	63	—
+prompts/runtime/storyStyles/cultivation.ts	间接依赖	11	—
+prompts/runtime/storyStyles/general.ts	间接依赖	14	—
+prompts/runtime/storyStyles/harem.ts	间接依赖	12	—
+prompts/runtime/storyStyles/index.ts	间接依赖	59	../../../models/system, ../../../types, ../../../utils/promptFeatureToggles, ./cultivation, ./general, ./harem, ./ntlHarem, ./pureLove, ./shura
+prompts/runtime/storyStyles/ntlHarem.ts	间接依赖	35	—
+prompts/runtime/storyStyles/pureLove.ts	间接依赖	11	—
+prompts/runtime/storyStyles/shura.ts	间接依赖	11	—
+prompts/runtime/variableCalibration.ts	间接依赖	3	./variableGeneration
+prompts/runtime/variableCot.ts	间接依赖	128	../../types, ../../utils/promptFeatureToggles
+prompts/runtime/variableGeneration.ts	间接依赖	18	—
+prompts/runtime/variableModel.ts	间接依赖	299	../../models/system, ../../types, ../../utils/promptFeatureToggles, ./currencyReference, ./openingVariableGenerationInit
+prompts/runtime/variableReview.ts	间接依赖	86	../../hooks/useGame/variableReviewEquipment, ../../hooks/useGame/variableReviewNotes, ../../types
+prompts/runtime/variableReviewRules.ts	间接依赖	26	../../types, ../../utils/promptFeatureToggles, ../../utils/variableRegistry
+prompts/runtime/worldDataSchema.ts	间接依赖	212	—
+prompts/runtime/worldEvolution.ts	间接依赖	230	./worldDataSchema
+prompts/runtime/worldEvolutionCot.ts	间接依赖	225	—
+prompts/runtime/worldGeneration.ts	间接依赖	229	../../types, ../../utils/effectiveTopicProfile, ../../utils/promptFeatureToggles, ./openingConfig
+prompts/runtime/worldGenerationRuntimeConstraints.ts	间接依赖	86	../../models/worldbook, ../../types
+prompts/stats/body.ts	间接依赖	77	../../types, ../../utils/promptFeatureToggles
+prompts/stats/character.ts	间接依赖	134	../../types, ../../utils/promptFeatureToggles, ../runtime/fandom
+prompts/stats/combat.ts	间接依赖	116	../../types, ../../utils/promptFeatureToggles
+prompts/stats/cultivation.ts	间接依赖	142	../../types, ../runtime/fandom
+prompts/stats/drop.ts	间接依赖	79	../../types, ../../utils/promptFeatureToggles
+prompts/stats/experience.ts	间接依赖	55	../../types, ../../utils/promptFeatureToggles
+prompts/stats/itemWeight.ts	间接依赖	49	../../types, ../../utils/promptFeatureToggles
+prompts/stats/items.ts	间接依赖	78	../../data/structuredItemLibrary, ../../types, ../../utils/promptFeatureToggles
+prompts/stats/kungfu.ts	间接依赖	118	../../types, ../../utils/promptFeatureToggles
+prompts/stats/npc.ts	间接依赖	179	../../types, ../../utils/promptFeatureToggles, ../runtime/fandom
+prompts/stats/others.ts	间接依赖	49	../../types, ../../utils/promptFeatureToggles
+prompts/stats/recovery.ts	间接依赖	93	../../types, ../../utils/promptFeatureToggles
+prompts/writing/antiOmniscient.ts	间接依赖	91	../../types
+prompts/writing/conflictPacing.ts	间接依赖	21	../../types
+prompts/writing/emotionGuard.ts	间接依赖	49	../../types
+prompts/writing/naturalProse.ts	间接依赖	11	—
+prompts/writing/noControl.ts	间接依赖	50	../../types
+prompts/writing/perspective.ts	间接依赖	83	../../types
+prompts/writing/requirements.ts	间接依赖	12	../../types
+prompts/writing/style.ts	间接依赖	74	../../types
+scripts/benchmark-preset-image-hosts.mjs	专项	95	node:fs/promises, node:path
+scripts/cnb-image-backend-sync.mjs	专项	463	./lib/cnb-openapi.mjs, node:child_process
+scripts/gen-structured-item-images.mjs	专项	498	../data/defaultComfyWorkflow.ts, ../data/structuredItemLibrary.ts, node:fs/promises, node:path, node:url
+scripts/generate-gpt-image2-auction-images.mjs	专项	188	node:fs/promises, node:path, node:url
+scripts/generate-gpt-image2-preset-images.mjs	专项	835	../data/structuredItemLibrary.ts, node:child_process, node:fs/promises, node:path, node:url, sharp
+scripts/generate-preset-item-images.mjs	专项	253	node:child_process, node:fs, node:path, node:url
+scripts/lib/cnb-openapi.mjs	间接依赖	150	—
+scripts/migrate-preset-images-msjh-nodeimage.mjs	专项	299	node:fs/promises, node:path
+scripts/migrate-preset-images-nodeimage.mjs	专项	261	node:crypto, node:fs/promises, node:path
+scripts/migrate-preset-images-to-s3.mjs	专项	133	node:crypto, node:fs/promises, node:http, node:https, node:path
+scripts/regenerate-preset-images-gpt-image2.mjs	专项	721	node:child_process, node:crypto, node:fs/promises, node:http, node:https, node:path
+scripts/switch-preset-images-to-s3-proxy.mjs	专项	35	node:fs/promises, node:path, node:url
+scripts/test-gpt-image2-direct.mjs	专项	80	node:fs/promises, node:path
+services/ai/artistTagDictionary.ts	专项	34	—
+services/ai/artistTagExtractor.ts	专项	195	./artistTagDictionary
+services/ai/chatCompletionClient.ts	专项	2446	../../prompts/providers/glmStablePreset, ../../prompts/providers/xiaomiMiMoStablePreset, ../../utils/apiConfig, ../../utils/customRequestHeaders, ../../utils/nativeRuntime, ../../utils/openAICompatibleEndpoint, ../../utils/variableReviewSampling, ./corsRelay, @capacitor/core
+services/ai/comfyWorkflowTools.ts	专项	110	—
+services/ai/comfyWorkflowValidation.ts	专项	130	../../data/releaseInfo, ../../types, ../../utils/apiConfig, ./comfyWorkflowTools, ./image
+services/ai/corsRelay.ts	间接依赖	113	../../utils/nativeRuntime
+services/ai/image/index.ts	专项	21	../imageTasks
+services/ai/image/runtime.ts	专项	8	../imageTasks
+services/ai/imageBackendRegistry.ts	专项	270	../../models/system, ../../utils/nativeRuntime
+services/ai/imageGenerationDiagnostics.ts	专项	493	../../data/releaseInfo, ../../utils/apiConfig, ../../utils/nativeRuntime
+services/ai/imageTasks.ts	专项	5455	../../data/releaseInfo, ../../models/imageGeneration, ../../models/system, ../../prompts/runtime/imageAnchorExtractionCot, ../../prompts/runtime/imageTokenizerCharacterCot, ../../prompts/runtime/imageTokenizerSceneCot, ../../prompts/runtime/imageTokenizerSecretPartCot, ../../prompts/runtime/pngParseCot, ../../utils/apiConfig, ../../utils/imageAssets, ../../utils/jsonRepair, ../../utils/nativeRuntime, ../../utils/visualAge, ../dbService, ../diagnosticLog, ./artistTagExtractor, ./chatCompletionClient, ./imageGenerationDiagnostics, @capacitor/core, fflate
+services/ai/itemImageGeneration.ts	专项	1358	../../data/defaultComfyWorkflow, ../../data/structuredItemLibrary, ../../models/item, ../../models/system, ../../types, ../../utils/apiConfig, ../../utils/imageAssets, ../../utils/itemImage, ../dbService, ../diagnosticLog, ./chatCompletionClient, ./image
+services/ai/openaiImageTest.ts	专项	180	../../models/system, ../../utils/nativeRuntime, ./imageGenerationDiagnostics
+services/ai/storyResponseParser.ts	间接依赖	2144	../../types, ../../utils/bodyTextSanitizer, ../../utils/dialogueLogNormalizer, ../../utils/dialogueSpeakerGuard, ../../utils/jsonRepair, ../../utils/judgeBlockExtractor, ../../utils/judgmentFormat, ../../utils/stateHelpers
+services/ai/storyTasks.ts	间接依赖	2864	../../models/novelDecomposition, ../../models/system, ../../prompts/runtime/defaults, ../../prompts/runtime/fandom, ../../prompts/runtime/fandomPlanningAnalysis, ../../prompts/runtime/fandomRealmGeneration, ../../prompts/runtime/fandomWorldEvolution, ../../prompts/runtime/novelDecomposition, ../../prompts/runtime/novelDecompositionCot, ../../prompts/runtime/novelModePackCompletion, ../../prompts/runtime/novelSegmentFieldCompletion, ../../prompts/runtime/planUpdateReference, ../../prompts/runtime/planningAnalysis, ../../prompts/runtime/roleIdentity, ../../prompts/runtime/variableCot, ../../prompts/runtime/variableModel, ../../prompts/runtime/variableReview, ../../prompts/runtime/worldEvolution, ../../prompts/runtime/worldGeneration, ../../types, ../../utils/apiConfig, ../../utils/builtinPrompts, ../../utils/jsonRepair, ../../utils/naturalProse, ../../utils/worldbook, ./chatCompletionClient, ./imageGenerationDiagnostics, ./storyResponseParser
+services/ai/text/index.ts	间接依赖	41	../storyResponseParser, ../storyTasks
+services/appUpdate.ts	间接依赖	484	../data/releaseInfo, ../utils/nativeRuntime, ./nativeApkUpdater, @capacitor/app
+services/auctionHouse.ts	间接依赖	1121	../models/character, ../models/item, ../models/system, ../utils/currencyDisplay, ../utils/effectiveTopicProfile, ../utils/nativeRuntime, ../utils/storageCarry, ../utils/topicModeProfiles, ./diagnosticLog
+services/cloudPlayService.ts	间接依赖	1249	../types, ../utils/cloudPlayStorageMode, ../utils/imageAssets, ../utils/objectUrlLifecycle, ../utils/saveTurn, ./dbService, ./imageHostService, ./objectStorageSync, ./saveArchiveService
+services/creativeWorkshop.ts	间接依赖	681	../data/creativeWorkshopModules, ../data/releaseInfo, ../utils/creativeWorkshopDedupe, ../utils/modeRuntimeProfile, ../utils/nativeRuntime, ../utils/tavernPreset, ./ai/comfyWorkflowTools, ./cloudPlayService, @capacitor/core
+services/dbService.ts	专项	3695	../models/system, ../types, ../utils/apiConfig, ../utils/cloudPlayStorageMode, ../utils/imageAssets, ../utils/nativeRuntime, ../utils/naturalProse, ../utils/saveLineage, ../utils/saveLoadTrace, ../utils/saveTurn, ../utils/settingsSchema, ../utils/variableReviewSettings, ./dbService_saveTree, ./diagnosticLog, ./imageHostService
+services/dbService_saveTree.ts	间接依赖	88	../types, ./dbService
+services/diagnosticLog.ts	专项	259	../utils/nativeRuntime
+services/githubSync.ts	间接依赖	1947	../utils/imageAssets, ../utils/nativeRuntime, ../utils/settingsSchema, ./dbService, @capacitor/core, fflate
+services/imageHostService.ts	专项	563	./diagnosticLog
+services/nativeApkUpdater.ts	间接依赖	35	@capacitor/core
+services/novelDecompositionStore.ts	间接依赖	1195	../types, ../utils/settingsSchema, ./dbService, ./novelDecompositionTime, fflate
+services/novelDecompositionTime.ts	间接依赖	327	—
+services/npcTemplateNameContext.ts	间接依赖	24	../types, ../utils/npcTemplateNamePolicy, ../utils/openingConfig, ./novelDecompositionStore
+services/objectStorageSync.ts	间接依赖	1894	../data/releaseInfo, ../types, ../utils/nativeRuntime, ../utils/saveTurn, ../utils/settingsSchema, ./dbService, ./diagnosticLog, ./githubSync, ./saveArchiveService
+services/saveArchiveService.ts	间接依赖	495	../types, ../utils/imageAssets, ./dbService, fflate
+tests/e2e-image-fallback-cache.spec.mjs	专项	121	/hooks/useImageAssetPrefetch.ts, /services/dbService.ts, /utils/imageAssets.ts, @playwright/test, node:path, node:url, vite
+tests/e2e-novelai-proxy.spec.mjs	专项	46	../services/ai/imageTasks.ts, @playwright/test
+tests/e2e-novelai-zip-render.spec.mjs	专项	204	/services/ai/imageTasks.ts, @playwright/test, fflate, node:child_process, node:fs, node:path, node:zlib
+types.ts	间接依赖	135	./models/battle, ./models/character, ./models/environment, ./models/fandomPlanning/heroinePlan, ./models/fandomPlanning/story, ./models/heroinePlan, ./models/imageGeneration, ./models/item, ./models/kungfu, ./models/novelDecomposition, ./models/sect, ./models/social, ./models/story, ./models/storyPlan, ./models/system, ./models/task, ./models/world, ./models/worldbook
+utils/apiConfig.ts	专项	2971	../data/defaultComfyWorkflow, ../models/system, ../prompts/runtime/defaults, ../services/ai/corsRelay, ../services/ai/imageBackendRegistry, ./currencySystemLoader, ./openAICompatibleEndpoint
+utils/attributeBudget.ts	间接依赖	51	—
+utils/autoConsumables.ts	间接依赖	58	../types
+utils/backgroundTalentBinding.ts	间接依赖	148	../types
+utils/bodyTextSanitizer.ts	间接依赖	69	—
+utils/builtinPrompts.ts	间接依赖	146	../prompts/runtime/variableModel, ../types, ./worldbook
+utils/characterAnchorOptions.ts	间接依赖	66	—
+utils/chineseName.ts	间接依赖	25	—
+utils/cloudPlayStorageMode.ts	间接依赖	43	—
+utils/creativeWorkshopDedupe.ts	间接依赖	63	../data/creativeWorkshopModules
+utils/currencyDisplay.ts	间接依赖	897	../models/character, ../models/system, ../types, ./apiConfig, ./realmDisplay, ./topicModeProfiles
+utils/currencySystemLoader.ts	间接依赖	139	../models/system, ./currencyTemplateExpander
+utils/currencyTemplateExpander.ts	间接依赖	75	../models/system
+utils/customNewGamePresets.ts	间接依赖	571	../data/creativeWorkshopModules, ../data/newGamePresets, ../data/presets, ../services/creativeWorkshop, ../types, ./backgroundTalentBinding, ./modeRuntimeProfile, ./newGameDiy, ./openingConfig, ./topicModeProfiles
+utils/customRequestHeaders.ts	间接依赖	230	—
+utils/dataUrlImage.ts	专项	52	—
+utils/debugFlags.ts	间接依赖	16	—
+utils/dialogueLogNormalizer.ts	间接依赖	675	../types, ./dialogueSpeakerGuard, ./judgeBlockExtractor, ./judgmentFormat, ./npcName
+utils/dialogueSpeakerGuard.ts	间接依赖	156	./chineseName, ./judgmentFormat, ./npcName
+utils/economyRules.ts	间接依赖	213	../models/system, ../models/world, ./apiConfig, ./mapLayerNames
+utils/effectiveTopicProfile.ts	间接依赖	159	../models/system, ../prompts/runtime/worldGenerationRuntimeConstraints, ./topicModeProfiles
+utils/equipmentActions.ts	间接依赖	245	../types
+utils/femaleNameSelector.ts	间接依赖	188	../女性人名选择器?raw, ./npcTemplateNamePolicy
+utils/gameRequestTimeouts.ts	间接依赖	38	—
+utils/gameSettings.ts	间接依赖	449	../prompts/runtime/defaults, ../types, ./gameRequestTimeouts, ./tavernPreset
+utils/imageAssets.ts	专项	384	./nativeRuntime
+utils/imageFeatureConfig.ts	专项	72	../types
+utils/imageGenerationRetry.ts	专项	70	../services/ai/imageTasks
+utils/imageManagerSettings.ts	专项	30	../types
+utils/imageSizeOptions.ts	专项	100	—
+utils/itemEffects.ts	间接依赖	121	—
+utils/itemImage.ts	专项	262	../data/presetItemImages, ../models/item, ../models/system, ../services/dbService, ./imageAssets
+utils/jsonRepair.ts	间接依赖	460	—
+utils/judgeBlockExtractor.ts	间接依赖	72	—
+utils/judgmentFormat.ts	间接依赖	74	—
+utils/mapLayerNames.ts	间接依赖	1	—
+utils/mapLayoutOptimizer.ts	间接依赖	284	../models/world
+utils/mapSpatial.ts	间接依赖	2447	../types, ./mapLayoutOptimizer, ./mapValidator
+utils/mapValidator.ts	间接依赖	424	../types, ./mapSpatial
+utils/modeRuntimeProfile.ts	间接依赖	1141	../data/workshopThemes/topicModeThemeData, ../models/system, ./currencyDisplay, ./gameSettings
+utils/modelRuleEditorSelection.ts	间接依赖	13	—
+utils/nativeRuntime.ts	专项	112	@capacitor/core
+utils/naturalProse.ts	间接依赖	16	../prompts/writing/naturalProse
+utils/newGameDiy.ts	间接依赖	451	../types
+utils/npcDeathGuard.ts	间接依赖	111	../types, ./stateHelpers
+utils/npcGenderFlags.ts	间接依赖	33	—
+utils/npcName.ts	间接依赖	82	—
+utils/npcRealmRegressionGuard.ts	间接依赖	317	../types, ./npcRetentionGuard, ./realmConfig, ./stateHelpers
+utils/npcRetentionGuard.ts	间接依赖	258	../types, ./npcName, ./stateHelpers
+utils/npcTemplateNamePolicy.ts	间接依赖	114	../types, ./npcName, ./stateHelpers
+utils/objectUrlLifecycle.ts	间接依赖	103	—
+utils/openAICompatibleEndpoint.ts	间接依赖	63	—
+utils/openingCompanion.ts	间接依赖	311	../types, ./npcName
+utils/openingConfig.ts	间接依赖	893	../hooks/useGame/timeUtils, ../models/system, ../types, ./effectiveTopicProfile, ./modeRuntimeProfile, ./topicModeProfiles, ./workshopEngine
+utils/planningConsistency.ts	间接依赖	98	—
+utils/promptFeatureToggles.ts	间接依赖	139	../types
+utils/realmConfig.ts	间接依赖	263	../models/system, ./topicModeProfiles
+utils/realmDisplay.ts	间接依赖	125	../prompts/runtime/fandom, ./realmConfig
+utils/reproduction.ts	间接依赖	547	../hooks/useGame/timeUtils
+utils/saveLineage.ts	间接依赖	559	../types, ./saveTurn
+utils/saveLoadTrace.ts	间接依赖	353	—
+utils/saveTurn.ts	间接依赖	20	../types
+utils/scriptedMoneyReconciler.ts	间接依赖	45	—
+utils/settingsSchema.ts	间接依赖	317	./builtinPrompts, ./customNewGamePresets, ./worldbook
+utils/skillDefaults.ts	间接依赖	21	../models/system, ./topicModeProfiles
+utils/stateHelpers.ts	间接依赖	428	../types
+utils/storageCarry.ts	间接依赖	168	—
+utils/taskCompat.ts	间接依赖	147	../models/task
+utils/taskRewards.ts	间接依赖	336	../models/system, ../types, ./currencyDisplay
+utils/tavernPreset.ts	间接依赖	506	../models/system, ./tavernRegexEngine
+utils/tavernRegexEngine.ts	间接依赖	441	../models/system
+utils/templateNameBlacklist.ts	间接依赖	56	./npcTemplateNamePolicy
+utils/tokenEstimate.ts	间接依赖	265	../types
+utils/topicImageGuidance.ts	专项	51	../models/system
+utils/topicModeProfiles.ts	间接依赖	14	./workshopEngine
+utils/variableRegistry.ts	间接依赖	319	../types, ./stateHelpers
+utils/variableReviewBudget.ts	间接依赖	84	./tokenEstimate
+utils/variableReviewSampling.ts	间接依赖	8	—
+utils/variableReviewSettings.ts	间接依赖	86	../prompts/runtime/variableReview, ../types, ./apiConfig, ./variableReviewBudget, ./variableReviewSampling
+utils/visualAge.ts	专项	562	../models/system, ./topicModeProfiles
+utils/visualSettings.ts	间接依赖	253	../types, react
+utils/workshopEngine.ts	间接依赖	217	../data/workshopThemes/defaultWorkshopTheme, ../data/workshopThemes/topicModeThemeData, ../models/system, ./modeRuntimeProfile
+utils/worldbook.ts	间接依赖	1394	../hooks/useGame/historyUtils, ../hooks/useGame/timeUtils, ../models/system, ../prompts/core/cot, ../prompts/core/cotHeroine, ../prompts/core/cotPolish, ../prompts/core/format, ../prompts/core/heroinePlan, ../prompts/core/heroinePlanCot, ../prompts/core/world, ../prompts/runtime/defaults, ../prompts/runtime/mapRegenerate, ../prompts/runtime/mapRegenerateCot, ../prompts/runtime/memoryRefine, ../prompts/runtime/opening, ../prompts/runtime/realWorldMode, ../prompts/runtime/recall, ../prompts/runtime/roleIdentity, ../prompts/runtime/storyStyles, ../prompts/runtime/variableCalibration, ../prompts/runtime/variableCot, ../prompts/runtime/variableModel, ../prompts/runtime/worldEvolution, ../prompts/runtime/worldEvolutionCot, ../prompts/writing/emotionGuard, ../prompts/writing/noControl, ../prompts/writing/style, ../types, ./worldbookFeatureLinkage
+utils/worldbookFeatureLinkage.ts	间接依赖	63	../models/system, ../models/worldbook, ./promptFeatureToggles

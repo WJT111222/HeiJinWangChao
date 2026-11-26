@@ -1,0 +1,56 @@
+{
+  "project": "desktop",
+  "turns": 300,
+  "pictures": 308,
+  "sourceSize": "960×540",
+  "disabled": {
+    "reads": 0,
+    "bulk": 0,
+    "liveUrls": 0,
+    "mounted": 0,
+    "entries": 300
+  },
+  "initial": {
+    "reads": 2,
+    "bulk": 0,
+    "liveUrls": 2,
+    "mounted": 2,
+    "entries": 300
+  },
+  "scrolled": {
+    "reads": 11,
+    "bulk": 0,
+    "liveUrls": 11,
+    "mounted": 2,
+    "entries": 300
+  },
+  "off": {
+    "reads": 11,
+    "bulk": 0,
+    "liveUrls": 0,
+    "mounted": 0,
+    "entries": 300
+  },
+  "textFrames": {
+    "frames": 48,
+    "distance": 4320,
+    "medianMs": 67,
+    "p95Ms": 100,
+    "over50Ms": 45
+  },
+  "imageFrames": {
+    "frames": 48,
+    "distance": 4320,
+    "medianMs": 67,
+    "p95Ms": 83,
+    "over50Ms": 45
+  },
+  "timeToThumbnailsMs": 408,
+  "scrollThumbnailWaitMs": [
+    123,
+    9,
+    85,
+    79,
+    64
+  ]
+}

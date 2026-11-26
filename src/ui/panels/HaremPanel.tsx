@@ -159,7 +159,7 @@ export function HaremPanel({ view, management }: { view: PlayerView; management?
           onClose={() => setPerson(undefined)}
           returnFocus={() => opener.current}
         >
-          <NpcPanel view={view} initialId={person} management={management} onBack={() => setPerson(undefined)} />
+          <NpcPanel view={view} initialId={person} familyMemberId={ids.has(person) ? person : undefined} management={management} onBack={() => setPerson(undefined)} />
         </Dialog>
       )}
     </div>

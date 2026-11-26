@@ -37,6 +37,10 @@ import { TurnUndoControl } from './TurnUndoControl';
 import type { TurnUndoResult } from '../../services/storage/saveRepository';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { TalentProfile } from '../components/TalentProfile';
+import { ImageAvatar, ImageEntry, Portraits } from '../images/ImageGallery';
+import { ImageScope } from '../images/ImageScope';
+import { config as imageConfig } from '../../services/images/config';
+import { afterSettlement } from '../../services/images/queue';
 import { StoryReading } from './StoryReadingView';
 import { TheaterPanel } from './TheaterPanel';
 import type { TheaterLeaveGuard } from './TheaterPanel';
@@ -273,7 +277,10 @@ export function GameScreen({
     memoryState.revision >= state.revision ? memoryState : state;
   function handleSettled(result: TurnCommitResult) {
     onCommitted(result);
-    if (!result.replayed) void memory.run(true);
+    if (!result.replayed) {
+      void memory.run(true);
+      if(imageConfig().enabled) queueMicrotask(()=>afterSettlement(repository.images,state,result.state,instance));
+    }
   }
   const progress =
     automatic.progress?.stage === 'story' && automatic.progress.phase !== 'retrying'
@@ -445,8 +452,7 @@ export function GameScreen({
       });
       if (submitToken.current !== token) return;
       reportRuntimeEvent('commit', 'completed');
-      onCommitted(result);
-      if (!result.replayed) void memory.run(true);
+      handleSettled(result);
       setInput('');
       setSubmitting(false);
       // 发送明确授权下一轮请求；重复回执只恢复数据库真值，不再次发起付费生成。
@@ -894,7 +900,7 @@ export function GameScreen({
                       />
   );
   return (
-    <main className="game-layout city-night" data-city={atmosphere.city} data-time={atmosphere.time} data-wx={atmosphere.weather}
+    <ImageScope key={JSON.stringify([state.saveId,state.createdAt,instance])} lib={repository.images} state={state} instance={instance}><main className="game-layout city-night" data-city={atmosphere.city} data-time={atmosphere.time} data-wx={atmosphere.weather}
       onKeyDown={event => {
         if (compactSidebars || desktopArchive || desktopSettings || theaterActive || event.nativeEvent.isComposing || event.repeat || (event.target as HTMLElement).closest('dialog, .archive')) return;
         if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.altKey) {
@@ -944,6 +950,7 @@ export function GameScreen({
               <CityChapter number={index + 1} state={state} scene={state.journal[index]?.scene} desktop={!compactSidebars} />
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
               <SettlementNotice settlement={state.journal[index]?.settlement} />
+              <ImageEntry kind="story" id={entry.turnId}/>
               {index===view.journal.length-1&&showChanges&&<TurnChanges state={state} comparison={turnComparison} mobile={compactSidebars} onOpen={openChange}/>}
             </article>
           ))}
@@ -1196,6 +1203,7 @@ export function GameScreen({
         <Dialog title={panel} mobileVariant="sheet" sheetFull seal={{NPC:'人',势力组织:'势',我的势力:'盟',地图:'图',物品栏:'物',世界事件:'事',历史时间轴:'史',记忆:'忆',后宫:'家',人物档案:'人',经济与资产:'财'}[panel]} eyebrow="WORLD · ARCHIVE" returnFocus={()=>changeOpener.current?.isConnected?changeOpener.current:mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={`mobile-archive ${panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : panel === '我的势力' ? 'faction-dialog' : ''}`} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
           {panel === '人物档案' ? (
             <>
+            <ImageAvatar kind="player" id={hero.id}/><Portraits kind="player" id={hero.id}/>
             <dl className="profile-details">
               {Object.entries({
                 姓名: hero.name,
@@ -1220,6 +1228,7 @@ export function GameScreen({
                 </Detail>
               ))}
             </dl>
+            <ImageEntry kind="player" id={hero.id}/>
             <ProfessionProfile hero={hero} />
             <TalentProfile talentId={hero.talentId} />
             <h3>当前穿戴与装备</h3>
@@ -1286,6 +1295,6 @@ export function GameScreen({
           </div>
         </Dialog>
       )}
-    </main>
+    </main></ImageScope>
   );
 }

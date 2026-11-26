@@ -1,3 +1,4 @@
+import { ImageAvatar } from '../images/ImageGallery';
 import type { GameState } from '../../domain/state';
 import { dateTime, money } from '../panels/playerView';
 import type { CSSProperties } from 'react';
@@ -19,7 +20,7 @@ export function PlayerStatus({ state, equipment, onProfile, onEconomy, activePan
   const place = state.locations[hero.locationId]?.name || '地点未确认';
   return <aside className="player-status" aria-label="主角信息">
     <div className="status-identity">
-      <span className="status-seal" aria-hidden="true">{Array.from(hero.name)[0] || '人'}</span>
+      <span className="status-seal"><ImageAvatar kind="player" id={hero.id}>{Array.from(hero.name)[0] || '人'}</ImageAvatar></span>
       <div>
         <h2 title={hero.name}>{hero.name}</h2>
         <p className="status-demographics" title={`${hero.age} 岁 · ${hero.gender} · ${hero.profession || '职业未确认'}`}>{hero.age} 岁 · {hero.gender} · {hero.profession || '职业未确认'}</p>

@@ -8,6 +8,7 @@ import { reserveStageSession, withBrowserLock } from '../../../workflows/stageGu
 import { request, transaction } from '../idb';
 import { migrateSave } from '../migrations';
 import { clearUndoRecords, controlInstance, inspectUndo, newSaveControl, readControl, SnapshotSchema, timelineStores, writeControl } from '../turnUndo';
+import { notifyImages, imageTimelineChange } from '../../images/library';
 import { historyCodec } from './worker';
 import { historyStores, historySummary, ManualHistorySchema } from './model';
 import type { HistoryNode, ManualHistory } from './model';
@@ -199,28 +200,32 @@ export class HistoryRepository {
     requireData(checked?.owner === this, 'HISTORY_CONFIRMATION_INVALID', '历史确认已失效，请重新预览');
     const { saveId, selection, current: expected, source: selected } = checked;
     const userInput = z.string().trim().min(1).max(100000).parse(action), session = reserveStageSession(saveId);
-    try { return await withBrowserLock(saveId, async () => {
-      const restored = await decode(selected, selection, saveId); settled(restored);
-      return transaction(this.database, stores, 'readwrite', async tx => {
-        session.check();
-        const observed = await current(tx, saveId);
-        requireData(same(observed, expected), 'HISTORY_CONFLICT', '正式存档、草稿或时间线已改变，请重新预览；本次没有覆盖，也没有请求模型');
-        requireData(sameSource(await source(tx, saveId, selection), selected), 'HISTORY_CONFLICT', '历史节点已改变或被删除，请重新预览');
-        const state = checkedState(observed.state, saveId), oldDraft = observed.draft === undefined ? undefined : TurnDraftSchema.parse(observed.draft);
-        const nextState = GameStateSchema.parse({ ...restored, revision: Math.max(state.revision, restored.revision) + 1, updatedAt: new Date().toISOString() });
-        const draft = TurnDraftSchema.parse({ ...createTurnDraft(saveId, nextState.revision, `turn-${crypto.randomUUID()}`, 'regular', userInput,
-          useVariableStage, useWorldStage, useEntityStage), draftRevision: (oldDraft?.draftRevision ?? 0) + 1 });
-        const control = { ...newSaveControl(saveId), instanceId: `instance-${crypto.randomUUID()}` };
-        // Intentional new timeline root: no old automatic point or commit receipt survives.
-        await clearUndoRecords(tx, saveId);
-        const receipts = tx.objectStore('turnReceipts');
-        for (const key of await request(receipts.index('saveId').getAllKeys(saveId))) await request(receipts.delete(key));
-        await request(tx.objectStore('saves').put(nextState));
-        await request(tx.objectStore('drafts').put(draft));
-        await writeControl(tx, control);
-        return { state: nextState, draft, instance: control.instanceId, replayed: false };
-      });
-    }, { required: true }); } finally { session.release(); }
+    try {
+      const result = await withBrowserLock(saveId, async () => {
+        const restored = await decode(selected, selection, saveId); settled(restored);
+        return transaction(this.database, stores, 'readwrite', async tx => {
+          session.check();
+          const observed = await current(tx, saveId);
+          requireData(same(observed, expected), 'HISTORY_CONFLICT', '正式存档、草稿或时间线已改变，请重新预览；本次没有覆盖，也没有请求模型');
+          requireData(sameSource(await source(tx, saveId, selection), selected), 'HISTORY_CONFLICT', '历史节点已改变或被删除，请重新预览');
+          const state = checkedState(observed.state, saveId), oldDraft = observed.draft === undefined ? undefined : TurnDraftSchema.parse(observed.draft);
+          const nextState = GameStateSchema.parse({ ...restored, revision: Math.max(state.revision, restored.revision) + 1, updatedAt: new Date().toISOString() });
+          const draft = TurnDraftSchema.parse({ ...createTurnDraft(saveId, nextState.revision, `turn-${crypto.randomUUID()}`, 'regular', userInput,
+            useVariableStage, useWorldStage, useEntityStage), draftRevision: (oldDraft?.draftRevision ?? 0) + 1 });
+          const control = { ...newSaveControl(saveId), instanceId: `instance-${crypto.randomUUID()}` };
+          // Intentional new timeline root: no old automatic point or commit receipt survives.
+          await clearUndoRecords(tx, saveId);
+          const receipts = tx.objectStore('turnReceipts');
+          for (const key of await request(receipts.index('saveId').getAllKeys(saveId))) await request(receipts.delete(key));
+          await request(tx.objectStore('saves').put(nextState));
+          await request(tx.objectStore('drafts').put(draft));
+          await writeControl(tx, control);
+          return { state: nextState, draft, instance: control.instanceId, replayed: false };
+        });
+      }, { required: true });
+      notifyImages(imageTimelineChange);
+      return result;
+    } finally { session.release(); }
   }
 
   async exportNode(saveId: string, selection: HistorySelection, app: string): Promise<{ text: string; name: string }> {

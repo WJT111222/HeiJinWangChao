@@ -1,0 +1,55 @@
+
+> heijinwangchao@1.0.0-beta test:e2e
+> playwright test e2e/image-finalization.spec.ts --grep 跨标签配置 --repeat-each=5 --workers=2 --reporter=list
+
+[WebServer] (node:56988) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:57005) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm notice
+[WebServer] npm notice New major version of npm available! 11.9.0 -> 12.2.3
+[WebServer] npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+[WebServer] npm notice To update run: npm install -g npm@12.2.3
+[WebServer] npm notice
+[WebServer] (node:57064) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 10 tests using 2 workers
+
+(node:57128) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:57129) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [desktop] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (24.5s)
+(node:58050) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [desktop] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (25.7s)
+(node:58161) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   3 [desktop] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (20.7s)
+  ✓   4 [desktop] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (20.3s)
+(node:58892) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:58915) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   6 [mobile] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (11.1s)
+(node:59308) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   7 [mobile] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (9.9s)
+  ✓   5 [desktop] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (24.2s)
+(node:59467) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59474) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   8 [mobile] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (10.3s)
+  ✓   9 [mobile] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (10.5s)
+(node:59840) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  10 [mobile] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (10.3s)
+
+  10 passed (1.7m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.3
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+npm notice To update run: npm install -g npm@12.2.3
+npm notice

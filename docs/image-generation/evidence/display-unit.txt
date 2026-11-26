@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /workspace/HeiJinWangChao
+
+ ✓ src/tests/image-generation.test.ts > 后端协议（Mock） > openai 单次生成及原生响应 64ms
+ ✓ src/tests/image-generation.test.ts > 后端协议（Mock） > sd 单次生成及原生响应 4ms
+ ✓ src/tests/image-generation.test.ts > 后端协议（Mock） > novelai 单次生成及原生响应 13ms
+ ✓ src/tests/image-generation.test.ts > 后端协议（Mock） > comfy 单次生成及原生响应 5ms
+ ✓ src/tests/image-generation.test.ts > 后端协议（Mock） > 拒绝非位图和超限 ZIP，文本错误不回显密钥，探测只读 8ms
+ ✓ src/tests/image-generation.test.ts > 旧版文生图配置保留用户设置并补齐居家照模板 9ms
+ ✓ src/tests/image-generation.test.ts > 存档附属资源 > 同名隔离、锚点、槽位、去重和备份覆盖确认 90ms
+ ✓ src/tests/image-generation.test.ts > 存档附属资源 > 回溯标记历史、同名新 ID 不接管、相册只引用已有图片 10ms
+ ✓ src/tests/image-generation.test.ts > 存档附属资源 > 四种人物用途各自保存当前图、历史和备份；家庭退出后资源可导出、删除 70ms
+ ✓ src/tests/image-generation.test.ts > 存档附属资源 > 空间不足回滚文件与元数据 3ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > player 仅向图片后端提供目标资料 47ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > npc 仅向图片后端提供目标资料 8ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > place 仅向图片后端提供目标资料 10ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > item 仅向图片后端提供目标资料 9ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > vehicle 仅向图片后端提供目标资料 10ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > 启用转换后只调用文本和图片接口各一次，图片使用转换后的提示词 10ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > 缺失同期快照的旧剧情只发送当时正文及场景，不发送当下年龄、外貌和锚点 15ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > 转换失败仅请求文本一次，超时或取消不自动重发 10ms
+ ✓ src/tests/image-generation.test.ts > 正式撤回和历史节点覆盖保留原图，禁止旧任务越过存档实例 284ms
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  10:45:41
+   Duration  2.61s (transform 55%, tests 28%, import 17%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.3
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+npm notice To update run: npm install -g npm@12.2.3
+npm notice
