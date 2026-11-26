@@ -391,5 +391,5 @@ test('从历史根重新积累五个恢复点，UI 连续五次撤回后不能�
     await expect.poll(async () => (await read(page)).undo.available).toBe(count - 1);
   }
   await expect(page.getByRole('button', { name: '撤回', exact: true })).toBeDisabled();
-  expect((await read(page)).state.turnNumber,{timeout:15000}).toBe(3); expect(server.calls).toEqual(['story', 'entities', 'variables', 'world']);
+  expect((await read(page)).state.turnNumber).toBe(3); expect(server.calls).toEqual(['story', 'entities', 'variables', 'world']);
 });

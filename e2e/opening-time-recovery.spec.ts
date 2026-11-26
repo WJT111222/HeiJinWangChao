@@ -160,7 +160,7 @@ test('缺少时钟且没有候选时，启用设置不发请求，主动补算�
   await page.locator('#workflow-runtime-switches input[data-stage="variables"]').check();
   await closeWorkflowSheet(page);
   await expect(recovery(page)).toHaveCount(0);
-  await expect(action(page)).toHaveAccessibleName('继续生成变量');
+  await expect(action(page)).toHaveAccessibleName('继续生成主角与现场');
   expect(await stored(page)).toEqual(before);
   expect(mock.calls).toEqual(['story']);
   await action(page).click();

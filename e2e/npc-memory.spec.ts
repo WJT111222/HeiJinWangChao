@@ -37,7 +37,7 @@ async function seed(page: Page, automatic = false) {
       }; request.onerror = () => reject(request.error);
     });
     if (automatic) { const storage = await SaveRepository.open(); try { await completeDraft(storage, { variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); } finally { storage.close(); } }
-    const settings = defaultSettings(); settings.memory.automaticMaintenance = automatic;
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.memory.automaticMaintenance = automatic;
     settings.memory.summaries.short.automatic = automatic; settings.memory.summaries.medium.automatic = automatic; settings.memory.summaries.npc.automatic = false;
     settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));

@@ -50,13 +50,13 @@ test('某环节停下后按钮变为继续当前环节；运行中变为取消�
   let calls = 0;
   await page.route('https://persistent-button.mock.invalid/**', () => { calls++; });
   const before = await stored(page);
-  await expect(named(page, '继续生成变量')).toBeEnabled();
-  await named(page, '继续生成变量').click();
+  await expect(named(page, '继续生成主角与现场')).toBeEnabled();
+  await named(page, '继续生成主角与现场').click();
   await expect.poll(() => calls).toBe(1);
   await expect(named(page, '取消生成')).toBeEnabled();
   await expect(action(page)).toHaveAttribute('data-kind', 'cancel');
   await named(page, '取消生成').click();
-  await expect(named(page, '继续生成变量')).toBeEnabled();
+  await expect(named(page, '继续生成主角与现场')).toBeEnabled();
   const after = await stored(page);
   expect(after.state).toEqual(before.state);
   expect(after.draft?.story).toEqual(before.draft?.story);
@@ -106,5 +106,5 @@ for (const edited of [false, true]) test(`正文重试成功后：${edited ? '�
   const after = await stored(page);
   expect(after.draft?.userInput).toBe('去码头找老周');
   await expect(input).toHaveValue(edited ? '改成去菜市场' : '');
-  await expect(named(page, '继续生成变量')).toBeEnabled();
+  await expect(named(page, '继续生成主角与现场')).toBeEnabled();
 });

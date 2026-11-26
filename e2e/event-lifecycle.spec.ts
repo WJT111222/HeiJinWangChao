@@ -132,7 +132,7 @@ test('Variables拒绝纯组织事件，合法现场更新可恢复；组织事�
   await expect(page.getByRole('region',{name:'主角与现场详情',exact:true})).toContainText('已完成');
   saved=await stored(page);expect(saved.state).toEqual(seeded.state);expect(saved.draft.variables.result.commands).toContainEqual(expect.objectContaining({type:'SaveEvent',event:expect.objectContaining({id:'local',status:'blocked'})}));
   await openWorkflowStage(page, 'world'); await page.getByRole('button',{name:/^(?:重新)?生成世界候选$/}).click();
-  await expect(page.getByRole('region',{name:'动态世界详情',exact:true})).toContainText('已完成');
+  await expect(page.getByRole('region',{name:'场外与网络详情',exact:true})).toContainText('已完成');
   expect(calls).toEqual(['variables','variables','world']);expect((await stored(page)).state).toEqual(seeded.state);
   const committed=await page.evaluate(async()=>{const path='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(path),repo=await SaveRepository.open();try{
     const draft=await repo.loadDraft('save-a');return await repo.commitTurn({draft,nextAction:'继续休息',useVariableStage:true,useWorldStage:true});

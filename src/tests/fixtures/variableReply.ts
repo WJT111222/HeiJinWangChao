@@ -57,5 +57,7 @@ export function stageFixtureReply(stage: 'entities' | 'variables', text: string)
   const selected = stage === 'entities' ? entities : lines.filter(line => !entityLine(line));
   const contacts = [...new Set(entities.flatMap(line => /npc\[([^\]]+)\]/.exec(line)?.slice(1,2) ?? []))];
   const declaration = stage === 'entities' ? '<接触者>'+JSON.stringify(contacts)+'</接触者>' : '';
-  return declaration + variableTextEnvelope('<命令>\n'+selected.join('\n')+'\n</命令>');
+  const commands = '<命令>\n'+selected.join('\n')+'\n</命令>';
+  const template = /<命令>[\s\S]*?<\/命令>/.test(text) ? text.replace(/<命令>[\s\S]*?<\/命令>/, () => commands) : commands;
+  return declaration + variableTextEnvelope(template);
 }

@@ -89,7 +89,7 @@ for (const mode of ['variables', 'world'] as const) {
     });
     try {
       await page.locator('#player-input').fill('保留尚未发送的下一行动');
-      await expect(action(page)).toHaveAccessibleName(mode === 'variables' ? '继续生成变量' : '继续生成世界');
+      await expect(action(page)).toHaveAccessibleName(mode === 'variables' ? '继续生成主角与现场' : '继续生成场外与网络');
       await gate(page, '__pr162HoldCommit'); await action(page).click();
       await expect.poll(() => calls.includes('world')).toBe(true);
       expect(calls).toEqual(mode === 'variables' ? ['variables', 'world'] : ['world']);
@@ -138,7 +138,7 @@ test('正文真正保存期间不可取消，失败回填中玩家修改的文�
     await expect.poll(async () => (await stored(page)).draft.stageStatus.story).toBe('ready');
     expect((await stored(page)).state).toEqual(before.state);
     await expect(page.locator('#player-input')).toHaveValue('失败后主动修改且尚未发送的文字');
-    await expect(action(page)).toHaveAccessibleName('继续生成变量'); expect(calls).toBe(1);
+    await expect(action(page)).toHaveAccessibleName('继续生成主角与现场'); expect(calls).toBe(1);
   } finally { await release(page, '__pr162ReleaseStory').catch(() => undefined); }
 });
 
