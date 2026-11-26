@@ -412,7 +412,7 @@ describe('小剧场存储和主线结算', () => {
         const files = await repo.exportBackup([state.saveId], withImages);
         const text = await serializeBackup(files, 'test');
         const envelope = JSON.parse(text);
-        expect(envelope.version).toBe(5);
+        expect(envelope.version).toBe(6);
         const parsed = await parseBackup(JSON.stringify({ ...envelope, version: withImages ? 3 : 2 }));
         expect(parsed.checksum).toBe('valid');
         const [entry] = parsed.entries;

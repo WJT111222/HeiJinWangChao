@@ -84,6 +84,7 @@ import type { StageAction, WorkflowStage, WorkflowTab, WorkflowView } from './Wo
 import type { MemoryFailureObservation } from '../../services/ai/memoryObservation';
 import { MemoryIssueDetails } from './MemoryResponses';
 import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
+import { usePrivateChat } from '../phone/usePrivateChat';
 import { GamePhone, PhoneEntry } from '../phone/GamePhone';
 import { usePhoneReminders } from '../phone/usePhoneReminders';
 import { CityAtmosphere, CityBar, CityChapter } from './CityNight';
@@ -299,8 +300,9 @@ export function GameScreen({
   const workflowBusy = Boolean(
     submitting || automatic.running || progress || storyRetry || entities.phase || variables.phase || world.phase,
   );
-  const npcManagement = useNpcManagement(repository, state, draft, workflowBusy, onNpcManaged, instance);
-  const busy = workflowBusy || Boolean(npcManagement.pendingId);
+  const privateChat = usePrivateChat(repository, state, draft, instance ?? null, settings, onDraftSaved);
+  const npcManagement = useNpcManagement(repository, state, draft, workflowBusy || privateChat.busy, onNpcManaged, instance);
+  const busy = workflowBusy || privateChat.busy || Boolean(npcManagement.pendingId);
   useEffect(() => { enterTavernChat(state.saveId, instance); }, [state.saveId, instance]);
   const recentActions = useRef<{ state: GameState; actions: Record<string, string> }>(undefined);
   useEffect(() => {
@@ -432,9 +434,9 @@ export function GameScreen({
     restoredText.current = undefined;
     setInput((current) => (current.trim() === restored.text.trim() ? '' : current));
   }, [draft, awaitingAction]);
-  async function send() {
+  async function send(action = input) {
     const bindAction = awaitingAction || rebindAction;
-    if (!draft || (!canCommit && !bindAction) || busy || submitLock.current || !input.trim()) return;
+    if (!draft || (!canCommit && !bindAction) || busy || submitLock.current || !action.trim()) return;
     submitLock.current = true;
     const token = submitToken.current;
     setSubmitting(true);
@@ -442,9 +444,9 @@ export function GameScreen({
     setConcurrencyBlocked(false);
     try {
       if (bindAction) {
-        const bound = await repository.bindTurnAction(draft, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage, settings.runtime.useEntityStage, instance ?? null);
+        const bound = await repository.bindTurnAction(draft, action, settings.runtime.useVariableStage, settings.runtime.useWorldStage, settings.runtime.useEntityStage, instance ?? null);
         if (submitToken.current !== token) return;
-        onDraftSaved(bound); setInput(''); setSubmitting(false);
+        onDraftSaved(bound); setInput(current => current === action ? '' : current); setSubmitting(false);
         await automatic.generate(bound);
         return;
       }
@@ -452,14 +454,14 @@ export function GameScreen({
       reportRuntimeEvent('commit', 'started');
       const result = await repository.commitTurn({
         draft,
-        nextAction: input,
+        nextAction: action,
         useEntityStage: settings.runtime.useEntityStage, useVariableStage: settings.runtime.useVariableStage,
         useWorldStage: settings.runtime.useWorldStage,
       },instance ?? null);
       if (submitToken.current !== token) return;
       reportRuntimeEvent('commit', 'completed');
       handleSettled(result);
-      setInput('');
+      setInput(current => current === action ? '' : current);
       setSubmitting(false);
       // 发送明确授权下一轮请求；重复回执只恢复数据库真值，不再次发起付费生成。
       if (!result.replayed) await automatic.generate(result.draft);
@@ -1147,7 +1149,7 @@ export function GameScreen({
                 ? '填写你的行动；发送后完成已启用阶段并自动结算' : '填写你的行动；发送后生成四阶段并自动结算'} />
             <div className="composer-footer">
               <button className="primary" disabled={(!canCommit && !awaitingAction && !rebindAction) || busy || !input.trim()}
-                onClick={() => void send()}>{submitting ? '正在结算…' : '发送'}</button>
+                title={privateChat.busy ? '手机消息还在等回复' : undefined} onClick={() => void send()}>{submitting ? '正在结算…' : '发送'}</button>
               {!compactSidebars && <span className="kbd">Ctrl + Enter</span>}
             </div>
           </div>
@@ -1167,7 +1169,21 @@ export function GameScreen({
         {compactSidebars && phoneButton(true)}
         <button data-settings-open aria-current={renderSettings?'page':undefined} onClick={onOpenSettings}><span className="mobile-seal" aria-hidden="true">设</span>设置</button>
       </nav>
-      {phoneOpen && <GamePhone key={JSON.stringify([state.saveId,state.createdAt,instance])} state={state} view={view} mobile={compactSidebars} data={phone}
+      {phoneOpen && <GamePhone key={JSON.stringify([state.saveId,state.createdAt,instance])} state={state} view={view} mobile={compactSidebars} data={phone} pending={draft?.phonePending ?? []}
+        controls={{
+          chat: privateChat,
+          frozen: Boolean(draft && !awaitingAction) || !state.turnNumber,
+          inactive: workflowBusy || Boolean(npcManagement.pendingId),
+          enabled: settings.runtime.phoneChat !== false,
+          canAbandon: Boolean(state.turnNumber && draft?.turnKind === 'regular'),
+          canEnd: Boolean(awaitingAction && !busy && draft?.phonePending?.length),
+          end: () => {
+            if (!awaitingAction || busy || !draft?.phonePending?.length) return;
+            const names = [...new Set(draft.phonePending.map(row => state.npc[row.reply.npcId].name))];
+            setPanel(undefined);
+            void send('用手机和' + names.join('、') + '聊了一会儿');
+          },
+        }}
         close={action => {
           setPanel(undefined);
           requestAnimationFrame(() => (action ? inputElement.current : document.querySelector<HTMLButtonElement>('[data-phone-entry]'))?.focus());

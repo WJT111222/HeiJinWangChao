@@ -10,6 +10,7 @@ export const isOpenAiCompatible = (protocol: Protocol): protocol is 'openai' | '
   protocol === 'openai' || protocol === 'deepseek';
 export type AiStage = 'story' | 'entities' | 'variables' | 'world';
 export type AiTask = AiStage | 'memory';
+export type ModelUse = AiTask | 'phone';
 export const modelIdSchema = z
   .string()
   .min(1)
@@ -66,6 +67,7 @@ export const AiConfigSchema = z
     version: z.literal(1),
     channels: z.array(ChannelSchema),
     routes: z.strictObject({ story: direct, entities: optionalRoute.optional(), variables: optionalRoute, world: optionalRoute,
+      phone: z.discriminatedUnion('mode',[z.strictObject({ mode:z.literal('follow-variables'), independent:direct.optional() }),direct.extend({mode:z.literal('independent')})]).default({mode:'follow-variables'}),
       memory: optionalRoute.default({ mode: 'follow-story' }) }).transform(routes => ({ ...routes, entities: routes.entities ?? structuredClone(routes.variables) })),
   })
   .superRefine((config, ctx) => {
@@ -90,6 +92,7 @@ export function defaultAiConfig(): AiConfig {
     channels: [],
     routes: {
       story: { channelId: '', modelId: '' },
+      phone: { mode:'follow-variables' },
       entities: { mode: 'follow-story' },
       variables: { mode: 'follow-story' },
       world: { mode: 'follow-story' },
@@ -126,11 +129,11 @@ export function readAiConfig(storage: Pick<Storage, 'getItem'>) {
 export function saveAiConfig(storage: Pick<Storage, 'setItem'>, config: AiConfig) {
   return writeDocument(storage, aiConfigKey, AiConfigSchema, config);
 }
-export function setModelRouteFollow(config: AiConfig, stage: Exclude<AiTask, 'story'>, follow: boolean): AiConfig {
+export function setModelRouteFollow(config: AiConfig, stage: Exclude<ModelUse, 'story'>, follow: boolean): AiConfig {
   const route = config.routes[stage];
-  if ((route.mode === 'follow-story') === follow) return config;
+  if ((route.mode !== 'independent') === follow) return config;
   const next = route.mode === 'independent'
-    ? { mode: 'follow-story' as const, independent: { channelId: route.channelId, modelId: route.modelId } }
+    ? { mode: stage === 'phone' ? 'follow-variables' as const : 'follow-story' as const, ...(route.channelId ? { independent: { channelId: route.channelId, modelId: route.modelId } } : {}) }
     : { mode: 'independent' as const, ...(route.independent ?? { channelId: '', modelId: '' }) };
   return { ...config, routes: { ...config.routes, [stage]: next } };
 }
@@ -146,6 +149,7 @@ export function removeChannel(config: AiConfig, id: string): AiConfig {
     routes: {
       story:
         config.routes.story.channelId === id ? { channelId: '', modelId: '' } : config.routes.story,
+      phone: (config.routes.phone.mode === 'independent' ? config.routes.phone.channelId : config.routes.phone.independent?.channelId) === id ? {mode:'follow-variables'} : config.routes.phone,
       entities: remainingRoute(config.routes.entities),
       variables: remainingRoute(config.routes.variables),
       world: remainingRoute(config.routes.world),

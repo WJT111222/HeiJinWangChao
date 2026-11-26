@@ -1,5 +1,5 @@
 import { AiConfigSchema, ChannelSchema, modelIdSchema } from './configuration';
-import type { AiConfig, AiTask, Channel } from './configuration';
+import type { AiConfig, ModelUse, Channel } from './configuration';
 import type { CredentialVault } from './credentials';
 import { AiError } from './errors';
 import { thinkingCapability } from './thinking';
@@ -9,7 +9,7 @@ const secrets = new WeakMap<object, string>();
 export interface RequestSnapshot {
   readonly channel: Readonly<Channel>;
   readonly model: string;
-  readonly stage: AiTask | 'theater';
+  readonly stage: ModelUse | 'theater';
   readonly useCot: boolean;
   readonly thinkingCapability: ThinkingCapability;
   readonly diagnostics: readonly string[];
@@ -44,10 +44,11 @@ export function channelSnapshot(
   secrets.set(snapshot, secret);
   return snapshot;
 }
-export function resolveModelRoute(config: AiConfig, stage: AiTask) {
+export function resolveModelRoute(config: AiConfig, stage: ModelUse) {
   const checked = AiConfigSchema.safeParse(config);
   if (!checked.success) throw new AiError('configuration');
-  const selected = checked.data.routes[stage];
+  const initial = checked.data.routes[stage];
+  const selected = 'mode' in initial && initial.mode === 'follow-variables' ? checked.data.routes.variables : initial;
   const route =
     'mode' in selected && selected.mode === 'follow-story' ? checked.data.routes.story : selected;
   if (!('channelId' in route)) throw new AiError('configuration');
@@ -63,7 +64,7 @@ export function cotSupported(channel: Channel, _model: string, stage: RequestSna
 }
 export function requestSnapshot(
   config: AiConfig,
-  stage: AiTask,
+  stage: ModelUse,
   vault: CredentialVault,
 ): RequestSnapshot {
   const { channel, model } = resolveModelRoute(config, stage);

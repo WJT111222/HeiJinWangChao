@@ -6,8 +6,9 @@ import {
   newChannel,
   readAiConfig,
   saveAiConfig,
+  setModelRouteFollow,
 } from '../../services/ai/configuration';
-import type { AiConfig, AiTask, Channel, Protocol } from '../../services/ai/configuration';
+import type { AiConfig, ModelUse, Channel, Protocol } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
 import type { VaultSnapshot } from '../../services/ai/credentials';
 import { channelSnapshot } from '../../services/ai/snapshot';
@@ -24,15 +25,16 @@ import type { PresetId } from './aiPresets';
 import './ai-connections.css';
 import { relayMode, setRelayMode } from '../../services/ai/corsRelay';
 
-const stages: [AiTask, string, string][] = [
+const stages: [ModelUse, string, string][] = [
   ['story', '正文生成', '写剧情，最需要好模型'],
   ['entities', '人物与实体', '记录人物、组织和地点'],
   ['variables', '主角与现场', '记录主角变化和现场事务'],
   ['world', '场外与网络', '推进你不在场的世界'],
+  ['phone', '手机私聊', '每次发送调用一次，默认使用主角与现场模型'],
   ['memory', '记忆维护', '定期整理长期记忆'],
 ];
-const short: Record<AiTask, string> = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', memory: '记忆' };
-type Optional = Exclude<AiTask, 'story'>;
+const short: Record<ModelUse, string> = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', memory: '记忆', phone:'手机' };
+type Optional = Exclude<ModelUse, 'story'>;
 interface Draft { config: AiConfig; keys: Record<string, string>; remember: Record<string, boolean>; presets: Record<string, PresetId | ''> }
 type TestState = { model: string; status: 'loading' | 'ok' | 'err'; text: string };
 
@@ -71,8 +73,8 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   const [selectedId, setSelectedId] = useState(start.draft.config.channels[0]?.id ?? '');
   const [showKey, setShowKey] = useState(false);
   const [urlEditing, setUrlEditing] = useState<Record<string, boolean>>({});
-  const [manual, setManual] = useState<Partial<Record<AiTask, boolean>>>({});
-  const [spinStage, setSpinStage] = useState<AiTask>();
+  const [manual, setManual] = useState<Partial<Record<ModelUse, boolean>>>({});
+  const [spinStage, setSpinStage] = useState<ModelUse>();
   const [tests, setTests] = useState<Record<string, TestState>>({});
   const [confirm, setConfirm] = useState<{ kind: 'delete'; id: string } | { kind: 'preset'; id: string; preset: PresetId }>();
   const [relay, setRelay] = useState(relayMode);
@@ -113,14 +115,15 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   useEffect(() => () => { active.current?.controller.abort(); catalog.dispose(); }, [catalog]);
 
   // —— 路由工具 ——
-  const routeOf = (stage: AiTask) => {
+  const routeOf = (stage: ModelUse) => {
     const route = config.routes[stage];
+    if ('mode' in route && route.mode === 'follow-variables' && config.routes.variables.mode === 'independent') return config.routes.variables;
     return 'channelId' in route ? route : config.routes.story;
   };
-  const follows = (stage: AiTask) => stage !== 'story' && config.routes[stage as Optional].mode === 'follow-story';
+  const follows = (stage: ModelUse) => stage !== 'story' && config.routes[stage as Optional].mode !== 'independent';
   const effectiveModel = (route: { channelId: string; modelId: string }) =>
     route.modelId || config.channels.find((item) => item.id === route.channelId)?.defaultModel || '';
-  const usedBy = (id: string) => stages.filter(([stage]) => (follows(stage) ? config.routes.story : routeOf(stage)).channelId === id).map(([stage]) => short[stage]);
+  const usedBy = (id: string) => stages.filter(([stage]) => routeOf(stage).channelId === id).map(([stage]) => short[stage]);
 
   // —— 阻止保存的问题（缺密钥只提醒，不阻止） ——
   const problems = useMemo(() => {
@@ -164,7 +167,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     const target = config.channels.find((item) => item.id === id);
     return Boolean(target && draft.presets[id] && validEndpoint(target.baseUrl) && draft.keys[id]?.trim());
   }
-  function loadModels(id: string, force = false, stage?: AiTask) {
+  function loadModels(id: string, force = false, stage?: ModelUse) {
     const target = config.channels.find((item) => item.id === id);
     if (!target || !canLoad(id)) return;
     if (stage) setSpinStage(stage);
@@ -236,13 +239,14 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
       for (const [stage] of stages.slice(1)) {
         const route = next.config.routes[stage as Optional];
         const uses = route.mode === 'independent' ? route.channelId === id : route.independent?.channelId === id;
-        if (uses) next.config.routes[stage as Optional] = { mode: 'follow-story' };
+        if (uses && stage === 'phone') next.config.routes.phone = {mode:'follow-variables'};
+        else if (uses && stage !== 'story' && stage !== 'phone') next.config.routes[stage] = {mode:'follow-story'};
       }
     });
     const rest = config.channels.filter((item) => item.id !== id);
     setSelectedId(rest[0]?.id ?? ''); onEditingChange(false);
   }
-  function setRoute(stage: AiTask, values: { channelId?: string; modelId?: string }) {
+  function setRoute(stage: ModelUse, values: { channelId?: string; modelId?: string }) {
     update((next) => {
       if (stage === 'story') next.config.routes.story = { ...next.config.routes.story, ...values };
       else {
@@ -253,18 +257,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     });
   }
   function setFollow(stage: Optional, follow: boolean) {
-    update((next) => {
-      const route = next.config.routes[stage];
-      if ((route.mode === 'follow-story') === follow) return;
-      if (follow) next.config.routes[stage] = route.mode === 'independent'
-        ? { mode: 'follow-story', ...(route.channelId ? { independent: { channelId: route.channelId, modelId: route.modelId } } : {}) }
-        : route;
-      else {
-        // 恢复上次单独指定的渠道和模型；没有的话留空，让玩家先选渠道再选模型，不默默沿用正文的。
-        const kept = route.mode === 'follow-story' ? route.independent : undefined;
-        next.config.routes[stage] = { mode: 'independent', ...(kept?.channelId ? kept : { channelId: '', modelId: '' }) };
-      }
-    });
+    update(next => { next.config = setModelRouteFollow(next.config,stage,follow); });
   }
 
   // —— 保存 / 放弃 ——
@@ -309,7 +302,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
 
   // —— 测试回复（真实调用一次模型） ——
   function replyModel(id: string) {
-    const routed = stages.map(([stage]) => (follows(stage) ? config.routes.story : routeOf(stage))).find((route) => route.channelId === id && effectiveModel(route));
+    const routed = stages.map(([stage]) => routeOf(stage)).find((route) => route.channelId === id && effectiveModel(route));
     return (routed && effectiveModel(routed)) || config.channels.find((item) => item.id === id)?.defaultModel || lists[id]?.models[0] || '';
   }
   async function testReply(id: string) {
@@ -356,9 +349,9 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   }
   const listCount = (id: string) => lists[id]?.models.length ?? 0;
 
-  function stageRow([stage, label, hint]: [AiTask, string, string]) {
+  function stageRow([stage, label, hint]: [ModelUse, string, string]) {
     const follow = follows(stage);
-    const route = follow ? config.routes.story : routeOf(stage);
+    const route = routeOf(stage);
     const routeChannel = config.channels.find((item) => item.id === route.channelId);
     const model = effectiveModel(route);
     const list = routeChannel ? lists[routeChannel.id] : undefined;
@@ -368,10 +361,10 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     return <div className={`ai-use ${follow ? 'is-follow' : ''}`} key={stage}>
       <div className="ai-use-name"><strong>{label}</strong><small>{hint}</small></div>
       {stage === 'story' ? <div className="ai-use-seg" /> : <div className="ai-seg" role="group" aria-label={`${label}模型来源`}>
-        <button type="button" aria-pressed={follow} onClick={() => setFollow(stage as Optional, true)}>跟随正文</button>
+        <button type="button" aria-pressed={follow} onClick={() => setFollow(stage as Optional, true)}>{stage === 'phone' ? '跟随主角与现场' : '跟随正文'}</button>
         <button type="button" aria-pressed={!follow} onClick={() => setFollow(stage as Optional, false)}>单独指定</button>
       </div>}
-      {follow ? <p className="ai-inherit">同正文 · {routeChannel?.name || '未设置'} / {model || '未选模型'}</p> : <div className="ai-route-pick">
+      {follow ? <p className="ai-inherit">{stage === 'phone' ? '同主角与现场' : '同正文'} · {routeChannel?.name || '未设置'} / {model || '未选模型'}</p> : <div className="ai-route-pick">
         <div className="ai-route-channel">
           <ThemedSelect label={`${label}渠道`} value={route.channelId}
             hint={config.channels.length ? undefined : '还没有渠道：先关闭这里，在设置页下方「我的渠道」点「＋ 添加渠道」，填好地址和密钥后再回来选择。'}
@@ -554,7 +547,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
       {confirm && confirmChannel && <Dialog small title={confirm.kind === 'delete' ? `删除「${confirmChannel.name || '未命名渠道'}」？` : '替换服务地址？'}
         feedback="warn" seal={confirm.kind === 'delete' ? '删' : '换'} mobileVariant="confirm" onClose={() => setConfirm(undefined)}>
         <p>{confirm.kind === 'delete'
-          ? <>{usedBy(confirmChannel.id).length ? `它正被「${usedBy(confirmChannel.id).join('、')}」使用。删除后正文需要重新选择模型，其他阶段改回跟随正文。` : '这个渠道没有被任何阶段使用。'}密钥会一并删除。点「保存 AI 配置」后才真正生效，在那之前可以「放弃修改」。</>
+          ? <>{usedBy(confirmChannel.id).length ? `它正被「${usedBy(confirmChannel.id).join('、')}」使用。使用该渠道的正文模型需要重新选择；受影响的手机模型改为跟随主角与现场，其他受影响的阶段改为跟随正文。` : '这个渠道没有被任何阶段使用。'}密钥会一并删除。点「保存 AI 配置」后才真正生效，在那之前可以「放弃修改」。</>
           : '切换到官方服务商会把你填写的地址换成官方地址。'}</p>
         <div className="dialog-actions feedback-dialog-actions">
           <button type="button" onClick={() => setConfirm(undefined)}>取消</button>

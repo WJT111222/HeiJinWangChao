@@ -1,12 +1,76 @@
+import { chatMessages } from '../domain/phone';
+import type { TurnDraft } from '../domain/drafts';
 import type { GameState } from '../domain/state';
 
-const recentCount = 8;
-export function phoneContext(state: GameState, stage: 'story' | 'entities' | 'world', text: string) {
+export const recentCount = 8;
+export function recentPhoneHistory<T extends { at: string; text: string }>(history: readonly T[]) {
+  const ordered = [...history].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+  const older = ordered.slice(0, -recentCount);
+  return {
+    recent: ordered.slice(-recentCount),
+    ...(older.length
+      ? {
+          earlier: {
+            count: older.length,
+            from: older[0].at,
+            to: older.at(-1)!.at,
+            lastExcerpt: older.at(-1)!.text.slice(0, 100),
+          },
+        }
+      : {}),
+  };
+}
+export function frozenChatContext(
+  state: GameState,
+  draft: TurnDraft | undefined,
+  stage: 'story' | 'entities' | 'variables' | 'world',
+) {
+  const rows = draft?.phoneFreeze && draft.phonePending;
+  if (!rows?.length) return {};
+  const people = [...new Set(rows.map((row) => row.reply.npcId))];
+  if (stage === 'variables')
+    return {
+      PHONE_CHAT_TIME: {
+        exchanges: rows.length,
+        participants: people,
+        rule: '普通现场回合估算耗时时计入手机交谈，沿用本回合时钟规则。聊天中的承诺仍待履行。',
+      },
+    };
+  if (stage === 'world') {
+    const waiting = rows.filter(row => !state.npc[row.reply.npcId]?.onScene && ['later','read_unanswered'].includes(row.reply.status))
+      .map(row => ({ npcId:row.reply.npcId,messageId:row.id,status:row.reply.status }));
+    return waiting.length ? { PHONE_CHAT_FOLLOWUP: {waiting, rule:'已读未回的场外人物可视情况用 SchedulePhoneMessage 安排后续来信。结合已有排期和正文，避免重复。'} } : {};
+  }
+  return {
+    PHONE_CHAT: {
+      rule:
+        stage === 'story'
+          ? '以下聊天已发生，可概述或引用，不改写原话，不替主角继续回复。单独结束聊天的行动也要承接随后的日常。'
+          : '以下原话由程序结算。只处理参与者的记忆、知情、关系和约定等后果，不重复记录这些消息。',
+      // All exchanges in this turn share a clock. Preserve the freeze order across recipients.
+      frozenMessages: rows.flatMap((row) =>
+        chatMessages(row, draft!.turnId).map((message) => ({ npcId: row.reply.npcId, ...message })),
+      ),
+      threads: people.map((npcId) => ({
+        npcId,
+        name: state.npc[npcId].name,
+        ...recentPhoneHistory(state.phone.threads[npcId]?.messages ?? []),
+      })),
+    },
+  };
+}
+export function phoneContext(
+  state: GameState,
+  stage: 'story' | 'entities' | 'world',
+  text: string,
+  frozenPeers: readonly string[] = [],
+) {
   const lastTurn = state.journal.at(-1)?.turnId;
   const scheduled = stage === 'world' ? state.phone.scheduled : [];
   const pendingPeers = new Set(scheduled.map((m) => m.npcId));
   const threads = Object.values(state.phone.threads).flatMap((thread) => {
     const npc = state.npc[thread.npcId];
+    if (frozenPeers.includes(npc.id)) return []; // Included once in PHONE_CHAT with the same history window.
     const incoming = thread.messages.some((m) => m.sender === 'npc' && m.deliveredTurnId === lastTurn);
     const mentioned = [npc.name, ...npc.aliases].some((name) => name && text.includes(name));
     const awaiting = thread.messages.at(-1)?.status === 'read_unanswered';
@@ -16,25 +80,7 @@ export function phoneContext(state: GameState, stage: 'story' | 'entities' | 'wo
         : !(npc.onScene || mentioned || incoming)
     )
       return [];
-    const messages = [...thread.messages].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
-    const older = messages.slice(0, -recentCount);
-    return [
-      {
-        npcId: npc.id,
-        name: npc.name,
-        recent: messages.slice(-recentCount),
-        ...(older.length
-          ? {
-              earlier: {
-                count: older.length,
-                from: older[0].at,
-                to: older.at(-1)!.at,
-                lastExcerpt: older.at(-1)!.text.slice(0, 100),
-              },
-            }
-          : {}),
-      },
-    ];
+    return [{ npcId: npc.id, name: npc.name, ...recentPhoneHistory(thread.messages) }];
   });
   if (stage === 'world')
     return {

@@ -3,6 +3,8 @@ import type { GameState } from '../../domain/state';
 import { chinaCalendar } from '../../domain/openingTime';
 import { locationText } from '../game/atmosphere';
 import type { PlayerView } from '../panels/playerView';
+import type { ChatExchange } from '../../domain/phoneChat';
+import { PrivateChatComposer, type PrivateChatControls } from './PrivateChatComposer';
 import { PhoneChats, PhoneThread } from './PhoneChats';
 import { PhoneAssets } from './PhoneAssets';
 import { contactGroups, phoneDate, phoneDateTime, phoneMoney } from './phoneView';
@@ -95,7 +97,11 @@ export function GamePhone({
   data,
   close,
   showNpc,
+  controls,
+  pending,
 }: {
+  controls: PrivateChatControls;
+  pending: ChatExchange[];
   state: GameState;
   view: PlayerView;
   mobile: boolean;
@@ -106,6 +112,8 @@ export function GamePhone({
   const [page, go] = useState<Page>(() => (data.unreadCount ? '锁屏' : '主屏'));
   const [contacts, setContacts] = useState(false);
   const [peer, setPeer] = useState('');
+  const scroller = useRef<HTMLDivElement>(null);
+  useLayoutEffect(()=>{ if (page === '会话' && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight; },[page,peer,pending.length]);
   const [previous, setPrevious] = useState<Page>('信息');
   const openThread = (id: string) => {
     setPrevious(page);
@@ -252,7 +260,7 @@ export function GamePhone({
             </h3>
           </header>
         )}
-        <div className="ph-scroll" key={page}>
+        <div className="ph-scroll" key={page} ref={scroller}>
           {page === '锁屏' && (
             <div className="ph-lock">
               <h3 ref={heading} tabIndex={-1}>
@@ -332,11 +340,15 @@ export function GamePhone({
               {contacts ? (
                 <Contacts view={view} showNpc={showNpc} open={openThread} />
               ) : (
-                <PhoneChats state={state} view={view} unread={data.unreadMessages} open={openThread} />
+                <>
+                  {pending.length > 0 && <section className="ph-pending-banner"><p>{pending.length} 条聊天待结算，会随下一回合提交。</p>
+                    <button disabled={!controls.canEnd} onClick={controls.end}>结束聊天，发起回合</button><button onClick={()=>close(true)}>回到行动框</button></section>}
+                  <PhoneChats state={state} view={view} pending={pending} unread={data.unreadMessages} open={openThread} />
+                </>
               )}
             </>
           )}
-          {page === '会话' && npc && <PhoneThread state={state} npcId={npc.id} />}
+          {page === '会话' && npc && <PhoneThread state={state} npcId={npc.id} pending={pending.filter(row=>row.reply.npcId === npc.id)} />}
           {page === '通知' && (
             <>
               <section className="ph-group">
@@ -351,9 +363,10 @@ export function GamePhone({
             </>
           )}
         </div>
-        <button className="ph-exit" onClick={() => close(true)}>
+        {page === '会话' && npc && <PrivateChatComposer npcId={npc.id} contactStatus={npc.phoneContact?.status} controls={controls}/>}
+        {!(page === '信息' && !contacts && pending.length > 0) && <button className="ph-exit" onClick={() => close(true)}>
           回到行动框
-        </button>
+        </button>}
       </div>
     </dialog>
   );
