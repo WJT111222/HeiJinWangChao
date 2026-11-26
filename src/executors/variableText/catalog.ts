@@ -25,6 +25,15 @@ const creationOmit = {id:true,departments:true,members:true,protagonistKnown:tru
 const factionDisplay = z.strictObject({action:z.enum(['bind','update','unbind']),position:TextSchema.optional(),bondText:TextSchema.optional(),departmentId:z.string().nullable().optional()});
 const npcChanges = variableCommandSchemas[1].shape.changes.shape;
 const heroChanges = variableCommandSchemas[0].shape.changes.shape;
+// 直接登记资产与对应购买命令里的资产值结构完全相同；目录只写一次完整结构，这里给出指向说明，控制主角与现场的目录字数。
+const acquiredProperty = PropertyAssetSchema.omit({id:true}), acquiredVehicle = VehicleAssetSchema.omit({id:true}), acquiredOther = OtherAssetSchema.omit({id:true});
+const acquiredAssetSchemas = new Map<z.ZodType, string>([
+  [acquiredProperty, 'economy.properties[id].purchase 的 property'],
+  [acquiredVehicle, 'economy.vehicles[id].purchase 的 vehicle'],
+  [acquiredOther, 'economy.otherAssets[id].purchase 的 asset'],
+]);
+const acquiredAssetSchema = (source: string) => ({ $schema: 'http://json-schema.org/draft-07/schema#', type: 'object',
+  description: `结构与 ${source} 完全相同（完整资产去掉 id）；原本持有或无偿得到，不扣款、不加余额。` });
 interface Entry { operation:VariableOperation; path:string; commandType:DomainCommand['type']; value:z.ZodType }
 const slotFields = ['topItemId','bottomItemId','shoesItemId','primaryWeaponItemId','secondaryWeaponItemId','currentVehicleAssetId'];
 const entries:Entry[] = [
@@ -79,9 +88,9 @@ const entries:Entry[] = [
   {operation:'set',path:'economy.vehicles[id].purchase',commandType:'PurchaseVehicle',value:z.strictObject({account:AccountSchema,price:positive,vehicle:VehicleAssetSchema.omit({id:true})})},
   {operation:'set',path:'economy.properties[id].purchase',commandType:'PurchaseProperty',value:z.strictObject({account:AccountSchema,price:positive,property:PropertyAssetSchema.omit({id:true})})},
   {operation:'set',path:'economy.otherAssets[id].purchase',commandType:'PurchaseOtherAsset',value:z.strictObject({account:AccountSchema,price:positive,asset:OtherAssetSchema.omit({id:true})})},
-  {operation:'set',path:'economy.properties[id]',commandType:'AcquireAsset',value:PropertyAssetSchema.omit({id:true})},
-  {operation:'set',path:'economy.vehicles[id]',commandType:'AcquireAsset',value:VehicleAssetSchema.omit({id:true})},
-  {operation:'set',path:'economy.otherAssets[id]',commandType:'AcquireAsset',value:OtherAssetSchema.omit({id:true})},
+  {operation:'set',path:'economy.properties[id]',commandType:'AcquireAsset',value:acquiredProperty},
+  {operation:'set',path:'economy.vehicles[id]',commandType:'AcquireAsset',value:acquiredVehicle},
+  {operation:'set',path:'economy.otherAssets[id]',commandType:'AcquireAsset',value:acquiredOther},
 ];
 // The nine operations share IDs, timestamps and reasons. Keep the wire schema
 // resolvable while sending these definitions only once per catalog.
@@ -99,7 +108,7 @@ export function textVariableCatalog(mode: 'opening' | 'regular' = 'regular', pha
   return { protocol:'VARIABLE_TEXT_V1', currencyUnit:'CNY_FEN_INTEGER', limits:variableTextLimits,
     ...(phase !== 'entities' ? { organizationUpdateFields: organizationChangeFields,
     itemDetailsGuide: { categoryGroups: itemCategoryGroup, suggestedStringFields: itemDetailFields } } : {}),
-    entries:activeEntries.map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...(value === HaremChangesSchema ? haremValueSchema : z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'})),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
+    entries:activeEntries.map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...(value === HaremChangesSchema ? haremValueSchema : acquiredAssetSchemas.has(value) ? acquiredAssetSchema(acquiredAssetSchemas.get(value)!) : z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'})),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
     usageExamples: {
       ...(phase !== 'scene' ? {
       addressing: 'set npc[example-npc].addressing = {"npcToPlayer":"老大"}；根据本回合剧情更新适用方向。playerToNpc 是主角称呼该人物，npcToPlayer 是该人物称呼主角。省略的方向保持原值。',
