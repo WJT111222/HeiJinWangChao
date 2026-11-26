@@ -208,8 +208,10 @@ class Frames {
         if (!tool.id || !tool.name || ids.has(tool.id)) invalid();
         const args = parse(tool.args);
         if (!objectArgs(args)) invalid();
-        if (this.expectedContentTool !== undefined && this.expectedContentTool !== tool.name)
+        if (this.expectedContentTool !== undefined && this.expectedContentTool !== tool.name) {
+          if (isOpenAiCompatible(this.protocol)) invalid();
           throw new AiError('unsupported', undefined, { fieldPath: 'tavern.native_delivery.response' });
+        }
         if (this.expectedContentTool === tool.name && this.tools.size === 1) {
           const content = record(args).content;
           // The wrapper can prefer a competing plain answer. Check what the client actually received.

@@ -54,15 +54,17 @@ export async function runStageRequest(
   client = new AiClient(),
 ) {
   try {
-    if (input.stage !== 'story' || (options.stream === false && !(options.presetSelection === undefined
-      ? captureAssistantPreferences(!options.continuation && !input.legacyNotificationRecovery) : options.presetSelection)))
-      return await runStageRequestUnchecked(input, config, vault, options, client);
+    if (input.stage !== 'story') return await runStageRequestUnchecked(input, config, vault, options, client);
+    const selection = options.presetSelection === undefined
+      ? captureAssistantPreferences(!options.continuation && !input.legacyNotificationRecovery) : options.presetSelection;
+    const storyOptions = { ...options, presetSelection: selection };
+    if (options.stream === false && !selection) return await runStageRequestUnchecked(input, config, vault, storyOptions, client);
     const clock = options.storyClock ?? new StoryClock();
     const timeout = options.timeoutSeconds ?? input.settings.runtime.timeoutSeconds;
     const preparation = preparationSeconds(timeout);
     const limits = options.stream === false ? { idle: timeout, total: preparation } : storyStreamLimits(input.settings.runtime);
     return await withStoryPreparation(options.signal, clock, limits, preparation, (signal, prepared) =>
-      runStageRequestUnchecked(input, config, vault, { ...options, storyClock: clock, signal }, client, prepared));
+      runStageRequestUnchecked(input, config, vault, { ...storyOptions, storyClock: clock, signal }, client, prepared));
   }
   catch (error) { throw input.stage === 'variables' ? variableFailure(error, 'context') : error; }
 }

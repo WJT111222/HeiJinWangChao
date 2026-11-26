@@ -25,6 +25,7 @@ import {
   string,
 } from './protocols';
 import type { AiMessage, Usage } from './protocols';
+import { preparationSeconds } from './storyPreparation';
 import { StoryClock, type TimeoutKind } from '../../presets/tavern/timing';
 import { FINISH_TAIL_MS, readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
@@ -32,7 +33,7 @@ import { checkFinish, normalTextFinish, LeadingThink, rememberPresetSamplingReje
 import { isOpenAiCompatible } from './configuration';
 import { rawResponseObservation, responseContent, responseDiagnostics, mergeResponseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
-import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, classifyUpstreamPayload, diagnosticSecrets, failurePhase } from './failureDiagnostic';
+import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, classifyUpstreamPayload, diagnosticSecrets, failurePhase, readFailureDiagnostic } from './failureDiagnostic';
 
 export interface RequestOptions {
   storyClock?: import('../../presets/tavern/timing').StoryClock;
@@ -107,7 +108,7 @@ async function operation<T>(
     controller.abort();
   };
   const totalMs = (limits?.total ?? options.timeoutSeconds ?? 120) * 1000;
-  const elapsed = limits && clock ? clock.elapsed() - (clock.marks.budgetStartMs ?? clock.elapsed()) : 0;
+  const elapsed = limits && clock ? clock.elapsed() - (clock.marks.preparationStartMs ?? clock.marks.budgetStartMs ?? clock.elapsed()) : 0;
   const timeout = setTimeout(() => expire('total'), Math.max(0, totalMs - elapsed));
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   if (limits && clock) {
@@ -115,7 +116,8 @@ async function operation<T>(
     clock.marks.totalTimeoutSeconds = limits.total;
     clock.onProgress = () => {
       clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => expire(clock.idleKind()), limits.idle * 1000);
+      const wait = clock.idleKind() === 'preparation' ? preparationSeconds(options.timeoutSeconds ?? 120) : limits.idle;
+      idleTimer = setTimeout(() => expire(clock.idleKind()), wait * 1000);
     };
     clock.onProgress();
   }
@@ -577,8 +579,11 @@ export class AiClient {
       if (trace && failure instanceof AiError) {
         const upstreamTimeout = failure.code === 'timeout' && !trace.complete && trace.clock.marks.sentMs !== undefined &&
           (['awaiting_headers', 'awaiting_bytes', 'upstream_read'].includes(trace.clock.marks.deadlinePhase ?? ''));
+        const upstreamClass = readFailureDiagnostic(failure)?.upstreamClass;
+        const serviceFailure = failure.code === 'server' || (failure.code === 'rate_limit' && !failure.details?.quota) ||
+          (failure.code === 'rejected' && ['overload', 'rate_limit', 'internal'].includes(upstreamClass ?? ''));
         const upstreamFailure = failure === trace.error && !trace.complete &&
-          (failure.code === 'network' || failure.code === 'server' ||
+          ((failure.code === 'network' && !trace.status) || serviceFailure ||
             (failure.code === 'stream_interrupted' && (trace.readError || (trace.readerEof &&
               ['tavern.upstream.missing_finish', 'tavern.upstream.message_stop'].includes(failure.details?.fieldPath ?? '')))));
         if (!trace.retryableHost || trace.calls !== 1 || !(upstreamTimeout || upstreamFailure))

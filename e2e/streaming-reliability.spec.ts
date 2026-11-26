@@ -10,7 +10,7 @@ const frame = (delta: object, finish_reason: string | null = null) =>
 const scenarios = ['held-finish', 'slow-output', 'slow-body', 'source-retry', 'disconnect-retry', 'idle-retry', 'retry-off', 'cancel', 'json'] as const;
 for (const literary of [false, true]) for (const scenario of scenarios) {
   test((literary ? '1118 ' : '原生 ') + scenario, async ({ page }, info) => {
-    const posts: { stream: boolean; tool: boolean; originalWorld: boolean; changedWorld: boolean; finish?: string; closed?: boolean }[] = [];
+    const posts: { stream: boolean; tool: boolean; originalWorld: boolean; changedWorld: boolean; finishMs?: number; closeMs?: number; finish?: string; closed?: boolean }[] = [];
     let active: ServerResponse | undefined;
     const timers = new Set<ReturnType<typeof setTimeout>>();
     const later = (ms: number, fn: () => void) => { timers.add(setTimeout(fn, ms)); };
@@ -24,14 +24,16 @@ for (const literary of [false, true]) for (const scenario of scenarios) {
       const body = JSON.parse(raw);
       const tool = body.tools?.some((t: { function?: { name: string } }) => t.function?.name === 'actual_content') === true;
       const seen: (typeof posts)[number] = { stream: body.stream === true, tool, originalWorld: raw.includes('stream-test-world-A'), changedWorld: raw.includes('stream-test-world-B') };
+      const started = performance.now();
       posts.push(seen); active = res;
-      res.on('close', () => { seen.closed = true; });
+      res.on('close', () => { seen.closed = true; seen.closeMs = Math.round(performance.now() - started); });
       const text = (snippet: string) => res.write(frame({ content: snippet }));
       const finish = () => {
         if (tool) res.write(frame({ tool_calls: [{ index: 0, type: 'function', id: 'fixture-1', function: {
           name: 'actual_content', arguments: JSON.stringify({ content: story }) } }] }));
         else text(story);
         seen.finish = tool ? 'tool_calls' : 'stop';
+        seen.finishMs = Math.round(performance.now() - started);
         res.write(frame({}, seen.finish));
       };
       if (scenario === 'json') {

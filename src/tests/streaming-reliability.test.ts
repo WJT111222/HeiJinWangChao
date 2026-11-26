@@ -144,3 +144,24 @@ it('准备超时在发送前停止，迟到的准备回调看到已取消身份'
   expect(readFailureDiagnostic(error)).toMatchObject({ timeoutKind: 'preparation' });
   expect(manualRetryOnly.has(error)).toBe(true); expect(send).not.toHaveBeenCalled();
 });
+
+it.each([
+  { status: 503, extended: false, expected: 2 },
+  { status: 503, extended: true, expected: 4 },
+  { status: 401, extended: true, expected: 1 },
+  { status: 429, extended: true, expected: 1 },
+])('审计宿主 HTTP $status，扩展重试 $extended，共 $expected 次真实传输', async ({ status, extended, expected }) => {
+  retryDelays.scale = 0;
+  const settings = defaultSettings();
+  settings.runtime.failureAutoRetry = extended;
+  settings.runtime.maxAutoRetries = 3;
+  const send = vi.fn<typeof fetch>(async () => Response.json({ error: {
+    code: status === 429 ? 'insufficient_quota' : 'temporary_failure',
+  } }, { status }));
+  const client = new AiClient(send);
+  await expect(executeWithAutoRetry({ settings, signal: new AbortController().signal,
+    run: () => client.generate(snap, messages, { stream: true, tavernType: 'normal', retryableTavernHost: true }),
+    onFailure: () => {}, onRetry: () => {} })).rejects.toMatchObject({ status });
+  expect(send).toHaveBeenCalledTimes(expected);
+  expect(new Set(send.mock.calls.map(([, init]) => init?.signal)).size).toBe(expected);
+});

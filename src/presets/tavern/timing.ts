@@ -1,6 +1,6 @@
 // Numeric milestones are observed in this page only. Reading bytes, receiving a
 // data event and receiving generated content are intentionally separate clocks.
-type Milestone = 'assistantReadyMs' | 'generationEventsDoneMs' | 'settingsReadyMs' | 'budgetStartMs' | 'sentMs' | 'headersMs' | 'firstByteMs'
+type Milestone = 'preparationStartMs' | 'assistantReadyMs' | 'generationEventsDoneMs' | 'settingsReadyMs' | 'budgetStartMs' | 'sentMs' | 'headersMs' | 'firstByteMs'
   | 'firstSseEventMs' | 'firstContentMs' | 'firstArgumentsMs' | 'firstReasoningMs'
   | 'upstreamCompleteMs' | 'wrapperReturnedMs' | 'restoredMs' | 'clientEndMs';
 type DeadlinePhase = 'request_preparation' | 'awaiting_headers' | 'awaiting_bytes'
@@ -41,7 +41,7 @@ export class StoryClock {
   first(key: Milestone) {
     if (this.marks[key] !== undefined) return;
     this.marks[key] = this.elapsed();
-    if (key === 'upstreamCompleteMs') this.onProgress?.();
+    if (key === 'sentMs' || key === 'headersMs' || key === 'upstreamCompleteMs') this.onProgress?.();
   }
   bytes() {
     const at = this.elapsed();
