@@ -1845,6 +1845,11 @@
         "baseCommit": "f88480a8138f0f76586226512a08e7028346edfe",
         "notes": "生成电话号码使用 phoneContact；兼容解析和重放保留。",
         "sha256": "4a4a854b87c302604de97018f2180de93da980de7bd9204ebb3ff302b605fd3d"
+      },
+      "phoneReadonlyV1": {
+        "baseCommit": "3be381f64808b16d46ed54c6cf1fb0065555c0ed",
+        "notes": "按手机定稿区分新建旧识与新认识的陌生人。",
+        "sha256": "4aca44119c6bfb10cd055e9016721e34456db7164e5bee2ac6a5f3f6d1c815eb"
       }
     },
     "shared/history_output.md": {

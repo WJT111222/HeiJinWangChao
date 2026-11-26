@@ -9,8 +9,9 @@ export function sentContext(messages: readonly AiMessage[]) {
   return record(JSON.parse(data[0].content.slice('<GAME_CONTEXT>\n'.length, -'\n</GAME_CONTEXT>'.length)));
 }
 export function expectWorldWithNpcProjection(context: Record<string, unknown>, state: GameState, baseRevision = state.revision) {
-  const { journal, appliedCommands, dormantNpcProfiles, npc, memories, ...expected } = state;
-  void journal; void appliedCommands; void dormantNpcProfiles;
+  const { phone, journal, appliedCommands, dormantNpcProfiles, npc, memories, ...expected } = state;
+  expect(context.SAVE_STATE).not.toHaveProperty('phone');
+  void phone; void journal; void appliedCommands; void dormantNpcProfiles;
   const {npc: projected,memories: projectedMemories,...other}=record(context.SAVE_STATE);
   expect(other).toEqual({...expected,revision:baseRevision});
   const {npcSummaries,...layers}=memories,{npcSummaries:shownSummaries,...shownLayers}=record(projectedMemories);

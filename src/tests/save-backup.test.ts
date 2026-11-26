@@ -116,7 +116,7 @@ describe('备份文件格式', () => {
     await expect(Reflect.apply(repository.compareBackup, repository, [oldIncoming])).rejects.toBeDefined();
     await expect(Reflect.apply(repository.importBackup, repository, [oldIncoming, confirmation, { overwrite: true }])).rejects.toBeDefined();
     expect(await all()).toEqual(before);
-    expect((await repository.load('save-a')).schemaVersion).toBe(10);
+    expect((await repository.load('save-a')).schemaVersion).toBe(11);
   });
   it('导出→序列化→解析往返保留同一正式版本的未结算草稿，校验和为 valid', async () => {
     await withDraft();
@@ -198,7 +198,7 @@ describe('备份文件格式', () => {
     expect(await code(parseBackup(JSON.stringify({ hello: 'world' })))).toBe('BACKUP_INVALID');
     expect(await code(parseBackup(JSON.stringify({ format: 'heijin-backup', version: 1, saves: [] })))).toBe('BACKUP_INVALID');
     expect(await code(parseBackup(JSON.stringify({ format: 'heijin-raw-save', version: 1, records: {} })))).toBe('BACKUP_RAW');
-    expect(await code(parseBackup(JSON.stringify({ format: 'heijin-backup', version: 4, saves: [] })))).toBe('BACKUP_FUTURE');
+    expect(await code(parseBackup(JSON.stringify({ format: 'heijin-backup', version: 5, saves: [] })))).toBe('BACKUP_FUTURE');
   });
 
   it('单份损坏、未来或过旧版本不影响同文件其他存档', async () => {

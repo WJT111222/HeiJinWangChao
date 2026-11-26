@@ -411,8 +411,9 @@ describe('小剧场存储和主线结算', () => {
       for (const withImages of [true, false]) {
         const files = await repo.exportBackup([state.saveId], withImages);
         const text = await serializeBackup(files, 'test');
-        expect(JSON.parse(text).version).toBe(withImages ? 3 : 2);
-        const parsed = await parseBackup(text);
+        const envelope = JSON.parse(text);
+        expect(envelope.version).toBe(4);
+        const parsed = await parseBackup(JSON.stringify({ ...envelope, version: withImages ? 3 : 2 }));
         expect(parsed.checksum).toBe('valid');
         const [entry] = parsed.entries;
         if (!entry.ok) throw new Error(entry.error);

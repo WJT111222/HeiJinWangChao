@@ -9,5 +9,5 @@ export const VariableStateProjectionSchema = z.strictObject({ ...SaveShape,
   // Batch 4 deliberately omits the empty legacy marker, not any raw memory.
   npc: entityTable(z.discriminatedUnion('kind', [OrdinaryNpcSchema, SpecialNpcSchema.omit({ longTermMemories: true })])),
 }).omit({
-  journal: true, appliedCommands: true, dormantNpcProfiles: true,
+  phone: true, journal: true, appliedCommands: true, dormantNpcProfiles: true,
 });

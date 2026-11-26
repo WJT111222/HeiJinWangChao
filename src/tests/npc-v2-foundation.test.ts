@@ -164,7 +164,7 @@ describe('V6 → V7与永久人物保留', () => {
     expect(DomainCommandSchema.safeParse({ type: 'ChangeNpcKind', npcId: 'person', kind: 'special' }).success).toBe(false);
   });
   it('未来版本、旧版本与损坏 V10 均拒绝迁移，不修改原文', () => {
-    for (const raw of [{ ...npcV2State(), schemaVersion: 11 }, { ...worldState(), schemaVersion: 6 }, { ...worldState(), schemaVersion: 9 }, { ...npcV2State(), schemaVersion: 10, unknown: true }]) {
+    for (const raw of [{ ...npcV2State(), schemaVersion: 12 }, { ...worldState(), schemaVersion: 6 }, { ...worldState(), schemaVersion: 9 }, { ...npcV2State(), schemaVersion: 10, unknown: true }]) {
       const before = structuredClone(raw); expect(() => migrateSave(raw)).toThrow(); expect(raw).toEqual(before);
     }
   });
@@ -211,7 +211,7 @@ describe('V6 → V7与永久人物保留', () => {
   it('旧版本与损坏记录读取失败，不覆盖原记录', async () => {
     const factory = new IDBFactory(), name = 'raw-legacy', repo = await SaveRepository.open(name, factory);
     try {
-      for (const broken of [{ ...worldState(), schemaVersion: 6 }, { ...worldState(), schemaVersion: 9 }, { ...worldState(), schemaVersion: 11 }, { ...worldState(), npc: { bad: npc() } }]) {
+      for (const broken of [{ ...worldState(), schemaVersion: 6 }, { ...worldState(), schemaVersion: 9 }, { ...worldState(), schemaVersion: 12 }, { ...worldState(), npc: { bad: npc() } }]) {
         await rawAccess(factory, name, 'saves', 'readwrite', s => s.put(broken));
         await expect(repo.load('save-a')).rejects.toThrow();
         await expect(repo.save('save-a', 0, 'overwrite', [])).rejects.toThrow();

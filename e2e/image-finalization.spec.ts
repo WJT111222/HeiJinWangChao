@@ -172,7 +172,7 @@ test('跨标签关闭自动子开关只取消该规则的等待任务，运行�
   }
 });
 
-test('同版 V8 结构异常在首页显示可操作提示，并可重新读取原记录', async ({ page }) => {
+test('升级前的 V8 结构异常在首页显示可操作提示，并可重新读取原记录', async ({ page }) => {
   await page.route('**/schema-fixture', (route) =>
     route.fulfill({ contentType: 'text/html', body: '<html></html>' }),
   );

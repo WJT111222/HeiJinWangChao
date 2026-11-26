@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import type { GameState } from '../../domain/state';
 import { openingCityIdentity } from '../../domain/openingCity';
@@ -17,7 +18,7 @@ export function CityAtmosphere({ state }: { state: GameState }) {
   </div>;
 }
 
-export function CityBar({ state }: { state: GameState }) {
+export function CityBar({ state, phone }: { state: GameState; phone?: ReactNode }) {
   const city = openingCityIdentity(state), atmo = deriveAtmosphere(state);
   const place = locationText(state.locations, state.protagonist.locationId);
   const calendar = state.openingTimePending ? undefined : chinaCalendar(state.worldClock);
@@ -28,6 +29,7 @@ export function CityBar({ state }: { state: GameState }) {
     <div className="bar-main">
       <div className="where" title={[place.path, place.name].filter(Boolean).join(' › ')}><span className="path">{place.path || '当前地点'}</span><span className="name">{place.name}</span></div>
       <div className="clock" title={`${date} ${clock}`}><time dateTime={calendar ? state.worldClock : undefined}>{clock}</time><div className="date"><span>{date}</span>{calendar && <span className="tod">{timeOfDayLabel(state)}</span>}</div></div>
+      {phone}
       <SceneDetails weatherText={state.weatherText} environmentText={state.environmentText} weatherSeal={weatherSeals[atmo.weather]} />
     </div>
   </header>;

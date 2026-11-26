@@ -29,7 +29,7 @@ afterEach(() => repo.close());
 
 it('Variables 文本命令可从剧情更新未逐字出现的称呼，保留另一方向及其他 NPC 的设置', async () => {
   const snap = await repo.loadVariableSnapshot(id);
-  expect(snap.state.schemaVersion).toBe(10);
+  expect(snap.state.schemaVersion).toBe(11);
   expect(snap.state.npc.scene).not.toHaveProperty('addressing');
   const documents = new Map<string,string>();
   const storage = {getItem:(key:string)=>documents.get(key) ?? null, setItem:(key:string,data:string)=>{documents.set(key,data);}};
