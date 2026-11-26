@@ -1,6 +1,53 @@
 # 文学创作权移交 · 浪潮 1118 验收
 
-基线为 `release/1.0` 的 `f6ca1ca8e961652ea8cdb8a490e3e8d653cd0482`。本批使用已有的《我即浪潮 · 1118 peinture》王朝适配版。所有模型传输均由浏览器路由或测试传输层返回合成数据。
+基线为 `release/1.0` 的 `f6ca1ca8e961652ea8cdb8a490e3e8d653cd0482`。本批使用已有的《我即浪潮 · 1118 peinture》王朝适配版。所有模型数据均为合成夹具，传输验收包含本机 HTTPS 服务。
+
+## 最终整改 · 旧断点续写的单次传输
+
+审查起点为 `82e3a9f`。只有在玩家为来源未知的旧断点确认续写时，游戏才选定本次传输路径。「续写正文」默认直连；渠道端点符合既有中转规则、且设置允许时，玩家可以点「通过本站中转续写」。确认框显示本次路径。两种操作均保留全局设置。
+
+原先的授权包围整个 `AiClient.response`，里面的 `fetchWithRelay` 在直连失败后仍可调用第二次 fetch。现在授权携带选择的路径，经 runtime 传到实际发送回调。完成原有 IndexedDB 草稿、正式版本、页面、取消信号及文学配置核对后，授权只可消费一次。中转路径还会复核中转设置。已发出后使用冻结的文学配置。Worker 对每个有效入站 POST 只发起一次上游 fetch，并拒绝跟随重定向。普通 Story、其他阶段和模型列表继续使用原来的中转策略。
+
+无法确定请求是否受理时，页面提示模型服务可能已受理或计费。协调器记录诊断，保留原草稿和文学归属，等待玩家重新选择并确认。成功的续写才进入已有候选与结算链。实现见 [传输入口](../../src/services/ai/corsRelay.ts)、[一次性确认](../../src/workflows/legacyContinuation.ts) 和 [Worker 转发](../../src/aiRelay.ts)。
+
+### 实际收件及正式状态
+
+同一 V10 浪潮断点、桌面 Chromium 和 Pixel 7 模拟，观察结果在两端一致。第一列 POST 为浏览器发起的直连请求，因此预检被拒绝时它仍可为 1。Worker 列为本站中转收件，模型列由本机 HTTPS 服务读完整请求体后计数。回合和 revision 在本夹具内数值相同。新验收用例开启了阶段自动重试。
+
+| 场景 | 浏览器直连 POST | Worker POST | 模型收到 POST | 回合与 revision |
+| --- | ---: | ---: | ---: | --- |
+| 直连正常完成 | 1 | 0 | 1 | 1 → 2 |
+| 等待 OPTIONS 时另一标签修改节奏，预检失败 | 1 | 0 | 0 | 均保持 1 |
+| 直连 POST 已受理，200 响应不允许跨域读取 | 1 | 0 | 1 | 均保持 1 |
+| 玩家确认中转，正常完成 | 0 | 1 | 1 | 1 → 2 |
+| 玩家确认中转，上游收件后断开连接 | 0 | 1 | 1 | 均保持 1 |
+| 全局中转关闭，直连响应无法读取 | 1 | 0 | 1 | 均保持 1 |
+| 玩家重新确认，用中转完成上次直连失败的续写 | 1 | 1 | 2，两次独立授权 | 第一次保持 1，第二次到 2 |
+| **已知边界**：直连复用 HTTP/1.1 连接，服务读取正文后立即断开 | 1 | 0 | **2** | 均保持 1 |
+
+整改前，预检反例在节奏变化后仍由 Worker 发送 1 次并结算；直连 200 反例让模型收到 2 份相同正文并结算。整改后，两项均保留完整的原始 IndexedDB 草稿。详细计数、请求体哈希、修复前后版本及项目身份见[双端实测记录](literary-ownership/continuation-transport.json)。
+
+### 独立探针与未关闭的浏览器边界
+
+- 原独立中转探针共 12 项。审查版 4 通过、8 失败；修复后原样复跑 6 通过、6 失败。四个旧等待条件分别要求失败后结算或递增草稿版本，与现在的断点保留行为冲突。另两个是双端的原始服务器单收断言，实收 2 次。
+- 对照运行保留了服务器收件断言，改用失败提示和完整 IndexedDB 草稿作为等待条件，在发起请求前装好 Worker 路由拦截。12 项均通过。CDP 拦截会改变预检及连接复用，这组结果不能证明浏览器不会自行重放。
+- 仓库新增的 16 项双端验收在直连路径上使用真实 TLS、被浏览器信任的临时证书公钥和实际预检；在中转路径上执行仓库 Worker，转发到同一本地模型。14 通过、2 失败、0 跳过。两项红灯均为上表最后一行，严格的服务器单收断言保留在用例中。
+- 单独使用 Chromium 原生 fetch、移除游戏与中转后，相同的 HTTP/1.1 复用连接仍导致模型端收到两次同文 POST。Chromium NetLog 记录 `HTTP_TRANSACTION_RESTART_AFTER_ERROR`；让预检服务关闭连接的对照只收到一次。应用能核对发起 fetch 时的授权，无法从浏览器网络错误判断服务商的准确受理或扣费结果。按负责人决定保留现有直连兼容性，该边界继续公开记录。没有调用真实付费服务。
+
+工程检查通过，含全量 Vitest 5,481 项、TypeScript、ESLint 和生产构建；受影响 Vitest 259 项、Prompt 93 项均通过。仓库文学与续写 Chromium 50/50、正式版定向门槛及集成冒烟 44/44、此前独立探针 6/6 和 11/11，各组单列。一次开发服务器热更新使历史屏障探针挂到旧模块，已中止该轮；冷启动后按原断言、零重试完成 50 项。既有的手动重新生成缺标签后出现 TURN_INCOMPLETE 继续列为正式版独立待办。
+
+### 复跑
+
+Node 24、锁文件、Chromium、OpenSSL，5174 端口。预检竞争使用可控 Promise。已知 HTTP/1.1 重放会使严格传输专项在本次 Chromium 版本下返回非零。
+
+```sh
+npm ci
+npm run check
+npm run prompts:check
+npx vitest run src/tests/cors-relay.test.ts src/tests/ai-relay-worker.test.ts src/tests/ai-relay-compat.test.ts src/tests/failure-auto-retry.test.ts src/tests/story-{writing-repair,stage,continuation,continuation-coordinator}.test.ts src/tests/turn-commit.test.ts
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/story-continuation-transport.spec.ts --workers=1 --retries=0
+CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/story-continuation-consent.spec.ts e2e/story-legacy-writing.spec.ts e2e/story-literary-ownership.spec.ts --workers=1 --retries=0
+```
 
 ## 第二轮定向整改
 
