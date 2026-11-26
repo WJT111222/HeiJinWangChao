@@ -47,18 +47,15 @@ export function frozenChatContext(
         stage === 'story'
           ? '以下聊天已发生，可概述或引用，不改写原话，不替主角继续回复。单独结束聊天的行动也要承接随后的日常。'
           : '以下原话由程序结算。只处理参与者的记忆、知情、关系和约定等后果，不重复记录这些消息。',
-      threads: people.map((npcId) => {
-        const exchanges = rows.filter((row) => row.reply.npcId === npcId);
-        const recent = exchanges.flatMap((row) =>
-          chatMessages(row, draft!.turnId).map((message) => ({ ...message, pending: true })),
-        );
-        return {
-          npcId,
-          name: state.npc[npcId].name,
-          exchanges: exchanges.length,
-          ...recentPhoneHistory([...(state.phone.threads[npcId]?.messages ?? []), ...recent]),
-        };
-      }),
+      // All exchanges in this turn share a clock. Preserve the freeze order across recipients.
+      frozenMessages: rows.flatMap((row) =>
+        chatMessages(row, draft!.turnId).map((message) => ({ npcId: row.reply.npcId, ...message })),
+      ),
+      threads: people.map((npcId) => ({
+        npcId,
+        name: state.npc[npcId].name,
+        ...recentPhoneHistory(state.phone.threads[npcId]?.messages ?? []),
+      })),
     },
   };
 }

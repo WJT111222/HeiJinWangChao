@@ -1,3 +1,4 @@
+import type { TurnDraft } from './drafts';
 import type { ChatExchange } from './phoneChat';
 import { z } from 'zod';
 import { GameTimeSchema, IdSchema, requireData } from './common';
@@ -105,12 +106,17 @@ export function chatBase(state: GameState, rows: readonly ChatExchange[], turnId
   const next = { ...state, phone: structuredClone(state.phone) };
   for (const row of rows) {
     const peer = row.reply.npcId;
-    requireData(Object.hasOwn(state.npc, peer) && row.baseTurnId === state.journal.at(-1)?.turnId &&
-      Date.parse(row.at) === Date.parse(state.worldClock), 'PHONE_TIMELINE', '私聊不属于当前时间线');
+    requireData(Object.hasOwn(state.npc, peer), 'PHONE_CONFLICT', '待结算私聊引用的人物不存在');
+    requireData(row.baseTurnId === state.journal.at(-1)?.turnId && Date.parse(row.at) === Date.parse(state.worldClock),
+      'PHONE_TIMELINE', '待结算私聊的基准回合或游戏时间与存档不符');
     for (const message of chatMessages(row, turnId)) append(next, peer, message);
   }
   requireData(validPhone(next), 'PHONE_CONFLICT', '私聊消息 ID 或会话引用冲突');
   return next;
+}
+// Check the same projection as settlement without persisting it during save management.
+export function validatePendingChat(state: GameState, draft?: Pick<TurnDraft, 'phonePending' | 'turnId'>) {
+  if (draft?.phonePending?.length) chatBase(state, draft.phonePending, draft.turnId);
 }
 export function recordPhone(
   s: GameState,

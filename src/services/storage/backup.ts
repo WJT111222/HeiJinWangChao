@@ -1,6 +1,6 @@
 import { parseImages } from '../images/library';
 import type { PortableImages } from '../images/library';
-import { chatBase } from '../../domain/phone';
+import { validatePendingChat } from '../../domain/phone';
 import { z } from 'zod';
 import { DataError } from '../../domain/common';
 import { TurnDraftSchema } from '../../domain/drafts';
@@ -97,19 +97,24 @@ async function sha256(text: string): Promise<string | undefined> {
   return 'sha256:' + Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-/** 草稿只有指向同一存档、且基于同一正式版本时才随备份恢复；否则跳过草稿，不影响存档。 */
+/** An obsolete candidate can be skipped. A draft containing player chat must stay with its save. */
 export function compatibleDraft(state: GameState, raw: unknown, exportLocalRecovery = false): { draft?: TurnDraft; dropped?: string } {
   if (raw === undefined || raw === null) return {};
-  const parsed = TurnDraftSchema.safeParse(raw);
-  if (!parsed.success) return { dropped: '草稿结构无法通过校验，已跳过草稿。' };
-  if (parsed.data.saveId !== state.saveId) return { dropped: '草稿不属于这份存档，已跳过草稿。' };
-  if (parsed.data.baseSaveRevision !== state.revision) return { dropped: '草稿基于旧的回合，已过期，已跳过草稿。' };
-  if (parsed.data.phonePending?.length) {
-    try { chatBase(state, parsed.data.phonePending, parsed.data.turnId); }
-    catch { return { dropped:'聊天草稿的基准回合、收信人或消息 ID 与正式存档不符，已跳过草稿。' }; }
+  function incompatible(reason: string, notice = '已跳过草稿。') {
+    if (raw && typeof raw === 'object') {
+      const pending = 'phonePending' in raw && raw.phonePending;
+      if ((Array.isArray(pending) ? pending.length : pending) || ('phoneFreeze' in raw && raw.phoneFreeze))
+        throw new DataError('PHONE_DRAFT_CONFLICT', `无法完整恢复待结算私聊：${reason}。`);
+    }
+    return { dropped: reason + '，' + notice };
   }
+  const parsed = TurnDraftSchema.safeParse(raw);
+  if (!parsed.success) return incompatible('草稿结构无法通过校验');
+  if (parsed.data.saveId !== state.saveId) return incompatible('草稿不属于这份存档');
+  if (parsed.data.baseSaveRevision !== state.revision) return incompatible('草稿基于旧的回合，已过期');
+  validatePendingChat(state, parsed.data);
   if (parsed.data.legacyNotificationRecovery && !exportLocalRecovery)
-    return { dropped: '旧通知恢复授权只在原本机草稿有效，已跳过该未结算草稿，正式存档可导入。' };
+    return incompatible('旧通知恢复授权只在原本机草稿有效', '已跳过该未结算草稿，正式存档可导入。');
   return { draft: parsed.data };
 }
 
@@ -193,6 +198,8 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
         ...(theaters ? { theaters } : {}) };
     } catch (error) {
       const code = error instanceof DataError ? error.code : 'CORRUPT_SAVE';
+      if (error instanceof DataError && code.startsWith('PHONE_'))
+        return { ok: false, title, code, error: error.message };
       const message = code === 'FUTURE_VERSION'
         ? '这份存档来自更新的游戏版本，请先更新游戏再导入。'
         : code === 'UNSUPPORTED_VERSION' ? '这份存档版本太旧，当前程序无法读取。' : '这份存档的内容已损坏，无法导入。';

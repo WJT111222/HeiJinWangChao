@@ -1,3 +1,4 @@
+import { validatePendingChat } from '../../domain/phone';
 import { ChatExchange, freezeChat, restoreChat } from '../../domain/phoneChat';
 import { withWorldbookLibrary, restoreWorldview, worldviewDigest, missingWorldview, storySourceHash, type StoryWorldview } from '../worldbook/mainWorldview';
 import { HistoryRepository } from './history/repository';
@@ -368,8 +369,11 @@ export class SaveRepository {
         const old = current.draft;
         const draft = old && TurnDraftSchema.parse({
           ...createTurnDraft(saveId, state.revision, old.turnId, old.turnKind, old.userInput, old.useVariableStage, old.useWorldStage, old.useEntityStage),
+          phonePending: old.phonePending,
+          phoneFreeze: old.phoneFreeze,
           draftRevision: old.draftRevision + 1,
         });
+        validatePendingChat(state, draft);
         const control = await readControl(tx,saveId) ?? newSaveControl(saveId);
         delete control.storyOrigin;
         control.epoch = `epoch-${crypto.randomUUID()}`;
@@ -414,6 +418,7 @@ export class SaveRepository {
       const next=setNpcImportance(state,checked.npcId,checked.identityKey,checked.choice);
       next.npcManagementRevision=(state.npcManagementRevision??0)+1;
       const nextDraft=draft?TurnDraftSchema.parse({...draft,draftRevision:draft.draftRevision+1}):undefined;
+      validatePendingChat(next, nextDraft);
       control.epoch=`epoch-${crypto.randomUUID()}`;delete control.lastUndo;
       control.lastNpcManagement={operationId:checked.operationId,request:signature,managementRevision:next.npcManagementRevision};
       await request(tx.objectStore('saves').put(GameStateSchema.parse(next)));
@@ -498,8 +503,9 @@ export class SaveRepository {
         const restored = await restoreSnapshot(tx, state, control!);
         const next = createTurnDraft(saveId, restored.state.revision, `turn-${crypto.randomUUID()}`, 'regular', '',
           draft?.useVariableStage ?? true, draft?.useWorldStage ?? true, draft?.useEntityStage ?? true);
-        const pending = [...(restored.phonePending ?? []), ...restoreChat(restored.state, draft?.phonePending ?? [], input.chatChoice)];
+        const pending = restoreChat(restored.state, draft?.phonePending ?? [], input.chatChoice, restored.phonePending);
         if (pending.length) next.phonePending = pending;
+        validatePendingChat(restored.state, next);
         // Retire receipts from the previous branch, including a predecessor receipt
         // whose next-draft ID is now obsolete. Keep the restored appliedCommands.
         const receipts = tx.objectStore('turnReceipts');

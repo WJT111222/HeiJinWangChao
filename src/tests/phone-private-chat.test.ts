@@ -171,7 +171,7 @@ it('冻结清单防篡改，备份保留草稿，放弃后原样解冻并可再�
   } finally { imported.close(); }
   expect(
     JSON.parse(contextMessage(frozenChatContext(start.state, frozen, 'story')).split('\n')[1]).PHONE_CHAT
-      .threads[0].recent[0].text,
+      .frozenMessages[0].text,
   ).toBe(text);
   await repo.deleteDraft(saveId, frozen.draftRevision, frozen, start.instance);
   const unlocked = (await repo.loadDraft(saveId))!;
@@ -419,7 +419,7 @@ it('同一段冻结原话能经原生、独立防截断及文学预设正文入�
     const parts = messages.flatMap((m) =>
       [...m.content.matchAll(/<([A-Z_]+)>\n(\{[^\n]+\})\n<\/\1>/g)].map((match) => JSON.parse(match[2])),
     );
-    expect(parts.flatMap((p) => p.PHONE_CHAT?.threads ?? [])[0].recent[0].text).toBe(text);
+    expect(parts.flatMap((p) => p.PHONE_CHAT?.frozenMessages ?? [])[0].text).toBe(text);
     expect(messages.map((m) => m.content).join('')).not.toContain('未送达的原件位置');
   }
 });

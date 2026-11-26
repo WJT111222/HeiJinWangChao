@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DataError, IdSchema, requireData } from '../../../domain/common';
 import { fingerprint } from '../../../domain/commands';
+import { validatePendingChat } from '../../../domain/phone';
 import { freezeChat, restoreChat } from '../../../domain/phoneChat';
 import { createTurnDraft, TurnDraftSchema } from '../../../domain/drafts';
 import { GameStateSchema } from '../../../domain/state';
@@ -213,9 +214,10 @@ export class HistoryRepository {
           const state = checkedState(observed.state, saveId), oldDraft = observed.draft === undefined ? undefined : TurnDraftSchema.parse(observed.draft);
           const nextState = GameStateSchema.parse({ ...restored, revision: Math.max(state.revision, restored.revision) + 1, updatedAt: new Date().toISOString() });
           const original = selection.kind === 'automatic' ? SnapshotSchema.parse(selected.record).phonePending ?? [] : [];
-          const pending = [...original, ...restoreChat(nextState, oldDraft?.phonePending ?? [], chatChoice).filter(row=>!original.some(item=>item.id===row.id))];
+          const pending = restoreChat(nextState, oldDraft?.phonePending ?? [], chatChoice, original);
           const draft = TurnDraftSchema.parse({ ...(pending.length ? { phonePending:pending,phoneFreeze:freezeChat(pending) } : {}), ...createTurnDraft(saveId, nextState.revision, `turn-${crypto.randomUUID()}`, 'regular', userInput,
             useVariableStage, useWorldStage, useEntityStage), draftRevision: (oldDraft?.draftRevision ?? 0) + 1 });
+          validatePendingChat(nextState, draft);
           const control = { ...newSaveControl(saveId), instanceId: `instance-${crypto.randomUUID()}` };
           // Intentional new timeline root: no old automatic point or commit receipt survives.
           await clearUndoRecords(tx, saveId);

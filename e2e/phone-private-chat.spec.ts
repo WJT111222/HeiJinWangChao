@@ -1,57 +1,86 @@
 import { join } from 'node:path';
+import type { Page } from '@playwright/test';
 import { test, expect } from './helpers/test';
+import { openSettings } from './helpers/gameLayout';
+
+async function seedChat(page: Page, mode: 'day' | 'night') {
+  await page.goto('/');
+  await page.evaluate(async (mode) => {
+    const [
+      { SaveRepository },
+      { phoneGame },
+      { settingsKey, defaultSettings },
+      { createTurnDraft },
+      { defaultAiConfig, newChannel, saveAiConfig },
+      { CredentialVault },
+    ] = await Promise.all(
+      [
+        '/src/services/storage/saveRepository.ts',
+        '/src/tests/fixtures/phone.ts',
+        '/src/ui/settings/model.ts',
+        '/src/domain/drafts.ts',
+        '/src/services/ai/configuration.ts',
+        '/src/services/ai/credentials.ts',
+      ].map((path) => import(path)),
+    );
+    const state = phoneGame(),
+      settings = defaultSettings();
+    settings.display.appearance = mode;
+    settings.runtime.streamStory = false;
+    for (const summary of Object.values(settings.memory.summaries) as { automatic: boolean }[])
+      summary.automatic = false;
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
+    const config = defaultAiConfig(),
+      channel = {
+        ...newChannel(),
+        baseUrl: 'https://phone-fixture.invalid/v1',
+        defaultModel: 'story-fixture',
+      };
+    config.channels.push(channel);
+    config.routes.story = { channelId: channel.id, modelId: 'story-fixture' };
+    config.routes.phone = { mode: 'independent', channelId: channel.id, modelId: 'phone-fixture' };
+    saveAiConfig(localStorage, config);
+    new CredentialVault(sessionStorage, localStorage).set(channel.id, 'private-chat-fixture');
+    const repo = await SaveRepository.open();
+    try {
+      const entry = {
+        state,
+        draft: createTurnDraft(state.saveId, state.revision, 'following', 'regular', ''),
+      };
+      await repo.importBackup(entry, (await repo.compareBackup(entry)).confirmation);
+    } finally {
+      repo.close();
+    }
+  }, mode);
+}
+
+function readChat(page: Page) {
+  return page.evaluate(async () => {
+    const { SaveRepository } = await import('/src/services/storage/saveRepository.ts' as string);
+    const repo = await SaveRepository.open();
+    try {
+      return await repo.loadGame('phone-fixture');
+    } finally {
+      repo.close();
+    }
+  });
+}
+
+async function openConversation(page: Page) {
+  const phone = page.getByRole('dialog', { name: '林舟的手机 · 游戏内' });
+  await page.locator('[data-phone-entry]:visible').click();
+  const unlock = phone.getByRole('button', { name: '点按进入' });
+  if (await unlock.count()) await unlock.click();
+  await phone.getByRole('button', { name: /^信息/ }).click();
+  await phone.getByRole('button', { name: '通讯录' }).click();
+  await phone.getByRole('button', { name: '打开与方宁的会话' }).click();
+  return phone;
+}
 
 for (const mode of ['day', 'night'] as const) {
   test('私聊经过跨标签锁、冻结和解冻 · ' + mode, async ({ page, context }, info) => {
     test.setTimeout(90000);
-    await page.goto('/');
-    await page.evaluate(async (mode) => {
-      const [
-        { SaveRepository },
-        { phoneGame },
-        { settingsKey, defaultSettings },
-        { createTurnDraft },
-        { defaultAiConfig, newChannel, saveAiConfig },
-        { CredentialVault },
-      ] = await Promise.all(
-        [
-          '/src/services/storage/saveRepository.ts',
-          '/src/tests/fixtures/phone.ts',
-          '/src/ui/settings/model.ts',
-          '/src/domain/drafts.ts',
-          '/src/services/ai/configuration.ts',
-          '/src/services/ai/credentials.ts',
-        ].map((path) => import(path)),
-      );
-      const state = phoneGame(),
-        settings = defaultSettings();
-      settings.display.appearance = mode;
-      settings.runtime.streamStory = false;
-      for (const summary of Object.values(settings.memory.summaries) as { automatic: boolean }[])
-        summary.automatic = false;
-      localStorage.setItem(settingsKey, JSON.stringify(settings));
-      const config = defaultAiConfig(),
-        channel = {
-          ...newChannel(),
-          baseUrl: 'https://phone-fixture.invalid/v1',
-          defaultModel: 'story-fixture',
-        };
-      config.channels.push(channel);
-      config.routes.story = { channelId: channel.id, modelId: 'story-fixture' };
-      config.routes.phone = { mode: 'independent', channelId: channel.id, modelId: 'phone-fixture' };
-      saveAiConfig(localStorage, config);
-      new CredentialVault(sessionStorage, localStorage).set(channel.id, 'private-chat-fixture');
-      const repo = await SaveRepository.open();
-      try {
-        const entry = {
-          state,
-          draft: createTurnDraft(state.saveId, state.revision, 'following', 'regular', ''),
-        };
-        await repo.importBackup(entry, (await repo.compareBackup(entry)).confirmation);
-      } finally {
-        repo.close();
-      }
-    }, mode);
+    await seedChat(page, mode);
     const requests: { model: string; messages: { content: string }[] }[] = [];
     let release!: () => void;
     const held = new Promise<void>((resolve) => {
@@ -86,16 +115,7 @@ for (const mode of ['day', 'night'] as const) {
       }
       return route.fulfill({ status: 401, json: { error: { message: 'fixture end of turn' } } });
     });
-    const read = () =>
-      page.evaluate(async () => {
-        const { SaveRepository } = await import('/src/services/storage/saveRepository.ts' as string);
-        const repo = await SaveRepository.open();
-        try {
-          return await repo.loadGame('phone-fixture');
-        } finally {
-          repo.close();
-        }
-      });
+    const read = () => readChat(page);
     await page.goto('/#game/phone-fixture');
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-appearance', mode);
@@ -105,16 +125,8 @@ for (const mode of ['day', 'night'] as const) {
     await mainAction.fill('在窗边坐下');
     const actionButton = second.locator('.composer-footer button');
     await expect(actionButton).toBeEnabled();
-    const phone = page.getByRole('dialog', { name: '林舟的手机 · 游戏内' }),
-      entry = page.locator('[data-phone-entry]:visible');
-    const open = async () => {
-      await entry.click();
-      if (await phone.getByRole('button', { name: '点按进入' }).count())
-        await phone.getByRole('button', { name: '点按进入' }).click();
-      await phone.getByRole('button', { name: /^信息/ }).click();
-      await phone.getByRole('button', { name: '通讯录' }).click();
-      await phone.getByRole('button', { name: '打开与方宁的会话' }).click();
-    };
+    const phone = page.getByRole('dialog', { name: '林舟的手机 · 游戏内' });
+    const open = () => openConversation(page);
     const screenshot = async (label: string) => {
       if (process.env.PHONE_SCREENSHOTS)
         await page.screenshot({
@@ -197,5 +209,49 @@ for (const mode of ['day', 'night'] as const) {
     expect((await read()).draft.phonePending).toEqual(attached.draft.phonePending);
     expect((await read()).state).toEqual(before.state);
     await second.close();
+  });
+  test('变量管理保存后刷新保留' + (mode === 'day' ? '待输入' : '已冻结') + '的私聊', async ({ page, context }) => {
+    await seedChat(page, mode);
+    await context.route('https://phone-fixture.invalid/**', route => {
+      if (route.request().postDataJSON().model !== 'phone-fixture')
+        return route.fulfill({ status: 401, json: { error: { message: 'fixture stops Story' } } });
+      return route.fulfill({ json: { choices: [{ finish_reason: 'stop', message: {
+        content: JSON.stringify({ npcId: 'partner', status: 'replied', text: '好，明天会面。' }),
+      } }] } });
+    });
+    await page.goto('/#game/phone-fixture');
+    await page.reload();
+    const phone = await openConversation(page);
+    await phone.getByRole('textbox', { name: '私聊消息' }).fill('明天请在南门见面。');
+    await phone.getByRole('button', { name: '发送', exact: true }).click();
+    await expect(phone.locator('.ph-pending')).toHaveCount(2);
+    if (mode === 'night') {
+      await phone.getByRole('button', { name: '结束聊天', exact: true }).click();
+      await expect.poll(async () => (await readChat(page)).draft.stageStatus.story).toBe('failed');
+    }
+    const before = await readChat(page);
+    expect(before.draft.phonePending).toHaveLength(1);
+    if (mode === 'night') expect(before.draft.phoneFreeze.ids).toHaveLength(2);
+    else expect(before.draft.phoneFreeze).toBeUndefined();
+    await page.reload();
+    await openSettings(page);
+    const settings = page.getByRole('dialog', { name: '设置', exact: true });
+    await settings.getByRole('button', { name: '变量管理', exact: true }).click();
+    await settings.getByRole('button', { name: '编辑 年龄', exact: true }).click();
+    await settings.getByLabel('变量值', { exact: true }).fill(String(before.state.protagonist.age + 1));
+    await settings.getByRole('button', { name: '加入待保存修改' }).click();
+    await settings.getByRole('button', { name: '保存变量修改' }).click();
+    await expect.poll(async () => (await readChat(page)).state.protagonist.age).toBe(before.state.protagonist.age + 1);
+    await page.reload();
+    const after = await readChat(page);
+    expect(after.draft.phonePending).toEqual(before.draft.phonePending);
+    expect(after.draft.phoneFreeze).toEqual(before.draft.phoneFreeze);
+    expect(after.state.phone).toEqual(before.state.phone);
+    await openConversation(page);
+    await expect(phone.locator('.ph-pending')).toHaveCount(2);
+    await expect(phone.getByText('好，明天会面。', { exact: true })).toBeVisible();
+    const field = phone.getByRole('textbox', { name: '私聊消息' });
+    if (mode === 'night') await expect(field).toBeDisabled();
+    else await expect(field).toBeEnabled();
   });
 }
