@@ -158,6 +158,8 @@ test('文学预设接管篇幅和人称，可打开控制台，停用后恢复�
   await expect(managed.getByText('由当前文学预设接管', { exact: false })).toBeVisible();
   for (const label of ['正文最低字数', '正文建议上限', '叙事人称', '自然文风修复'])
     await expect(managed.getByLabel(label)).toBeDisabled();
+  await expect(managed.getByRole('radiogroup', { name:'剧情风格' }).getByRole('radio').first()).toBeDisabled();
+  await expect(managed.getByRole('radiogroup', { name:'剧情难度' }).getByRole('radio').first()).toBeEnabled();
   await expect(managed.getByLabel('行动选项', { exact: true })).toBeEnabled();
   await page.screenshot({ path: info.outputPath('literary-settings.png'), animations: 'disabled' });
   await managed.getByRole('button', { name: '打开文学预设控制台' }).click();
@@ -169,4 +171,27 @@ test('文学预设接管篇幅和人称，可打开控制台，停用后恢复�
   await expect(restored.getByLabel('正文最低字数')).toHaveValue('4000');
   await expect(restored.getByLabel('叙事人称')).toHaveValue('first');
   expect(await stored(page)).toEqual(preferences);
+});
+
+test('独立防截断启用后可修改并保存原生人称、文风和篇幅', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name:'设置', exact:true }).first().click();
+  const dialog = page.getByRole('dialog', { name:'设置', exact:true });
+  const back = dialog.getByRole('button', { name:'返回设置', exact:true });
+  if (await back.isVisible()) await back.click();
+  await dialog.getByRole('button', { name:'运行', exact:true }).click();
+  await dialog.getByLabel('防截断破甲模式').check();
+  await Promise.all([page.waitForNavigation(), dialog.getByRole('button', { name:'保存预设并刷新' }).click()]);
+  const native = await promptTab(page);
+  await expect(native.getByRole('button', { name:'打开文学预设控制台' })).toHaveCount(0);
+  await native.getByLabel('叙事人称').selectOption('first');
+  await native.getByRole('radiogroup', { name:'剧情风格' }).getByRole('radio', { name:'冷硬黑色' }).check();
+  await tier(native, '高').check();
+  await native.getByRole('button', { name:'保存本地设置', exact:true }).click();
+  await expect(native.getByRole('status')).toContainText('本地偏好已保存');
+  await page.reload();
+  const restored = await promptTab(page);
+  await expect(restored.getByLabel('叙事人称')).toHaveValue('first');
+  await expect(restored.getByRole('radiogroup', { name:'剧情风格' }).getByRole('radio', { name:'冷硬黑色' })).toBeChecked();
+  await expect(tier(restored, '高')).toBeChecked();
 });

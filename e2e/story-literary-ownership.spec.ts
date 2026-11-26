@@ -37,9 +37,9 @@ for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
       const [{SaveRepository},{talentPromptInput},{createTurnDraft},{StoryStage},{newChannel,defaultAiConfig},{CredentialVault}] =
         await Promise.all(paths.map(path => import(path)));
       const input = talentPromptInput('story','regular');
-      input.settings.runtime.streamStory = false;
+      Object.assign(input.settings.runtime, {streamStory:false, useVariableStage:false, useWorldStage:false});
       Object.assign(input.settings.prompts, { minNarrativeChars:4000, maxNarrativeChars:5678, style:'noir', perspective:'first' });
-      let draft = createTurnDraft(input.state.saveId,input.state.revision,'writing-compare','regular',input.userInput);
+      let draft = createTurnDraft(input.state.saveId,input.state.revision,'writing-compare','regular',input.userInput,false,false);
       const repo = await SaveRepository.open(), stage = new StoryStage(repo);
       try {
         const backup = {state:input.state,draft};
@@ -62,13 +62,21 @@ for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
               preserved:JSON.stringify(await repo.loadDraft(draft.saveId)) === previous});
           }
         }
-        return {rows, revisionUnchanged:(await repo.load(draft.saveId)).revision === initialState.revision};
+        const revisionUnchanged = (await repo.load(draft.saveId)).revision === initialState.revision;
+        if (!draft.story) return {rows, revisionUnchanged, committed:null};
+        // Only the complete first candidate is still selected after the four failed attempts.
+        const submitted = await repo.commitTurn({draft, nextAction:'', useVariableStage:false, useWorldStage:false});
+        const saved = await repo.load(draft.saveId);
+        return {rows, revisionUnchanged, committed:{narrative:saved.journal.at(-1).story.narrative,
+          advanced:saved.turnNumber - initialState.turnNumber, replayed:submitted.replayed}};
       } finally { stage.dispose(); repo.close(); }
     }, cases.length);
     expect(wires.length, JSON.stringify(result.rows)).toBe(cases.length);
     expect(result.revisionUnchanged).toBe(true);
     expect(result.rows[0]).toMatchObject(mode === '文学预设' ? {saved:'林舟核对笔记，留在车站等车。',source:'preset'}
       : {rule:'narrative_short',preserved:true});
+    expect(result.committed).toEqual(mode === '文学预设'
+      ? {narrative:'林舟核对笔记，留在车站等车。', advanced:1, replayed:false} : null);
     const outcomes = ['invalid_output','output_limit','content_filter','invalid_output'];
     for (const [index, expected] of outcomes.entries()) expect(result.rows[index + 1]).toMatchObject({code:expected,preserved:true});
     const requests = wires.map(text => {
