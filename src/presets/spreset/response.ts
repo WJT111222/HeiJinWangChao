@@ -18,7 +18,7 @@ export async function readPrototypeResponse(response: Response, protocol: Protoc
   if (!response.body) throw new AiError('stream_interrupted');
   const trace = newTrace();
   trace.status = response.status;
-  const frames = new UpstreamFrames(protocol, trace);
+  const frames = new UpstreamFrames(protocol, trace, 'submit_scene');
   const body = await identifyBody(response.body, signal, trace);
   const streaming = trace.normalized === 'sse';
   let text = '', reasoning = '';
@@ -68,14 +68,7 @@ export async function readPrototypeResponse(response: Response, protocol: Protoc
   if (!['tool_calls', 'tool_use'].includes(trace.finish)) checkFinish(trace.finish);
   frames.finish(streaming);
   if (trace.error) throw trace.error;
+  // #252 validates the original protocol, the unique terminal call and its content schema.
   const call = frames.singleCompletedCall();
-  // The shared parser owns multiplicity, provider terminal markers and transport completeness.
-  // Only our declared action and its exact argument shape may cross the processor boundary.
-  const content = record(call?.args).content;
-  if (call && (text || call.name !== 'submit_scene' || !call.id.trim()
-    || !call.args || typeof call.args !== 'object' || Array.isArray(call.args)
-    || Object.keys(call.args).length !== 1 || !Object.hasOwn(call.args, 'content')
-    || typeof content !== 'string' || !content.trim()))
-    throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.spreset.tool' });
   return { text, reasoning, call, usage: trace.usage, finish: trace.finish, transport: streaming ? 'sse' as const : 'json' as const };
 }
