@@ -15,7 +15,7 @@ import { SaveRepository } from '../services/storage/saveRepository';
 import { playerView } from '../ui/panels/playerView';
 import { contextFor } from '../prompts/context';
 import { defaultSettings } from '../ui/settings/model';
-import { completeDraft, elapsedVariables, submission } from './fixtures/turn';
+import { saveFixtureStory, completeDraft, elapsedVariables, submission } from './fixtures/turn';
 import { handoffState, finishTask, receiveTask, retireCommand, handoffResult, resultText } from './fixtures/handoff';
 import { event, npc } from './fixtures/game';
 import type { DomainCommand } from '../domain/commands';
@@ -260,7 +260,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
   it('Roll及重放不能删除正式NPC；过期候选CAS提交拒绝', async () => {
     const repo = await repository(), raw = handoffResult(await repo.load('save-a')); raw.worldCommands = [];
     const d = await prepared(repo, raw), before = await repo.load('save-a');
-    await repo.saveDraft(rerollStory(d, { ...d.story!, narrative: '主角改为在家阅读。' }), d.draftRevision);
+    await saveFixtureStory(repo,rerollStory(d, { ...d.story!, narrative: '主角改为在家阅读。' }), d.draftRevision);
     await expect(repo.commitTurn(submission(d))).rejects.toThrow(); expect(await repo.load('save-a')).toEqual(before);
     expect((await repo.loadDraft('save-a'))?.world).toBeUndefined();
   });
@@ -275,7 +275,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
       const rejected = expect(pending).rejects.toThrow(); await active;
       if (cause === 'cancel') runner.cancel(); else {
         const current = (await repo.loadDraft('save-a'))!;
-        await repo.saveDraft(rerollStory(current, { ...current.story!, narrative: '跨标签的新正文' }), current.draftRevision);
+        await saveFixtureStory(repo,rerollStory(current, { ...current.story!, narrative: '跨标签的新正文' }), current.draftRevision);
       }
       release(); await rejected; expect(await repo.load('save-a')).toEqual(before);
       expect((await repo.loadDraft('save-a'))?.world).toBeUndefined();

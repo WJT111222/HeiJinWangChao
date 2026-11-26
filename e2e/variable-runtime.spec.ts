@@ -87,7 +87,7 @@ async function seed(page: Page, ready = true, disabled = false, text = narrative
               summary: '午餐',
               variableGuide: [],
             }),
-            0,
+            0, undefined, initial, await repo.prepareWorldview(initial,false),
           );
       }
       repo.close();
@@ -192,7 +192,7 @@ test('正文未完成不能运行；双阶段关闭后仅补算变量，正文�
         summary: '',
         variableGuide: [],
       }),
-      d.draftRevision,
+      d.draftRevision, undefined, d, await repo.prepareWorldview(d,false),
     );
     repo.close();
   });

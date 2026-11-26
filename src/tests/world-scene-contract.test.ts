@@ -9,7 +9,7 @@ import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
 import { stageResponses } from '../services/ai/stageResponses';
 import { defaultSettings } from '../ui/settings/model';
-import { submission } from './fixtures/turn';
+import { saveFixtureStory, submission } from './fixtures/turn';
 import { worldDraft, worldResult, worldState } from './fixtures/world';
 
 import { hanhaiSceneContext as context, narrative } from './fixtures/hanhaiSceneContext';
@@ -71,7 +71,7 @@ async function live(a = context()) {
   await repo.create(a.state);
   const initial = createTurnDraft(a.state.saveId, a.state.revision, a.draft.turnId, 'opening', '');
   await repo.saveDraft(initial, null);
-  const selected = await repo.saveDraft(rerollStory(initial, a.draft.story!), initial.draftRevision);
+  const selected = await saveFixtureStory(repo,rerollStory(initial, a.draft.story!), initial.draftRevision);
   a.draft = await repo.saveDraft(TurnDraftSchema.parse({...selected,draftRevision:selected.draftRevision+1,variables:a.draft.variables,stageStatus:{...selected.stageStatus,variables:'ready'}}), selected.draftRevision);
   const config = defaultAiConfig(), channel = newChannel(); channel.defaultModel = 'world'; config.channels = [channel]; config.routes.story = {channelId:channel.id,modelId:'world'};
   const data = new Map<string,string>(), storage = {getItem:(key:string)=>data.get(key)??null,setItem:(key:string,value:string)=>{data.set(key,value);},removeItem:(key:string)=>{data.delete(key);}};

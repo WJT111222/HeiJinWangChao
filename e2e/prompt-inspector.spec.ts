@@ -49,7 +49,7 @@ async function seed(page: Page, ready = true) {
           summary: '',
           variableGuide: [],
         }),
-        0,
+        0, undefined, initial, await opened.prepareWorldview(initial,false),
       );
     }
     opened.close();

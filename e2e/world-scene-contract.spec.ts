@@ -17,7 +17,7 @@ async function seed(page: Page) {
     try {
       await repo.create(state);
       const initial = createTurnDraft(state.saveId,state.revision,draft.turnId,'opening',''); await repo.saveDraft(initial,null);
-      const selected = await repo.saveDraft(rerollStory(initial,draft.story),initial.draftRevision);
+      const selected = await repo.saveDraft(rerollStory(initial,draft.story),initial.draftRevision,undefined,initial,await repo.prepareWorldview(initial,false));
       await repo.saveDraft(TurnDraftSchema.parse({...selected,draftRevision:selected.draftRevision+1,variables:draft.variables,stageStatus:{...selected.stageStatus,variables:'ready'}}),selected.draftRevision);
     } finally { repo.close(); }
   },a);

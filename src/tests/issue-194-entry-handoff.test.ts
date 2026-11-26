@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { issue194, handoffDeadline } from './fixtures/issue194';
 import { stageCommand } from './fixtures/eventStages';
-import { submission } from './fixtures/turn';
+import { seedFixtureTurn, submission } from './fixtures/turn';
 import { parseWorld } from '../services/validation/aiOutputs';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { composePrompt } from '../prompts/composer';
@@ -31,7 +31,7 @@ it('唯一合法后继通过提交前重验、正式提交与重载；非法候�
   const repo = await SaveRepository.open('issue194', new IDBFactory());
   try {
     const seed = { state: a.state, draft: a.draft };
-    await repo.importBackup(seed, (await repo.compareBackup(seed)).confirmation);
+    await seedFixtureTurn(repo,seed);
     a.draft = (await repo.loadGame(a.state.saveId)).draft!;
     const save = (result: ReturnType<typeof parse>) => repo.saveDraft({
       ...a.draft, draftRevision: a.draft.draftRevision + 1, stageStatus: { ...a.draft.stageStatus, world: 'ready' },

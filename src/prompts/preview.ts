@@ -69,7 +69,9 @@ export async function previewStoryMessages(input: ComposeInput, prompt: Awaited<
   return [...insertPlayerWorldbook(ready, { foundation, history: presetHistory, plan: worldbook.status === 'ok' ? worldbook.plan : undefined })];
 }
 
-export async function buildStagePreviews(input: Omit<ComposeInput, 'stage'>, config: AiConfig) {
+export async function buildStagePreviews(input: Omit<ComposeInput, 'stage'>, config: AiConfig,
+  readOriginal?: () => Promise<NonNullable<ComposeInput['worldview']>>) {
+  let original: ReturnType<typeof loadMainWorldview> | undefined;
   const entries = await Promise.all(
     inspectionStages.map(async (stage): Promise<[AiStage, StagePreview]> => {
       const selected = { ...input, stage };
@@ -78,7 +80,8 @@ export async function buildStagePreviews(input: Omit<ComposeInput, 'stage'>, con
       const route = previewRoute(config, stage);
       try {
         const draft = stage === 'story' && input.draft?.turnKind !== input.mode ? undefined : input.draft;
-        const captured = { ...selected, draft, worldview: await loadMainWorldview({ ...selected, draft }), cotAllowed: route.cotAllowed };
+        const captured = { ...selected, draft, worldview: selected.worldview ??
+          (stage !== 'story' && readOriginal ? await (original ??= readOriginal()) : await loadMainWorldview()), cotAllowed: route.cotAllowed };
         const preset = stage === 'story' ? captureAssistantSelection() : null;
         const prompt = await composePrompt(captured, preset);
         if (stage === 'story') {

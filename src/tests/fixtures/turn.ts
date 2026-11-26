@@ -1,7 +1,29 @@
 import { createTurnDraft, rerollStory, TurnDraftSchema } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
+import type { GameState } from '../../domain/state';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import { worldDraft, worldResult, worldNarrative } from './world';
+
+/** Seed a synthetic Story as if its candidate and fixture worldview were accepted together. */
+export async function saveFixtureStory(repo: SaveRepository, next: TurnDraft, revision: number) {
+  const base = await repo.loadDraft(next.saveId);
+  if (!base) throw Error('Missing fixture draft');
+  const lease = await repo.prepareWorldview(base,false);
+  return repo.saveDraft(next,revision,undefined,base,lease);
+}
+
+/** Import a historical state, then accept local fixture outputs for the business rule under test. */
+export async function seedFixtureTurn(repo: SaveRepository, {state,draft}: {state:GameState; draft:TurnDraft}) {
+  if (!draft.story) throw Error('Missing fixture Story');
+  const initial = createTurnDraft(state.saveId,state.revision,draft.turnId,draft.turnKind,draft.userInput,
+    draft.useVariableStage,draft.useWorldStage);
+  const entry = {state,draft:initial};
+  await repo.importBackup(entry,(await repo.compareBackup(entry)).confirmation);
+  const imported = (await repo.loadDraft(state.saveId))!;
+  const selected = await saveFixtureStory(repo,rerollStory(imported,draft.story),imported.draftRevision);
+  if (draft.variables) await repo.saveDraft({...selected,draftRevision:selected.draftRevision+1,
+    variables:{...draft.variables,storyRevision:selected.storyRevision},stageStatus:{...selected.stageStatus,variables:draft.stageStatus.variables}},selected.draftRevision);
+}
 
 export async function completeDraft(
   repo: SaveRepository,
@@ -26,7 +48,7 @@ export async function completeDraft(
       '',
     );
   if (!existing) await repo.saveDraft(initial, null);
-  const selected = await repo.saveDraft(
+  const selected = await saveFixtureStory(repo,
     rerollStory(initial, {
       turnKind: initial.turnKind,
       narrative: options.narrative ?? worldNarrative,

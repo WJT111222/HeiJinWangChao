@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { composePrompt } from '../prompts/composer';
 import { formatTailMessage } from '../prompts/formatTail';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { AiClient } from '../services/ai/client';
 import { payloadMessages, requestInspections } from '../services/ai/inspection';
 import { stageResponses } from '../services/ai/stageResponses';
@@ -20,7 +20,7 @@ it.each(['openai', 'deepseek', 'gemini', 'anthropic'] as const)('%s 实际 Runti
     const text = stage === 'story' ? talentStory(talentNarrative) : stage === 'world' ? JSON.stringify(emptyTalentWorld)
       : variableTextEnvelope(`<命令>set worldClock = ${JSON.stringify(new Date(Date.parse(input.state.worldClock) + 60_000).toISOString())}\nset protagonist.emotionText = "审慎"</命令>`);
     const fetcher = vi.fn<typeof fetch>(async () => talentJson(protocol, text));
-    const result = await runStageRequest(input, options.config, options.vault, { stream: false }, new AiClient(fetcher));
+    const result = await requestFixtureStage(input, options.config, options.vault, { stream: false }, new AiClient(fetcher));
     expect(fetcher).toHaveBeenCalledTimes(1); expect(input).toEqual(before);
     const body = JSON.parse(String(fetcher.mock.calls[0][1]!.body)), messages = payloadMessages(body, protocol), context = sentContext(messages);
     expect(context.PROTAGONIST_TALENT).toMatchObject({ stage, definition: { id: 'cyber_tyrant', mechanismName: '数字统御' } });

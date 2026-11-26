@@ -1,4 +1,4 @@
-import { completeDraft, submission } from './fixtures/turn';
+import { saveFixtureStory, completeDraft, submission } from './fixtures/turn';
 import { variableReply, variableTextEnvelope } from './fixtures/variableReply';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
@@ -119,7 +119,7 @@ beforeEach(async () => {
     summary: '吃饭',
     variableGuide: [],
   });
-  await repo.saveDraft(draft, 0);
+  await saveFixtureStory(repo, draft, 0);
   requestInspections.clear();
   stageResponses.clear();
 });
@@ -140,7 +140,7 @@ describe('DeepSeek V4 Pro 官方 Variables', () => {
           world: { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] },
         });
         current = (await repo.commitTurn(submission(opening))).draft;
-        current = await repo.saveDraft(rerollStory(current, {
+        current = await saveFixtureStory(repo,rerollStory(current, {
           turnKind: 'regular', narrative: text, summary: '午餐', variableGuide: [],
         }), current.draftRevision);
       }
@@ -328,7 +328,7 @@ describe('变量阶段真实请求到草稿保存', () => {
       summary: '',
       variableGuide: [],
     });
-    await repo.saveDraft(disabled, 0);
+    await saveFixtureStory(repo, disabled, 0);
     const settings = setup();
     settings.settings.runtime.useWorldStage = false;
     const saved = await runner(async () => wire()).generate({ ...settings, draft: disabled });
@@ -353,7 +353,7 @@ describe('变量阶段真实请求到草稿保存', () => {
         summary: '',
         variableGuide: [],
       });
-      await repo.saveDraft(current, 0);
+      await saveFixtureStory(repo, current, 0);
       await runner(async () => wire()).generate({ ...setup(), draft: current });
       const ids = requestInspections.getSnapshot()[0].scope?.modules.map((m) => m.id) ?? [];
       expect(ids).toContain(`stages.${mode}.variables`);

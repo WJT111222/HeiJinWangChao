@@ -17,17 +17,17 @@ import { parseVariables, revalidateWorld } from '../services/validation/aiOutput
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { reserveStageSession, withBrowserLock } from './stageGuard';
-import { StoryStage, storyPartialAfterFailure } from './storyStage';
+import { StoryStage } from './storyStage';
 import { canContinueStory } from '../domain/storyContinuation';
 import { VariableStage } from './variableStage';
 import { WorldStage } from './worldStage';
-import { planRetry, recordedRetryable, retryStopError, waitForRetry, extendedStageRetryable, transientStageError } from './stageRetry';
+import { planRetry, retryStopError, waitForRetry, extendedStageRetryable, transientStageError } from './stageRetry';
 import { carryFailureDiagnostic, markRetryIssued, noteRetryDecision } from '../services/ai/failureDiagnostic';
 import type { RetryNotice } from './stageRetry';
 
 export { transientStageError } from './stageRetry';
 
-type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>;
+type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft' | 'prepareWorldview' | 'loadGame'>;
 export interface TurnProgress {
   stage: AiStage;
   phase: 'generating' | 'saving' | 'retrying';
@@ -46,6 +46,7 @@ export interface TurnOutcome {
   skipped: AiStage[];
 }
 export interface TurnInput {
+  expectedInstance?: string | null;
   draft: TurnDraft;
   settings: Settings;
   config: AiConfig;
@@ -60,7 +61,6 @@ export interface TurnInput {
 interface ActiveTurn {
   cancelled: boolean;
   controller: AbortController;
-  savingFailure?: boolean;
   stage?: StoryStage | VariableStage | WorldStage;
   release: () => void;
 }
@@ -77,7 +77,6 @@ export class TurnCoordinator {
   cancel() {
     const attempt = this.attempt;
     if (!attempt) return true;
-    if (attempt.savingFailure) return false;
     if (attempt.stage && !attempt.stage.cancel()) return false;
     attempt.cancelled = true;
     attempt.controller.abort();
@@ -145,12 +144,18 @@ export class TurnCoordinator {
           draft = stored;
           return state;
         };
+        if (input.expectedInstance !== undefined) {
+          const {instance} = await this.repository.loadGame(draft.saveId);
+          if ((instance ?? null) !== input.expectedInstance) throw new DataError('DRAFT_CONFLICT','存档已被替换，请重新读取。');
+        }
         const state = await reread();
         const storyReady = () => Boolean(draft.story && draft.stageStatus.story === 'ready');
         const variableReady = () =>
           draft.stageStatus.variables === 'ready' && draft.variables?.validation === 'validated';
         const worldReady = () =>
           ['ready', 'preview'].includes(draft.stageStatus.world) && Boolean(draft.world);
+        if (storyReady() || draft.stageStatus.story === 'failed' || draft.storyPartial)
+          await this.repository.prepareWorldview(draft,true);
         // 复用之前的结果前重新执行安全验证，不只信任持久化的 validated 字样。
         if (variableReady()) parseVariables(JSON.stringify(draft.variables!.result), state, draft);
         if (worldReady()) revalidateWorld(state, draft);
@@ -174,7 +179,6 @@ export class TurnCoordinator {
         }
         // 本次运行是否续写在开始时固定（玩家点「续写正文」）：自动重试也只能续写，绝不悄悄改成从头生成。
         const continueStory = canContinueStory(draft, settings.prompts.minNarrativeChars);
-        const secrets = config.channels.map((channel) => vault.get(channel.id)).filter(Boolean);
         const story = new StoryStage(this.repository, this.client, session.guard(scope));
         const variables = new VariableStage(this.repository, this.client, session.guard(scope));
         const world = new WorldStage(this.repository, this.client, session.guard(scope));
@@ -194,7 +198,7 @@ export class TurnCoordinator {
               input.onProgress?.({ stage, phase, attempt: number, narrative });
             };
             try {
-              const common = { draft, settings, config, vault, orderPreferences };
+              const common = { draft, expectedInstance:input.expectedInstance, settings, config, vault, orderPreferences };
               if (stage === 'story') {
                 attempt.stage = story;
                 saved(
@@ -202,6 +206,7 @@ export class TurnCoordinator {
                     ...common,
                     companionProfile,
                     continuation: continueStory,
+                    onFailureSaved: saved,
                     onProgress: (progress) => {
                       check();
                       input.onProgress?.({ stage, attempt: number, ...progress });
@@ -220,48 +225,11 @@ export class TurnCoordinator {
               check();
               attempt.stage = undefined;
               const continuationStops = stage === 'story' && continueStory && error instanceof AiError && error.code !== 'cancelled'
-                && !canContinueStory({
-                  ...draft,
-                  stageStatus: { ...draft.stageStatus, story: 'failed' },
-                  storyPartial: storyPartialAfterFailure(draft, error, true, secrets),
-                }, settings.prompts.minNarrativeChars);
+                && !canContinueStory(draft, settings.prompts.minNarrativeChars);
               if (!(error instanceof AiError && error.code === 'cancelled')) {
                 const plan = continuationStops ? { action: 'stop' as const, reason: 'not_retryable' as const } : planRetry(error, settings, number);
                 noteRetryDecision(error, settings, number, plan, settings.runtime.failureAutoRetry ? extendedStageRetryable(error) : transientStageError(error));
                 input.onAttemptFailure?.(stage, error);
-              }
-              if (stage === 'story' && error instanceof AiError && error.code !== 'cancelled') {
-                // 原 StoryStage 只保存成功正文；协调器额外记录安全失败码，刷新后仍可恢复。
-                await reread();
-                const failed = TurnDraftSchema.parse({
-                  ...draft,
-                  draftRevision: draft.draftRevision + 1,
-                  storyPartial: storyPartialAfterFailure(draft, error, continueStory, secrets),
-                  stageStatus: { ...draft.stageStatus, story: 'failed' },
-                  failures: [
-                    ...draft.failures,
-                    {
-                      stage,
-                      attempt: number,
-                      storyRevision: draft.storyRevision,
-                      errorCode: error.code,
-                      retryable: recordedRetryable(error, settings),
-                    },
-                  ],
-                });
-                attempt.savingFailure = true;
-                try {
-                  saved(
-                    await this.repository.saveDraft(
-                      failed,
-                      draft.draftRevision,
-                      attempt.controller.signal,
-                      draft,
-                    ),
-                  );
-                } finally {
-                  attempt.savingFailure = false;
-                }
               }
               // 续写次数已用完：停下并保留已写部分，由玩家决定是否重新生成。
               if (stage === 'story' && continueStory && !canContinueStory(draft, settings.prompts.minNarrativeChars)) throw error;

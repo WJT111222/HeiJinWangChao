@@ -49,17 +49,25 @@ it('V3 启用的旧版本原样升级，主书编辑、缺失版本、损坏配�
     expect(imported).toMatchObject({ok:true,release:{bookId:r.bookId,versionId:change.release.versionId,contentHash:change.release.contentHash,metadata:{purpose:'main'}}});
     expect(await lib.install(change.release)).toMatchObject({status:'already_installed'});
     await Promise.all(officialIds.map(id => lib.setOfficial(id,false)));
-    const basis = { saveId:'one',createdAt:'2026',turnId:'turn',sourceRevision:0,baseRevision:0,bindingRevision:1 };
-    const captured = await lib.worldview(basis,true);
+    // Legacy V4 keys are never consulted; cleanup is scoped to the selected save.
+    const legacyKey = ['one','2026','turn',0,0];
+    await transaction(db,['turnWorldviews'],'readwrite',async tx => {
+      const store = tx.objectStore('turnWorldviews');
+      await request(store.put({worldview:'obsolete'},legacyKey));
+      await request(store.put({worldview:'other'},['two',...legacyKey.slice(1)]));
+    });
+    const captured = await lib.captureWorldview('one','local','test-generation');
+    expect(await transaction(db,['turnWorldviews'],'readonly',tx=>request(tx.objectStore('turnWorldviews').getAllKeys())))
+      .toEqual([['one','local','test-generation'],['two',...legacyKey.slice(1)]]);
     expect(captured.books[0].entries).toEqual([{entryId:'lunar',content:'原世界的潮历'}]);
     await transaction(db,['releases'],'readwrite',async tx => { await request(tx.objectStore('releases').delete([r.bookId,change.release.versionId])); });
     await expect(lib.worldview()).rejects.toThrow('missing_version');
-    expect(await lib.worldview(basis,true,true)).toEqual(captured);
+    expect(await lib.readWorldview('one','local','test-generation')).toEqual(captured);
+    await expect(lib.readWorldview('two','local','test-generation')).rejects.toThrow('unbound');
     await lib.setEnabled(r.bookId,false);
-    const fresh = await lib.worldview({...basis,bindingRevision:3},true);
+    const fresh = await lib.worldview();
     expect(fresh.books).toEqual([]);
     expect(Object.values(fresh.official)).toEqual([false,false]);
-    await expect(lib.worldview({...basis,turnId:'old-import'},true,true)).rejects.toThrow('unbound');
     await transaction(db,['mainSettings'],'readwrite',async tx => { await request(tx.objectStore('mainSettings').delete(officialIds[1])); });
     await expect(lib.worldview()).rejects.toThrow();
     expect(await lib.setOfficial()).toEqual({ok:true});

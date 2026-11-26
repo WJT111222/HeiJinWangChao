@@ -21,7 +21,7 @@ async function seed(page: Page) {
     try {
       await repo.create(a.state);
       const initial = createTurnDraft(a.state.saveId, 0, a.draft.turnId, 'opening', '');
-      await repo.saveDraft(initial, null); await repo.saveDraft(rerollStory(initial, a.draft.story), 0);
+      await repo.saveDraft(initial, null); await repo.saveDraft(rerollStory(initial, a.draft.story), 0, undefined, initial, await repo.prepareWorldview(initial,false));
       await repo.saveDraft({ ...a.draft, draftRevision: 2 }, 1);
     } finally { repo.close(); }
     return { response: a.response, task: a.task, event: a.event };

@@ -12,7 +12,7 @@ import { defaultSettings } from '../ui/settings/model';
 import { runtimeLogEvent } from '../ui/game/runtimeLog';
 import { endStage, stageCommand } from './fixtures/eventStages';
 import { handoffDeadline, issue194 } from './fixtures/issue194';
-import { submission } from './fixtures/turn';
+import { seedFixtureTurn, submission } from './fixtures/turn';
 import { variableTextEnvelope } from './fixtures/variableReply';
 
 function fourCommands() {
@@ -50,7 +50,7 @@ it('联合批次：收悉结案、终态复述、任务推进与待决承接，�
   let reopened: SaveRepository | undefined;
   try {
     const input={state,draft};
-    await repo.importBackup(input,(await repo.compareBackup(input)).confirmation);
+    await seedFixtureTurn(repo,input);
     const before=await repo.loadGame(state.saveId), selected=before.draft!;
     const projected=projectTurn(before.state,selected);
     expect(projected.events['handoff-source'].protagonistEntry?.status).toBe('acknowledged');
@@ -120,7 +120,7 @@ it.each([
   const repo=await SaveRepository.open('joint-review-invalid',new IDBFactory());
   try {
     const input={state,draft};
-    await repo.importBackup(input,(await repo.compareBackup(input)).confirmation);
+    await seedFixtureTurn(repo,input);
     const before=await repo.loadGame(state.saveId), selected=before.draft!;
     let failure: unknown;
     try { parseWorld(JSON.stringify(response),before.state,selected); } catch (error) { failure=error; }

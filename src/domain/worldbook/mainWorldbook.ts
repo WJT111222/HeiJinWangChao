@@ -15,4 +15,3 @@ export const worldviewSchema = z.strictObject({
   })),
 });
 export type MainWorldview = z.infer<typeof worldviewSchema>;
-export interface WorldviewBasis { saveId: string; createdAt: string; turnId: string; baseRevision: number; sourceRevision: number; bindingRevision?: number }

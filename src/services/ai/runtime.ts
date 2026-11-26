@@ -1,5 +1,5 @@
 import { prepareStoryWorldbook, storyTriggerInput } from '../worldbook/storyWorldbook';
-import { loadMainWorldview } from '../worldbook/mainWorldview';
+import { loadMainWorldview, missingWorldview } from '../worldbook/mainWorldview';
 import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
 import { nativeReferenceRecords } from '../../presets/nativeDelivery';
 import { captureAssistantPreferences, ensureNativeDeliveryHost, withTavernRequest } from '../../presets/tavern/hostState';
@@ -76,7 +76,9 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const type = requestedContinuation ? 'continue' : captured.draft?.story || captured.draft?.storyPartial
     || captured.draft?.failures.some(f => f.stage === 'story') ? 'regenerate' : 'normal';
   const generation = stageResponses.generation();
-  captured.worldview = await loadMainWorldview(captured, true, !!requestedContinuation);
+  // Formal stages supply the snapshot checked by the live repository before any draft mutation.
+  if (!captured.worldview && (requestedContinuation || captured.stage !== 'story')) throw missingWorldview();
+  captured.worldview ??= await loadMainWorldview();
   if (options.signal?.aborted) throw new AiError('cancelled');
   const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation);
   if (!presetSelection || captured.stage !== 'story') return run();
@@ -355,7 +357,7 @@ export async function previewTavernStory(input: ComposeInput & { stage: 'story' 
   const selected = captureAssistantPreferences();
   if (!selected) throw new AiError('configuration');
   const captured = checkedInput(input);
-  captured.worldview = await loadMainWorldview(captured);
+  captured.worldview = await loadMainWorldview();
   const { previewStoryMessages } = await import('../../prompts/preview');
   return previewStoryMessages(captured, await composePrompt(captured, selected), type, true);
 }

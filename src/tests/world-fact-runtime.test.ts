@@ -1,3 +1,4 @@
+import { saveFixtureStory } from './fixtures/turn';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { WorldStage } from '../workflows/worldStage';
@@ -19,7 +20,7 @@ async function seed(context = schoolContext()) {
   await repo.create(context.state);
   const initial = createTurnDraft('save-a', 0, context.draft.turnId, context.draft.turnKind, '');
   await repo.saveDraft(initial, null);
-  await repo.saveDraft(rerollStory(initial, context.draft.story!), 0);
+  await saveFixtureStory(repo,rerollStory(initial, context.draft.story!), 0);
   draft = await repo.saveDraft({ ...context.draft, draftRevision: 2 }, 1);
 }
 beforeEach(async () => { await seed(); });

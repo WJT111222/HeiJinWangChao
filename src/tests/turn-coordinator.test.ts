@@ -378,6 +378,8 @@ describe('会话互斥、取消、版本与配置快照', () => {
       entered = deferred<void>();
     const repository = {
       load: repo.load.bind(repo),
+      prepareWorldview: repo.prepareWorldview.bind(repo),
+      loadGame: repo.loadGame.bind(repo),
       loadDraft: repo.loadDraft.bind(repo),
       saveDraft: async (...args: Parameters<SaveRepository['saveDraft']>) => {
         if (args[0].story) {

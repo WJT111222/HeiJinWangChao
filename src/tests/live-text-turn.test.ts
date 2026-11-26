@@ -1,7 +1,7 @@
 import { WorldbookLibrary } from '../services/storage/worldbookLibrary';
 import { officialIds } from '../domain/worldbook/mainWorldbook';
 import { issue194 } from './fixtures/issue194';
-import { runStageRequest } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
 import { variableTextEnvelope } from './fixtures/variableReply';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
@@ -598,7 +598,7 @@ it('旧通知恢复保留其他事件裁定，当轮坏项原文只进入 Variab
     narrative: selected.narrative + receipt.textEvidence, guide: [decision, receipt],
   }));
   const client = new AiClient(t.fetcher);
-  await runStageRequest({ state: current.state, draft: current.draft!, settings: route.settings, stage: 'variables', mode: 'regular', userInput: draft.userInput },
+  await requestFixtureStage({ state: current.state, draft: current.draft!, settings: route.settings, stage: 'variables', mode: 'regular', userInput: draft.userInput },
     route.config, route.vault, {}, client);
   expect(t.calls[0].context.VARIABLE_GUIDE_REFERENCES).toEqual(references);
   const stage = new StoryStage(repo, client);

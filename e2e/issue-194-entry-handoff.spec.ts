@@ -55,7 +55,10 @@ async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decis
     try {
       const entry = { state, draft: notification === true || notification === 'partial' || notification === 'location-isolation'
         ? createTurnDraft(state.saveId, state.revision, draft.turnId, 'regular', '') : draft };
-      await repo.importBackup(entry, (await repo.compareBackup(entry)).confirmation);
+      if (notification === false) {
+        const fixture = '/src/tests/fixtures/turn.ts';
+        await (await import(fixture)).seedFixtureTurn(repo,entry);
+      } else await repo.importBackup(entry, (await repo.compareBackup(entry)).confirmation);
     } finally { repo.close(); }
     return { response, successor: stageCommand(successor) };
   }, { notification, streamWorld });

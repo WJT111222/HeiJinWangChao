@@ -290,6 +290,7 @@ export function PromptInspector({
           companionProfile,
         },
         captured.config,
+        draft && (() => repository.prepareWorldview(draft,true).then(source => source.worldview)),
       );
       if (ticket !== generation.current) return;
       const safeResult = redactInspection(result, secrets);

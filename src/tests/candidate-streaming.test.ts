@@ -14,7 +14,7 @@ import { defaultSettings, SettingsSchema, settingsKey } from '../ui/settings/mod
 import { VariableStage } from '../workflows/variableStage';
 import { WorldStage } from '../workflows/worldStage';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
-import { completeDraft } from './fixtures/turn';
+import { saveFixtureStory, completeDraft } from './fixtures/turn';
 import { worldState, worldNarrative } from './fixtures/world';
 import { variableTextEnvelope } from './fixtures/variableReply';
 
@@ -38,7 +38,7 @@ async function repository(mode: 'opening' | 'regular' = 'regular') {
   }
   const state = await repo.load('save-a'), initial = createTurnDraft('save-a', state.revision, 'stream-turn', mode, '');
   await repo.saveDraft(initial, null);
-  const draft = await repo.saveDraft(rerollStory(initial, { turnKind: mode, narrative: worldNarrative, summary: '用餐', variableGuide: [] }), 0);
+  const draft = await saveFixtureStory(repo,rerollStory(initial, { turnKind: mode, narrative: worldNarrative, summary: '用餐', variableGuide: [] }), 0);
   return { repo, draft };
 }
 function json(protocol: Protocol, text: string, reasoning = '公开思考') {

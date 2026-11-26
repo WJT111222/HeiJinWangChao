@@ -17,7 +17,7 @@ import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { defaultSettings } from '../ui/settings/model';
 import { event, task } from './fixtures/game';
 import { worldState, worldResult, proof } from './fixtures/world';
-import { completeDraft, submission } from './fixtures/turn';
+import { saveFixtureStory, completeDraft, submission } from './fixtures/turn';
 import { variableTextEnvelope } from './fixtures/variableReply';
 
 const repos: SaveRepository[] = [], stages: Array<VariableStage|WorldStage> = [];
@@ -74,7 +74,7 @@ async function repoFor(a:{state:ReturnType<typeof formalState>;draft:TurnDraft})
   a.state=await repo.load('save-a');a.draft={...a.draft,baseSaveRevision:a.state.revision};
   const initial=createTurnDraft(a.state.saveId,a.state.revision,a.draft.turnId,a.draft.turnKind,a.draft.userInput);
   const variables=a.draft.variables;
-  await repo.saveDraft(initial,null);a.draft=await repo.saveDraft(rerollStory(initial,a.draft.story!),initial.draftRevision);
+  await repo.saveDraft(initial,null);a.draft=await saveFixtureStory(repo,rerollStory(initial,a.draft.story!),initial.draftRevision);
   if(variables)a.draft=await repo.saveDraft(TurnDraftSchema.parse({...a.draft,draftRevision:a.draft.draftRevision+1,variables,stageStatus:{...a.draft.stageStatus,variables:'ready'}}),a.draft.draftRevision);
   return repo;
 }

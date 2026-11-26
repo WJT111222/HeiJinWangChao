@@ -1,0 +1,17 @@
+{"scenario":"default","op":"variables","wire":[{"stage":"variables","origin":"中国城市与地域差异","narrative":"王先生在南城散步。经过十分钟，主角完成用餐。"}],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,0],"draftRevision":[6,8]}
+{"scenario":"default","op":"world","wire":[{"stage":"world","origin":"中国城市与地域差异","narrative":"王先生在南城散步。经过十分钟，主角完成用餐。"}],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,0],"draftRevision":[8,10]}
+{"scenario":"default","op":"commit","wire":[],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,1],"draftRevision":[10,0]}
+{"scenario":"overwrite","op":"variables","wire":[{"stage":"variables","origin":"device-B-world","narrative":"李先生在星城散步。经过十分钟，主角完成用餐。"}],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,0],"draftRevision":[6,8]}
+{"scenario":"overwrite","op":"world","wire":[{"stage":"world","origin":"device-B-world","narrative":"李先生在星城散步。经过十分钟，主角完成用餐。"}],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,0],"draftRevision":[8,10]}
+{"scenario":"overwrite","op":"commit","wire":[],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,1],"draftRevision":[10,0]}
+{"scenario":"overwrite","op":"variables","wire":[{"stage":"variables","origin":"device-B-world","narrative":"李先生在星城散步。经过十分钟，主角完成用餐。"}],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,0],"draftRevision":[6,8]}
+{"scenario":"default","op":"variables","wire":[{"stage":"variables","origin":"中国城市与地域差异","narrative":"王先生在南城散步。经过十分钟，主角完成用餐。"}],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,0],"draftRevision":[6,8]}
+{"scenario":"overwrite","op":"world","wire":[{"stage":"world","origin":"device-B-world","narrative":"李先生在星城散步。经过十分钟，主角完成用餐。"}],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,0],"draftRevision":[8,10]}
+{"scenario":"overwrite","op":"commit","wire":[],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,1],"draftRevision":[10,0]}
+{"scenario":"default","op":"world","wire":[{"stage":"world","origin":"中国城市与地域差异","narrative":"王先生在南城散步。经过十分钟，主角完成用餐。"}],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,0],"draftRevision":[8,10]}
+{"scenario":"default","op":"commit","wire":[],"error":"","story":"张先生在月港散步。经过十分钟，主角完成用餐。","formalRevision":[0,1],"draftRevision":[10,0]}
+  4 failed
+    [desktop] › e2e/worldview-source.spec.ts:30:3 › overwrite 恢复外部正文后必须验证来源，再发送或结算 ─────────────────
+    [desktop] › e2e/worldview-source.spec.ts:30:3 › default 恢复外部正文后必须验证来源，再发送或结算 ───────────────────
+    [mobile] › e2e/worldview-source.spec.ts:30:3 › overwrite 恢复外部正文后必须验证来源，再发送或结算 ──────────────────
+    [mobile] › e2e/worldview-source.spec.ts:30:3 › default 恢复外部正文后必须验证来源，再发送或结算 ────────────────────

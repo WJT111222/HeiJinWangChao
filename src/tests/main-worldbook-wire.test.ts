@@ -48,8 +48,14 @@ it('捕获八种组合、两种回合及三阶段 HTTP 请求；切换设置后�
     return Response.json({ error: { message: 'capture complete' } }, { status: 400 });
   });
   const originals = await Promise.all(officialIds.map(readPromptResource));
+  let generation: string | undefined;
   const send = async (stage: AiStage, mode: 'opening'|'regular', turn: string, options: StageRequestOptions = {}, revision = 0) => {
     const input = talentPromptInput(stage, mode);
+    if (turn !== 'persist') input.worldview = await lib.worldview();
+    else if (!generation || revision) {
+      generation = crypto.randomUUID();
+      input.worldview = await lib.captureWorldview(input.state.saveId,'transport-fixture',generation);
+    } else input.worldview = await lib.readWorldview(input.state.saveId,'transport-fixture',generation);
     input.draft!.turnId = turn;
     if (stage === 'story' && !revision) input.draft = createTurnDraft(input.state.saveId, input.state.revision, turn, mode, input.userInput);
     label = [turn, mode, stage, options.continuation ? 'continue' : options.presetSelection ? 'preset' : 'default', revision].join('/');

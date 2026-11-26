@@ -1,4 +1,4 @@
-import { officialIds, officialSchema, worldviewSchema, type MainWorldview, type OfficialId, type OfficialSelection, type WorldviewBasis } from '../../domain/worldbook/mainWorldbook';
+import { officialIds, officialSchema, worldviewSchema, type MainWorldview, type OfficialId, type OfficialSelection } from '../../domain/worldbook/mainWorldbook';
 import { canonicalJson, sha256Hex } from '../../domain/worldbook/canonical';
 import { WORLDBOOK_LIMITS, WorldbookReleaseSchema, type ImportNotice, type WorldbookRelease } from '../../domain/worldbook/schema';
 import { TRIGGER_RESOURCE_LIMITS, type BookRef } from '../../domain/worldbook/triggerRequest';
@@ -293,20 +293,8 @@ export class WorldbookLibrary {
   }
 
   /** One consistent read of flags and enabled releases. Ordinary books stay on the existing Worker path. */
-  async worldview(basis?: WorldviewBasis, bind = false, resume = false): Promise<MainWorldview> {
-    const key = basis && [basis.saveId, basis.createdAt, basis.turnId, basis.baseRevision, basis.sourceRevision];
-    const readBinding = (raw: unknown) => {
-      if (raw === undefined) return undefined;
-      const row = raw as { draftRevision: number; worldview: unknown };
-      if (!Number.isSafeInteger(row.draftRevision)) throw new Error('invalid');
-      if (basis?.bindingRevision !== undefined && basis.bindingRevision > row.draftRevision) return undefined;
-      return worldviewSchema.parse(row.worldview);
-    };
-    const captured = await transaction(this.database, [MAIN_SETTINGS, ENABLED, BOOKS, SUMMARIES, RELEASES, TURN_WORLDS], 'readonly', async tx => {
-      if (key) {
-        const saved = readBinding(await request(tx.objectStore(TURN_WORLDS).get(key)));
-        if (saved) return { kind:'bound' as const, saved };
-      }
+  async worldview(): Promise<MainWorldview> {
+    const captured = await transaction(this.database, [MAIN_SETTINGS, ENABLED, BOOKS, SUMMARIES, RELEASES], 'readonly', async tx => {
       const official = await readOfficial(tx);
       const releases: WorldbookRelease[] = [];
       // IndexedDB keys are ordered by stable book ID, independently of activation time or title.
@@ -326,9 +314,8 @@ export class WorldbookLibrary {
             release.versionId !== book.latestVersionId || release.contentHash !== summary.contentHash) throw new Error('invalid');
         releases.push(release);
       }
-      return { kind:'current' as const, official, releases };
+      return { official, releases };
     });
-    if (captured.kind === 'bound') return captured.saved;
     const books: MainWorldview['books'] = [];
     for (const release of captured.releases) {
       const verified = await hashWithinLimit(release, this.limits.maxCanonicalChars);
@@ -336,25 +323,51 @@ export class WorldbookLibrary {
       const entries = release.entries.filter(entry => entry.constant && !entry.disabled).map(({entryId, content}) => ({entryId, content}));
       books.push({ bookId: release.bookId, versionId: release.versionId, contentHash: release.contentHash, title: release.metadata.title, entries });
     }
-    const snapshot = { official: captured.official, books };
-    const unbound = resume && (books.length > 0 || officialIds.some(id => !snapshot.official[id]));
-    if (!bind || !basis || !key) {
-      if (key && unbound) throw new Error('unbound');
-      return snapshot;
-    }
-    return transaction(this.database, [TURN_WORLDS], 'readwrite', async tx => {
+    return { official: captured.official, books };
+  }
+
+  /** The workflow lock serializes captures for this save. Keep the accepted candidate intact
+   * until its replacement passes the draft CAS; a cancelled capture can leave one unused row. */
+  async captureWorldview(saveId: string, owner: string, generation: string, retain?: string) {
+    const worldview = await this.worldview();
+    await transaction(this.database,[TURN_WORLDS],'readwrite',async tx => {
       const store = tx.objectStore(TURN_WORLDS);
-      const winner = readBinding(await request(store.get(key)));
-      if (winner) return winner;
-      if (unbound) throw new Error('unbound');
-      const range = IDBKeyRange.bound(key.slice(0, 2), [...key.slice(0, 2), []]);
-      for (const existing of await request(store.getAllKeys(range))) {
-        if (Array.isArray(existing) && (Number(existing[3]) < basis.baseRevision ||
-            (existing[2] === basis.turnId && Number(existing[4]) < basis.sourceRevision - 1))) await request(store.delete(existing));
+      const range = IDBKeyRange.bound([saveId],[saveId,[]]);
+      for (const key of await request(store.getAllKeys(range))) {
+        if (Array.isArray(key) && (key.length === 5 || (key[1] === owner && key[2] !== retain)))
+          await request(store.delete(key));
       }
-      await request(store.put({ worldview: snapshot, draftRevision: basis.bindingRevision ?? 0 }, key));
-      return snapshot;
+      await request(store.add(worldview, [saveId,owner,generation]));
     });
+    return worldview;
+  }
+
+  async readWorldview(saveId: string, owner: string, generation: string) {
+    const value = await transaction(this.database,[TURN_WORLDS],'readonly',tx =>
+      request(tx.objectStore(TURN_WORLDS).get([saveId,owner,generation])));
+    const result = worldviewSchema.safeParse(value);
+    if (!result.success) throw new Error('unbound');
+    return result.data;
+  }
+
+  async forgetGeneration(saveId: string, owner: string, generation: string) {
+    await this.forgetWorldviewKeys([[saveId, owner, generation]]);
+  }
+
+  async worldviewKeys(saveId: string, owner: string) {
+    return transaction(this.database, [TURN_WORLDS], 'readonly', tx =>
+      request(tx.objectStore(TURN_WORLDS).getAllKeys(IDBKeyRange.bound([saveId, owner], [saveId, owner, []]))));
+  }
+
+  async forgetWorldviewKeys(keys: IDBValidKey[]) {
+    await transaction(this.database, [TURN_WORLDS], 'readwrite', async tx => {
+      for (const key of keys) await request(tx.objectStore(TURN_WORLDS).delete(key));
+    });
+  }
+
+  async forgetWorldviews(saveId: string, owner: string) {
+    await transaction(this.database,[TURN_WORLDS],'readwrite',tx =>
+      request(tx.objectStore(TURN_WORLDS).delete(IDBKeyRange.bound([saveId,owner],[saveId,owner,[]]))));
   }
 
   /**

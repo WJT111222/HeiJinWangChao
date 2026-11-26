@@ -8,6 +8,7 @@ import { newChannel, defaultAiConfig } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
 import { requestInspections } from '../services/ai/inspection';
 import { wireRequest, type AiMessage } from '../services/ai/protocols';
+import { loadMainWorldview } from '../services/worldbook/mainWorldview';
 import { runStageRequest } from '../services/ai/runtime';
 import { requestSnapshot } from '../services/ai/snapshot';
 import { stageResponses } from '../services/ai/stageResponses';
@@ -165,7 +166,7 @@ it.each(['regenerate', 'continue', 'normal'] as const)('以 %s 扫描重新生�
   if (trigger === 'continue') transport.mockResolvedValue(Response.json({
     choices: [{ message: { content: '正文继续。</正文><短期记忆>完成续写。</短期记忆>' }, finish_reason: 'stop' }],
   }));
-  await runStageRequest({ ...input, draft }, config, vault, {
+  await runStageRequest({ ...input, draft, worldview:await loadMainWorldview() }, config, vault, {
     ...options, ...(trigger === 'continue' ? { continuation: { partial: '<正文>已有正文。' } } : {}),
   }, client);
   expect(prepare).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
