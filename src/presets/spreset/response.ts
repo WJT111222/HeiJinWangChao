@@ -70,5 +70,6 @@ export async function readPrototypeResponse(response: Response, protocol: Protoc
   if (trace.error) throw trace.error;
   // #252 validates the original protocol, the unique terminal call and its content schema.
   const call = frames.singleCompletedCall();
-  return { text, reasoning, call, usage: trace.usage, finish: trace.finish, transport: streaming ? 'sse' as const : 'json' as const };
+  return { text, reasoning, call, matchesDelivery: trace.matchesDelivery, usage: trace.usage, finish: trace.finish,
+    transport: streaming ? 'sse' as const : 'json' as const };
 }

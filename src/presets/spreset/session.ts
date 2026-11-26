@@ -65,15 +65,18 @@ export class PrototypeSession {
     return tavernWire(snapshot, prepared, undefined, worldbook, 'channel');
   }
   async read(response: Response, snapshot: RequestSnapshot, observer: RequestOptions) {
-    const upstream = await readPrototypeResponse(response, snapshot.channel.protocol, this.signal, observer);
-    const finished = await this.run('finish', { text: upstream.text, call: upstream.call });
+    const { matchesDelivery, ...upstream } = await readPrototypeResponse(response, snapshot.channel.protocol, this.signal, observer);
+    const args = upstream.call?.args as { content: string } | undefined;
+    // Only the original frames can attest to padding before this completed call.
+    let text = upstream.text;
+    if (args && text && matchesDelivery?.(text + args.content)) text = '';
+    const finished = await this.run('finish', { text, call: upstream.call });
     if (!finished || typeof finished !== 'object' || !('output' in finished) || typeof finished.output !== 'string')
       throw new AiError('invalid_output');
     const receipt = record(finished).receipt;
     if (upstream.call ? !isEqual(receipt, { id: upstream.call.id, bytes: new TextEncoder().encode(finished.output).length }) : receipt !== null)
       throw new AiError('invalid_output');
-    const args = upstream.call?.args as { content?: string } | undefined;
-    if (args?.content) {
+    if (args) {
       observer.onRawTextDelta?.(args.content);
       observer.onRawResponse?.({ text: args.content, order: 'events' });
     }

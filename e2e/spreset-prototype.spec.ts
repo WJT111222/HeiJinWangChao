@@ -7,23 +7,30 @@ const envelope = '<正文>' + narrative + '</正文><短期记忆>核对瓷杯�
 const content = '<think>合成兼容文本</think>' + envelope;
 type Protocol = 'openai' | 'deepseek' | 'anthropic' | 'gemini';
 
-function reply(protocol: Protocol, stream: boolean) {
-  const args = { content }, fn = { name: 'submit_scene', arguments: JSON.stringify(args) };
+function reply(protocol: Protocol, stream: boolean, payload = content, padding: readonly string[] = []) {
+  const args = { content: payload }, fn = { name: 'submit_scene', arguments: JSON.stringify(args) };
   let json: unknown, events: unknown[];
   if (protocol === 'anthropic') {
     const tool = { id: 'fixture-tool', type: 'tool_use', name: fn.name, input: args };
     json = { type: 'message', content: [tool], stop_reason: 'tool_use' };
-    events = [{ type: 'message_start', message: { role: 'assistant', content: [] } },
-      { type: 'content_block_start', index: 0, content_block: { ...tool, input: {} } },
-      ...[fn.arguments.slice(0, 8), fn.arguments.slice(8)].map(partial_json => ({ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json } })),
-      { type: 'content_block_stop', index: 0 }, { type: 'message_delta', delta: { stop_reason: 'tool_use' } }, { type: 'message_stop' }];
+    const index = padding.length ? 1 : 0;
+    const prefix = padding.length ? [
+      { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
+      ...padding.map(text => ({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } })),
+      { type: 'content_block_stop', index: 0 },
+    ] : [];
+    events = [{ type: 'message_start', message: { role: 'assistant', content: [] } }, ...prefix,
+      { type: 'content_block_start', index, content_block: { ...tool, input: {} } },
+      ...[fn.arguments.slice(0, 8), fn.arguments.slice(8)].map(partial_json => ({ type: 'content_block_delta', index, delta: { type: 'input_json_delta', partial_json } })),
+      { type: 'content_block_stop', index }, { type: 'message_delta', delta: { stop_reason: 'tool_use' } }, { type: 'message_stop' }];
   } else if (protocol === 'gemini') {
     json = { candidates: [{ content: { role: 'model', parts: [{ functionCall: { name: fn.name, args } }] }, finishReason: 'STOP' }] };
-    events = [json];
+    events = [...padding.map(text => ({ candidates: [{ content: { role: 'model', parts: [{ text }] } }] })), json];
   } else {
     const tool = { id: 'fixture-tool', type: 'function', function: fn };
     json = { choices: [{ message: { role: 'assistant', tool_calls: [tool] }, finish_reason: 'tool_calls' }] };
-    events = [{ choices: [{ delta: { tool_calls: [{ ...tool, index: 0, function: { name: fn.name, arguments: fn.arguments.slice(0, 8) } }] } }] },
+    events = [...padding.map(text => ({ choices: [{ delta: { content: text } }] })),
+      { choices: [{ delta: { tool_calls: [{ ...tool, index: 0, function: { name: fn.name, arguments: fn.arguments.slice(0, 8) } }] } }] },
       { choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: fn.arguments.slice(8) } }] }, finish_reason: 'tool_calls' }] }];
   }
   return stream ? { contentType: 'text/event-stream', body: events.map(e => 'data: ' + JSON.stringify(e) + '\n\n').join('')
@@ -31,7 +38,12 @@ function reply(protocol: Protocol, stream: boolean) {
 }
 
 for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
-  for (const stream of [false, true]) test(protocol + (stream ? ' SSE' : ' JSON') + ' 正式正文及结算', async ({ page }, info) => {
+  for (const format of ['JSON', 'SSE', 'SSE 多段排版空白']) test(protocol + ' ' + format + ' 正式正文及结算', async ({ page }, info) => {
+    const stream = format !== 'JSON';
+    const padded = format === 'SSE 多段排版空白';
+    const padding = padded ? [' \t', '\r\n'] : [];
+    const expectedNarrative = padded ? narrative + '\n\n  他翻开下一页。' : narrative;
+    const payload = padded ? ' \n' + envelope.replace(narrative, expectedNarrative) + '\n\t ' : content;
     const wires: string[] = [], external: string[] = [], replies: Buffer[] = [];
     let workers = 0;
     page.on('worker', worker => { if (worker.url().startsWith('blob:null/')) workers++; });
@@ -39,7 +51,7 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
       const url = new URL(route.request().url());
       if (url.hostname === 'spreset.mock.invalid' && route.request().method() === 'POST') {
         wires.push(route.request().postData()!);
-        const fixture = reply(protocol, stream);
+        const fixture = reply(protocol, stream, payload, padding);
         const bytes = Buffer.from(fixture.body ?? JSON.stringify(fixture.json), 'utf8');
         replies.push(bytes);
         return route.fulfill({ contentType: stream ? 'text/event-stream' : 'application/json', body: bytes });
@@ -63,6 +75,16 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
       input.userInput = '我在博物馆核对蓝釉瓷杯。';
       const draft = createTurnDraft(input.state.saveId, input.state.revision, 'spreset-story', 'regular', input.userInput, false, false);
       const repo = await SaveRepository.open(), stage = new StoryStage(repo);
+      const finishes: unknown[] = [], deliveries: unknown[] = [];
+      const post = MessagePort.prototype.postMessage;
+      MessagePort.prototype.postMessage = function (...args: [unknown, (Transferable[] | StructuredSerializeOptions)?]) {
+        const message = args[0] as { session?: string; operation?: string; input?: unknown } | null;
+        if (message?.session && message.operation === 'finish') {
+          finishes.push(message.input);
+          this.addEventListener('message', event => deliveries.push(event.data?.result), { once: true });
+        }
+        return Reflect.apply(post, this, args);
+      };
       try {
         const backup = { state: input.state, draft };
         await repo.importBackup(backup, (await repo.compareBackup(backup)).confirmation);
@@ -80,17 +102,21 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
         const { stageResponses } = await import('/src/services/ai/stageResponses.ts' as string);
         const observed = stageResponses.getSnapshot()[0];
         return { before: before.revision, afterCandidate, turnDelta: after.turnNumber - before.turnNumber, revisionDelta: after.revision - before.revision,
-          writing: saved.storyWriting, observed: { transport: observed.diagnostics.transport, finish: observed.diagnostics.finishReasons,
+          finishes, deliveries, writing: saved.storyWriting, observed: { transport: observed.diagnostics.transport, finish: observed.diagnostics.finishReasons,
             complete: observed.diagnostics.complete, raw: observed.text, saved: observed.candidateSaved }, candidate: saved.story.narrative, committed: after.journal.at(-1).story.narrative, replayed: committed.replayed };
-      } finally { stage.dispose(); repo.close(); }
+      } finally { MessagePort.prototype.postMessage = post; stage.dispose(); repo.close(); }
     }, { protocol, stream });
     expect(wires).toHaveLength(1); expect(workers).toBe(1); expect(external).toEqual([]);
     const response = await incoming;
     expect(replies).toHaveLength(1);
     const [bytes] = replies;
     expect(response.status()).toBe(200);
-    expect(result.observed).toEqual({ transport: stream ? 'sse' : 'json', complete: true, saved: true, raw: content,
+    expect(result.observed).toEqual({ transport: stream ? 'sse' : 'json', complete: true, saved: true, raw: padding.join('') + payload,
       finish: [protocol === 'gemini' ? 'STOP' : protocol === 'anthropic' ? 'tool_use' : 'tool_calls'] });
+    const id = protocol === 'gemini' ? 'gemini-call-0' : 'fixture-tool';
+    const output = padded ? payload : envelope;
+    expect(result.finishes).toEqual([{ text: '', call: { id, name: 'submit_scene', args: { content: payload } } }]);
+    expect(result.deliveries).toEqual([{ output, receipt: { id, bytes: Buffer.byteLength(output) } }]);
     const wire = JSON.parse(wires[0]);
     const name = protocol === 'gemini' ? wire.tools[0].functionDeclarations[0].name : protocol === 'anthropic' ? wire.tools[0].name : wire.tools[0].function.name;
     expect(name).toBe('submit_scene');
@@ -102,7 +128,7 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
     expect(wires[0]).not.toContain('c2-fixture-credential');
     expect(result.afterCandidate).toBe(result.before);
     expect(result).toMatchObject({ turnDelta: 1, revisionDelta: 1, writing: { source: 'preset', id: 'spreset-c2', configurationVersion: 4 },
-      candidate: narrative, committed: narrative, replayed: false });
+      candidate: expectedNarrative, committed: expectedNarrative, replayed: false });
     await info.attach('c2-wire', { contentType: 'application/json', body: JSON.stringify({ protocol, stream, name, choice, posts: wires.length,
       endpoint: new URL(response.url()).pathname, responseBytes: bytes.length,
       responseSha256: createHash('sha256').update(bytes).digest('hex'), bytes: Buffer.byteLength(wires[0]), toolSchemaEstimate: estimateTokens(JSON.stringify(wire.tools)), requestEstimate: estimateTokens(wires[0]), sha256: createHash('sha256').update(wires[0]).digest('hex'), ...result }) });

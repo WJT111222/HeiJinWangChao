@@ -92,7 +92,7 @@ describe('真实供应商边界优先于输出处理器', () => {
 
 for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
   it.each([false, true])(protocol + ' 完整纯文本经实际处理器正常交付，收据为空（stream=%s）', async streaming => {
-    const content = '<正文>杯。</正文><短期记忆>核对杯子。</短期记忆><变量规划>[]</变量规划>';
+    const content = '  \n<正文>杯。\n\n  标签还在。</正文><短期记忆>核对杯子。</短期记忆><变量规划>[]</变量规划>\n\t ';
     let json: unknown, events: unknown[];
     if (protocol === 'anthropic') {
       const block = { type: 'text', text: content };
