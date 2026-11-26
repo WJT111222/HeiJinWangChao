@@ -266,3 +266,55 @@ describe('正文消息和场外来信', () => {
     });
   });
 });
+
+it('四种正文入口可承接含模板字样的手机原话，排队消息仍不可见', async () => {
+  const [{ composePrompt }, { talentPromptInput }, { builtInPresets }, { nativeDeliveryId }] =
+    await Promise.all([
+      import('../prompts/composer'),
+      import('./fixtures/talentPrompt'),
+      import('../presets/library'),
+      import('../presets/settings'),
+    ]);
+  const input = talentPromptInput('story', 'regular');
+  const text = '签收编号写着 {{ticket}}，原样带上。';
+  const turn = input.state.journal.at(-1)!.turnId;
+  recordPhone(
+    input.state,
+    'npc-a',
+    { messageId: 'receipt', sender: 'npc', medium: 'text', text },
+    turn,
+    false,
+  );
+  schedulePhone(
+    input.state,
+    {
+      messageId: 'pending-receipt',
+      npcId: 'npc-a',
+      dueAt: '2027-01-01T08:00:00+08:00',
+      text: '尚未送达的签收细节',
+    },
+    turn,
+  );
+  for (const selection of [
+    null,
+    nativeDeliveryId,
+    ...builtInPresets.map((definition) => ({ definition })),
+  ] as const) {
+    const { messages } = await composePrompt(input, selection);
+    const parts = messages.flatMap((m) =>
+      [...m.content.matchAll(/<([A-Z_]+)>\n(\{[^\n]+\})\n<\/\1>/g)].map((match) => JSON.parse(match[2])),
+    );
+    expect(parts.flatMap((p) => p.PHONE_STORY?.threads ?? [])[0].recent[0].text).toBe(text);
+    const wire = messages.map((m) => m.content).join('\n');
+    expect(wire).toContain('只有玩家行动明确授权');
+    expect(wire).not.toContain('尚未送达的签收细节');
+  }
+  const { contextMessage } = await import('../prompts/contextMessage');
+  const command = { type: 'RecordPhoneMessage', text };
+  const keys = { ENTITY_CANDIDATE: [command], other: '{{unknown}}' };
+  const envelope = contextMessage(keys);
+  expect(JSON.parse(envelope.split('\n')[1])).toEqual(keys);
+  expect(envelope).not.toContain('{{ticket}}');
+  expect(envelope).toContain('{{unknown}}');
+  expect(input.state.phone.threads['npc-a'].messages[0].text).toBe(text);
+});
