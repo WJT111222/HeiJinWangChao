@@ -1,3 +1,4 @@
+import type { StoryWriting } from '../domain/storyWriting';
 import { nativeDeliveryId } from '../presets/settings';
 import { StoryClock } from '../presets/tavern/timing';
 import { awaitAssistant, assistantStarting, captureAssistantPreferences } from '../presets/tavern/hostState';
@@ -51,6 +52,7 @@ interface StoryInput {
   onFailureSaved?: (draft: TurnDraft) => void;
   /** 从草稿里保存的截断原文接着写（玩家点「续写正文」）。 */
   continuation?: boolean;
+  confirmedWriting?: StoryWriting;
   legacyNotificationSelection?: LegacyNotificationSelection;
 }
 
@@ -88,6 +90,7 @@ export class StoryStage {
     }
     const selection = input.legacyNotificationSelection && structuredClone(input.legacyNotificationSelection);
     const continuation = Boolean(input.continuation);
+    const confirmedWriting = input.confirmedWriting && structuredClone(input.confirmedWriting);
     const captureInputs = () => {
       const config = AiConfigSchema.parse(input.config);
       return {
@@ -127,7 +130,11 @@ export class StoryStage {
       const recovery = selection ? authorizeLegacyNotificationRecovery(state,draft,selection) : undefined;
       if (recovery && (!this.repository.saveRecoveredStory || continuation
         || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage)) throw new AiError('configuration');
-      if (continuation && !canContinueStory(draft, settings.prompts.minNarrativeChars))
+      if (continuation && draft.storyPartial && !draft.storyPartial.writing && !confirmedWriting)
+        throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_unknown' });
+      const continuationDraft = continuation && draft.storyPartial && !draft.storyPartial.writing && confirmedWriting
+        ? { ...draft, storyPartial: { ...draft.storyPartial, writing: confirmedWriting } } : draft;
+      if (continuation && !canContinueStory(continuationDraft, settings.prompts.minNarrativeChars))
         throw new DataError('DRAFT_CONFLICT', '这段正文已不能续写，请重新生成。');
       const partial = continuation ? trimIncompleteTag(draft.storyPartial!.text) : '';
       const stream = new StoryStream();
@@ -171,7 +178,7 @@ export class StoryStage {
             stream: streaming, storyClock: clock,
             presetSelection, frozenStoryChannel,
             signal: attempt.signal,
-            ...(continuation ? { continuation: { partial } } : {}),
+            ...(continuation ? { continuation: { partial, confirmedWriting } } : {}),
             onDelta: (delta) => {
               current();
               narrative = pushDelta(delta);
@@ -242,7 +249,10 @@ export class StoryStage {
         storyInspections.update(inspectionId, { status: 'failed' });
         if (responseInspectionId) stageResponses.update(responseInspectionId, { status: 'failed', failureLayer: saving ? 'draft' : 'story_validation',
           ...(!saving && clock ? { validationEndMs: clock.elapsed() } : {}), normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
-        if (!recovery && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
+        // An unsuccessful explicit rewrite of an uncredited V10 fragment must leave its only copy intact.
+        const keepLegacyPartial = !continuation && draft.storyPartial && !draft.storyPartial.writing;
+        if (!recovery && !keepLegacyPartial && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled'
+          && !(draft.story && error.details?.storyRule === 'narrative_empty')) {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)
             .reduce((last, failure) => Math.max(last, failure.attempt), 0);

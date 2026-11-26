@@ -45,6 +45,8 @@ function reply(stage: AiStage, text: string) {
 }
 
 let repo: SaveRepository, draft: TurnDraft;
+const expectedWriting = { source: 'native' as const, min: 5, max: 2000, perspective: setup().settings.prompts.perspective,
+    style: setup().settings.prompts.style, naturalProse: setup().settings.prompts.naturalProse };
 const runners: TurnCoordinator[] = [];
 function runner(fetcher: typeof fetch) {
   const value = new TurnCoordinator(repo, new AiClient(fetcher));
@@ -62,7 +64,7 @@ beforeEach(async () => {
   const base = createTurnDraft('save-a', 0, 'turn-a', 'opening', '');
   draft = TurnDraftSchema.parse({ ...base, stageStatus: { ...base.stageStatus, story: 'failed' },
     failures: [{ stage: 'story', attempt: 1, storyRevision: 0, errorCode: 'output_limit', retryable: false }],
-    storyPartial: { text: head, storyRevision: 0, continuations: 2 } });
+    storyPartial: { text: head, storyRevision: 0, continuations: 2, writing: expectedWriting } });
   draft = await repo.saveDraft(draft, null);
 });
 afterEach(() => {
@@ -88,7 +90,7 @@ describe('续写与自动重试', () => {
       expect(String(messages.at(-1)?.content)).toContain(`目前已写 ${partialNarrative(head).chars} 字，已达到最低 5 字`);
     }
     const saved = await current();
-    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 2 });
+    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 2, writing: expectedWriting });
     expect(saved.stageStatus.story).toBe('failed');
   });
 
@@ -122,15 +124,13 @@ describe('续写与自动重试', () => {
     expect(transport).not.toHaveBeenCalled();
     const saved = await current();
     // 服务器错误不属于「没写完」：保留原来的已写部分，只记下这次消耗。
-    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 3 });
+    expect(saved.storyPartial).toEqual({ text: head, storyRevision: 0, continuations: 3, writing: expectedWriting });
     expect(saved.stageStatus.story).toBe('failed');
   });
 });
 
 /** 兼容渠道把推理写成开头的 <think>…</think>：与正式解析一致先剥掉，推理不进入可续写的正文。 */
 describe('前导 <think> 的截断原文', () => {
-  const expectedWriting = { source: 'native', min: 5, max: 2000, perspective: setup().settings.prompts.perspective,
-    style: setup().settings.prompts.style, naturalProse: setup().settings.prompts.naturalProse };
   function sse(chunks: string[], finish: string) {
     const events = chunks.map((content, index) => ({ choices: [{ delta: { content }, finish_reason: index === chunks.length - 1 ? finish : null }] }));
     return new Response(events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join('') + 'data: [DONE]\n\n', { headers: { 'content-type': 'text/event-stream' } });
@@ -171,7 +171,7 @@ describe('正文已闭合但字数不足', () => {
   const chars = partialNarrative(closed).chars;
   async function closedDraft() {
     const latest = await current();
-    return repo.saveDraft({ ...latest, draftRevision: latest.draftRevision + 1, storyPartial: { text: closed, storyRevision: 0, continuations: 0 } }, latest.draftRevision, undefined, latest);
+    return repo.saveDraft({ ...latest, draftRevision: latest.draftRevision + 1, storyPartial: { text: closed, storyRevision: 0, continuations: 0, writing: expectedWriting } }, latest.draftRevision, undefined, latest);
   }
   it('最低字数高于已写字数：拒绝续写，不发出任何请求，已写部分不变', async () => {
     const saved = await closedDraft();

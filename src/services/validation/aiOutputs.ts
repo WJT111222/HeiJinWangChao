@@ -1,3 +1,4 @@
+import { hasVisibleNarrative } from '../../domain/storyContent';
 import { storySceneAuthority, validateNarrationClock } from '../../domain/events/narration';
 import { nestedStoryTag, storyEnvelopeDiagnostic, storySchemaError } from './storyDiagnostics';
 import { recoverStoryEnvelope, repairUnclosedTags } from './storyEnvelopeRecovery';
@@ -131,6 +132,8 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
   const summary = envelope[3].trim();
   // 100～200 汉字为质量目标，偏离仅提示；空摘要不能充当有效的本回合事实记录。
   if (assessSummary(summary).status === 'empty') fail(new AiError('invalid_output', undefined, { storyRule: 'summary_empty', storyTag: '短期记忆' }));
+  if (!hasVisibleNarrative(narrative))
+    fail(new AiError('invalid_output', undefined, { storyRule: 'narrative_empty', storyTag: '正文' }));
   const narrativeChars = Array.from(narrative.replace(/\s/gu, '')).length;
   if (minimum !== null && narrativeChars < minimum)
     fail(new AiError('invalid_output', undefined, { storyRule: 'narrative_short', actualCount: narrativeChars, minimumCount: minimum }));

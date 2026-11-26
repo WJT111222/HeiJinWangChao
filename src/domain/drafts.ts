@@ -1,3 +1,4 @@
+import { hasVisibleNarrative } from './storyContent';
 import { DeferredEventIdsSchema, UpdateSettlementSchema } from './updateSettlement';
 import { StoryWritingSchema, type StoryWriting } from './storyWriting';
 import { z } from 'zod';
@@ -190,6 +191,8 @@ export function validateDraftUpdate(old: TurnDraft, next: TurnDraft) {
   for (const key of ['useVariableStage', 'useWorldStage', 'requestedStages', 'stageRequestRevisions'] as const) {
     requireData(fingerprint(old[key]) === fingerprint(next[key]), 'DRAFT_CONTEXT', '同次执行尝试的运行配置不可悄然改变');
   }
+  if (next.story && next.storyRevision !== old.storyRevision)
+    requireData(hasVisibleNarrative(next.story.narrative), 'STORY_NOT_READY', '正文没有可见内容');
   requireData(next.storyRevision === old.storyRevision || next.storyRevision === old.storyRevision + 1, 'STORY_CONFLICT', '正文版本不连续');
   if (next.storyRevision === old.storyRevision) {
     requireData(fingerprint(next.story) === fingerprint(old.story) && fingerprint(next.storyWriting) === fingerprint(old.storyWriting), 'STORY_CONFLICT', '正文变化必须创建新版本');

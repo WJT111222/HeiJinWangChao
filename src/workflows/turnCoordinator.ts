@@ -1,3 +1,4 @@
+import type { StoryWriting } from '../domain/storyWriting';
 import { completeTurnDraft, settlementDraft } from '../domain/turnCommit';
 import { DataError } from '../domain/common';
 import { fingerprint } from '../domain/commands';
@@ -19,7 +20,7 @@ import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { reserveStageSession, withBrowserLock } from './stageGuard';
 import { StoryStage, storyPartialAfterFailure } from './storyStage';
-import { canContinueStory } from '../domain/storyContinuation';
+import { canContinueStory, storyPartialVisible } from '../domain/storyContinuation';
 import { VariableStage } from './variableStage';
 import { WorldStage } from './worldStage';
 import { planRetry, recordedRetryable, retryStopError, waitForRetry, extendedStageRetryable, transientStageError } from './stageRetry';
@@ -47,6 +48,7 @@ export interface TurnOutcome {
   skipped: AiStage[];
 }
 export interface TurnInput {
+  confirmedWriting?: StoryWriting;
   draft: TurnDraft;
   settings: Settings;
   config: AiConfig;
@@ -165,6 +167,9 @@ export class TurnCoordinator {
         )
           needed.push('world');
         // 全部所需路由及凭证在首次付费前检查，关闭/已经合法完成的阶段不要求配置。
+        if (needed.includes('story') && storyPartialVisible(draft) && !draft.storyPartial?.writing
+          && (!input.confirmedWriting || !canContinueStory(draft, settings.prompts.minNarrativeChars)))
+          throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_unknown' });
         for (const stage of needed) requestSnapshot(config, stage, vault);
         // 在同一执行锁内CAS保存本次设置，之后所有阶段只使用此快照。
         const configured = configureTurnStages(draft, settings.runtime);
@@ -202,7 +207,7 @@ export class TurnCoordinator {
                   await story.generate({
                     ...common,
                     companionProfile,
-                    continuation: continueStory,
+                    continuation: continueStory, confirmedWriting: input.confirmedWriting,
                     onProgress: (progress) => {
                       check();
                       input.onProgress?.({ stage, attempt: number, ...progress });

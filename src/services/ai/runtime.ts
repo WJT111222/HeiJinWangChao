@@ -1,3 +1,4 @@
+import { canonicalJson } from '../../domain/worldbook/canonical';
 import { logicalMessageCount } from '../../domain/worldbook/timedEffects';
 import { prepareStoryWorldbook } from '../worldbook/storyWorldbook';
 import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
@@ -5,10 +6,10 @@ import { nativeReferenceRecords } from '../../presets/nativeDelivery';
 import { captureAssistantPreferences, ensureNativeDeliveryHost, withTavernRequest } from '../../presets/tavern/hostState';
 import { promptReady, tavernGeneration, type GenerationType } from '../../presets/tavern/events';
 import { nativeDeliveryId } from '../../presets/settings';
-import { captureStoryWriting, type AssistantSelection } from '../../presets/library';
+import { captureStoryWriting, canResumeWriting, type AssistantSelection } from '../../presets/library';
 import { parsePartialVariables, parsePartialWorld } from '../validation/partialOutputs';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
-import { sameWritingSource, type StoryWriting } from '../../domain/storyWriting';
+import type { StoryWriting } from '../../domain/storyWriting';
 import { DataError } from '../../domain/common';
 import { historicalPerspective } from '../../domain/timePreflight';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
@@ -36,7 +37,7 @@ import type { StoryFailureText } from '../../domain/storyContinuation';
 import { splitLeadingThink } from './compat';
 
 /** 正文续写：已写出的截断原文（已隐藏凭证）。只用于正文阶段。 */
-export interface StageRequestOptions extends Omit<RequestOptions, 'tavernType' | 'playerWorldbook'> { frozenStoryChannel?: RequestSnapshot; presetSelection?: AssistantSelection; continuation?: { partial: string } }
+export interface StageRequestOptions extends Omit<RequestOptions, 'tavernType' | 'playerWorldbook'> { frozenStoryChannel?: RequestSnapshot; presetSelection?: AssistantSelection; continuation?: { partial: string; confirmedWriting?: StoryWriting } }
 /**
  * 正文请求失败时收到的内容（去掉前导 <think> 推理；续写时为与已写部分拼接后的全文），供上层保存为可续写的截断正文。
  * 以失败对象为键，不进入错误消息或诊断展示。
@@ -73,10 +74,21 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const selected = captured.stage === 'story' && suppliedSelection === undefined
     ? captureAssistantPreferences(nativeAllowed) : suppliedSelection;
   const presetSelection = selected === nativeDeliveryId && !nativeAllowed ? null : structuredClone(selected);
-  const writing = captured.stage === 'story' ? await captureStoryWriting(presetSelection, captured.settings.prompts) : undefined;
-  if (requestedContinuation && captured.draft?.storyPartial && writing
-    && !sameWritingSource(captured.draft.storyPartial.writing, writing))
-    throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_changed' });
+  let writing = captured.stage === 'story' ? await captureStoryWriting(presetSelection, captured.settings.prompts) : undefined;
+  if (requestedContinuation && captured.draft?.storyPartial && writing) {
+    const previous = captured.draft.storyPartial.writing;
+    if (!previous) {
+      if (!requestedContinuation.confirmedWriting)
+        throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_unknown' });
+      if (canonicalJson(requestedContinuation.confirmedWriting) !== canonicalJson(writing))
+        throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_changed' });
+      writing = { ...writing, prefixSource: 'unknown' };
+    } else {
+      if (!await canResumeWriting(previous, writing, presetSelection))
+        throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_changed' });
+      if (previous.prefixSource) writing = { ...writing, prefixSource: previous.prefixSource };
+    }
+  }
   const type = requestedContinuation ? 'continue' : captured.draft?.story || captured.draft?.storyPartial
     || captured.draft?.failures.some(f => f.stage === 'story') ? 'regenerate' : 'normal';
   const generation = stageResponses.generation();

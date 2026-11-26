@@ -1,7 +1,7 @@
 import { expect, test } from './helpers/test';
 
 const story = '<正文>林舟核对笔记，留在车站等车。</正文><短期记忆>核对笔记。</短期记忆><变量规划>[]</变量规划>';
-const cases = ['完整短正文', '空正文', '截断', '拒答', '无效协议'] as const;
+const cases = ['完整短正文', '空正文', '截断', '拒答', '无效协议', '不可见正文'] as const;
 
 for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
   test(mode + '：相同存档与 4000 字设置的实际请求和候选', async ({ page }, info) => {
@@ -16,6 +16,7 @@ for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
       wires.push(wire);
       const tool = JSON.parse(wire).tools?.some((t: {function:{name:string}}) => t.function.name === 'actual_content');
       const content = kind === '空正文' ? story.replace('林舟核对笔记，留在车站等车。', ' ')
+        : kind === '不可见正文' ? story.replace('林舟核对笔记，留在车站等车。', '\u200b')
         : kind === '无效协议' ? '无标签的响应' : kind === '截断' ? '<正文>林舟核对笔记' : story;
       const message = kind === '拒答' ? { content: '', refusal: 'synthetic refusal' }
         : tool ? { tool_calls: [{ type: 'function', id: 'delivery', function: { name: 'actual_content',
@@ -54,7 +55,8 @@ for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
         for (let index = 0; index < count; index++) {
           const previous = JSON.stringify(draft);
           try {
-            draft = await stage.generate({draft,settings:input.settings,config,vault});
+            draft = await stage.generate({draft,settings:input.settings,config,vault,
+              ...(index === count - 1 && draft.story && {onFailureSaved: () => {}})});
             rows.push({ saved:draft.story.narrative, source:draft.storyWriting?.source });
           } catch (err) {
             const error = err as {code?:string;details?:{storyRule?:string}};
@@ -64,7 +66,7 @@ for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
         }
         const revisionUnchanged = (await repo.load(draft.saveId)).revision === initialState.revision;
         if (!draft.story) return {rows, revisionUnchanged, committed:null};
-        // Only the complete first candidate is still selected after the four failed attempts.
+        // Only the complete first candidate is still selected after the failed attempts.
         const submitted = await repo.commitTurn({draft, nextAction:'', useVariableStage:false, useWorldStage:false});
         const saved = await repo.load(draft.saveId);
         return {rows, revisionUnchanged, committed:{narrative:saved.journal.at(-1).story.narrative,
@@ -77,7 +79,8 @@ for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
       : {rule:'narrative_short',preserved:true});
     expect(result.committed).toEqual(mode === '文学预设'
       ? {narrative:'林舟核对笔记，留在车站等车。', advanced:1, replayed:false} : null);
-    const outcomes = ['invalid_output','output_limit','content_filter','invalid_output'];
+    const outcomes = ['invalid_output','output_limit','content_filter','invalid_output','invalid_output'];
+    expect(result.rows.at(-1)).toMatchObject({rule:'narrative_empty',preserved:true});
     for (const [index, expected] of outcomes.entries()) expect(result.rows[index + 1]).toMatchObject({code:expected,preserved:true});
     const requests = wires.map(text => {
       const body = JSON.parse(text);

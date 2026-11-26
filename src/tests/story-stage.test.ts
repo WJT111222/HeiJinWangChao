@@ -762,7 +762,7 @@ it('文学断点与请求配置绑定：重开数据库能补尾；切换来源�
     const partial = (await database.loadDraft(state.saveId))!;
     expect(partial.storyPartial).toMatchObject({text:'<正文>林舟等到了电车。</正文>',writing:{source:'preset',id:'peinture-1118',version:'heijin.1',configuration:expect.stringMatching(/^[a-f0-9]{64}$/)}});
     const resume = () => runner(transport,database).generate({...fixture,draft:partial,continuation:true});
-    for (const selection of [{...root,enabled:false},{...root,packages:{'peinture-1118':{version:'heijin.1',entries:{'wave-pace-normal':{enabled:false}},scripts:{}}}}]) {
+    for (const selection of [{...root,enabled:false},{...root,packages:{'peinture-1118':{version:'heijin.1',entries:{'wave-pace-slow':{enabled:false}},scripts:{}}}}]) {
       savePresetSettings(selection);
       await expect(resume()).rejects.toMatchObject({code:'configuration',details:{fieldPath:'tavern.writing_changed'}});
       expect(await database.loadDraft(state.saveId)).toEqual(partial);
@@ -802,4 +802,24 @@ it('开始请求后停用预设仍按发出时的归属保存；下一次主动�
     expect(await repo.loadDraft(draft.saveId)).toEqual(saved);
     expect(transport).toHaveBeenCalledTimes(2);
   } finally { vi.unstubAllGlobals(); }
+});
+
+it('旧断点没有确认或确认时的配置已经失效：零请求，原始片段及正式版本保留', async () => {
+  const fixture = setup();
+  const old = await repo.saveDraft({
+    ...draft, draftRevision: draft.draftRevision + 1, stageStatus: {...draft.stageStatus,story:'failed'},
+    storyPartial:{text:'<正文>站台上，电车逐渐靠近。',storyRevision:draft.storyRevision,continuations:0},
+  },draft.draftRevision);
+  const before = await repo.load(old.saveId);
+  const transport = vi.fn<typeof fetch>();
+  const stage = runner(transport);
+  const input = {...fixture,draft:old,continuation:true};
+  await expect(stage.generate(input)).rejects.toMatchObject({details:{fieldPath:'tavern.writing_unknown'}});
+  const { captureStoryWriting } = await import('../presets/library');
+  const confirmedWriting = await captureStoryWriting(null,fixture.settings.prompts);
+  fixture.settings.prompts.minNarrativeChars += 1;
+  await expect(stage.generate({...input,confirmedWriting})).rejects.toMatchObject({details:{fieldPath:'tavern.writing_changed'}});
+  expect(transport).not.toHaveBeenCalled();
+  expect(await repo.loadDraft(old.saveId)).toEqual(old);
+  expect(await repo.load(old.saveId)).toEqual(before);
 });

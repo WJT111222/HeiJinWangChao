@@ -1,3 +1,4 @@
+import type { StoryWriting } from '../../domain/storyWriting';
 import { useEffect, useRef, useState } from 'react';
 import type { TurnDraft } from '../../domain/drafts';
 import { readAiConfig } from '../../services/ai/configuration';
@@ -51,7 +52,7 @@ export function useTurnGeneration(
     },
     [runner],
   );
-  async function generate(expected = draft) {
+  async function generate(expected = draft, confirmedWriting?: StoryWriting) {
     if (!expected || active.current) return;
     active.current = true;
     // 开始生成多由玩家点击触发：此时启用声音，之后异步完成才能出声；关闭提示音时不初始化音频。
@@ -69,7 +70,7 @@ export function useTurnGeneration(
     let reported: unknown;
     try {
       const result = await generateAndSettleTurn(runner, repository, {
-        draft: expected,
+        draft: expected, confirmedWriting,
         settings,
         companionProfile,
         config: readAiConfig(localStorage),

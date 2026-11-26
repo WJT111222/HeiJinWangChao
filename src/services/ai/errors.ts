@@ -88,6 +88,7 @@ const messages: Record<AiErrorCode, string> = {
 };
 export const aiErrorCodes = Object.keys(messages);
 const fieldMessages = new Map<string, string>([
+  ['tavern.writing_unknown', '旧版断点没有记录文学来源。请确认新续写使用的文学设置，或主动重新生成。已写内容保留。'],
   ['tavern.writing_changed', '这段正文的文学设置与当前选择不同。请恢复原文学设置后续写，或主动重新生成。已写内容保留。'],
   ['tavern.refresh_required', '正文模式已在其他页面变更，请刷新后再生成。'],
   ['tavern.context_boundary', '正文资料与交付标记冲突，本次未发送。'],

@@ -1,3 +1,5 @@
+import { captureStoryWriting } from '../../presets/library';
+import { captureAssistantPreferences } from '../../presets/tavern/hostState';
 import { continuationMinimum } from '../../domain/storyWriting';
 import { FeedbackCorrelation, linkMemoryFeedback } from '../../services/feedback/report';
 import { assistantView, bindTavernPage, enterTavernChat } from '../../presets/tavern/hostState';
@@ -668,6 +670,20 @@ export function GameScreen({
           onClick: () => void world.generate(),
         },
   };
+  async function continueWorkflow() {
+    if (!draft || busy) return;
+    if (storyContinuable && !draft.storyPartial?.writing) {
+      try {
+        const selected = captureAssistantPreferences(false);
+        const writing = await captureStoryWriting(selected, settings.prompts);
+        const label = writing.source === 'native' ? '王朝原生文学设置' : `${writing.id}（${writing.version}）`;
+        if (!window.confirm(`旧版断点没有记录文学来源。保留已写内容，使用${label}续写？仅新续写部分使用此来源。取消可继续阅读、复制或重新生成。`)) return;
+        await automatic.generate(draft, writing);
+      } catch { setSubmitError('当前文学设置无法读取。已写内容仍可阅读或复制。'); }
+      return;
+    }
+    await automatic.generate(draft);
+  }
   const workflowPrimaryButton = automatic.running ? (
     <button
       disabled={automatic.settling || automatic.progress?.phase === "saving"}
@@ -679,7 +695,7 @@ export function GameScreen({
     <button
       className="primary"
       disabled={!validDraft || busy}
-      onClick={() => void automatic.generate()}
+      onClick={() => void continueWorkflow()}
     >
       {canCommit
         ? "完成本回合结算"
@@ -705,7 +721,6 @@ export function GameScreen({
     if (!settings.runtime.useVariableStage || !settings.runtime.useWorldStage) void automatic.generate();
     else void generate();
   };
-  const continueWorkflow = () => { if (draft && !busy) void automatic.generate(); };
   const workflowAction: { kind: 'cancel' | 'continue' | 'idle'; label: string; short: string; title?: string; disabled: boolean; onClick?: () => void } =
     runningCancel ? { kind: 'cancel', label: runningCancel.saving ? '正在保存…' : '取消生成', short: '停', disabled: runningCancel.saving,
       title: runningCancel.saving ? '正在保存，稍候即可' : '取消正在进行的生成', onClick: runningCancel.onClick }
@@ -912,6 +927,8 @@ export function GameScreen({
                 ? `正文未写完 · 已续写 ${STORY_CONTINUATION_LIMIT} 次，不能再续写；可复制已写内容，按「发送」重新生成`
                 : partialBlock === 'closed_short'
                   ? `正文已结束但只有 ${partialCount?.chars ?? 0} 字，低于最低 ${partialMinimum} 字，续写无法补足 · 可复制已写内容，按「发送」重新生成`
+                  : !draft?.storyPartial?.writing
+                    ? '旧版断点的文学来源未知。点「续写正文」确认新续写的来源，也可保留行动并重新生成正文。'
                   : partialCount?.closed
                     ? '正文已写完，只差结尾的记录标签 · 点「续写正文」补齐，或按「发送」重新生成'
                     : '正文未写完 · 点「续写正文」从断点接着写，或按「发送」重新生成'}</span>
@@ -924,6 +941,8 @@ export function GameScreen({
                   onClick={() => void copyPartial(partialNarrative)} title="把已写出的正文复制到剪贴板">
                   <span className="partial-seal" aria-hidden="true">{partialCopy?.text === partialNarrative && partialCopy.ok ? '✓' : '抄'}</span>
                   {partialCopy?.text !== partialNarrative ? '复制已写内容' : partialCopy.ok ? '已复制' : '复制失败，请手动选中'}</button>}
+                {!draft?.storyPartial?.writing && <button type="button" className="partial-action" disabled={busy}
+                  onClick={() => void generate()} title="使用当前文学设置重新生成；成功前保留旧片段">重新生成正文</button>}
                 <button type="button" className="partial-action partial-discard" disabled={busy} onClick={() => void discardPartial()}
                   title="只丢掉这段没写完的正文，不调用 AI，也不会撤回上一回合；原行动留在输入框里">
                   <span className="partial-seal" aria-hidden="true">弃</span>放弃这段</button>
