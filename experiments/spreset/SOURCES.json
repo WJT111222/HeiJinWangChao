@@ -1,0 +1,50 @@
+{
+  "repository": "https://github.com/starowo/starowo.github.io",
+  "commit": "53bd585da14248ba10baaede7fc7ed0cebe1eeeb",
+  "license": "GPL-3.0-only",
+  "attribution": "SPreset / SoliUmbra (starowo); Meowssiah / 小猫之神",
+  "upstreamFiles": {
+    "regex_bind/index.js": "bc9fe020e629da3b7890c879c3525269e54ebb2d6dabb75dba1a576a2454e8ee",
+    "regex_bind/inject.js": "4858bcb57530e3ff6ef68f0c94a4d291e2914c766c274f888e9a2fdf8d0efb59",
+    "regex_bind/LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  "sections": {
+    "normalizeSPresetOutputProcessorResult:916-943": "f79b3be11604a5c184223e65044d70a5f00f37e2d008b70e1aa775ffcabb6121",
+    "processSPresetFinalRequest:1695-1720": "04a283087491a631b2d75e3df2253a5940013d60a5245969124dfe6f59d22ccc"
+  },
+  "preset": {
+    "file": "Meowssiah-2.1.7.json",
+    "sha256": "81c74429031e005fec1d0ea0a2cb7b4c35e3a055c3ce2ad4a7f3cf9c2fdf57f0",
+    "prompts": 56,
+    "regexRules": 8,
+    "processors": {
+      "FinalRequestProcessing": "ec15d7967d90be6ee19cab826367a61133de20f01e417e2a58c47927fb4096b4",
+      "OutputPreprocessing": "3c4ecabc4091cabf51a3ddc371eabe7c88f6f4beff98b166d74560812232d8fc",
+      "toolCallFormatter": "8c989dac21fa263c394ea8cfb7e68024c3728a43c0957d58c96290a427b9a54c"
+    },
+    "helpers": [
+      {
+        "name": "SPreset",
+        "id": "f0801c1a-3b0f-4e1c-82b6-f0f8990fbde6",
+        "sha256": "8298258224ebc3edaae17072b3bd93004f5cef05c479fa6012603dc049e3c632"
+      },
+      {
+        "name": "菜单",
+        "id": "3ee2a1fe-2cbb-4058-b3a0-5700867597d2",
+        "sha256": "b7a5b0350aebc955395437a4e4244fcd9cd55712c26d924e9fa40a2f338758bd"
+      }
+    ],
+    "spresetRegexes": 8,
+    "versionLabel": "3.0-Preview-01",
+    "versionId": 301,
+    "sections": {
+      "toolCallFormatter:87-92": "45156b4e6835ec197a6f85bb1dd3664258018b9445490a776bd34035272050c9"
+    }
+  },
+  "localFiles": {
+    "core.mjs": "88fe04ec66b474a895ddd5c65d879756da0e8159f312f9aec8fa9574abc02b99",
+    "worker.mjs": "15cc5dedff8de3c229ed6044dd1b9cc145258cf04d4cecd572abb7728298a2df",
+    "COPYING": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  "edition": "992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30"
+}

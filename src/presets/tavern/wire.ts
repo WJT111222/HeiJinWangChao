@@ -23,7 +23,7 @@ const request = z.object({
 });
 function unsupported(fieldPath: string): never { throw new AiError('unsupported', undefined, { fieldPath: 'tavern.' + fieldPath }); }
 
-export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeReference?: readonly AiMessage[], playerWorldbook?: PlayerWorldbook) {
+export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeReference?: readonly AiMessage[], playerWorldbook?: PlayerWorldbook, samplingSource: 'preset' | 'channel' = 'preset') {
   const parsed = request.safeParse(raw);
   if (!parsed.success) unsupported('request');
   const { messages, tools = [], tool_choice: choice, parallel_tool_calls: parallel, stream, temperature, top_p, frequency_penalty, presence_penalty } = parsed.data;
@@ -41,7 +41,7 @@ export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeRefere
   const withWorldbook = playerWorldbook && snapshot.stage === 'story'
     ? insertPlayerWorldbook(adapted, playerWorldbook, ordered)
     : adapted;
-  const wire = wireRequest(snapshot, withWorldbook, stream, nativeReference !== undefined ? undefined : { temperature, top_p, frequency_penalty, presence_penalty });
+  const wire = wireRequest(snapshot, withWorldbook, stream, nativeReference !== undefined || samplingSource === 'channel' ? undefined : { temperature, top_p, frequency_penalty, presence_penalty });
   const body = JSON.parse(wire.init.body) as Record<string, unknown>;
   const selected = typeof choice === 'object' ? choice.function.name : undefined;
   if (names.size !== tools.length || (selected && !names.has(selected)) || (!tools.length && (choice && choice !== 'none' || parallel !== undefined)))

@@ -1,3 +1,4 @@
+import { selectedPrototype } from '../spreset/definition';
 import type { ComposeInput } from '../../prompts/context';
 import isEqual from 'lodash/isEqual';
 import type { PackageOverride } from '../package';
@@ -129,7 +130,7 @@ export function startAssistant() {
     if (new URLSearchParams(location.search).get('safe') === '1') return;
     const selected = captureAssistantSelection();
     pageMode = modeOf(selected);
-    if (!selected) return;
+    if (!selected || selectedPrototype(selected)) return;
     const { loadAssistant } = await import('./scriptHost');
     await loadAssistant(selected);
   })().then(() => { initialized = true; }).catch(error => {

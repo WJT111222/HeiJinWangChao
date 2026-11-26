@@ -1,4 +1,5 @@
 import type { LegacyContinuationConsent } from './legacyContinuation';
+import { selectedPrototype } from '../presets/spreset/definition';
 import { nativeDeliveryId } from '../presets/settings';
 import { StoryClock } from '../presets/tavern/timing';
 import { awaitAssistant, assistantStarting, captureAssistantPreferences } from '../presets/tavern/hostState';
@@ -255,7 +256,8 @@ export class StoryStage {
         const keepLegacyPartial = !continuation && draft.storyPartial && !draft.storyPartial.writing;
         if ((!consent || consent.sent) && !recovery && !keepLegacyPartial && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled'
           && !isContinuationDeliveryUnknown(error)
-          && !(draft.story && error.details?.storyRule === 'narrative_empty')) {
+          // A failed experimental delivery must leave the already-selected candidate committable.
+          && !(draft.story && (selectedPrototype(presetSelection) || error.details?.storyRule === 'narrative_empty'))) {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)
             .reduce((last, failure) => Math.max(last, failure.attempt), 0);

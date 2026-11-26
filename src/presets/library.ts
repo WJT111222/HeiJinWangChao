@@ -1,3 +1,4 @@
+import { definition as prototype, prototypeRequested, readPrototype } from './spreset/definition';
 import { peintureWritingVariables } from './peintureSettings';
 import { literaryEntry } from './messages';
 import { scriptOrder } from './scriptOrder';
@@ -9,8 +10,8 @@ import peinture from './resources/peinture-manifest.json';
 import { loadPreset, type PresetDefinition, type PackageOverride, type LoadedPreset } from './package';
 import { nativeDeliveryId, readPresetSettings, storyMode } from './settings';
 
-interface PresetRegistration {
-  definition: typeof peinture;
+interface PresetRegistration<T extends PresetDefinition = typeof peinture> {
+  definition: T;
   read: () => Promise<string>;
   // Return null for UI-only scripts. Other presets can consume their full settings by default.
   scriptInputs?: (id: string, variables: Record<string, unknown>) => unknown;
@@ -26,6 +27,10 @@ const registry = new Map<string, PresetRegistration>([
   ],
 ]);
 export const builtInPresets = [...registry.values()].map((item) => item.definition);
+function registrationFor(id: string): PresetRegistration<PresetDefinition> | undefined {
+  if (import.meta.env.DEV && id === prototype.id) return { definition: prototype, read: readPrototype };
+  return registry.get(id);
+}
 export type PresetSelection = { definition: PresetDefinition; overrides?: PackageOverride } | null;
 
 /** Capture preferences before awaiting either repository reads or a lazy package load. */
@@ -66,7 +71,7 @@ function configurationText(loaded: LoadedPreset, preset: NonNullable<PresetSelec
     id: entry.identifier, role: entry.role, marker: entry.marker, text: entry.content,
     position: entry.injection_position, ...(entry.injection_position === 1 && { depth: entry.injection_depth, order: entry.injection_order }),
   })) : active.map(literaryEntry);
-  const registration = registry.get(preset.definition.id)!;
+  const registration = registrationFor(preset.definition.id)!;
   const scripts = scriptOrder(loaded.scripts).filter(script => script.enabled).flatMap(script => {
     const data = preset.overrides?.scriptVariables?.[script.id] ?? script.data;
     const variables = registration.scriptInputs ? registration.scriptInputs(script.id, data) : data;
@@ -108,15 +113,17 @@ export function captureAssistantSelection(): AssistantSelection {
   if (new URLSearchParams(globalThis.location?.search).get('safe') === '1') return null;
   const settings = readPresetSettings();
   const mode = storyMode(settings);
-  if (!mode) return null;
+  if (!mode) return prototypeRequested() ? { definition: prototype } : null;
   if (mode === nativeDeliveryId) return nativeDeliveryId;
   const item = registry.get(mode);
   if (!item) throw new Error('所选内置预设不存在');
   return { definition: item.definition, overrides: settings.packages[item.definition.id] };
 }
 export async function resolveStoryPreset(selected: NonNullable<PresetSelection>) {
-  const item = registry.get(selected.definition.id);
+  const item = registrationFor(selected.definition.id);
   if (!item) throw new Error('所选内置预设不存在');
+  if (import.meta.env.DEV && item.definition.id === prototype.id && item.definition.version !== selected.definition.version)
+    throw new Error('实验预设版本不匹配');
   return loadPreset(await item.read(), item.definition, selected.overrides);
 }
 

@@ -1,3 +1,4 @@
+import { selectedPrototype } from '../../presets/spreset/definition';
 import { canonicalJson } from '../../domain/worldbook/canonical';
 import { logicalMessageCount } from '../../domain/worldbook/timedEffects';
 import { prepareStoryWorldbook } from '../worldbook/storyWorldbook';
@@ -14,7 +15,7 @@ import type { StoryWriting } from '../../domain/storyWriting';
 import { DataError } from '../../domain/common';
 import { historicalPerspective } from '../../domain/timePreflight';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
-import { AiError } from './errors';
+import { AiError, manualRetryOnly } from './errors';
 import { browserPromptOrder } from '../../prompts/order';
 import { composePrompt, composeTextVariablesPrompt } from '../../prompts/composer';
 import { checkedInput } from '../../prompts/context';
@@ -94,7 +95,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
     || captured.draft?.failures.some(f => f.stage === 'story') ? 'regenerate' : 'normal';
   const generation = stageResponses.generation();
   const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation, writing);
-  if (!presetSelection || captured.stage !== 'story') return run();
+  if (!presetSelection || captured.stage !== 'story' || selectedPrototype(presetSelection)) return run();
   if (presetSelection === nativeDeliveryId) await ensureNativeDeliveryHost(options.signal);
   const recent = captured.state.journal.slice(-captured.settings.memory.immediateWindowSize);
   const chatLength = 1 + recent.reduce((sum, entry) => sum + 1 + Number(Boolean(captured.historyActions?.[entry.turnId])), 0);
@@ -183,12 +184,14 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     if (storyNotes.length) stageResponses.update(responseId, { notes: storyNotes }, secrets);
     if (options.signal?.aborted) throw new AiError('cancelled');
   }
-  const scripted = captured.stage === 'story' && !!presetSelection;
+  const spresetPrototype = captured.stage === 'story' && selectedPrototype(presetSelection);
+  const scripted = captured.stage === 'story' && !!presetSelection && !spresetPrototype;
   if (presetSelection === nativeDeliveryId && !captured.draft)
     throw new AiError('configuration', undefined, { fieldPath: 'tavern.native_delivery.action' });
   const nativeDeliveryReference = presetSelection === nativeDeliveryId ? nativeReferenceRecords(messages) : undefined;
   const responseResult = await client.generate(snapshot, scripted ? await promptReady(messages, false) : messages, {
     ...options,
+    spresetPrototype,
     confirmedTransmission: requestedContinuation?.consent,
     tavernType: scripted ? type : undefined,
     playerWorldbook,
@@ -320,6 +323,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     const compatibilityError = prompt.preset && error instanceof AiError && error.details?.fieldPath?.startsWith('tavern.');
     const failure = captured.stage === 'variables' ? variableFailure(error, step)
       : captured.stage === 'story' && !compatibilityError ? storyFailure(error, true) : error;
+    if (captured.stage === 'story' && selectedPrototype(presetSelection) && failure instanceof AiError) manualRetryOnly.add(failure);
     sealed = true;
     if (captured.stage === 'story' && failure && typeof failure === 'object') {
       // 兼容渠道会把推理写成开头的 <think>…</think>：与正式解析一致先去掉，推理不进入可续写的正文。

@@ -1,3 +1,4 @@
+import type { PrototypeSession } from '../../presets/spreset/session';
 import { fetchWithRelay, relayAttempt, relayMode, type ConfirmedTransmission } from './corsRelay';
 import { relayUpstreamHeader } from './relayTarget';
 import { nativeFetch } from '../../presets/tavern/fetch';
@@ -39,6 +40,7 @@ export interface RequestOptions {
   confirmedTransmission?: ConfirmedTransmission;
   storyClock?: import('../../presets/tavern/timing').StoryClock;
   presetSampling?: Sampling;
+  spresetPrototype?: boolean;
   tavernType?: GenerationType;
   /** Frozen reference records for checking the bundled script’s final tool declaration. */
   nativeDeliveryReference?: readonly AiMessage[];
@@ -307,8 +309,10 @@ export class AiClient {
     options: RequestOptions = {},
   ): Promise<AiResponse> {
     const theater = snapshot.stage === 'theater';
+    const prototype = import.meta.env.DEV && options.spresetPrototype && snapshot.stage === 'story';
+    let session: PrototypeSession | undefined;
     // Theater keeps a single paid transport. A failed direct POST is not replayed through a relay.
-    const relay = theater ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
+    const relay = theater || (prototype && !options.confirmedTransmission) ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
     const allowOutputLimit = options.validateStoryOutputLimit === true || theater;
     const relayEnabled = relayMode() === 'auto';
     const started = performance.now();
@@ -342,7 +346,12 @@ export class AiClient {
             wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission);
         };
         const playerWorldbook = snapshot.stage === 'story' ? options.playerWorldbook : undefined;
-        const response = trace && cleanup && options.tavernType
+        if (import.meta.env.DEV && prototype) {
+          const { PrototypeSession } = await import('../../presets/spreset/session');
+          session = new PrototypeSession(signal);
+        }
+        const response = session ? await send(await session.wire(snapshot, messages, options.stream === true, playerWorldbook), signal)
+          : trace && cleanup && options.tavernType
           ? await sendTavern(snapshot, options.tavernType, [...messages], options.nativeDeliveryReference !== undefined ? undefined : options.presetSampling ?? {}, options.stream === true,
             AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryReference, playerWorldbook)
           : await send(wireRequest(snapshot, insertPlayerWorldbook(messages, playerWorldbook), options.stream === true, options.presetSampling), signal);
@@ -354,7 +363,16 @@ export class AiClient {
         // 部分中转忽略 stream:true 直接返回完整 JSON；按非流式读取，再一次性交给进度回调。
         const wholeJson = options.stream === true && /application\/json/i.test(response.headers.get('content-type') ?? '');
         const streaming = trace ? safeMime(response.headers) === 'text/event-stream' : options.stream && !wholeJson;
-        if (!streaming) {
+        if (session) {
+          const delivered = await session.read(response, snapshot, options);
+          text = delivered.text;
+          reasoning = delivered.reasoning;
+          observedUsage = usage = delivered.usage;
+          signal.throwIfAborted();
+          if (reasoning) options.onReasoningDelta?.(reasoning);
+          options.onDelta?.(text);
+          observe({ transport: delivered.transport, complete: true, finishReasons: [delivered.finish] });
+        } else if (!streaming) {
           // Inspect an unsolicited SSE copy without accepting it as a summary or
           // changing the ordinary JSON path (including mislabeled valid JSON).
           const observedSse = snapshot.stage === 'memory' && options.onResponseDiagnostics && safeMime(response.headers) === 'text/event-stream'
@@ -539,7 +557,7 @@ export class AiClient {
       }
       // 页面允许中转，不代表这次用了中转。直连已经返回的生成失败仍可自动重试。
       // 真正发出本站中转后仍失败，以及酒馆包装失败，继续只允许手动处理，避免再付一笔。
-      if (relay.used && failure instanceof AiError) manualRetryOnly.add(failure);
+      if ((relay.used || prototype) && failure instanceof AiError) manualRetryOnly.add(failure);
       if (trace && failure instanceof AiError) {
         manualRetryOnly.add(failure);
         trace.cancelled = failure.code === 'cancelled' || failure.code === 'timeout';
@@ -574,6 +592,7 @@ export class AiClient {
         cancelled: trace.cancelled === true, readerEof: trace.readerEof === true, readError: trace.readError === true, rawFinish: trace.rawFinish,
         wrapperFormat: trace.wrapperFormat, wrapperBodyRead: trace.wrapperBodyRead === true, restored: trace.restored === true,
         boundary: trace.boundary, normalized: trace.normalized, wrapper: trace.wrapper } });
+      session?.dispose();
       cleanup?.abort();
     }
   }

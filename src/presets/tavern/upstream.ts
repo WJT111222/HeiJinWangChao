@@ -49,7 +49,7 @@ function normalizedUsage(u?: Usage) {
   return u && { prompt_tokens: u.inputTokens, completion_tokens: u.outputTokens, total_tokens: u.totalTokens,
     prompt_tokens_details: { cached_tokens: u.cacheReadTokens }, completion_tokens_details: { reasoning_tokens: u.reasoningTokens } };
 }
-class Frames {
+export class UpstreamFrames {
   private tools = new Map<number, { id: string; name: string; args: string }>();
   private blocks = new Map<number, number>();
   private snapshots = new Map<string, { name: string; args: string }>();
@@ -189,6 +189,12 @@ class Frames {
     return { choices: [{ index: 0, [streaming ? 'delta' : 'message']: payload, finish_reason: finish }],
       ...(usage ? { usage: normalizedUsage(this.trace.usage) } : {}) };
   }
+  /** Read only after finish validated the provider's original tool-call structure. */
+  singleCompletedCall() {
+    if (!this.trace.complete || this.trace.error || this.tools.size > 1 || (this.hasText && this.tools.size)) invalid();
+    const call = this.tools.values().next().value;
+    return call && { id: call.id, name: call.name, args: parse(call.args) };
+  }
   finish(streaming: boolean) {
     const finish = this.trace.finish;
     if (!finish && !this.boundary) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_finish' });
@@ -227,7 +233,7 @@ export async function normalizeUpstream(response: Response, protocol: Protocol, 
   trace.status = response.status;
   trace.contentType = safeMime(response.headers);
   trace.requestedStream = stream;
-  const frames = new Frames(protocol, trace, expectedContentTool);
+  const frames = new UpstreamFrames(protocol, trace, expectedContentTool);
   if (!response.body) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_body' });
   const stopped = new AbortController();
   const reading = AbortSignal.any([signal, stopped.signal]);

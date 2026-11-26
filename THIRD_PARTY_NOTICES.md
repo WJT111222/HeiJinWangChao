@@ -106,3 +106,11 @@ Files located in the node_modules and vendor directories are externally
 maintained libraries used by this software which have their own
 licenses; we recommend you read them, as their terms may differ from the
 terms above.
+
+## SPreset 本地运行时实验（C2）
+
+SPreset 发行源码来自 SoliUmbra / starowo 的 `starowo/starowo.github.io` 仓库。
+C2 在 `experiments/spreset/` 提供修改后的可编辑组件、完整 GPL 第三版许可及对应源码清单。
+小猫之神的 Meowssiah 预设按作者提供的适配许可研究，其署名和原包指纹见清单。
+本地开发实验的入口、分发边界及验证记录见
+[SPreset 运行时原型](docs/tavernhelper-compat/SPRESET_C2.md)。
