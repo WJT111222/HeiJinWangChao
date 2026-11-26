@@ -12,8 +12,8 @@
       "totalTokens": 150,
       "cacheReadTokens": 40
     },
-    "requestBytes": 65279,
-    "requestSha256": "a274f010736f5cfe8e14bb10a68cc11e6ac10e4edd0f4c0c9f632deddc532ad9",
+    "requestBytes": 65767,
+    "requestSha256": "7f823384270d106bd2b2e16159a15c5d810b9b8e4328b0ddb243578a0e3f27d0",
     "responseSha256": "458b29a4d13978297a8a0a017d17309e7e93e093127bbbd9fe7bb143d7f0bd43",
     "tools": [
       {
@@ -79,8 +79,8 @@
     "httpPath": "/chat/completions",
     "responseBytes": 502,
     "providerUsageFixture": {},
-    "requestBytes": 65278,
-    "requestSha256": "2b3c4b31ece9239ab46f32ef88a6194b27b1cec89940155d5ffb73f34da5e2fe",
+    "requestBytes": 65766,
+    "requestSha256": "d06698848e91c82550a105444e52a4df0d6bba7fdde70239064b2328c732554d",
     "responseSha256": "c4ae08a9759c16a68b02d97bc3cda567b9817ba04613e8e3fffc9195a6f00ac7",
     "tools": [
       {
@@ -146,8 +146,8 @@
     "httpPath": "/chat/completions",
     "responseBytes": 403,
     "providerUsageFixture": {},
-    "requestBytes": 65279,
-    "requestSha256": "a274f010736f5cfe8e14bb10a68cc11e6ac10e4edd0f4c0c9f632deddc532ad9",
+    "requestBytes": 65767,
+    "requestSha256": "7f823384270d106bd2b2e16159a15c5d810b9b8e4328b0ddb243578a0e3f27d0",
     "responseSha256": "38d45756996dd198e894e3612bde9f9bd1927283d914531f61d582ea15358da6",
     "tools": [
       {
@@ -213,8 +213,8 @@
     "httpPath": "/chat/completions",
     "responseBytes": 502,
     "providerUsageFixture": {},
-    "requestBytes": 65278,
-    "requestSha256": "2b3c4b31ece9239ab46f32ef88a6194b27b1cec89940155d5ffb73f34da5e2fe",
+    "requestBytes": 65766,
+    "requestSha256": "d06698848e91c82550a105444e52a4df0d6bba7fdde70239064b2328c732554d",
     "responseSha256": "c4ae08a9759c16a68b02d97bc3cda567b9817ba04613e8e3fffc9195a6f00ac7",
     "tools": [
       {
@@ -280,8 +280,8 @@
     "httpPath": "/models/fixture:generateContent",
     "responseBytes": 337,
     "providerUsageFixture": {},
-    "requestBytes": 64998,
-    "requestSha256": "3a6d276e4684bd25f6e20052ac27d21b875a35febda3831e1b3f74953c7aa8dd",
+    "requestBytes": 65486,
+    "requestSha256": "2abebad90a71a9ab6410db08fbd7225647a94267104fcca2fd7035ffede71928",
     "responseSha256": "010884f4cc1c8853e5bc6010d352437a8016f0c86130561d94d144b862f677c8",
     "tools": [
       {
@@ -352,8 +352,8 @@
     "httpPath": "/models/fixture:streamGenerateContent",
     "responseBytes": 345,
     "providerUsageFixture": {},
-    "requestBytes": 64998,
-    "requestSha256": "3a6d276e4684bd25f6e20052ac27d21b875a35febda3831e1b3f74953c7aa8dd",
+    "requestBytes": 65486,
+    "requestSha256": "2abebad90a71a9ab6410db08fbd7225647a94267104fcca2fd7035ffede71928",
     "responseSha256": "6f0c77d11a3da0c65cdac88799d486f2d68f37c75a1731a49ce66ff0cccbfa40",
     "tools": [
       {
@@ -424,8 +424,8 @@
     "httpPath": "/messages",
     "responseBytes": 337,
     "providerUsageFixture": {},
-    "requestBytes": 64718,
-    "requestSha256": "b4e4334328dba2a84e8d243cfa535b9b807346c8b38662d0bcf448cd8c66f51d",
+    "requestBytes": 65206,
+    "requestSha256": "89ce953ec00830f6749fb742dd8810028b6f9951919b766bc27e884aafc6e46f",
     "responseSha256": "99ec1bcda57ea1f7db40cde43040910aee337f01b026f142bc05bd04fda9a453",
     "tools": [
       {
@@ -490,8 +490,8 @@
     "httpPath": "/messages",
     "responseBytes": 785,
     "providerUsageFixture": {},
-    "requestBytes": 64717,
-    "requestSha256": "3a8b4d3e03133b878135608f8e6716c6754aa0795dd54b4ac953639418f93b1d",
+    "requestBytes": 65205,
+    "requestSha256": "f6f853d1bf4fc0f6a75ee5209f5559dacac0b5fdf8c69ff7b53b33a0e48d6610",
     "responseSha256": "246a354e90332faf18d148e4a8332bdbf79b7511fdd8df6c1c78ead14adbac9c",
     "tools": [
       {
@@ -561,8 +561,8 @@
       "totalTokens": 150,
       "cacheReadTokens": 40
     },
-    "requestBytes": 65279,
-    "requestSha256": "a274f010736f5cfe8e14bb10a68cc11e6ac10e4edd0f4c0c9f632deddc532ad9",
+    "requestBytes": 65767,
+    "requestSha256": "7f823384270d106bd2b2e16159a15c5d810b9b8e4328b0ddb243578a0e3f27d0",
     "responseSha256": "458b29a4d13978297a8a0a017d17309e7e93e093127bbbd9fe7bb143d7f0bd43",
     "tools": [
       {
@@ -628,8 +628,8 @@
     "httpPath": "/chat/completions",
     "responseBytes": 502,
     "providerUsageFixture": {},
-    "requestBytes": 65278,
-    "requestSha256": "2b3c4b31ece9239ab46f32ef88a6194b27b1cec89940155d5ffb73f34da5e2fe",
+    "requestBytes": 65766,
+    "requestSha256": "d06698848e91c82550a105444e52a4df0d6bba7fdde70239064b2328c732554d",
     "responseSha256": "c4ae08a9759c16a68b02d97bc3cda567b9817ba04613e8e3fffc9195a6f00ac7",
     "tools": [
       {
@@ -695,8 +695,8 @@
     "httpPath": "/chat/completions",
     "responseBytes": 403,
     "providerUsageFixture": {},
-    "requestBytes": 65279,
-    "requestSha256": "a274f010736f5cfe8e14bb10a68cc11e6ac10e4edd0f4c0c9f632deddc532ad9",
+    "requestBytes": 65767,
+    "requestSha256": "7f823384270d106bd2b2e16159a15c5d810b9b8e4328b0ddb243578a0e3f27d0",
     "responseSha256": "38d45756996dd198e894e3612bde9f9bd1927283d914531f61d582ea15358da6",
     "tools": [
       {
@@ -762,8 +762,8 @@
     "httpPath": "/chat/completions",
     "responseBytes": 502,
     "providerUsageFixture": {},
-    "requestBytes": 65278,
-    "requestSha256": "2b3c4b31ece9239ab46f32ef88a6194b27b1cec89940155d5ffb73f34da5e2fe",
+    "requestBytes": 65766,
+    "requestSha256": "d06698848e91c82550a105444e52a4df0d6bba7fdde70239064b2328c732554d",
     "responseSha256": "c4ae08a9759c16a68b02d97bc3cda567b9817ba04613e8e3fffc9195a6f00ac7",
     "tools": [
       {
@@ -829,8 +829,8 @@
     "httpPath": "/models/fixture:generateContent",
     "responseBytes": 337,
     "providerUsageFixture": {},
-    "requestBytes": 64998,
-    "requestSha256": "3a6d276e4684bd25f6e20052ac27d21b875a35febda3831e1b3f74953c7aa8dd",
+    "requestBytes": 65486,
+    "requestSha256": "2abebad90a71a9ab6410db08fbd7225647a94267104fcca2fd7035ffede71928",
     "responseSha256": "010884f4cc1c8853e5bc6010d352437a8016f0c86130561d94d144b862f677c8",
     "tools": [
       {
@@ -901,8 +901,8 @@
     "httpPath": "/models/fixture:streamGenerateContent",
     "responseBytes": 345,
     "providerUsageFixture": {},
-    "requestBytes": 64998,
-    "requestSha256": "3a6d276e4684bd25f6e20052ac27d21b875a35febda3831e1b3f74953c7aa8dd",
+    "requestBytes": 65486,
+    "requestSha256": "2abebad90a71a9ab6410db08fbd7225647a94267104fcca2fd7035ffede71928",
     "responseSha256": "6f0c77d11a3da0c65cdac88799d486f2d68f37c75a1731a49ce66ff0cccbfa40",
     "tools": [
       {
@@ -973,8 +973,8 @@
     "httpPath": "/messages",
     "responseBytes": 337,
     "providerUsageFixture": {},
-    "requestBytes": 64718,
-    "requestSha256": "b4e4334328dba2a84e8d243cfa535b9b807346c8b38662d0bcf448cd8c66f51d",
+    "requestBytes": 65206,
+    "requestSha256": "89ce953ec00830f6749fb742dd8810028b6f9951919b766bc27e884aafc6e46f",
     "responseSha256": "99ec1bcda57ea1f7db40cde43040910aee337f01b026f142bc05bd04fda9a453",
     "tools": [
       {
@@ -1039,8 +1039,8 @@
     "httpPath": "/messages",
     "responseBytes": 785,
     "providerUsageFixture": {},
-    "requestBytes": 64717,
-    "requestSha256": "3a8b4d3e03133b878135608f8e6716c6754aa0795dd54b4ac953639418f93b1d",
+    "requestBytes": 65205,
+    "requestSha256": "f6f853d1bf4fc0f6a75ee5209f5559dacac0b5fdf8c69ff7b53b33a0e48d6610",
     "responseSha256": "246a354e90332faf18d148e4a8332bdbf79b7511fdd8df6c1c78ead14adbac9c",
     "tools": [
       {

@@ -1,6 +1,6 @@
 # 小猫之神与神域控制台
 
-基线为 `release/1.0` 的 `5d4a42104c3f363d8bf6559f20a5dea719d7e12f`。玩家可在设置的「运行 → 正文预设」选择「小猫之神」，保存后打开「神域控制台」。原生、独立防截断和两个浪潮版本保留各自的入口。开发环境的 C2 夹具继续使用单独的预设 ID 和 `submit_scene`。
+从 `release/1.0` 的 `5d4a42104c3f363d8bf6559f20a5dea719d7e12f` 开发，最后同步含 #255 手机收件箱的 `ae55434d24d17de651cf94b46583387d6ac67efc`。玩家可在设置的「运行 → 正文预设」选择「小猫之神」，保存后打开「神域控制台」。原生、独立防截断和两个浪潮版本保留各自的入口。开发环境的 C2 夹具继续使用单独的预设 ID 和 `submit_scene`。
 
 ## 适配了哪些原版内容
 
@@ -75,3 +75,11 @@ git diff origin/release/1.0...HEAD --check
 [桌面控制台](console-desktop.png) · [手机控制台](console-mobile.png) · [四协议逐样本记录](wire.json) · [Mock 实收的完整请求体](synthetic-http.zip) · [工程复核统计及既有失败](verification.json) · [离线构建核对](build-evidence.json)
 
 压缩包包含八个 UTF-8 JSON 原件，每份对应两个相同字节的设备样本；仅含合成正文请求体，未采集鉴权头。解压后可逐份用 `sha256sum` 与 wire.json 对照。
+
+## 正式版手机收件箱合流验收
+
+双父提交 `5a9b9439c6a741c0387293c2e46175957ab5a674` 同步 #255。`context.ts` 的手机资料按阶段进入既有 Story 材料槽；`saveRepository.ts` 同时保留新版 IndexedDB 打开与回写逻辑、候选事务及一次性纸条消费。王朝手机未投递的场外来信由正式结算管理。
+
+合流后 `npm run check` 通过全部 249 个文件、5,818 项 Vitest，`npm run prompts:check` 通过 93 项。桌面与手机的世界观、候选保护、猫神和手机日夜流程共 54 项通过；加入已收及待投递来信的最终控制台与出站套件 18 项通过，生产构建入口 2 项通过。各组有重叠，均为零重试、零跳过。上述四协议请求附件已更新为含手机消息的实收字节，每份只含一次已收消息，均不含待投递正文。正式资源中的文学沙箱摘要与离线重建记录完全一致。
+
+使用 `node scripts/verify-phone-upgrade.mjs` 在同一浏览器来源先打开 `066ddcf6` 的真实 V9 数据库，再使用本版的 V10 数据库。桌面与手机各自保留了 2 回合、2 个历史节点、1 张图片、1 份小剧场及待处理草稿，恢复后完成第 3 回合、幂等回放及撤回。两次升级均为零 POST。可复跑 `e2e/phone-story-inbox.spec.ts`、`e2e/worldview-source.spec.ts` 和 `e2e/meowssiah.spec.ts` 验证交汇路径。早先列出的八项历史固定版本断言对应开发基线的配对运行。

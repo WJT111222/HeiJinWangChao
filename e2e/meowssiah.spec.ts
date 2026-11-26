@@ -114,6 +114,15 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
               { CredentialVault },
             ] = await Promise.all(paths.map((p) => import(p)));
             const input = talentPromptInput('story', 'regular');
+            const { recordPhone, schedulePhone } = await import('/src/domain/phone.ts' as string);
+            const lastTurn = input.state.journal.at(-1)!.turnId;
+            recordPhone(input.state, 'npc-a', {
+              messageId: 'oracle-delivered', sender: 'npc', medium: 'text', text: '合成来信：书签已放在柜台。',
+            }, lastTurn, false);
+            schedulePhone(input.state, {
+              npcId: 'npc-a', messageId: 'oracle-future', text: '合成未投递：邮局下周开门。',
+              dueAt: new Date(Date.parse(input.state.worldClock) + 86_400_000).toISOString(),
+            }, lastTurn);
             Object.assign(input.settings.runtime, {
               streamStory: stream,
               useEntityStage: false,
@@ -213,6 +222,8 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
         const raw = wires[0],
           wire = JSON.parse(raw);
         expect(raw).toContain(direction);
+        expect(raw.split('合成来信：书签已放在柜台。')).toHaveLength(2);
+        expect(raw).not.toContain('合成未投递：邮局下周开门。');
         expect(raw).toContain('保留窗边的倒影');
         expect(raw).toContain('完全聚焦五感');
         expect(raw).not.toContain('catgodml');

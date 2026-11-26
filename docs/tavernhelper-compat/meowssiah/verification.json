@@ -120,5 +120,100 @@
       "project": "mobile",
       "error": "Error: expect(received).toMatchObject(expected)\n\n- Expected  - 1\n+ Received  + 1\n\n@@ -4,7 +4,7 @@\n    \"loadCode\": \"UNSUPPORTED_VERSION\",\n    \"parsed\": Object {\n      \"code\": \"UNSUPPORTED_VERSION\",\n      \"ok\": false,\n    },\n-   \"version\": 10,\n+   \"version\": 11,\n  }"
     }
-  ]
+  ],
+  "releaseMerge": {
+    "base": "ae55434d24d17de651cf94b46583387d6ac67efc",
+    "codeMerge": "5a9b9439c6a741c0387293c2e46175957ab5a674",
+    "releasePR": 255,
+    "vitest": {
+      "files": 249,
+      "passed": 5818
+    },
+    "promptSubset": 93,
+    "worldviewAndPhone": {
+      "expected": 54,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "phoneWireAndConsole": {
+      "expected": 18,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "production": {
+      "expected": 2,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "indexedDbUpgrade": [
+      {
+        "device": "desktop",
+        "base": "066ddcf6259c0c50ba3ba2771d7f038b4f03282f",
+        "candidate": "5a9b9439c6a741c0387293c2e46175957ab5a674",
+        "from": 9,
+        "to": 10,
+        "backup": [
+          4,
+          5
+        ],
+        "images": 1,
+        "storedTurns": 2,
+        "historyNodes": 2,
+        "theaters": 1,
+        "pendingStages": 3,
+        "committed": {
+          "legacyRecovery": "resumed",
+          "turn": 3,
+          "replayed": true,
+          "journal": 3,
+          "undo": [
+            2,
+            1
+          ],
+          "versions": [
+            11,
+            11
+          ],
+          "restored": 1
+        },
+        "posts": 0
+      },
+      {
+        "device": "mobile",
+        "base": "066ddcf6259c0c50ba3ba2771d7f038b4f03282f",
+        "candidate": "5a9b9439c6a741c0387293c2e46175957ab5a674",
+        "from": 9,
+        "to": 10,
+        "backup": [
+          4,
+          5
+        ],
+        "images": 1,
+        "storedTurns": 2,
+        "historyNodes": 2,
+        "theaters": 1,
+        "pendingStages": 3,
+        "committed": {
+          "legacyRecovery": "resumed",
+          "turn": 3,
+          "replayed": true,
+          "journal": 3,
+          "undo": [
+            2,
+            1
+          ],
+          "versions": [
+            11,
+            11
+          ],
+          "restored": 1
+        },
+        "posts": 0
+      }
+    ],
+    "wire": "16 个身份均检查已投递来信仅出现一次；未投递内容不在请求内。8 对桌面、手机请求逐字节相同。"
+  }
 }
