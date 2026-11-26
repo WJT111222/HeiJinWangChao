@@ -1,3 +1,4 @@
+import { sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { SaveRepository } from '../services/storage/saveRepository';
@@ -9,7 +10,7 @@ import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
 import { array, record, string } from '../services/ai/protocols';
 import { stageResponses } from '../services/ai/stageResponses';
-import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { rerollStory } from '../domain/drafts';
 import { projectTurn } from '../domain/turnProjection';
 import { composePrompt } from '../prompts/composer';
 import { recallV2Fixture } from './fixtures/recallV2';
@@ -44,7 +45,7 @@ async function setup(action?: string) {
   const data = new Map<string, string>(), store = { getItem: (key: string) => data.get(key) ?? null,
     setItem: (key: string, value: string) => { data.set(key, value); }, removeItem: (key: string) => { data.delete(key); } };
   const vault = new CredentialVault(store, store); vault.set(channel.id, 'mock-only-context-v2');
-  a.settings.prompts.minNarrativeChars = 1; a.settings.prompts.actionOptions = false;
+  a.settings.runtime.useEntityStage = false; a.settings.prompts.minNarrativeChars = 1; a.settings.prompts.actionOptions = false;
   return { ...a, initial, factory, repo, config, vault };
 }
 function request(init?: RequestInit) {

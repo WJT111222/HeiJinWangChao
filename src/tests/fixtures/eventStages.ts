@@ -1,6 +1,7 @@
+import { sceneWorldDraft as createTurnDraft } from './stageScope';
 import { worldState, worldResult } from './world';
 import { event } from './game';
-import { createTurnDraft, rerollStory, TurnDraftSchema } from '../../domain/drafts';
+import { rerollStory, TurnDraftSchema } from '../../domain/drafts';
 import { GameStateSchema } from '../../domain/state';
 import type { WorldEvent } from '../../domain/events/schema';
 import type { DomainCommand } from '../../domain/commands';

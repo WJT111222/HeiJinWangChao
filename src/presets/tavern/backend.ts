@@ -13,7 +13,7 @@ import { tavernWire } from './wire';
 
 export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType, messages: AiMessage[], sampling: Sampling | undefined,
   stream: boolean, signal: AbortSignal, trace: UpstreamTrace,
-  send: (wire: ReturnType<typeof tavernWire>, signal: AbortSignal) => Promise<Response>, nativeReference?: readonly AiMessage[], playerWorldbook?: PlayerWorldbook) {
+  send: (wire: ReturnType<typeof tavernWire>, signal: AbortSignal) => Promise<Response>, nativeReference?: readonly AiMessage[], playerWorldbook?: PlayerWorldbook, storyDeliveryTool?: string) {
   const data: GenerationData = { type, messages, ...sampling, stream, n: 1, enable_web_search: false, request_images: false, model: snapshot.model,
     max_tokens: snapshot.channel.parameters.maxOutputTokens, chat_completion_source: 'custom', custom_prompt_post_processing: '' };
   try { await tavernTools.apply(data); }
@@ -32,10 +32,10 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
         const wire = tavernWire(snapshot, await request.json(), nativeReference, playerWorldbook);
         actual.throwIfAborted();
         trace.requestedStream = wire.stream;
-        trace.calls++;
         const response = await send(wire, actual);
+        const deliveryTool = nativeReference !== undefined ? nativeOutputTool : storyDeliveryTool;
         return await normalizeUpstream(response, snapshot.channel.protocol, wire.stream, actual, trace,
-          nativeReference === undefined ? undefined : nativeOutputTool);
+          deliveryTool && !wire.declaredTools.has(deliveryTool) ? null : deliveryTool);
       } catch (error) {
         trace.error = actual.aborted ? new AiError('cancelled') : error instanceof AiError ? error : new AiError('network');
         trace.status ??= trace.error.status;

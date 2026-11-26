@@ -1,3 +1,4 @@
+import { stagedFixture } from './fixtures/stageScope';
 import { IDBFactory } from 'fake-indexeddb';
 import { describe, expect, it } from 'vitest';
 import { TurnDraftSchema, rerollStory } from '../domain/drafts';
@@ -7,7 +8,7 @@ import { projectTurn } from '../domain/turnProjection';
 import { composePrompt } from '../prompts/composer';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { revalidateWorld } from '../services/validation/aiOutputs';
-import { parsePartialVariables, parsePartialWorld } from '../services/validation/partialOutputs';
+import { parseVariableBatch, parsePartialWorld } from '../services/validation/partialOutputs';
 import { structuredRefs } from '../services/validation/updateIsolation';
 import { defaultSettings } from '../ui/settings/model';
 import { stageCommand } from './fixtures/eventStages';
@@ -20,6 +21,9 @@ import {
   mutualOrganization, relationTo, wrapUpdates, wrongPlace,
 } from './fixtures/locationIsolation';
 
+const parsePartialVariables = (text: string, state: Parameters<typeof parseVariableBatch>[1], draft: Parameters<typeof parseVariableBatch>[2]) =>
+  parseVariableBatch(text, state, draft, 'combined');
+
 const wrap = (commands: string) => `<thinking>合成说明不执行。</thinking><说明>准备登记变化。</说明><命令>\n${commands}\n</命令>`;
 const item = { name:'合成便条', category:'document', quantity:1, conditionText:'完整' };
 const emotion = 'set protagonist.emotionText = "平静"';
@@ -27,13 +31,13 @@ const makeItem = `set items[note] = ${JSON.stringify(item, null, 2)}`;
 const buy = `set items[purchase].purchase = ${JSON.stringify({account:'cash',price:50,item})}`;
 
 function withVariables(draft: TurnDraft, result: NonNullable<TurnDraft['variables']>['result']) {
-  return TurnDraftSchema.parse({...draft,variables:{...draft.variables,result},world:undefined,
+  return stagedFixture({...draft,useEntityStage:true,entities:undefined,variables:{...draft.variables,result},world:undefined,
     stageStatus:{...draft.stageStatus,variables:'ready',world:'pending'}});
 }
 function saveWorld(draft: TurnDraft, result: NonNullable<TurnDraft['world']>['result']) {
   return TurnDraftSchema.parse({...draft,draftRevision:draft.draftRevision+1,stageStatus:{...draft.stageStatus,world:'ready'},
     world:{storyRevision:draft.storyRevision,candidateRevision:1,requestRevision:draft.stageRequestRevisions.world,
-      basedOnVariableRevision:draft.variables!.candidateRevision,validation:'validated',result}});
+      basedOnEntityRevision:draft.entities?.candidateRevision,basedOnVariableRevision:draft.variables!.candidateRevision,validation:'validated',result}});
 }
 
 describe('隔离结构、依赖和事务', () => {
@@ -347,7 +351,7 @@ describe('地点写入精确隔离', () => {
       for (const id of Object.keys(projected.npc)) expect(once.state.npc[id]).toEqual(projected.npc[id]);
       expect(once.state.organizations['mutual-x']).toEqual(mutualOrganization('mutual-x','mutual-y'));
       expect(once.state.organizations['mutual-y']).toEqual(mutualOrganization('mutual-y','mutual-x'));
-      expect(once.state.journal.at(-1)?.settlement).toMatchObject({variables:result.settlement,world:world.settlement});
+      expect(once.state.journal.at(-1)?.settlement).toMatchObject({variables:readyVariables.variables?.result.settlement,world:world.settlement});
       const reopened = await SaveRepository.open('location-isolation',factory);
       try {
         expect(await reopened.load(state.saveId)).toEqual(once.state);

@@ -53,7 +53,7 @@ async function seed(page: Page, variables = true, disabled = false, school = fal
         { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath),
         { CredentialVault } = await import(vaultPath),
         { defaultSettings, settingsKey } = await import(settingsPath);
-      const settings = defaultSettings();
+      const settings = defaultSettings(); settings.runtime.useEntityStage = false;
       settings.prompts.minNarrativeChars = 10;
       settings.runtime.useVariableStage = !disabled;
       settings.runtime.useWorldStage = !disabled;
@@ -74,7 +74,7 @@ async function seed(page: Page, variables = true, disabled = false, school = fal
       const context = school ? (await import(schoolFixturePath)).schoolContext() : undefined;
       const repo = await SaveRepository.open(),
         state = await repo.create({ ...(context?.state ?? worldState()), title: '世界阶段测试（隔离）' }),
-        initial = createTurnDraft('save-a', 0, 'turn-a', 'regular', '', !disabled, !disabled);
+        initial = createTurnDraft('save-a', 0, 'turn-a', 'regular', '', !disabled, !disabled, false);
       await repo.saveDraft(initial, null);
       const d = context?.draft ?? worldDraft(variables),
         ready = rerollStory(initial, d.story);
@@ -106,7 +106,7 @@ async function stored(page: Page) {
   });
 }
 async function ready(page: Page) {
-  await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(2)).toContainText('已完成');
+  await expect(page.getByRole('region', { name: '四阶段工作流' }).locator('.workflow-stages > li[data-stage=world]')).toContainText('已完成');
 }
 
 test('真实迎检准备文本：无效行动者安全失败，明确恢复后任务及合成事件入候选，正式状态不变', async ({ page }) => {
@@ -149,13 +149,13 @@ test('世界生成、补算、只读查看与刷新恢复，真实路由和快�
     bodies.push(route.request().postDataJSON());
     await route.fulfill({ contentType: 'application/json', body: response() });
   });
-  await page.getByLabel('变量管理', { exact: true }).uncheck();
+  await page.getByLabel('主角与现场', { exact: true }).uncheck();
   await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
   await ready(page);
   const first = await stored(page);
   expect(first.formal).toBe(before);
   expect(first.draft.world.validation).toBe('validated');
-  expect(first.draft.world.basedOnVariableRevision).toBe(1);
+  expect(first.draft.world.basedOnVariableRevision).toBeUndefined();
   expect(first.draft.useVariableStage).toBe(false);
   expect(bodies[0].model).toBe('world-browser-model');
   expect(JSON.stringify(bodies[0])).toContain('NPC_CONTEXT');expect(JSON.stringify(bodies[0])).not.toContain('WORLD_SOURCES');
@@ -198,7 +198,7 @@ test('双开关关闭后只补算世界，无变量时明确预览；不 Roll �
   const before = await seed(page, false, true),
     initial = await stored(page);
   await openWorkflowStage(page, 'world'); await expect(page.getByRole('button', { name: '启用并补算世界', exact: true })).toBeDisabled();
-  await page.getByLabel('动态世界', { exact: true }).check();
+  await page.getByLabel('场外与网络', { exact: true }).check();
   const planned = {
     ...result,
     worldCommands: [
@@ -221,10 +221,10 @@ test('双开关关闭后只补算世界，无变量时明确预览；不 Roll �
     route.fulfill({ contentType: 'application/json', body: response(planned) }),
   );
   await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '启用并补算世界', exact: true }).click();
-  await expect(page.getByRole('region', { name: '三阶段工作流' }).locator('.workflow-stages > li').nth(2)).toContainText('仅预览');
+  await expect(page.getByRole('region', { name: '四阶段工作流' }).locator('.workflow-stages > li[data-stage=world]')).toContainText('已完成');
   const saved = await stored(page);
   expect(saved.formal).toBe(before);
-  expect(saved.draft.world.validation).toBe('preview');
+  expect(saved.draft.world.validation).toBe('validated');
   expect(saved.draft.story).toEqual(initial.draft.story);
   expect(saved.draft.variables).toBeUndefined();
 });

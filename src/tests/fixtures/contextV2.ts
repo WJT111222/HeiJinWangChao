@@ -1,5 +1,6 @@
+import { stagedFixture } from './stageScope';
 import { GameStateSchema } from '../../domain/state';
-import { TurnDraftSchema } from '../../domain/drafts';
+
 import { defaultSettings } from '../../ui/settings/model';
 import { game, npc, gameTime, event, task, organizations } from './game';
 import { worldDraft } from './world';
@@ -77,7 +78,7 @@ export function contextV2Fixture() {
   }));
   state.revision = state.turnNumber = state.journal.length;
   state.appliedCommands = [{ turnId: 'past-1', commandId: 'old-command', fingerprint: '不可注入的幂等指纹' }];
-  const draft = TurnDraftSchema.parse({ ...worldDraft(), saveId: state.saveId, baseSaveRevision: state.revision,
+  const draft = stagedFixture({ ...worldDraft(), saveId: state.saveId, baseSaveRevision: state.revision,
     userInput: '本次独立玩家行动：付现金吃饭，然后听现场人物讲述。',
     story: { ...worldDraft().story!, narrative: '本回合候选正文标记：经过十分钟，主角用现金支付30元吃饭，听现场人物讲述。',
       variableGuide: [{ group: 'economy', observedFact: '本回合完整变量指导' }], actionOptions: ['本回合候选选项'] },

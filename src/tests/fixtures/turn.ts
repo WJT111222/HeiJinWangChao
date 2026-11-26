@@ -1,3 +1,4 @@
+import { commandsForPhase } from '../../domain/stageCommands';
 import { createTurnDraft, rerollStory, TurnDraftSchema } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
 import type { SaveRepository } from '../../services/storage/saveRepository';
@@ -6,6 +7,7 @@ import { worldDraft, worldResult, worldNarrative } from './world';
 export async function completeDraft(
   repo: SaveRepository,
   options: {
+    useEntityStage?: boolean;
     variables?: NonNullable<TurnDraft['variables']>['result'];
     world?: NonNullable<TurnDraft['world']>['result'];
     narrative?: string;
@@ -23,7 +25,7 @@ export async function completeDraft(
       state.revision,
       `initial-${state.saveId}`,
       state.turnNumber ? 'regular' : 'opening',
-      '',
+      '', true, true, options.useEntityStage ?? true,
     );
   if (!existing) await repo.saveDraft(initial, null);
   const selected = await repo.saveDraft(
@@ -36,20 +38,31 @@ export async function completeDraft(
     }),
     initial.draftRevision,
   );
+  const result = options.variables ?? worldDraft().variables!.result;
+  const entityTypes = new Set(commandsForPhase('entities', selected.turnKind));
+  const entityCommands = result.commands.filter(c => entityTypes.has(c.type));
+  const contactedNpcIds = [...new Set(entityCommands.flatMap(c => c.type === 'CreateNpc' ? [c.npc.id] : 'npcId' in c ? [c.npcId] : []))];
+  const entities = selected.useEntityStage ? await repo.saveDraft(TurnDraftSchema.parse({ ...selected,
+    draftRevision: selected.draftRevision + 1,
+    entities: { storyRevision: selected.storyRevision, requestRevision: selected.stageRequestRevisions.entities, candidateRevision: 1,
+      validation: 'structural', contactedNpcIds, result: { commands: entityCommands, unresolved: [], rejectedSuggestions: [] } },
+    stageStatus: { ...selected.stageStatus, entities: 'ready' },
+  }), selected.draftRevision) : selected;
   const variables = await repo.saveDraft(
     TurnDraftSchema.parse({
-      ...selected,
-      draftRevision: selected.draftRevision + 1,
+      ...entities,
+      draftRevision: entities.draftRevision + 1,
       variables: {
+        basedOnEntityRevision: entities.entities?.candidateRevision,
         storyRevision: selected.storyRevision,
         candidateRevision: 1,
         requestRevision: selected.stageRequestRevisions.variables,
         validation: 'validated',
-        result: options.variables ?? worldDraft().variables!.result,
+        result: { ...result, commands: result.commands.filter(c => !entityTypes.has(c.type)) },
       },
-      stageStatus: { ...selected.stageStatus, variables: 'ready' },
+      stageStatus: { ...entities.stageStatus, variables: 'ready' },
     }),
-    selected.draftRevision,
+    entities.draftRevision,
   );
   return repo.saveDraft(
     TurnDraftSchema.parse({
@@ -59,7 +72,7 @@ export async function completeDraft(
         storyRevision: selected.storyRevision,
         candidateRevision: 1,
         requestRevision: variables.stageRequestRevisions.world,
-        basedOnVariableRevision: 1,
+        basedOnVariableRevision: 1, basedOnEntityRevision: entities.entities?.candidateRevision,
         validation: 'validated',
         result: options.world ?? worldResult(),
       },

@@ -1,8 +1,9 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { variableReply } from './fixtures/variableReply';
 import { variableCommandsForTurn } from '../domain/turnProjection';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { newCreation, buildCreationState } from '../ui/creation/model';
-import { defaultSettings } from '../ui/settings/model';
+
 import { composePrompt } from '../prompts/composer';
 
 function form() {
@@ -32,7 +33,7 @@ describe('开局时间不取设备日期', () => {
 
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { openingTimeSelection, openingTimeBase, openingTimeContext, chinaCalendar, pendingOpeningClock } from '../domain/openingTime';
-import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { rerollStory } from '../domain/drafts';
 import { GameStateSchema, StorySchema } from '../domain/state';
 import { commitCommands } from '../domain/commands';
 import { projectTurn } from '../domain/turnProjection';
@@ -262,12 +263,13 @@ describe('开局时间真实Runtime、投影与原子事务', () => {
     expect((await run.generate()).status).toBe('complete');
     expect(run.contexts.at(-1)?.TIME_WINDOW).toEqual({ from: '2008-08-10T10:00:00+08:00', to: '2008-08-10T10:05:00+08:00' });
   });
-  it('无合法变量时world preview使用同一Story候选时钟，仍不能正式提交', async () => {
+  it('关闭现场时场外使用同一正文时钟，可原子提交', async () => {
     const run = await runtime(); run.settings.runtime.useVariableStage = false;
-    const result = await run.generate(); expect(result.status).toBe('preview');
+    const result = await run.generate(); expect(result.status).toBe('complete');
     expect(run.calls).toEqual(['story', 'world']); expect(run.contexts[1].TIME_WINDOW).toEqual({ from: start, to: end });
-    await expect(run.repo.commitTurn(submission(result.draft))).rejects.toThrow();
-    expect(await run.repo.load(run.state.saveId)).toEqual(run.state);
+    const committed = await run.repo.commitTurn(submission(result.draft));
+    expect(committed.state.worldClock).toBe(end);
+    expect(await run.repo.load(run.state.saveId)).toEqual(committed.state);
   });
 });
 

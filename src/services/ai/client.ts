@@ -1,4 +1,4 @@
-import { fetchWithRelay, relayAttempt, relayMode } from './corsRelay';
+import { fetchWithRelay, relayAttempt, relayMode, type ConfirmedTransmission } from './corsRelay';
 import { relayUpstreamHeader } from './relayTarget';
 import { nativeFetch } from '../../presets/tavern/fetch';
 import type { GenerationType } from '../../presets/tavern/events';
@@ -35,11 +35,14 @@ import type { RawResponseObservation, ResponseDiagnostics } from './responseCont
 import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, classifyUpstreamPayload, diagnosticSecrets, failurePhase } from './failureDiagnostic';
 
 export interface RequestOptions {
+  /** One-use dispatch gate for an explicitly confirmed, uncredited Story fragment. */
+  confirmedTransmission?: ConfirmedTransmission;
   storyClock?: import('../../presets/tavern/timing').StoryClock;
   presetSampling?: Sampling;
   tavernType?: GenerationType;
   /** Frozen reference records for checking the bundled script’s final tool declaration. */
   nativeDeliveryReference?: readonly AiMessage[];
+  storyDeliveryTool?: string;
   /** Internal Story-only handoff: caller must strictly validate received content. */
   validateStoryOutputLimit?: boolean;
   playerWorldbook?: PlayerWorldbook;
@@ -202,17 +205,24 @@ export class AiClient {
   constructor(private transport: typeof fetch = nativeFetch) {}
   private async response(
     url: string, init: RequestInit, signal: AbortSignal, relay: ReturnType<typeof relayAttempt>, snapshot?: RequestSnapshot,
-    observe?: (value: ResponseDiagnostics) => void, presetSampling = false, trace?: UpstreamTrace,
+    observe?: (value: ResponseDiagnostics) => void, presetSampling = false, trace?: UpstreamTrace, confirmed?: ConfirmedTransmission,
   ) {
-    trace?.clock.first('sentMs');
-    const response = await fetchWithRelay(this.transport, url, {
+    const markSent = () => {
+      if (trace) { trace.calls++; trace.clock.first('sentMs'); }
+    };
+    if (!confirmed) markSent();
+    const transport: typeof fetch = confirmed ? (target, request) => {
+      markSent();
+      return this.transport(target, request);
+    } : this.transport;
+    const response = await fetchWithRelay(transport, url, {
       ...init,
       signal,
       credentials: 'omit',
       redirect: 'error',
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
-    }, relay);
+    }, relay, confirmed && { transmission: confirmed, signal });
     trace?.clock.first('headersMs');
     if (trace) { trace.status = response.status; trace.contentType = safeMime(response.headers); }
     const relayError = relay.used && response.headers.get('X-Heijin-Relay-Error') === '1';
@@ -330,12 +340,12 @@ export class AiClient {
           try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
           catch { /* Inspection cannot affect transport. */ }
           return this.response(wire.url, wire.init, requestSignal, relay, snapshot, observe,
-            wire.presetSamplingInspection !== undefined, trace);
+            wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission);
         };
         const playerWorldbook = snapshot.stage === 'story' ? options.playerWorldbook : undefined;
         const response = trace && cleanup && options.tavernType
           ? await sendTavern(snapshot, options.tavernType, [...messages], options.nativeDeliveryReference !== undefined ? undefined : options.presetSampling ?? {}, options.stream === true,
-            AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryReference, playerWorldbook)
+            AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryReference, playerWorldbook, options.storyDeliveryTool)
           : await send(wireRequest(snapshot, insertPlayerWorldbook(messages, playerWorldbook), options.stream === true, options.presetSampling), signal);
         const protocol = trace ? 'openai' : snapshot.channel.protocol;
         lastHttp = response.status;
@@ -520,7 +530,14 @@ export class AiClient {
         return result;
       }, trace?.clock);
     } catch (error) {
-      const failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
+      let failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
+      if (options.confirmedTransmission?.sent && failure instanceof AiError &&
+          (failure.code === 'network' || failure.code === 'timeout' ||
+           (failure.code === 'server' && failure.details?.fieldPath === 'channel.relay'))) {
+        const uncertain = new AiError(failure.code, failure.status, { fieldPath: 'channel.continuation_delivery_unknown' });
+        carryFailureDiagnostic(failure, uncertain);
+        failure = uncertain;
+      }
       // 页面允许中转，不代表这次用了中转。直连已经返回的生成失败仍可自动重试。
       // 真正发出本站中转后仍失败，以及酒馆包装失败，继续只允许手动处理，避免再付一笔。
       if (relay.used && failure instanceof AiError) manualRetryOnly.add(failure);

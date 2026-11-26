@@ -1,3 +1,4 @@
+import { assertWorldEntityDependencies, effectiveEntityCandidate } from '../../domain/entityCandidate';
 import { z } from 'zod';
 import { DomainCommandSchema } from '../../domain/commands';
 import { WorldResultSchema } from '../../domain/drafts';
@@ -8,7 +9,7 @@ import { parseVariablePath } from '../../parsers/variableText';
 import { variableStatements } from '../../parsers/variableText/isolation';
 import type { VariableStatement } from '../../parsers/variableText/isolation';
 import { AiError } from '../ai/errors';
-import { parseVariables, validateVariableStatements, validateWorldCandidate, worldJson } from './aiOutputs';
+import { entityEnvelope, validateEntityStatements, parseVariables, validateVariableStatements, validateWorldCandidate, worldJson } from './aiOutputs';
 import { worldValidationError } from './worldDiagnostics';
 import { commandEnvelope } from './commandEnvelope';
 import { isolateUpdates, settlementField, structuredRefs } from './updateIsolation';
@@ -59,7 +60,13 @@ export async function parsePartialWorld(text: string, state: GameState, draft: T
   try { raw = worldJson(envelope?.commands ?? text); } catch (error) { throw worldValidationError(error); }
   const parsed = rawWorldSchema.safeParse(raw);
   if (!parsed.success) throw worldValidationError(parsed.error, {}, raw);
+  if (draft.entities) {
+    const effective = effectiveEntityCandidate(state, draft, draft.variables?.result.commands ?? []);
+    assertWorldEntityDependencies(effective, worldGroups.flatMap(group => parsed.data[group]), state.tasks);
+  }
   const existingLocations = new Set(Object.keys(state.locations));
+  for (const command of draft.entities?.result.commands ?? [])
+    if (command.type === 'CreateLocation') existingLocations.add(command.location.id);
   if (draft.variables?.validation === 'validated') {
     const variables = parseVariables(JSON.stringify(draft.variables.result), state, draft);
     for (const command of variables.commands)
@@ -194,7 +201,19 @@ function addSceneDependencies(state: GameState, units: UpdateUnit<VariableStatem
   }
 }
 
-export async function parsePartialVariables(text: string, state: GameState, draft: TurnDraft) {
+export async function parsePartialEntities(text: string, state: GameState, draft: TurnDraft) {
+  const { text: body, contactedNpcIds } = entityEnvelope(text);
+  const result = await parseVariableBatch(body, state, draft, contactedNpcIds);
+  if (result.settlement) for (const update of result.settlement.skipped) update.group = 'entities';
+  return { ...result, contactedNpcIds };
+}
+
+export function parsePartialVariables(text: string, state: GameState, draft: TurnDraft) {
+  return parseVariableBatch(text, state, draft, 'scene');
+}
+
+export async function parseVariableBatch(text: string, state: GameState, draft: TurnDraft, phase: 'combined' | 'scene' | readonly string[]) {
+  const contacts = typeof phase === 'string' ? undefined : [...phase];
   const envelope = commandEnvelope(text);
   if (!envelope) throw new AiError('variable_text_syntax', undefined, { variableStep: 'envelope', fieldPath: 'text.block_structure' });
   const statements = variableStatements(envelope.text);
@@ -223,12 +242,14 @@ export async function parsePartialVariables(text: string, state: GameState, draf
   }
   addSceneDependencies(state, units);
   // A world-clock statement is the temporal basis shared by application groups.
-  const clocks = units.filter(unit => unit.input.ast?.path.nodes.some(node => (node.kind === 'root' || node.kind === 'field') && node.name === 'worldClock') && unit.position.category === 'state');
+  const clocks = contacts ? [] : units.filter(unit => unit.input.ast?.path.nodes.some(node => (node.kind === 'root' || node.kind === 'field') && node.name === 'worldClock') && unit.position.category === 'state');
   const optional = units.filter(unit => !clocks.includes(unit));
   const { result, skipped } = await isolateUpdates(optional, selected => {
     const basis = units.filter(unit => clocks.includes(unit) || selected.includes(unit));
     const ast = basis.map(unit => unit.input.ast!);
-    return validateVariableStatements(ast, state, draft, envelope.hasDescription)
+    const validation = contacts ? validateEntityStatements(ast, state, draft, contacts) :
+      validateVariableStatements(ast, state, draft, envelope.hasDescription, phase === 'scene');
+    return validation
       .catch(error => {
         if (!(error instanceof AiError)) throw error;
         const offset = error.details?.commandIndex;
@@ -239,6 +260,6 @@ export async function parsePartialVariables(text: string, state: GameState, draf
       });
   });
   if (skipped.length || envelope.formatWarning)
-    result.settlement = { skipped, accepted: result.commands.filter(command => command.commandId.startsWith('text-v1:')).length, ...(envelope.formatWarning ? { formatWarning: true } : {}) };
+    result.settlement = { skipped, accepted: result.commands.filter(command => command.commandId.startsWith(contacts ? 'entity-v1:' : 'text-v1:')).length, ...(envelope.formatWarning ? { formatWarning: true } : {}) };
   return result;
 }

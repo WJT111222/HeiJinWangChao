@@ -23,7 +23,8 @@ async function mock(page:Page,bad=false){
    await route.fulfill({contentType:'text/event-stream',body:`data: ${JSON.stringify({choices:[{delta:{content:text}}]})}\n\ndata: [DONE]\n\n`});return;
   }
   let content:string;
-  if(stage==='variables')content=`<thinking>只推进实际时间。</thinking><说明></说明><命令>set worldClock = "${new Date(Date.parse(ctx.SAVE_STATE.worldClock)+600000).toISOString()}"</命令>`;
+  if(stage==='entities')content='<接触者>[]</接触者><thinking>现场无人物更新。</thinking><说明></说明><命令></命令>';
+  else if(stage==='variables')content=`<thinking>只推进实际时间。</thinking><说明></说明><命令>set worldClock = "${new Date(Date.parse(ctx.SAVE_STATE.worldClock)+600000).toISOString()}"</命令>`;
   else{
    const prompt=body.messages.map((m:{content:string})=>m.content).join('\n');expect(prompt).toContain('affinityConfirmed必须省略');expect(prompt).toContain('男性特殊NPC不得携带privateProfile');
    const createSchema=ctx.COMMAND_CATALOG.schema.oneOf.find((s:{properties:{type:{const:string}}})=>s.properties.type.const==='CreateNpc');
@@ -51,7 +52,7 @@ test('真实三阶段创建普通/特殊男性/成年女性，组织任务主子
  expect(saved.state.tasks['remote-duty']).toMatchObject({actorRef:{id:'remote-relative'},linkedEventId:'remote-main'});
  expect(saved.state.organizations['remote-company'].keyNpcIds).toEqual(['remote-relative','new-ordinary','new-woman']);
  expect(saved.state.locations['overseas-city'].parentId).toBe('overseas-country');expect(saved.state.events['remote-sub']).toMatchObject({parentEventId:'remote-main',protagonistEntry:{status:'pending'}});
- expect(server.calls).toEqual(['story','variables','world']);await page.reload();await expect(page.locator('.game-layout')).toBeVisible();expect((await rosterGame(page)).state).toEqual(saved.state);expect(server.calls).toHaveLength(3);
+ expect(server.calls).toEqual(['story','entities','variables','world']);await page.reload();await expect(page.locator('.game-layout')).toBeVisible();expect((await rosterGame(page)).state).toEqual(saved.state);expect(server.calls).toHaveLength(4);
 });
 
 test('非法确认和依赖跳过，其他人物正常结算且不自动重试',async({page})=>{
@@ -64,6 +65,6 @@ test('非法确认和依赖跳过，其他人物正常结算且不自动重试',
  expect(saved.state.npc['new-ordinary']).toBeDefined();
  expect(saved.state.npc['new-woman']).toBeDefined();
  expect(saved.state.journal.at(-1).settlement.world.skipped).toContainEqual(expect.objectContaining({category:'person',reason:'permission'}));
- expect(server.calls).toEqual(['story','variables','world']);
+ expect(server.calls).toEqual(['story','entities','variables','world']);
  expect(Date.parse(saved.state.worldClock)-Date.parse(before.state.worldClock)).toBe(600000);
 });

@@ -1,5 +1,5 @@
 import { openStoredSave } from './helpers/home';
-import { variableReply } from '../src/tests/fixtures/variableReply';
+import { variableReply, stageFixtureReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools, goHome, openWorkflowStage, openCandidateRaw, openStageCandidates, closeStageCandidates } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -20,11 +20,11 @@ const result = {
   rejectedSuggestions: [{ reason: '普通寒暄不改变好感' }],
   unresolved: ['内部候选事项不可默认公开'],
 };
-const response = (value: unknown = result) =>
+const response = (value: unknown = result, model?: string) =>
   JSON.stringify({
     choices: [
       {
-        message: { content: typeof value === 'string' ? value : variableReply(value) },
+        message: { content: model ? stageFixtureReply(model === 'entity-browser-model' ? 'entities' : 'variables', typeof value === 'string' ? value : variableReply(value)) : typeof value === 'string' ? value : variableReply(value) },
         finish_reason: 'stop',
       },
     ],
@@ -46,7 +46,7 @@ async function seed(page: Page, ready = true, disabled = false, text = narrative
       const { defaultSettings, settingsKey } = await import(settingsPath);
       const { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath);
       const { CredentialVault } = await import(vaultPath);
-      const settings = defaultSettings();
+      const settings = defaultSettings(); settings.runtime.useEntityStage = withNpc;
       settings.prompts.minNarrativeChars = 10;
       localStorage.setItem(settingsKey, JSON.stringify(settings));
       const config = defaultAiConfig(),
@@ -56,7 +56,8 @@ async function seed(page: Page, ready = true, disabled = false, text = narrative
       channel.compatibility.jsonMode = true;
       config.channels = [channel];
       config.routes.story = { channelId: channel.id, modelId: 'story-browser-model' };
-      config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: '' };
+      config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variable-browser-model' };
+      config.routes.entities = { mode: 'independent', channelId: channel.id, modelId: 'entity-browser-model' };
       saveAiConfig(localStorage, config);
       new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-var-browser-secret');
       const repo = await SaveRepository.open();
@@ -77,6 +78,7 @@ async function seed(page: Page, ready = true, disabled = false, text = narrative
           '已绑定输入',
           !disabled,
           !disabled,
+          withNpc,
         );
         await repo.saveDraft(initial, null);
         if (ready)
@@ -119,7 +121,7 @@ async function stored(page: Page, saveId = 'variable-e2e') {
   }, saveId);
 }
 async function ready(page: Page) {
-  const details = page.getByRole('region', { name: '变量管理详情', exact: true });
+  const details = page.getByRole('region', { name: '主角与现场详情', exact: true });
   if (!await details.isVisible()) await openWorkflowStage(page, 'variables');
   await expect(details).toContainText('已完成');
 }
@@ -197,7 +199,7 @@ test('正文未完成不能运行；双阶段关闭后仅补算变量，正文�
     repo.close();
   });
   await page.reload(); await openGameTools(page);
-  await page.getByLabel('动态世界', { exact: true }).uncheck();
+  await page.getByLabel('场外与网络', { exact: true }).uncheck();
   await page.route('https://variables.mock.invalid/**', (route) =>
     route.fulfill({ contentType: 'application/json', body: response() }),
   );
@@ -281,6 +283,17 @@ test('角色对白后换行的客观消费可保存候选，不改变正式资�
   });
 });
 
+async function stageCandidates(page: Page, entities: boolean, redo = false) {
+  if (entities) {
+    await openWorkflowStage(page,'entities');
+    await page.getByRole('button',{name: redo ? '重新生成人物与实体' : '生成人物与实体',exact:true}).click();
+    await expect(page.getByRole('region',{name:'人物与实体详情',exact:true})).toContainText('已完成');
+  }
+  await openWorkflowStage(page,'variables');
+  await page.getByRole('button',{name: redo && !entities ? '重新生成变量候选' : '生成变量候选',exact:true}).click();
+  await ready(page);
+}
+
 test('场景冲突隔离；合法离场可主动更新未结算候选', async ({ page }) => {
   const text = '主角独自走进社区诊所。同事留在重庆。';
   const before = await seed(page, true, false, text, true);
@@ -304,26 +317,26 @@ test('场景冲突隔离；合法离场可主动更新未结算候选', async ({
             expectedRevision: 0,
             npcId: 'npc-a',
             evidence: follow ? '主角独自走进社区诊所。' : '同事留在重庆。',
-            changes: follow ? { onScene: true, locationId: 'chongqing' } : { onScene: false },
+            changes: { onScene: follow },
           },
         ],
         rejectedSuggestions: [],
         unresolved: [],
-      }),
+      }, route.request().postDataJSON().model),
     }),
   );
-  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
-  await ready(page);
+  await stageCandidates(page, true);
   const rejected = await stored(page);
   expect(rejected.draft.stageStatus.variables).toBe('ready');
-  expect(rejected.draft.variables.result.settlement.skipped).not.toHaveLength(0);
+  await openWorkflowStage(page,'entities');
+  await page.getByRole('tab',{name:'校验结果',exact:true}).click();
+  await expect(page.getByRole('tabpanel',{name:'校验结果'})).toContainText('locationId');
   expect(rejected.draft.story.narrative).toBe(text);
   expect(rejected.formal).toBe(before);
   follow = false;
-  await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '重新生成变量候选', exact: true }).click();
-  await ready(page);
+  await stageCandidates(page, true, true);
   const accepted = await stored(page);
-  expect(accepted.draft.variables.result.commands[1].changes).toEqual({ onScene: false });
+  expect(accepted.draft.entities.result.commands[0].changes).toEqual({ onScene: false });
   expect(accepted.formal).toBe(before);
 });
 
@@ -372,23 +385,21 @@ for (const scenario of [
           ];
       return route.fulfill({
         contentType: 'application/json',
-        body: response({ commands, rejectedSuggestions: [], unresolved: [] }),
+        body: response({ commands, rejectedSuggestions: [], unresolved: [] }, route.request().postDataJSON().model),
       });
     });
-    await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '生成变量候选', exact: true }).click();
-    await ready(page);
+    await stageCandidates(page, scene);
     const rejected = await stored(page);
     expect(rejected.draft.stageStatus.variables).toBe('ready');
-    expect(rejected.draft.variables.result.settlement.skipped).not.toHaveLength(0);
+    expect((scene ? rejected.draft.entities : rejected.draft.variables).result.settlement.skipped).not.toHaveLength(0);
     expect(rejected.draft.story.narrative).toBe(text);
     expect(rejected.formal).toBe(before);
     corrected = true;
-    await openWorkflowStage(page, 'variables'); await page.getByRole('button', { name: '重新生成变量候选', exact: true }).click();
-    await ready(page);
+    await stageCandidates(page, scene, true);
     const accepted = await stored(page);
     expect(accepted.formal).toBe(before);
     expect(accepted.draft.story.narrative).toBe(text);
-    expect(accepted.draft.variables.result.commands[scene ? 1 : 0]).toMatchObject(
+    expect((scene ? accepted.draft.entities : accepted.draft.variables).result.commands[0]).toMatchObject(
       scene ? { changes: { onScene: false } } : { account: 'onlineBalance' },
     );
   });
@@ -403,12 +414,13 @@ test('正式文本命令映射NPC状态、私人记忆与消费；已启用JSON 
 set npc[npc-a].healthText = "略感疲倦"
 push npc[npc-a].memories = {"text":"本轮一起吃过午饭","knowledgeKind":"observed","knowledgeSource":"亲历","visibility":"npc_private"}
 add economy.cash = -3000
-</命令>`)});
+</命令>`, route.request().postDataJSON().model)});
   });
-  await openWorkflowStage(page, 'variables'); await page.getByRole('button', {name:'生成变量候选',exact:true}).click(); await ready(page);
-  const saved = await stored(page); expect(saved.formal).toBe(before); expect(calls).toBe(1);
-  expect(saved.draft.variables.result.commands.map((c:{type:string})=>c.type)).toEqual(['UpdateNpc','RecordNpcMemory','SpendFunds']);
-  expect(saved.draft.variables.result.commands[1].memory.visibility).toBe('npc_private');
+  await stageCandidates(page, true);
+  const saved = await stored(page); expect(saved.formal).toBe(before); expect(calls).toBe(2);
+  expect(saved.draft.entities.result.commands.map((c:{type:string})=>c.type)).toEqual(['UpdateNpc','RecordNpcMemory']);
+  expect(saved.draft.variables.result.commands.map((c:{type:string})=>c.type)).toEqual(['SpendFunds']);
+  expect(saved.draft.entities.result.commands[1].memory.visibility).toBe('npc_private');
   await expect(page.getByRole('complementary',{name:'主角信息'})).toContainText('100.00 元');
-  await page.reload(); await openGameTools(page); await ready(page); expect(calls).toBe(1); expect((await stored(page)).formal).toBe(before);
+  await page.reload(); await openGameTools(page); await ready(page); expect(calls).toBe(2); expect((await stored(page)).formal).toBe(before);
 });

@@ -64,8 +64,8 @@ export interface RuntimeLogEntry extends Partial<StoryDiagnostic> {
 
 export const runtimeStageNames: Record<RuntimeLogStage, string> = {
   story: '正文生成',
-  variables: '变量管理',
-  world: '动态世界',
+  entities: '人物与实体', variables: '主角与现场',
+  world: '场外与网络',
   workflow: '自动工作流',
   commit: '正式结算',
   memory: '记忆总结',

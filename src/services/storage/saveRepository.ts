@@ -305,7 +305,7 @@ export class SaveRepository {
         const state = GameStateSchema.parse(next);
         const old = current.draft;
         const draft = old && TurnDraftSchema.parse({
-          ...createTurnDraft(saveId, state.revision, old.turnId, old.turnKind, old.userInput, old.useVariableStage, old.useWorldStage),
+          ...createTurnDraft(saveId, state.revision, old.turnId, old.turnKind, old.userInput, old.useVariableStage, old.useWorldStage, old.useEntityStage),
           draftRevision: old.draftRevision + 1,
         });
         const control = await readControl(tx,saveId) ?? newSaveControl(saveId);
@@ -434,7 +434,7 @@ export class SaveRepository {
         requireData(Boolean(control), 'UNDO_UNAVAILABLE', '此存档没有可靠恢复点');
         const restored = await restoreSnapshot(tx, state, control!);
         const next = createTurnDraft(saveId, restored.state.revision, `turn-${crypto.randomUUID()}`, 'regular', '',
-          draft?.useVariableStage ?? true, draft?.useWorldStage ?? true);
+          draft?.useVariableStage ?? true, draft?.useWorldStage ?? true, draft?.useEntityStage ?? true);
         // Retire receipts from the previous branch, including a predecessor receipt
         // whose next-draft ID is now obsolete. Keep the restored appliedCommands.
         const receipts = tx.objectStore('turnReceipts');
@@ -746,7 +746,8 @@ export class SaveRepository {
       return await withBrowserLock(parsed.draft.saveId, async () => {
         const digest = await crypto.subtle.digest(
           'SHA-256',
-          new TextEncoder().encode(fingerprint(parsed)),
+          new TextEncoder().encode(fingerprint(Object.hasOwn(input.draft, 'useEntityStage') ? parsed :
+            { ...parsed, draft: input.draft })), // Compare pre-upgrade replays against their original receipt.
         );
         const requestHash = Array.from(new Uint8Array(digest), (byte) =>
           byte.toString(16).padStart(2, '0'),
@@ -811,7 +812,7 @@ export class SaveRepository {
               'regular',
               parsed.nextAction,
               parsed.useVariableStage,
-              parsed.useWorldStage,
+              parsed.useWorldStage, parsed.useEntityStage ?? current.useEntityStage,
             );
             const receipt = ReceiptSchema.parse({
               saveId: state.saveId,
@@ -860,7 +861,7 @@ export class SaveRepository {
 
   // 唯一允许绑定行动的入口：空待输入草稿，或正文失败/取消且尚无任何候选的已绑定草稿（重新绑定为全新草稿）。
   // 输入绑定后仍不可由saveDraft改写；不提升正式revision。
-  async bindTurnAction(expected: TurnDraft, action: string, useVariableStage: boolean, useWorldStage: boolean): Promise<TurnDraft> {
+  async bindTurnAction(expected: TurnDraft, action: string, useVariableStage: boolean, useWorldStage: boolean, useEntityStage = expected.useEntityStage): Promise<TurnDraft> {
     const snapshot = TurnDraftSchema.parse(expected), userInput = z.string().trim().min(1).max(100000).parse(action);
     const session = reserveStageSession(snapshot.saveId);
     try {
@@ -870,7 +871,7 @@ export class SaveRepository {
         const store = tx.objectStore('drafts'), current = TurnDraftSchema.parse(await request(store.get(snapshot.saveId)));
         requireData(fingerprint(current) === fingerprint(snapshot), 'DRAFT_CONFLICT', '行动草稿已被其他操作更新');
         requireData(awaitingPlayerAction(state, current) || rebindableAfterStoryStop(state, current), 'DRAFT_CONFLICT', '只能为未生成的待输入回合绑定行动');
-        const next = TurnDraftSchema.parse({ ...createTurnDraft(current.saveId, state.revision, current.turnId, 'regular', userInput, useVariableStage, useWorldStage), draftRevision: current.draftRevision + 1 });
+        const next = TurnDraftSchema.parse({ ...createTurnDraft(current.saveId, state.revision, current.turnId, 'regular', userInput, useVariableStage, useWorldStage, useEntityStage), draftRevision: current.draftRevision + 1 });
         const control = await readControl(tx, state.saveId) ?? newSaveControl(state.saveId);
         control.input = ''; control.memoryPaused = false; delete control.lastUndo;
         await writeControl(tx, control);
@@ -882,7 +883,7 @@ export class SaveRepository {
   // StoryStage holds the browser execution lock. This transaction only replaces the
   // selected draft after the full CAS and eligibility check, and never writes GameState.
   async saveRecoveredStory(basedOn: TurnDraft, story: NonNullable<TurnDraft['story']>,
-    selection: LegacyNotificationSelection, signal?: AbortSignal): Promise<TurnDraft> {
+    selection: LegacyNotificationSelection, signal?: AbortSignal, writing?: TurnDraft['storyWriting']): Promise<TurnDraft> {
     const base = TurnDraftSchema.parse(basedOn);
     return transaction(this.database, ['saves','drafts'], 'readwrite', async tx => {
       const state = await readStoredState(tx,base.saveId);
@@ -890,7 +891,7 @@ export class SaveRepository {
       const current = TurnDraftSchema.parse(await request(store.get(base.saveId)));
       requireData(fingerprint(current) === fingerprint(base), 'DRAFT_CONFLICT', '草稿已被其他操作更新');
       const recovery = authorizeLegacyNotificationRecovery(state,current,selection);
-      const replacement = rerollStory(current,story);
+      const replacement = rerollStory(current,story,writing);
       validateRecoveredStory(state,current.story!,replacement.story!,recovery);
       validateDraftUpdate(current,replacement);
       const next = TurnDraftSchema.parse({ ...replacement, legacyNotificationRecovery:recovery });
@@ -915,7 +916,7 @@ export class SaveRepository {
         requireData(raw === undefined && next.draftRevision === 0 && next.storyRevision === 0
           && next.executionRevision === 0 && next.requestedStages.length === 0
           && next.stageRequestRevisions.variables === 0 && next.stageRequestRevisions.world === 0
-          && !next.story && !next.variables && !next.world, 'DRAFT_CONFLICT', '初始草稿已存在或版本不为零');
+          && !next.story && !next.entities && !next.variables && !next.world, 'DRAFT_CONFLICT', '初始草稿已存在或版本不为零');
       } else {
         const old = TurnDraftSchema.parse(raw);
         requireData(old.draftRevision === expectedDraftRevision, 'DRAFT_CONFLICT', '草稿已被其他操作更新');

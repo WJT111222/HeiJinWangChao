@@ -25,7 +25,7 @@ test.beforeEach(async ({ page }) => {
     const body = JSON.parse(data); calls.push({ model: body.model, stream: body.stream });
     res.writeHead(200, { 'content-type': body.stream ? 'text/event-stream' : 'application/json' });
     if (body.model === 'story') { active = res; res.flushHeaders(); return; }
-    const content = body.model === 'world' ? JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] })
+    const content = body.model === 'entities' ? '<接触者>[]</接触者>' + variableTextEnvelope('<命令></命令>') : body.model === 'world' ? JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] })
       : variableTextEnvelope(`<命令>\nset worldClock = "${new Date(Date.parse(JSON.parse(body.messages.map((m: { content: string }) => m.content).join('\n').match(/<GAME_CONTEXT>\n([\s\S]*?)\n<\/GAME_CONTEXT>/)![1]).SAVE_STATE.worldClock) + 60000).toISOString()}"\n</命令>`);
     res.end(body.stream ? frame(content) + 'data: [DONE]\n\n' : json(content));
   });
@@ -47,7 +47,7 @@ async function seed(page: Page, stream: boolean, bound = false, legacy = false, 
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = baseUrl; config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: 'story' };
-    for (const stage of ['variables', 'world']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
+    for (const stage of ['entities', 'variables', 'world']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'synthetic-story-toggle-key');
     const repo = await SaveRepository.open();
     try {
@@ -88,8 +88,8 @@ for (const stream of [true, false]) {
     await expect(action(page)).toHaveAttribute('data-kind', 'idle');
     await expect(page.locator('.story-entry').last()).toContainText(narrative);
     const committed = await stored(page); expect(committed.state.journal).toHaveLength(2);
-    expect(calls).toEqual([{ model: 'story', stream }, { model: 'variables', stream: !stream }, { model: 'world', stream }]);
-    await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible(); expect(await stored(page)).toEqual(committed); expect(calls).toHaveLength(3);
+    expect(calls).toEqual([{ model: 'story', stream }, { model: 'entities', stream:false }, { model: 'variables', stream: !stream }, { model: 'world', stream }]);
+    await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible(); expect(await stored(page)).toEqual(committed); expect(calls).toHaveLength(4);
   });
 
   test(`${stream ? '流式' : '非流式'}失败：手动正文校验拒绝，安全摘要刷新保留且不自动重试`, async ({ page }) => {
@@ -119,8 +119,8 @@ test('旧设置默认开启，三开关独立保存/放弃/刷新，零模型请
   await seed(page, true, false, true); const raw = await page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
   await openSettings(page); await page.getByRole('button', { name: '运行', exact: true }).click();
   const story = page.getByRole('checkbox', { name: '正文生成 · 流式传输', exact: true });
-  const variables = page.getByRole('checkbox', { name: '变量管理 · 流式传输', exact: true });
-  const world = page.getByRole('checkbox', { name: '动态世界 · 流式传输', exact: true });
+  const variables = page.getByRole('checkbox', { name: '主角与现场 · 流式传输', exact: true });
+  const world = page.getByRole('checkbox', { name: '场外与网络 · 流式传输', exact: true });
   await expect(story).toBeChecked(); await expect(variables).not.toBeChecked(); await expect(world).toBeChecked();
   expect(await page.evaluate(() => localStorage.getItem('heijin.settings.v1'))).toBe(raw);
   await story.uncheck(); await expect(world).toBeChecked(); await expect(variables).not.toBeChecked();
@@ -160,6 +160,7 @@ test('GLM 中转 SSE 完成三阶段结算；下回合中转 500 保留正式状
     const content =
       body.model === 'story'
         ? output
+        : body.model === 'entities' ? '<接触者>[]</接触者>' + variableTextEnvelope('<命令></命令>')
         : body.model === 'variables'
           ? variableTextEnvelope(
               '<命令>\nset worldClock = "' +
@@ -196,6 +197,8 @@ test('GLM 中转 SSE 完成三阶段结算；下回合中转 500 保留正式状
   expect(routeCalls).toEqual([
     'direct story',
     'relay story',
+    'direct entities',
+    'relay entities',
     'direct variables',
     'relay variables',
     'direct world',

@@ -1,0 +1,47 @@
+{
+  "withTalent": "b02e53a28d3b61ac2b8c2637d8cc5dc57b01f9808b72f58a8eb47d1672d32f1c",
+  "results": [
+    {
+      "stage": "entities",
+      "mode": "opening",
+      "messages": "4e24dce50d2a178c1d4aed592968cace64e0fdc2bdb77754377f7f16e9f3f978",
+      "context": "c5e1c6be720a2f78c48bcf1d7e3ecd0efd84d1aab6827279f67e3aa908aeadec",
+      "modules": "ffb4c2bbb45fc43482b21eb925d4c26c4aa8a7446412d482dd48746147c91e4d"
+    },
+    {
+      "stage": "entities",
+      "mode": "regular",
+      "messages": "4a2043f21a2dc44285852d86aa901e4e1a0c5f557a72c591c43050e1d1c5b0a9",
+      "context": "11b2a51bed60793c2ff70c80011f0a853f4c7418acb021c18a30bd5feb006d12",
+      "modules": "3d1624443c67c441aae5adaacba4b2c438dea3a56b81680dc470ce1dd5f6957f"
+    },
+    {
+      "stage": "variables",
+      "mode": "opening",
+      "messages": "4c82f7f67e71c0cc604e48a5809111bd4cd9763eb226799184bc1c3a35626fec",
+      "context": "afb65ed0c63d7366969dd42f1dfab442d45f4257c3d5e6ab4bcaf3c9f7034b36",
+      "modules": "1ef2e37de92898bc1191767c5bf8ea1ffccfcce469e44526e43a4e46dc7728a6"
+    },
+    {
+      "stage": "variables",
+      "mode": "regular",
+      "messages": "e3a9c52f73bfa65277555787e8bf055c84d6bf077fea0d326847d384a2c9dd71",
+      "context": "6d550fe86172067a30f62fd0613f23d9635793a34d5bb4d93692e1e98440b421",
+      "modules": "c5a7a8a69d6c1849191efb894d8496b2c5414d59bc3b41f604d9336ae013150e"
+    },
+    {
+      "stage": "world",
+      "mode": "opening",
+      "messages": "35e1a03224222c9d206e98af891e8df9d09bae50e9613a4f5886fa3427ca650d",
+      "context": "2e62dac626ae5b5b0c95297e614d5b97abce00f2e49798d3d0f263eb044577ad",
+      "modules": "e33e2b38ce1747dfcbe21d0adf9b4a3d728358d5e594308343ff304e7691a15f"
+    },
+    {
+      "stage": "world",
+      "mode": "regular",
+      "messages": "eac8792e19614a8a62112468f2563fb1f5eeccc67dfb9e75a1265a327d7c1db3",
+      "context": "dc12657c4b7aab9f2b19358eed9925268b7f1f705504f27b3764b9d51956fb3c",
+      "modules": "f1941d4446b19a4d9bcd26883807d0d5ced31febae6829024f70d0a1f5ee4fdf"
+    }
+  ]
+}

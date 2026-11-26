@@ -241,12 +241,12 @@ test('设置、历史检索及创角长页仍可滚动，关闭资料保留阅�
 });
 
 test('工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间', async ({ page }, info) => {
-  const before = await seed(page), workflow = page.getByRole('region', { name: '三阶段工作流', exact: true });
+  const before = await seed(page), workflow = page.getByRole('region', { name: '四阶段工作流', exact: true });
   const disclosure = page.locator('.workflow-disclosure'), summary = workflowSummary(page);
   await expect(disclosure).not.toHaveAttribute('open'); await expect(summary).toContainText('详情');
   expect((await workflow.boundingBox())!.height).toBeLessThanOrEqual(44);
   // PC 收起条：三段进度（可点击、可 Tab 聚焦，直达对应阶段）+ 详情按钮。
-  await expect(workflow.locator('button:visible')).toHaveCount(info.project.name === 'desktop' ? 4 : 0);
+  await expect(workflow.locator('button:visible')).toHaveCount(info.project.name === 'desktop' ? 5 : 1);
   await expect(page.locator('.composer-tools > .stage-responses, .composer-tools > .runtime-log')).toHaveCount(0);
   for (const text of ['三阶段校验完成后自动原子结算', '自动执行会保留已完成阶段', '高级手动操作：', '手动启动新尝试；', '保留正文及合法变量；', '仅保存后续尝试偏好'])
     await expect(page.getByText(text, { exact: false })).toHaveCount(0);
@@ -255,7 +255,7 @@ test('工作流默认一行且无外置工具与冗余说明，展开保留入�
   await fit(page); await page.screenshot({ path: `docs/screenshots/compact-workflow/after-${info.project.name}-collapsed.png` });
   await workflowTrigger(page).click();
   await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeVisible();
-  await expect(page.locator('.workflow-stages > li')).toHaveCount(3);
+  await expect(page.locator('.workflow-stages > li')).toHaveCount(4);
   if (info.project.name === 'desktop') await expect(page.locator('.wf-aux').getByText('运行诊断', { exact: true })).toBeVisible();
   else await expect(page.getByText('重试与变更详情', { exact: true })).toBeVisible();
   await fit(page); await page.screenshot({ path: `docs/screenshots/compact-workflow/after-${info.project.name}-expanded.png` });

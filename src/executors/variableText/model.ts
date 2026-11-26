@@ -7,6 +7,7 @@ import type { ExecutionDiagnostic } from './diagnostics';
 
 export const ExecutionContextSchema = z.strictObject({
   draft: TurnDraftSchema,
+  phase: z.literal('entities').optional(),
   expectedRevision: CountSchema,
 });
 export type VariableExecutionContext = z.infer<typeof ExecutionContextSchema>;

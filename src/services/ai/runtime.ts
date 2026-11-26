@@ -1,14 +1,18 @@
+import { parsePartialEntities } from '../validation/partialOutputs';
+import { canonicalJson } from '../../domain/worldbook/canonical';
 import { logicalMessageCount } from '../../domain/worldbook/timedEffects';
 import { prepareStoryWorldbook } from '../worldbook/storyWorldbook';
 import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
-import { nativeReferenceRecords } from '../../presets/nativeDelivery';
+import { isPeinture } from '../../presets/peintureSettings';
+import { nativeOutputTool, nativeReferenceRecords } from '../../presets/nativeDelivery';
 import { captureAssistantPreferences, ensureNativeDeliveryHost, withTavernRequest } from '../../presets/tavern/hostState';
 import { promptReady, tavernGeneration, type GenerationType } from '../../presets/tavern/events';
 import { nativeDeliveryId } from '../../presets/settings';
-import type { AssistantSelection } from '../../presets/library';
+import { captureStoryWriting, canResumeWriting, type AssistantSelection } from '../../presets/library';
 import { parsePartialVariables, parsePartialWorld } from '../validation/partialOutputs';
 import { worldNormalizationNotes } from '../validation/worldSceneWrites';
-import { narrativeRange } from '../../ui/settings/model';
+import type { LegacyContinuationConsent } from '../../workflows/legacyContinuation';
+import type { StoryWriting } from '../../domain/storyWriting';
 import { DataError } from '../../domain/common';
 import { historicalPerspective } from '../../domain/timePreflight';
 import { validateStoryEventInteractions } from '../../domain/events/interactions';
@@ -36,7 +40,7 @@ import type { StoryFailureText } from '../../domain/storyContinuation';
 import { splitLeadingThink } from './compat';
 
 /** 正文续写：已写出的截断原文（已隐藏凭证）。只用于正文阶段。 */
-export interface StageRequestOptions extends Omit<RequestOptions, 'tavernType' | 'playerWorldbook'> { frozenStoryChannel?: RequestSnapshot; presetSelection?: AssistantSelection; continuation?: { partial: string } }
+export interface StageRequestOptions extends Omit<RequestOptions, 'tavernType' | 'playerWorldbook'> { frozenStoryChannel?: RequestSnapshot; presetSelection?: AssistantSelection; continuation?: { partial: string; consent?: LegacyContinuationConsent } }
 /**
  * 正文请求失败时收到的内容（去掉前导 <think> 推理；续写时为与已写部分拼接后的全文），供上层保存为可续写的截断正文。
  * 以失败对象为键，不进入错误消息或诊断展示。
@@ -72,11 +76,26 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const nativeAllowed = captured.stage === 'story' && !requestedContinuation && !captured.legacyNotificationRecovery;
   const selected = captured.stage === 'story' && suppliedSelection === undefined
     ? captureAssistantPreferences(nativeAllowed) : suppliedSelection;
-  const presetSelection = selected === nativeDeliveryId && !nativeAllowed ? null : selected;
+  const presetSelection = selected === nativeDeliveryId && !nativeAllowed ? null : structuredClone(selected);
+  let writing = captured.stage === 'story' ? await captureStoryWriting(presetSelection, captured.settings.prompts) : undefined;
+  if (requestedContinuation && captured.draft?.storyPartial && writing) {
+    const previous = captured.draft.storyPartial.writing;
+    if (!previous) {
+      if (!requestedContinuation.consent?.writing)
+        throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_unknown' });
+      if (canonicalJson(requestedContinuation.consent?.writing) !== canonicalJson(writing))
+        throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_changed' });
+      writing = { ...writing, prefixSource: 'unknown' };
+    } else {
+      if (!await canResumeWriting(previous, writing, presetSelection))
+        throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_changed' });
+      if (previous.prefixSource) writing = { ...writing, prefixSource: previous.prefixSource };
+    }
+  }
   const type = requestedContinuation ? 'continue' : captured.draft?.story || captured.draft?.storyPartial
     || captured.draft?.failures.some(f => f.stage === 'story') ? 'regenerate' : 'normal';
   const generation = stageResponses.generation();
-  const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation);
+  const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation, writing);
   if (!presetSelection || captured.stage !== 'story') return run();
   if (presetSelection === nativeDeliveryId) await ensureNativeDeliveryHost(options.signal);
   const recent = captured.state.journal.slice(-captured.settings.memory.immediateWindowSize);
@@ -90,7 +109,7 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
 
 async function executePrepared(captured: ComposeInput & { stage: AiStage }, snapshot: RequestSnapshot,
   presetSelection: AssistantSelection | undefined, type: GenerationType, config: AiConfig, vault: CredentialVault,
-  options: RequestOptions, requestedContinuation: StageRequestOptions['continuation'], client: AiClient, generation: number) {
+  options: RequestOptions, requestedContinuation: StageRequestOptions['continuation'], client: AiClient, generation: number, writing?: StoryWriting) {
   const prompt = captured.stage === 'variables'
     ? await composeTextVariablesPrompt({ ...captured, stage: 'variables', cotAllowed: snapshot.useCot })
     : await composePrompt({ ...captured, cotAllowed: snapshot.useCot }, presetSelection);
@@ -99,13 +118,14 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const messages = continuation
     ? [...prompt.messages, { role: 'assistant' as const, content: continuation.partial },
       { role: 'user' as const, content: continuationInstruction({ actionOptions: captured.settings.prompts.actionOptions,
-        minNarrativeChars: captured.settings.prompts.minNarrativeChars, maxNarrativeChars: narrativeRange(captured.settings.prompts).max,
+        minNarrativeChars: writing?.source === 'native' ? writing.min : undefined, maxNarrativeChars: writing?.source === 'native' ? writing.max : undefined,
         partial: continuation.partial }) }]
     : prompt.messages;
   const merged = (text: string) => continuation ? mergeContinuation(continuation.partial, text) : text;
   const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision, protocol: snapshot.channel.protocol, baseSaveRevision: captured.state.revision,
     draftRevision: captured.draft?.draftRevision, executionRevision: captured.draft?.executionRevision,
     stageRequestRevision: captured.stage === 'story' ? undefined : captured.draft?.stageRequestRevisions[captured.stage],
+    basedOnEntityRevision: ['variables','world'].includes(captured.stage) ? captured.draft?.entities?.candidateRevision : undefined,
     basedOnVariableRevision: captured.stage === 'world' ? captured.draft?.variables?.candidateRevision : undefined }, generation);
   const secrets = config.channels.map(channel => vault.get(channel.id)).filter(Boolean);
   if (presetSelection && captured.stage === 'story') secrets.push(secretFor(snapshot));
@@ -172,10 +192,12 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const nativeDeliveryReference = presetSelection === nativeDeliveryId ? nativeReferenceRecords(messages) : undefined;
   const responseResult = await client.generate(snapshot, scripted ? await promptReady(messages, false) : messages, {
     ...options,
+    confirmedTransmission: requestedContinuation?.consent,
     tavernType: scripted ? type : undefined,
     playerWorldbook,
     presetSampling: prompt.preset?.sampling,
     nativeDeliveryReference,
+    storyDeliveryTool: presetSelection && typeof presetSelection === 'object' && isPeinture(presetSelection.definition.id) ? nativeOutputTool : undefined,
     // Only Story may evaluate a complete limit response; other stages remain strict.
     validateStoryOutputLimit: captured.stage === 'story',
     onResponseDiagnostics: (value) => {
@@ -232,7 +254,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   const responseText = merged(response.text);
   const envelope = (() => {
     if (captured.stage !== 'story') return undefined;
-    try { return parseStoryEnvelope(responseText, captured.mode, captured.settings); }
+    try { return parseStoryEnvelope(responseText, captured.mode, captured.settings, writing?.source === 'native' ? writing.min : null); }
     catch (error) {
       // Genuine missing tail/body retains the established partial/continuation path.
       // Complete but invalid content keeps its precise strict validation error.
@@ -262,13 +284,14 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
       envelope.notes.push('本幕事件回执未通过核验，未授予事件操作。');
     }
   }
-  const result = story ?? (captured.stage === 'variables'
+  const result = story ?? (captured.stage === 'entities' ? await parsePartialEntities(responseText, captured.state, captured.draft!) : captured.stage === 'variables'
         ? await parsePartialVariables(responseText, captured.state, captured.draft!)
         : await parsePartialWorld(responseText, captured.state, captured.draft!));
   const notes = envelope ? [...storyNotes, ...envelope.notes] : worldNormalizationNotes.get(result);
   stageResponses.update(responseId, { status: 'validated', normalized: JSON.stringify(result, null, 2), ...(notes ? { notes } : {}) }, secrets);
   return {
     result,
+    storyWriting: writing,
     responseInspectionId: responseId,
     // 临时诊断单独返回；StorySchema和后续阶段永远不接收这些字段。
     storyInspection: envelope ? { planning: envelope.planning, nativeReasoning: response.nativeReasoning } : undefined,
@@ -289,6 +312,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
         captured.stage === 'story'
           ? undefined
           : captured.draft?.stageRequestRevisions[captured.stage],
+      basedOnEntityRevision: ['variables','world'].includes(captured.stage) ? captured.draft?.entities?.candidateRevision : undefined,
       basedOnVariableRevision:
         captured.stage === 'world' ? captured.draft?.variables?.candidateRevision : undefined,
     },
@@ -299,13 +323,13 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   } catch (error) {
     // 兼容包装和协议错误已有具体位置；仅将实际正文错误归入 Story 格式诊断。
     const compatibilityError = prompt.preset && error instanceof AiError && error.details?.fieldPath?.startsWith('tavern.');
-    const failure = captured.stage === 'variables' ? variableFailure(error, step)
+    const failure = (captured.stage === 'variables' || captured.stage === 'entities') ? variableFailure(error, step)
       : captured.stage === 'story' && !compatibilityError ? storyFailure(error, true) : error;
     sealed = true;
     if (captured.stage === 'story' && failure && typeof failure === 'object') {
       // 兼容渠道会把推理写成开头的 <think>…</think>：与正式解析一致先去掉，推理不进入可续写的正文。
       const raw = addition ?? received, content = splitLeadingThink(raw).content;
-      storyFailureText.set(failure, { produced: raw.trim() !== '',
+      storyFailureText.set(failure, { writing, produced: raw.trim() !== '',
         text: !continuation ? content : content.trim() ? merged(content) : continuation.partial });
     }
     clearTimeout(observationTimer);

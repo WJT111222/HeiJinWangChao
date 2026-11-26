@@ -1,6 +1,7 @@
 import jquery from 'jquery';
 import lodash from 'lodash';
-import { z } from 'zod';
+import { buttonsSchema, scriptOrder, type Script } from '../scriptOrder';
+export { scriptOrder } from '../scriptOrder';
 import { estimateTokens } from '../../prompts/statistics';
 import { loadNativeDeliveryScript, resolveStoryPreset, type AssistantSelection } from '../library';
 import type { LoadedPreset } from '../package';
@@ -10,17 +11,6 @@ import { assistantView, buttonEvent, currentStoryContext, currentTavernRequest, 
 import { runtimePreset } from './runtimePreset';
 import { storyFloors, variableStore } from './scriptVariables';
 
-const buttonsSchema = z.array(z.object({ name: z.string().min(1), visible: z.boolean() }));
-const scriptSchema = z.object({ id: z.string().min(1), name: z.string(), content: z.string(), enabled: z.boolean(),
-  data: z.record(z.string(), z.json()).default({}), module: z.boolean().default(true), button: z.object({ enabled: z.boolean(), buttons: buttonsSchema }).optional() });
-type Script = z.infer<typeof scriptSchema>;
-export function scriptOrder(nodes: LoadedPreset['scripts'], enabled = true): Script[] {
-  return nodes.flatMap(node => {
-    if (node.type === 'folder' && Array.isArray(node.scripts)) return scriptOrder(node.scripts, enabled && node.enabled === true);
-    const script = scriptSchema.parse(node);
-    return [{ ...script, enabled: enabled && script.enabled }];
-  }).sort((a,b) => a.id < b.id ? -1 : Number(a.id > b.id));
-}
 type Callback = (...args: unknown[]) => unknown;
 type ReportScriptError = (source: string, error: unknown) => void;
 function requireActive(active: boolean) {

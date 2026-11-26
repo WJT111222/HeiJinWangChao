@@ -543,7 +543,11 @@ it('正式撤回和历史节点覆盖保留原图，禁止旧任务越过存档�
     expect((await repo.images.read(scope.saveId)).library.pictures).toHaveLength(1);
     await turn();
     const preview = await repo.history.preview(scope.saveId, { kind: 'manual', id: node.id });
-    const restored = await repo.history.restore(preview.confirmation, '重新开始', true, true);
+    const restored = await repo.history.restore(preview.confirmation, '重新开始', true, true, false);
+    expect((await repo.loadGame(scope.saveId)).draft).toMatchObject({
+      useEntityStage: false, useVariableStage: true, useWorldStage: true,
+      stageStatus: { entities: 'skipped' },
+    });
     expect(validTarget(restored.state, target)).toBe(false);
     await expect(repo.images.save(scope, target, 'illustration', bytes)).rejects.toThrow('替换');
     expect((await repo.exportBackup([scope.saveId]))[0].images?.files).toHaveLength(1);

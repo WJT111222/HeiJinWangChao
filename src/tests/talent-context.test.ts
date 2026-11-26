@@ -6,6 +6,7 @@ import { talentContext } from '../prompts/talentContext';
 import { estimateTokens } from '../prompts/statistics';
 import { sentContext } from './fixtures/contextAssertions';
 import { talentPromptInput as currentTalentPromptInput, talentMemoryInput as currentTalentMemoryInput } from './fixtures/talentPrompt';
+import stagesBaseline from './fixtures/talent-variable-stages-baseline.json';
 import baseline from './fixtures/talent-no-selection-baseline.json';
 import partialSettlementPromptBaseline from './fixtures/talent-partial-settlement-prompt-baseline.json';
 import issue194PromptBaseline from './fixtures/talent-issue-194-prompt-baseline.json';
@@ -61,14 +62,14 @@ describe('PR-B 条件式单项天赋上下文', () => {
     // 普通回合 Variables 目录增加天气与环境；开局、World 和天赋定义保留既有基线。
     const requests = [];
     for (const definition of talentDefinitions) {
-      for (const stage of ['variables', 'world'] as const) for (const mode of ['opening', 'regular'] as const) {
+      for (const stage of ['entities','variables', 'world'] as const) for (const mode of ['opening', 'regular'] as const) {
         const prompt = await composePrompt(talentPromptInput(stage, mode, definition.id));
         requests.push({ messages: prompt.messages, context: prompt.context, modules: prompt.modules });
       }
       const { commonRules, additionalRules } = talentContext(definition.id, 'story')!;
       requests.push({ definition, commonRules, additionalRules });
     }
-    expect(hash(requests)).toBe(sceneBaseline.withTalentVariablesAndWorld);
+    expect(hash(requests)).toBe(stagesBaseline.withTalent);
   });
 
   it.each(talentDefinitions)('$name 在开局/普通三阶段读取同一正式全文，单份注入且不改输入', async definition => {
@@ -103,7 +104,7 @@ describe('PR-B 条件式单项天赋上下文', () => {
     const previous = partialSettlementPromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode)
       ?? issue194PromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? expected;
     // 逐消息审计仅更新 Story 输出协议和 Variables 的参考材料说明，分别锁定共享时间政策上下文及提示词。
-    const expectedText = sceneBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? storyGuidePromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? previous;
+    const expectedText = stagesBaseline.results.find(result=>result.stage===expected.stage && result.mode===expected.mode) ?? sceneBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? storyGuidePromptBaseline.results.find(result => result.stage === expected.stage && result.mode === expected.mode) ?? previous;
     expect(hash(prompt.messages)).toBe(expectedText.messages);
     expect(hash(prompt.context)).toBe(("context" in expectedText ? expectedText.context : undefined) ?? expected.context);
     expect(hash(prompt.modules)).toBe(expectedText.modules);

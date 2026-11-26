@@ -1,3 +1,4 @@
+import { sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { expect, it } from 'vitest';
 import { writeFileSync } from 'node:fs';
 import { cpus, totalmem } from 'node:os';
@@ -11,7 +12,7 @@ import { npcContext } from '../prompts/npcContext';
 import { composePrompt } from '../prompts/composer';
 import { contextStatistics } from '../prompts/statistics';
 import { defaultSettings } from '../ui/settings/model';
-import { createTurnDraft, rerollStory, TurnDraftSchema } from '../domain/drafts';
+import { rerollStory, TurnDraftSchema } from '../domain/drafts';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { migrateSave } from '../services/storage/migrations';
 

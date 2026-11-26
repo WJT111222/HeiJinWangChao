@@ -35,7 +35,7 @@ test('填好密钥后自动获取一次、四阶段分别选择、只有被点�
   await page.route('https://city.mock.invalid/**', async (route) => {
     if (route.request().method() !== 'GET') { generated++; await route.abort(); return; }
     lists++; if (gate) await gate;
-    await route.fulfill({ json: { data: ['city-default', 'city-story', 'city-variables', 'city-world', 'city-memory'].map((id) => ({ id })) } });
+    await route.fulfill({ json: { data: ['city-default', 'city-story', 'city-entities', 'city-variables', 'city-world', 'city-memory'].map((id) => ({ id })) } });
   });
   await page.goto('/'); const settings = await openAiSettings(page);
   hold();
@@ -47,16 +47,16 @@ test('填好密钥后自动获取一次、四阶段分别选择、只有被点�
   expect(lists).toBe(1);
   await expect(settings.locator('.ai-refresh.is-spinning')).toHaveCount(0);
   release(); gate = undefined;
-  await expect(settings.locator('.ai-connect')).toContainText('当前接口返回 5 个模型');
-  for (const [label, model] of [['正文生成', 'city-story'], ['变量管理', 'city-variables'], ['动态世界', 'city-world'], ['记忆维护', 'city-memory']]) {
+  await expect(settings.locator('.ai-connect')).toContainText('当前接口返回 6 个模型');
+  for (const [label, model] of [['正文生成', 'city-story'], ['人物与实体', 'city-entities'], ['主角与现场', 'city-variables'], ['场外与网络', 'city-world'], ['记忆维护', 'city-memory']]) {
     await stageModel(settings, label, '都市渠道', model, 'list');
   }
   expect(lists).toBe(1);
   await saveAi(settings); expect(lists).toBe(1);
   const config = await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.ai.v1')!));
-  expect(Object.values(config.routes).map((route) => (route as { modelId: string }).modelId)).toEqual(['city-story', 'city-variables', 'city-world', 'city-memory']);
+  expect(Object.values(config.routes).map((route) => (route as { modelId: string }).modelId)).toEqual(['city-story', 'city-entities', 'city-variables', 'city-world', 'city-memory']);
   // 点哪个阶段的刷新，只有那个按钮转。
-  for (const [index, label] of ['正文生成', '变量管理', '动态世界', '记忆维护'].entries()) {
+  for (const [index, label] of ['正文生成', '主角与现场', '场外与网络', '记忆维护'].entries()) {
     hold();
     await settings.getByRole('button', { name: `刷新${label}模型`, exact: true }).click();
     await expect.poll(() => lists).toBe(index + 2);
@@ -67,8 +67,8 @@ test('填好密钥后自动获取一次、四阶段分别选择、只有被点�
   }
   expect(lists).toBe(5); expect(generated).toBe(0);
   await page.reload(); await openAiSettings(page);
-  await selected(page, '正文生成模型', 'city-story'); await selected(page, '变量管理模型', 'city-variables');
-  await selected(page, '动态世界模型', 'city-world'); await selected(page, '记忆维护模型', 'city-memory');
+  await selected(page, '正文生成模型', 'city-story'); await selected(page, '人物与实体模型', 'city-entities'); await selected(page, '主角与现场模型', 'city-variables');
+  await selected(page, '场外与网络模型', 'city-world'); await selected(page, '记忆维护模型', 'city-memory');
 });
 
 test('旧配置恢复、换渠道清除旧模型、跟随显示真实继承，刷新失败保留配置和已有列表', async ({ page }) => {
@@ -80,14 +80,14 @@ test('旧配置恢复、换渠道清除旧模型、跟随显示真实继承，�
   const { ids, settings } = await seed(page);
   await backToList(settings);
   await selected(page, '正文生成模型', 'legacy-story');
-  await expect(settings.getByText('同正文 · 都市渠道 / legacy-story', { exact: true })).toHaveCount(3);
+  await expect(settings.getByText('同正文 · 都市渠道 / legacy-story', { exact: true })).toHaveCount(4);
   await choose(page, '正文生成渠道', ids[1]);
   // 换渠道后旧模型不再沿用，显示新渠道的默认模型。
   await selected(page, '正文生成模型', 'backup-default');
-  await expect(settings.getByText('同正文 · 备用渠道 / backup-default', { exact: true })).toHaveCount(3);
+  await expect(settings.getByText('同正文 · 备用渠道 / backup-default', { exact: true })).toHaveCount(4);
   await expect.poll(() => backup).toBe(1);
   await searchChoose(page, '正文生成模型', 'custom', 'backup-custom');
-  await expect(settings.getByText('同正文 · 备用渠道 / backup-custom', { exact: true })).toHaveCount(3);
+  await expect(settings.getByText('同正文 · 备用渠道 / backup-custom', { exact: true })).toHaveCount(4);
   await saveAi(settings);
   const before = await storedConfig(page);
   fail = true; await settings.getByRole('button', { name: '刷新正文生成模型', exact: true }).click();

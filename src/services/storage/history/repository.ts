@@ -194,7 +194,7 @@ export class HistoryRepository {
   release(confirmation: HistoryConfirmation) { confirmations.delete(confirmation); }
 
   /** Fresh explicit confirmation. Paid generation starts in the UI only AFTER this transaction commits. */
-  async restore(confirmation: HistoryConfirmation, action: string, useVariableStage: boolean, useWorldStage: boolean) {
+  async restore(confirmation: HistoryConfirmation, action: string, useVariableStage: boolean, useWorldStage: boolean, useEntityStage = useVariableStage) {
     const checked = confirmations.get(confirmation);
     confirmations.delete(confirmation); // one-shot: double click or replay cannot replace twice
     requireData(checked?.owner === this, 'HISTORY_CONFIRMATION_INVALID', '历史确认已失效，请重新预览');
@@ -211,7 +211,7 @@ export class HistoryRepository {
           const state = checkedState(observed.state, saveId), oldDraft = observed.draft === undefined ? undefined : TurnDraftSchema.parse(observed.draft);
           const nextState = GameStateSchema.parse({ ...restored, revision: Math.max(state.revision, restored.revision) + 1, updatedAt: new Date().toISOString() });
           const draft = TurnDraftSchema.parse({ ...createTurnDraft(saveId, nextState.revision, `turn-${crypto.randomUUID()}`, 'regular', userInput,
-            useVariableStage, useWorldStage), draftRevision: (oldDraft?.draftRevision ?? 0) + 1 });
+            useVariableStage, useWorldStage, useEntityStage), draftRevision: (oldDraft?.draftRevision ?? 0) + 1 });
           const control = { ...newSaveControl(saveId), instanceId: `instance-${crypto.randomUUID()}` };
           // Intentional new timeline root: no old automatic point or commit receipt survives.
           await clearUndoRecords(tx, saveId);

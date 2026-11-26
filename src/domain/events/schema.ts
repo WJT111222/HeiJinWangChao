@@ -71,6 +71,12 @@ export const WorldEventSchema = z.union([
 export function plannedEventSchema(event: Pick<WorldEvent,'eventKind'>) {
   return WorldEventSchema.options[event.eventKind==='main' ? 1 : event.eventKind==='sub' ? 2 : 0];
 }
+// Scene creation records an event formed in the scene. Scheduling and entry metadata stay with World.
+export const SceneEventCreationSchema = PlannedEventSchema.pick({
+  title:true, backgroundText:true, goalText:true, status:true, startAt:true, estimatedEndAt:true,
+  locationId:true, actorRefs:true, linkedTaskIds:true, prerequisites:true, blockers:true,
+  visibility:true, impact:true, completionCondition:true, resolvedAt:true, resolutionText:true, outcome:true, resultKnowledge:true,
+}).extend({estimatedEndAt:GameTimeSchema});
 export const SceneEventStateSchema = StoredWorldEventSchema.pick({status:true,resolvedAt:true,resolutionText:true,outcome:true,resultKnowledge:true}).extend({status:z.enum(['active','blocked','resolved','cancelled'])});
 const RetiredEventDetailSchema = StoredWorldEventSchema.pick({
   title: true, startAt: true, estimatedEndAt: true, resolvedAt: true, actorRefs: true,

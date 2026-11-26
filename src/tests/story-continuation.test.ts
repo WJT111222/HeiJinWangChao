@@ -78,7 +78,7 @@ describe('正文续写：草稿字段与资格', () => {
   it('失败、未超次数、版本一致时才可续写', () => {
     expect(canContinueStory(failedDraft(), 5)).toBe(true);
     expect(canContinueStory(failedDraft({ storyPartial: { text: partial, storyRevision: 0, continuations: STORY_CONTINUATION_LIMIT } }), 5)).toBe(false);
-    expect(canContinueStory(failedDraft({ stageStatus: { story: 'pending', variables: 'pending', world: 'pending' } }), 5)).toBe(false);
+    expect(canContinueStory(failedDraft({ stageStatus: { story: 'pending', entities: 'pending', variables: 'pending', world: 'pending' } }), 5)).toBe(false);
     expect(canContinueStory(failedDraft({ storyPartial: undefined }), 5)).toBe(false);
     expect(canContinueStory(undefined, 5)).toBe(false);
   });
@@ -176,7 +176,8 @@ describe('正文续写：已写字数', () => {
 
 describe('正文续写：正文已闭合但字数不足', () => {
   const short = '<thinking>提纲</thinking><正文>周衡走进会议室，翻开档案。</正文>';
-  const draft = failedDraft({ storyPartial: { text: short, storyRevision: 0, continuations: 0 } });
+  const draft = failedDraft({ storyPartial: { text: short, storyRevision: 0, continuations: 0,
+    writing: { source: 'native', min: 100, max: 2000, perspective: 'first', style: 'noir', naturalProse: true } } });
   const chars = partialNarrative(short).chars;
   it('低于最低字数：不能续写（续写只能在 </正文> 后补标签），但已写内容仍显示', () => {
     expect(continuationBlock(draft, 1500)).toBe('closed_short');

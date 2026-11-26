@@ -43,7 +43,7 @@ it('合成夹具明确保留修复所需的离场、后台任务和单侧关联�
  expect([...a.response.worldCommands,...a.response.taskCommands,...a.response.eventCommands].map(c=>c.type))
   .toEqual(['CreateLocation','RecordHistory','SaveTask','SaveEvent']);
  expect(a.state.npc[task.actorRef.id].onScene).toBe(true);
- expect(a.draft.variables!.result.commands).toContainEqual(expect.objectContaining({type:'UpdateNpc',npcId:task.actorRef.id,changes:{onScene:false}}));
+ expect(a.draft.entities!.result.commands).toContainEqual(expect.objectContaining({type:'UpdateNpc',npcId:task.actorRef.id,changes:{onScene:false}}));
  expect(projectTurn(a.state,a.draft).npc[task.actorRef.id].onScene).toBe(false);
  expect(task).not.toHaveProperty('linkedEventId');expect(event.linkedTaskIds).toEqual([task.id]);
  expect(event.sourceTurnIds).toEqual([a.draft.turnId]);
@@ -116,8 +116,8 @@ describe('单一关系输入在真实领域事务中补齐反向字段',()=>{
 describe('离场权限与正式World请求上下文一致',()=>{
  it.each(['仍在现场','未验证离场','开局同伴'] as const)('%s不会获得后台任务权限',kind=>{
   const a=teahouse();
-  if(kind==='仍在现场')a.draft.variables!.result.commands=a.draft.variables!.result.commands.filter(c=>c.type!=='UpdateNpc');
-  if(kind==='未验证离场')a.draft.variables=undefined;
+  if(kind==='仍在现场')a.draft.entities!.result.commands=a.draft.entities!.result.commands.filter(c=>c.type!=='UpdateNpc');
+  if(kind==='未验证离场') a.draft.entities=undefined;
   if(kind==='开局同伴') {
    a.state.npc.npc_fixture_lin={...a.state.npc.npc_fixture_lin,kind:'special',detailedBackground:'同伴',activeGoals:[],habits:[],longTermMemories:[],offscreenTaskIds:[]};
    a.state.initialCompanionId='npc_fixture_lin';
@@ -126,16 +126,16 @@ describe('离场权限与正式World请求上下文一致',()=>{
  });
  it('正式上下文纳入本轮合法离场NPC并保留仍在场保护，协议说明一致',async()=>{
   const a=teahouse(), input={stage:'world' as const,mode:'opening' as const,state:a.state,draft:a.draft,settings:defaultSettings(),userInput:'',domains:['npc_ordinary','npc_special']};
-  const context=contextFor(input), offscreen=context.OFFSCREEN_STATE as {npcIds:string[]};
-  expect(offscreen.npcIds).toContain('npc_fixture_lin');expect(offscreen.npcIds).not.toContain('npc_fixture_xu');
-  expect(context.PROTECTED_SCENE).toMatchObject({sceneNpcIds:['npc_fixture_xu']});
+  const context=contextFor(input), offscreen=context.OFFSCREEN_STATE as {npcIds:string[];taskNpcIds:string[]};
+  expect(offscreen.taskNpcIds).toContain('npc_fixture_lin');expect(offscreen.npcIds).not.toContain('npc_fixture_lin');expect(offscreen.npcIds).not.toContain('npc_fixture_xu');
+  expect(context.PROTECTED_SCENE).toMatchObject({sceneNpcIds:expect.arrayContaining(['npc_fixture_lin','npc_fixture_xu'])});
   const prompt=await composePrompt(input), text=JSON.stringify(prompt.messages);
   expect(text).toContain('单侧关联');expect(text).toContain('Variables投影');
  });
- it('World重复写入本轮离场字段时以Variables为准并忽略（#186），仍不能操控主角',()=>{
+ it('World不可修改已离场接触者的档案，仍不能操控主角',()=>{
   const a=teahouse();
   const update={type:'UpdateNpc',commandId:'repeat-leave',npcId:'npc_fixture_lin',expectedRevision:0,changes:{onScene:false},evidence:'离场'};
-  expect(apply(a,{...a.response,worldCommands:[...a.response.worldCommands,update]})).toEqual(apply(a));
+  expect(()=>apply(a,{...a.response,worldCommands:[...a.response.worldCommands,update]})).toThrow(expect.objectContaining({code:'permission'}));
   expect(()=>apply(a,{...a.response,worldCommands:[{type:'UpdateProtagonist',commandId:'move',changes:{locationId:'loc_fixture_city'},evidence:'移动'}]})).toThrow();
  });
 });

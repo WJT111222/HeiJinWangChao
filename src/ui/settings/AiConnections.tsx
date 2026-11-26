@@ -26,11 +26,12 @@ import { relayMode, setRelayMode } from '../../services/ai/corsRelay';
 
 const stages: [AiTask, string, string][] = [
   ['story', '正文生成', '写剧情，最需要好模型'],
-  ['variables', '变量管理', '整理金钱、物品、关系'],
-  ['world', '动态世界', '推进你不在场的世界'],
+  ['entities', '人物与实体', '记录人物、组织和地点'],
+  ['variables', '主角与现场', '记录主角变化和现场事务'],
+  ['world', '场外与网络', '推进你不在场的世界'],
   ['memory', '记忆维护', '定期整理长期记忆'],
 ];
-const short: Record<AiTask, string> = { story: '正文', variables: '变量', world: '动态世界', memory: '记忆' };
+const short: Record<AiTask, string> = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', memory: '记忆' };
 type Optional = Exclude<AiTask, 'story'>;
 interface Draft { config: AiConfig; keys: Record<string, string>; remember: Record<string, boolean>; presets: Record<string, PresetId | ''> }
 type TestState = { model: string; status: 'loading' | 'ok' | 'err'; text: string };

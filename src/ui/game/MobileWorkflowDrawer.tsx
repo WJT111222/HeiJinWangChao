@@ -51,9 +51,9 @@ export function MobileWorkflowDrawer({ inputRef, onClose, children }: {
       <button type="button" className="workflow-drawer-shade" aria-label="收起工作流暗区" tabIndex={-1}
         style={{top:window.visualViewport?.offsetTop ?? 0,height:Math.max(0,bounds.top-(window.visualViewport?.offsetTop ?? 0))}} onClick={onClose}/>
       <div className="workflow-drawer-viewport" style={{top:bounds.top,height:Math.max(0,bounds.bottom-bounds.top)}}>
-        <section ref={root} className="mobile-workflow-sheet workflow-floating-drawer" role="dialog" aria-modal="false" aria-label="三阶段工作流" tabIndex={-1} style={{transform:`translateY(${drag}px)`}}>
+        <section ref={root} className="mobile-workflow-sheet workflow-floating-drawer" role="dialog" aria-modal="false" aria-label="四阶段工作流" tabIndex={-1} style={{transform:`translateY(${drag}px)`}}>
           <div className="workflow-drawer-tools">
-            <button type="button" className="workflow-drawer-grip" aria-label="收起三阶段工作流" onClick={() => {if(suppressClick.current){suppressClick.current=false;return;}onClose();}}
+            <button type="button" className="workflow-drawer-grip" aria-label="收起四阶段工作流" onClick={() => {if(suppressClick.current){suppressClick.current=false;return;}onClose();}}
               onPointerDown={event=>{if(event.button!==0)return;pointer.current={id:event.pointerId,y:event.clientY,dy:0};event.currentTarget.setPointerCapture(event.pointerId);}}
               onPointerMove={event=>{const p=pointer.current;if(!p||p.id!==event.pointerId)return;p.dy=Math.max(0,event.clientY-p.y);setDrag(p.dy);}}
               onPointerUp={event=>{const p=pointer.current;if(!p||p.id!==event.pointerId)return;suppressClick.current=p.dy>4;pointer.current=undefined;setDrag(0);if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);if(p.dy>72)onClose();}}

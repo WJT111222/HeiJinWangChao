@@ -2,7 +2,7 @@ import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { openWorkflowDiagnostics, openWorkflowStage } from './helpers/gameLayout';
 
-// 三阶段详情：错误横幅可以关闭；鼠标停在错误日志上也能用滚轮滚动整个诊断区。
+// 四阶段详情：错误横幅可以关闭；鼠标停在错误日志上也能用滚轮滚动整个诊断区。
 async function seed(page: Page) {
   await page.goto('/');
   await page.evaluate(async () => {
@@ -23,7 +23,7 @@ async function seed(page: Page) {
 }
 
 test('电脑端：错误横幅可关闭，新错误会重新出现；日志上滚轮可以滚动诊断区', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', '电脑端三阶段详情');
+  test.skip(info.project.name !== 'desktop', '电脑端四阶段详情');
   await page.setViewportSize({ width: 1440, height: 760 });
   await seed(page);
   let calls = 0;
@@ -40,11 +40,11 @@ test('电脑端：错误横幅可关闭，新错误会重新出现；日志上�
   await banner.getByRole('button', { name: '关闭错误提示' }).click();
   await expect(banner).toHaveCount(0);
 
-  // ① 同一回合：切换面板视图、收起再展开三阶段详情、清空日志等重渲染，都不会让同一错误再弹出。
+  // ① 同一回合：切换面板视图、收起再展开四阶段详情、清空日志等重渲染，都不会让同一错误再弹出。
   await openWorkflowDiagnostics(page);
   await expect(page.locator('.runtime-log li')).toHaveCount(4);
   await openWorkflowStage(page, 'variables');
-  await page.getByRole('button', { name: '收起三阶段详情' }).click();
+  await page.getByRole('button', { name: '收起四阶段详情' }).click();
   await page.getByRole('button', { name: /^详情/ }).click();
   await expect(page.locator('.wf-rail')).toBeVisible();
   await expect(banner).toHaveCount(0);

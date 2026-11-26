@@ -630,7 +630,7 @@ export function App() {
       {notices.kind && <NoticeDialog announcement={notices.announcement} key={desktopUi?notices.kind:'mobile-notice'} automatic={notices.automatic} kind={notices.kind} muted={notices.muted}
         onMutedChange={notices.setMuted} onClose={notices.close} />}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}
-      <PeintureLauncher />
+      <PeintureLauncher state={loaded && route === `#game/${loaded.state.saveId}` ? loaded.state : undefined} />
       {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={variablesDirty ? '存档变量' : worldbookDirty ? '世界书' : summarySettingsDirty ? '记忆设置' : localSettingsDirty ? '本地偏好' : undefined} onContinue={() => {setConfirmSettingsClose(false);settingsDestination.current=undefined;}} onDiscard={() => {
         setConfirmSettingsClose(false);
         setLocalSettingsDirty(false); setAiSettingsDirty(false); setSummarySettingsDirty(false); setVariablesDirty(false); setWorldbookDirty(false);

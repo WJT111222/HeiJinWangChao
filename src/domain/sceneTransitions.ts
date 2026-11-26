@@ -1,6 +1,12 @@
 import type { DomainCommand } from './commands';
 import type { GameState } from './state';
-import { requireData } from './common';
+import { DataError } from './common';
+
+export class SceneLocationError extends DataError {
+  constructor(readonly npcId: string) {
+    super('SCENE_LOCATION', `在场 NPC（${npcId}）必须有明确地点`);
+  }
+}
 
 // 只维护“主角现场”的成员关系，不推断人物移动、行动或认知。
 export function maintainSceneTransition(
@@ -24,10 +30,6 @@ export function maintainSceneTransition(
     && (command.changes.onScene === true || command.changes.locationId === null)) {
     const person = after.npc[command.npcId];
     if (!person) continue; // 人物引用由正式状态校验保证。
-    requireData(
-      !person.onScene || person.locationId,
-      'SCENE_LOCATION',
-      `在场 NPC（${command.npcId}）必须有明确地点`,
-    );
+    if (person.onScene && !person.locationId) throw new SceneLocationError(command.npcId);
   }
 }

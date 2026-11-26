@@ -25,7 +25,7 @@ async function setup(page: Page, options = true, timeoutSeconds = 30) {
         channel.baseUrl = 'https://actions-recovery.mock.invalid/v1';
         config.channels = [channel];
         config.routes.story = { channelId: channel.id, modelId: 'story' };
-        for (const stage of ['variables', 'world'])
+        for (const stage of ['entities','variables','world'])
             config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
         saveAiConfig(localStorage, config);
         new CredentialVault(sessionStorage, localStorage).set(channel.id, 'synthetic-not-a-key');
@@ -81,7 +81,9 @@ async function installTransport(page: Page) {
                 return new Response(frame(content) + (mode === 'missing-done' ? '' : 'data: [DONE]\n\n'), { headers: { 'content-type': 'text/event-stream' } });
             }
             let content: string;
-            if (stage === 'variables') {
+            if (stage === 'entities') {
+                content = '<接触者>[]</接触者><thinking>本轮没有人物变化</thinking><说明></说明><命令></命令>';
+            } else if (stage === 'variables') {
                 const p = '/src/tests/fixtures/variableReply.ts', { variableReply } = await import(p);
                 content = variableReply({ commands: [{ type: 'SetWorldClock', commandId: 'clock', worldClock: new Date(Date.parse(ctx.SAVE_STATE.worldClock) + 60000).toISOString(), evidence: '经过一分钟' }], rejectedSuggestions: [], unresolved: [] });
             }

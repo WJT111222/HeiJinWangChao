@@ -185,6 +185,18 @@ export function timeOutcome(state: GameState, draft: Pick<TurnDraft, 'userInput'
   else requireData(guide.subjectHint === 'time:end' || guide.subjectHint === 'time:pause', 'TIME_PREFLIGHT', '未知时间结果类型');
   return { at: guide.observedFact, evidence };
 }
+export function effectiveTurnClock(state: GameState, draft: TurnDraft, scene: readonly DomainCommand[]) {
+  if (draft.useVariableStage && draft.turnKind === 'regular' && draft.story?.variableGuideRaw === undefined
+      && draft.story?.variableGuide.some(guide => guide.group === 'time' && guide.subjectHint === 'time:pause')) {
+    const pause = timeOutcome(state, draft)!;
+    return { endAt: pause.at, pause };
+  }
+  const authorized = draft.useVariableStage ? scene : [];
+  const opening = openingTimeSelection(state, draft, authorized);
+  const clocks = authorized.filter(command => command.type === 'SetWorldClock');
+  return { endAt: opening?.endAt ?? clocks.at(-1)?.worldClock ?? state.worldClock };
+}
+
 export function validateTimeCommands(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]) {
   if (state.openingTimePending && variablesChooseOpening(draft)) {
     requireData(!historicalPerspective(state, draft), 'TIME_PREFLIGHT', '纯历史回顾不能初始化当前世界时钟');

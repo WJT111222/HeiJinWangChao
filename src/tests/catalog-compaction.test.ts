@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { commandCatalog, inlineCommandCatalog } from '../services/validation/commandCatalog';
-import { describeTimeFormats, factorRepeatedSchemas, resolveCatalogRefs } from '../services/validation/catalogCompaction';
+import { compactWorldCommandSchema, describeTimeFormats, factorRepeatedSchemas, resolveCatalogRefs } from '../services/validation/catalogCompaction';
 import { composePrompt } from '../prompts/composer';
 import { defaultSettings } from '../ui/settings/model';
 import { worldDraft, worldState } from './fixtures/world';
@@ -65,6 +65,16 @@ describe.each(['world', 'variables'] as const)('%s 命令目录只合并重复�
 });
 
 describe('合并与展开的工具行为', () => {
+  it('World 的字符串常量或枚举保留完整取值约束，混合枚举保留类型约束', () => {
+    const properties = { status: { type:'string', enum:['planned','active'] }, kind: { type:'string', const:'npc' },
+      mixed: { type:'string', enum:[1,'one'] }, text: { type:'string', minLength:1 } };
+    expect(compactWorldCommandSchema({ properties })).toEqual({ properties: {
+      ...properties, status: { enum: ['planned','active'] }, kind: { const:'npc' },
+    } });
+    const world = inlineCommandCatalog('world').schema;
+    expect(world.$schema).toBe('http://json-schema.org/draft-07/schema#');
+    expect(world.oneOf.every(command => command.$schema === undefined)).toBe(true);
+  });
   it('只抽取有明显收益的重复结构，展开后与原文相同', () => {
     const shared = { type: 'object', properties: { a: { type: 'string', minLength: 1, maxLength: 400 }, b: { type: 'string', minLength: 1, maxLength: 400 } }, required: ['a', 'b'], additionalProperties: false };
     const schema = { oneOf: [

@@ -18,11 +18,11 @@ async function seed(page: Page, stage: 'variables' | 'world', deepseekV4?: { str
     const [{ SaveRepository }, { worldState, worldDraft }, { defaultSettings, settingsKey }, { newChannel, defaultAiConfig, saveAiConfig }, { CredentialVault }, { createTurnDraft }] = await Promise.all(paths.map(p => import(p)));
     const repo = await SaveRepository.open(); await repo.create(worldState());
     const mode = deepseekV4 ? 'opening' : 'regular';
-    await repo.saveDraft(createTurnDraft('save-a', 0, 'turn-a', mode, ''), null);
+    await repo.saveDraft(createTurnDraft('save-a', 0, 'turn-a', mode, '', true, true, false), null);
     await repo.saveDraft(worldDraft(false, mode), 0);
     if (stage === 'world') await repo.saveDraft({ ...worldDraft(true), draftRevision: 2 }, 1);
     repo.close();
-    const settings = defaultSettings();
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false;
     if (deepseekV4) settings.runtime.streamVariables = deepseekV4.stream;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel('deepseek'), config = defaultAiConfig();
@@ -40,7 +40,7 @@ async function closeDiagnostics(page: Page) {
   if (await dialog.isVisible()) await page.keyboard.press('Escape');
 }
 async function closeWorkflow(page: Page) {
-  const close = page.getByRole('button', { name: '收起三阶段详情', exact: true });
+  const close = page.getByRole('button', { name: '收起四阶段详情', exact: true });
   if (await close.isVisible()) await close.click(); else await workflowTrigger(page).click();
 }
 for (const stage of ['variables', 'world'] as const) {
@@ -54,7 +54,7 @@ for (const stage of ['variables', 'world'] as const) {
     });
     const before = await seed(page, stage);
     await openWorkflowStage(page, stage);
-    const label = stage === 'variables' ? '变量' : '世界', rawLabel = stage === 'variables' ? '变量' : '动态世界';
+    const label = stage === 'variables' ? '变量' : '世界', rawLabel = stage === 'variables' ? '主角与现场' : '场外与网络';
     await page.getByRole('button', { name: `生成${label}候选`, exact: true }).click();
     await expect.poll(async () => (await stored(page)).draft?.failures.length).toBeGreaterThan(0);
     expect(calls).toBe(1);
@@ -122,8 +122,8 @@ for (const stream of [false, true]) {
     expect(saved.state).toEqual(before.state);
     expect(saved.draft?.variables?.result.commands).toMatchObject([{ type: 'SpendFunds', account: 'cash', amount: 3000 }]);
     const panel = await openStageRaw(page, 'variables');
-    await expect(panel.getByRole('textbox', { name: '变量模型完整原文', exact: true })).toHaveValue(envelope);
-    await panel.getByLabel('变量原文内容', { exact: true }).selectOption('reasoning');
+    await expect(panel.getByRole('textbox', { name: '主角与现场模型完整原文', exact: true })).toHaveValue(envelope);
+    await panel.getByLabel('主角与现场原文内容', { exact: true }).selectOption('reasoning');
     await expect(panel.getByRole('textbox')).toHaveCount(0);
     await page.screenshot({ path: info.outputPath('deepseek-variables.png') });
     await page.reload();

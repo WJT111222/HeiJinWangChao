@@ -1,17 +1,16 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { composePrompt } from '../prompts/composer';
 import { readPromptResource } from '../prompts/loader';
 import { formatTailMessage } from '../prompts/formatTail';
 import { continuationInstruction } from '../domain/storyContinuation';
-import { createTurnDraft } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { AiStage } from '../services/ai/configuration';
 import { SaveRepository } from '../services/storage/saveRepository';
-import { defaultSettings } from '../ui/settings/model';
 import { STORY_STYLE_IDS } from '../ui/settings/storyStyles';
 import type { StoryStyle } from '../ui/settings/storyStyles';
 import { TurnCoordinator } from '../workflows/turnCoordinator';

@@ -1,3 +1,4 @@
+import { commandsForPhase } from '../../domain/stageCommands';
 import { describeTimeFormats } from '../../services/validation/catalogCompaction';
 import { HaremChangesSchema } from '../../domain/harem/schema';
 import { PromotionProfileSchema } from '../../domain/npc/schema';
@@ -16,7 +17,7 @@ import { SceneDescriptionField, type DomainCommand } from '../../domain/commands
 import type { VariableOperation } from '../../parsers/variableText';
 import { variableTextLimits } from '../../parsers/variableText';
 import { affinityChangeInput, memoryInputSchema, orgKnowledgeInputSchema, textInputSchema } from './entities';
-import { SceneEventStateSchema, WorldTaskSchema } from '../../domain/events/schema';
+import { SceneEventCreationSchema, SceneEventStateSchema, WorldTaskSchema } from '../../domain/events/schema';
 
 const positive = MoneySchema.refine(n=>n>0);
 const creationOmit = {id:true,departments:true,members:true,protagonistKnown:true} as const;
@@ -44,6 +45,7 @@ const entries:Entry[] = [
     {operation:'delete',path:`protagonist.currentWear.${slot}`,commandType:'SetEquipment',value:z.null()}]),
   {operation:'push',path:'protagonist.currentWear.accessoryItemIds',commandType:'SetEquipment',value:ActorRefSchema.shape.id},
   {operation:'delete',path:'protagonist.currentWear.accessoryItemIds[index]',commandType:'SetEquipment',value:z.null()},
+  {operation:'set',path:'events[id]',commandType:'SaveEvent',value:SceneEventCreationSchema},
   {operation:'set',path:'events[id].sceneState',commandType:'SaveEvent',value:SceneEventStateSchema},
   {operation:'set',path:'tasks[id]',commandType:'SaveTask',value:WorldTaskSchema.omit({id:true})},
   ...Object.entries(heroChanges).map(([field,value]):Entry=>({operation:'set',path:`protagonist.${field}`,commandType:'UpdateProtagonist',
@@ -56,7 +58,6 @@ const entries:Entry[] = [
   {operation:'set',path:'npc[id]',commandType:'CreateNpc',value:z.union([OrdinaryNpcCreationSchema.omit({id:true}),SpecialNpcCreationSchema.omit({id:true,longTermMemories:true})])},
   {operation:'set',path:'npc[id].activeGoals',commandType:'UpdateNpc',value:variableCommandSchemas[1].shape.activeGoals.unwrap()},
   {operation:'set',path:'npc[id].specialProfile',commandType:'PromoteNpc',value:z.union([PromotionProfileSchema,z.strictObject({})])},
-  {operation:'set',path:'npc[id].contact',commandType:'RegisterContact',value:z.strictObject({reason:TextSchema})},
   // 创建只展示基础字段；部门、成员在创建后用state补充，主角已知只能逐条push，避免四类结构重复展示。
   {operation:'set',path:'organizations[id]',commandType:'CreateOrganization',value:z.union([
     GangOrgSchema.omit(creationOmit),GovernmentOrgSchema.omit(creationOmit),CivilOrgSchema.omit(creationOmit),BusinessOrgSchema.omit(creationOmit)])},
@@ -83,37 +84,42 @@ const haremValueSchema = describeTimeFormats(z.toJSONSchema(HaremChangesSchema, 
   target: 'draft-7', unrepresentable: 'any', reused: 'ref',
 }));
 /** 正式及离线文本组装共用的值结构目录；不执行、审批或写入状态。 */
-export function textVariableCatalog(mode: 'opening' | 'regular' = 'regular') {
+export function textVariableCatalog(mode: 'opening' | 'regular' = 'regular', phase?: 'entities' | 'scene') {
   const sceneEntries = mode === 'regular' ? SceneDescriptionField.options.map((path): Entry => ({
     operation: 'set', path, commandType: 'SetSceneDescription', value: SaveShape[path],
   })) : [];
+  const allowed = new Set(phase ? commandsForPhase(phase, mode) :
+    [...commandsForPhase('entities', mode), ...commandsForPhase('scene', mode)]);
+  const activeEntries = [...entries, ...sceneEntries].filter(entry => allowed.has(entry.commandType));
   return { protocol:'VARIABLE_TEXT_V1', currencyUnit:'CNY_FEN_INTEGER', limits:variableTextLimits,
-    organizationUpdateFields: organizationChangeFields,
-    itemDetailsGuide: { categoryGroups: itemCategoryGroup, suggestedStringFields: itemDetailFields },
-    entries:[...entries, ...sceneEntries].map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...(value === HaremChangesSchema ? haremValueSchema : z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'})),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
+    ...(phase !== 'entities' ? { organizationUpdateFields: organizationChangeFields,
+    itemDetailsGuide: { categoryGroups: itemCategoryGroup, suggestedStringFields: itemDetailFields } } : {}),
+    entries:activeEntries.map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...(value === HaremChangesSchema ? haremValueSchema : z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'})),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
     usageExamples: {
+      ...(phase !== 'scene' ? {
       addressing: 'set npc[example-npc].addressing = {"npcToPlayer":"老大"}；根据本回合剧情更新适用方向。playerToNpc 是主角称呼该人物，npcToPlayer 是该人物称呼主角。省略的方向保持原值。',
       affinityChange: 'set npc[example-npc].affinityChange = {"to":35,"reason":"共同核对材料后彼此更信任","relationshipText":"愿意继续协作"}',
       memory: 'push npc[example-npc].memories = {"text":"自己与对方核对材料并约定继续合作，尚有问题待确认。","knowledgeKind":"observed","knowledgeSource":"本人参与本轮交谈","visibility":"npc_private"}',
-      faction: 'set organizations[example-org].protagonistRelation = {"relation":"正式成员","reason":"拜码头入会","faction":{"action":"bind","position":"看场","bondText":"经引荐入会看场"}}；bind需position与bondText。',
-      caution: '示例只说明结构，替换人物ID、数值和剧情。好感只用set npc[id].affinityChange={to,reason,relationshipText}：to为变化后的好感终值（-100～100），reason写本回合具体剧情原因，relationshipText写当前关系与态度，三项都不可省略；前值由程序读取正式状态（同批连续更新按上一笔结果），不要填写from。可与healthText、lastInteractionAt及四字段记忆同批写入。记忆ID、来源回合、时间和人物引用由程序生成。',
+      } : {}),
+      ...(phase !== 'entities' ? {faction: 'set organizations[example-org].protagonistRelation = {"relation":"正式成员","reason":"拜码头入会","faction":{"action":"bind","position":"看场","bondText":"经引荐入会看场"}}；bind需position与bondText。',} : {}),
+      ...(phase !== 'scene' ? {caution: '示例只说明结构，替换人物ID、数值和剧情。好感只用set npc[id].affinityChange={to,reason,relationshipText}：to为变化后的好感终值（-100～100），reason写本回合具体剧情原因，relationshipText写当前关系与态度，三项都不可省略；前值由程序读取正式状态（同批连续更新按上一笔结果），不要填写from。可与healthText、lastInteractionAt及四字段记忆同批写入。记忆ID、来源回合、时间和人物引用由程序生成。',} : {}),
     },
     rules:[
-      'events[id].sceneState只写本轮Story实际成立且满足现场权限的变化；active仍为active不是变化，提及、讨论风险、等待发展均不授予介入权限。eventNarration.mode=enter与既有eventInteraction沿用正式语义，mention不授权，不得靠改状态绕过权限。没有合法事件变化省略此命令，其他合法人物、情绪、好感和记忆仍完整记录。合法现场更新和提前结案不禁用；后台推进属于World。无交易不生成经济命令。',
-      '新增物品和购买的item都必须明确填写ownerRef。购买和转账使用完整复合命令，不另写扣款，不从说明推导交易。',
-      '物品description是稳定外观/功能/背景，conditionText是当前状态；referenceValue为单件参考价值（人民币非负整数分），未知省略或null，不用0代替未知，不代表购买price，不生成交易。不可交易证件不编造市价。itemDetails复用字符串附加资料，按itemDetailsGuide选适用字段，未知省略；set items[id].itemDetails替换该记录，保留仍有效的旧属性，不支持任意深层赋值。tool为工具类，weapon仍为武器；旧other不按名称猜类。questItem仅在确有任务用途时标true。',
+      ...(phase !== 'entities' ? ['events[id].sceneState只写本轮Story实际成立且满足现场权限的变化；active仍为active不是变化，提及、讨论风险、等待发展均不授予介入权限。eventNarration.mode=enter与既有eventInteraction沿用正式语义，mention不授权，不得靠改状态绕过权限。没有合法事件变化省略此命令，其他合法人物、情绪、好感和记忆仍完整记录。合法现场更新和提前结案不禁用；后台推进属于World。无交易不生成经济命令。'] : []),
+      ...(phase !== 'entities' ? ['新增物品和购买的item都必须明确填写ownerRef。购买和转账使用完整复合命令，不另写扣款，不从说明推导交易。'] : []),
+      ...(phase !== 'entities' ? ['物品description是稳定外观/功能/背景，conditionText是当前状态；referenceValue为单件参考价值（人民币非负整数分），未知省略或null，不用0代替未知，不代表购买price，不生成交易。不可交易证件不编造市价。itemDetails复用字符串附加资料，按itemDetailsGuide选适用字段，未知省略；set items[id].itemDetails替换该记录，保留仍有效的旧属性，不支持任意深层赋值。tool为工具类，weapon仍为武器；旧other不按名称猜类。questItem仅在确有任务用途时标true。'] : []),
       '同一次响应依次输出完整<thinking>、<说明>、<命令>。只执行命令块；set/add/push 路径 = JSON值；delete 路径，无操作数。以换行分隔，值可多行。不输出DomainCommand JSON、commandId、evidence、expectedRevision。',
       '可选gameState.前缀与源仓库一致，根和字段仍以本目录为准；[index]仅用于列明的普通数组，NPC/实体表必须用稳定ID。[id]替换为真实稳定ID；创建对象省略id，由路径注入。条目是有限操作入口，不是任意深层赋值。',
-      '建档须有Story/正式设定明确姓名及持续关系/事件追踪价值，由AI判断；不编造无名路人姓名，不以角色称呼建档，不按次数或职业地位机械升级。specialProfile为PromoteNpc入口：升级或完善profilePending，已有休眠档案用空对象恢复；AI不得降级或覆盖玩家ordinary选择。电话/常驻地点/专属关系字段仅Variables更新，私密档案仍按原privateProfile路径和初次经历保护。',
-      '记忆内容遵守共享协议的人物原始记忆内容质量：以本人认知保留背景、经过、自身行动、结果与持续影响，不写成事件标题，不补造事实；长度仅为弹性参考，普通/特殊同标，不强迫每回合写入。',
-      '内联NPC初始记忆保持空；用push记忆路径新增，由程序填充当前回合、人物引用和游戏时间。knownInformation同时记录一条个人记忆。',
-      '所有普通/特殊NPC统一push npc[id].memories；不选择记忆层，不因special强制增加条目，无值得保存的新经历时可不写。knownInformation仍是知晓状态入口，push会同时建立唯一原始记忆，同一事实不要再重复push memories。两入口使用{text,knowledgeKind,knowledgeSource,visibility}四项。存档中的source/learnedAt只读，不是命令格式；不填id/sourceTurnIds/createdAtGameTime/affectedEntityRefs。亲历、转述和推测由模型区分，不由程序猜测补全。',
-      '组织state仅合并白名单当前字段，id/kind及关系历史只读；按组织类型使用organizationUpdateFields。金额仅gang.funds、business.assetsEstimate/liquidityEstimate，需同值内financialBasis={at,note}且不晚于当前时钟；不改变主角余额。leadership公开姓名或null，关联须稳定NPC ID；relations每目标唯一、可空、可单向。无变化不输出更新，不自动创建NPC。',
-      '只能更新目录内字段。旧资产无交易登记、历史债务无到账登记、房产购买尚无原生命令，写入<说明>，不伪造交易。events[id].sceneState仅更新已存在现场事件的实际状态和结果；所选Story的eventNarration.enter可明确授权该事件实际介入，mention无此权限，提前结案用实际at且保留fixedEndAt，程序保留旧规划并填写来源；新事件、预计终止时间、延期、承接及清理由World处理。tasks仍须截止时间或非空完成条件，不套用事件新规。',
-      'opening.initialState仅供带openingInitializationPending=true的新游戏开局，一批最多一条set。填写缺失weatherText/environmentText、原有cash/onlineBalance及expectedIncomes，不覆盖明确数据。expectedIncomes内每条需稳定id、source、整数分amount、status=expected、account、scheduleText，可选expectedAt不早于当前候选游戏时间；不是到账，不填receivedAt/sourceTurnId，不增加余额。普通回合及无标记旧档禁用。先初始化再处理真实交易。',
+      ...(phase !== 'scene' ? ['建档须有Story/正式设定明确姓名及持续关系/事件追踪价值，由AI判断；不编造无名路人姓名，不以角色称呼建档，不按次数或职业地位机械升级。specialProfile为PromoteNpc入口：升级或完善profilePending，已有休眠档案用空对象恢复；AI不得降级或覆盖玩家ordinary选择。电话/常驻地点/专属关系字段仅Variables更新，私密档案仍按原privateProfile路径和初次经历保护。'] : []),
+      ...(phase !== 'scene' ? ['记忆内容遵守共享协议的人物原始记忆内容质量：以本人认知保留背景、经过、自身行动、结果与持续影响，不写成事件标题，不补造事实；长度仅为弹性参考，普通/特殊同标，不强迫每回合写入。'] : []),
+      ...(phase !== 'scene' ? ['内联NPC初始记忆保持空；用push记忆路径新增，由程序填充当前回合、人物引用和游戏时间。knownInformation同时记录一条个人记忆。'] : []),
+      ...(phase !== 'scene' ? ['所有普通/特殊NPC统一push npc[id].memories；不选择记忆层，不因special强制增加条目，无值得保存的新经历时可不写。knownInformation仍是知晓状态入口，push会同时建立唯一原始记忆，同一事实不要再重复push memories。两入口使用{text,knowledgeKind,knowledgeSource,visibility}四项。存档中的source/learnedAt只读，不是命令格式；不填id/sourceTurnIds/createdAtGameTime/affectedEntityRefs。亲历、转述和推测由模型区分，不由程序猜测补全。'] : []),
+      ...(phase !== 'entities' ? ['组织state仅合并白名单当前字段，id/kind及关系历史只读；按组织类型使用organizationUpdateFields。金额仅gang.funds、business.assetsEstimate/liquidityEstimate，需同值内financialBasis={at,note}且不晚于当前时钟；不改变主角余额。leadership公开姓名或null，关联须稳定NPC ID；relations每目标唯一、可空、可单向。无变化不输出更新，不自动创建NPC。'] : []),
+      ...(phase !== 'entities' ? ['只能更新目录内字段。旧资产无交易登记、历史债务无到账登记、房产购买尚无原生命令，写入<说明>，不伪造交易。events[id].sceneState仅更新已存在现场事件的实际状态和结果；所选Story的eventNarration.enter可明确授权该事件实际介入，mention无此权限，提前结案用实际at且保留fixedEndAt，程序保留旧规划并填写来源；set events[id]可记录当场新事件；后台排期、延期、承接及清理由场外阶段处理。tasks仍须截止时间或非空完成条件，不套用事件新规。'] : []),
+      ...(phase !== 'entities' && mode === 'opening' ? ['opening.initialState仅供带openingInitializationPending=true的新游戏开局，一批最多一条set。填写缺失weatherText/environmentText、原有cash/onlineBalance及expectedIncomes，不覆盖明确数据。expectedIncomes内每条需稳定id、source、整数分amount、status=expected、account、scheduleText，可选expectedAt不早于当前候选游戏时间；不是到账，不填receivedAt/sourceTurnId，不增加余额。普通回合及无标记旧档禁用。先初始化再处理真实交易。'] : []),
       '数组set替换、push追加一个元素、delete按当前索引删除；同一数组多个delete按索引从大到小输出，程序按文本顺序执行，不静默重排。NPC整体/原始记忆、账目记录、地点和组织整体删除没有安全领域命令，明确拒绝；不采用任意深合并。',
-      '开局程序统一注入Story时间，不重复计时。普通回合set worldClock为合法ISO时间且不倒退；需要推进时明确输出set worldClock，程序会将时钟优先应用，互动、记忆和实际到账使用本批最终时钟；其他命令保持文本顺序。lastInteractionAt不晚于执行时钟且不早于本人已有互动时间；receivedAt不晚于执行时钟。',
-      ...(mode === 'regular' ? [
+      ...(phase !== 'entities' ? ['开局程序统一注入Story时间，不重复计时。普通回合set worldClock为合法ISO时间且不倒退；需要推进时明确输出set worldClock，程序会将时钟优先应用，互动、记忆和实际到账使用本批最终时钟；其他命令保持文本顺序。lastInteractionAt不晚于执行时钟且不早于本人已有互动时间；receivedAt不晚于执行时钟。'] : []),
+      ...(phase !== 'entities' && mode === 'regular' ? [
         '结合本回合玩家行动、正文和当前存档，在天气或环境有实质变化时按需分别 set weatherText、set environmentText；没有变化就省略。天气约10个汉字，写清可辨认的天气，如“小雨，微风，略有凉意”；环境约30个汉字，概括场景、人流、光线或持续影响，避免重复天气和铺陈无关物件。字数仅供参考，不按现实天气、设备时间、季节或固定回合数强制更新。',
       ] : []),
     ] };

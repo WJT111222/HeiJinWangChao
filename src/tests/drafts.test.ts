@@ -1,5 +1,6 @@
+import { sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { describe, expect, it } from 'vitest';
-import { TurnDraftSchema, createTurnDraft, rerollStory, startStageAttempt, validateDraftUpdate } from '../domain/drafts';
+import { TurnDraftSchema, rerollStory, startStageAttempt, validateDraftUpdate } from '../domain/drafts';
 import { commitCommands } from '../domain/commands';
 import { GameTimeSchema, IdSchema } from '../domain/common';
 import { game, purchase, story } from './fixtures/game';
@@ -10,7 +11,7 @@ function withCandidates() {
     variables: { storyRevision: 1, candidateRevision: 1, validation: 'validated', result: { commands: [purchase()], rejectedSuggestions: [], unresolved: [] } },
     world: { storyRevision: 1, candidateRevision: 1, basedOnVariableRevision: 1, validation: 'validated',
       result: { worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] } },
-    stageStatus: { story: 'ready', variables: 'ready', world: 'ready' },
+    stageStatus: { ...draft.stageStatus, variables: 'ready', world: 'ready' },
   });
 }
 describe('候选来源与版本控制', () => {
@@ -52,7 +53,7 @@ describe('候选来源与版本控制', () => {
     const selected = rerollStory(rerollStory(initial, story), { ...story, narrative: '满意的正文' });
     const attempt = startStageAttempt(selected, ['variables', 'world'], { useVariableStage: true, useWorldStage: true });
     expect(attempt.story).toEqual(selected.story); expect(attempt.storyRevision).toBe(2);
-    expect(attempt.executionRevision).toBe(1); expect(attempt.stageStatus).toEqual({ story: 'ready', variables: 'pending', world: 'pending' });
+    expect(attempt.executionRevision).toBe(1); expect(attempt.stageStatus).toEqual({ story: 'ready', entities: 'skipped', variables: 'pending', world: 'pending' });
     expect(() => validateDraftUpdate(selected, attempt)).not.toThrow();
     expect(selected.useVariableStage).toBe(false); expect(selected.useWorldStage).toBe(false);
     expect(selected.executionRevision).toBe(0);
@@ -73,19 +74,19 @@ describe('候选来源与版本控制', () => {
     const selected = withCandidates();
     const attempt = startStageAttempt(selected, ['world'], { useVariableStage: false, useWorldStage: true });
     expect(attempt.story).toEqual(selected.story); expect(attempt.storyRevision).toBe(selected.storyRevision);
-    expect(attempt.variables).toEqual(selected.variables); expect(attempt.world).toBeUndefined();
+    expect(attempt.inactiveCandidates?.variables).toEqual(selected.variables); expect(attempt.world).toBeUndefined();
     expect(attempt.stageRequestRevisions.variables).toBe(selected.stageRequestRevisions.variables);
     expect(() => validateDraftUpdate(selected, attempt)).not.toThrow();
     const result = TurnDraftSchema.parse({ ...attempt, draftRevision: attempt.draftRevision + 1,
-      world: { ...selected.world, requestRevision: attempt.stageRequestRevisions.world },
+      world: { ...selected.world, basedOnVariableRevision:undefined, requestRevision: attempt.stageRequestRevisions.world },
       stageStatus: { ...attempt.stageStatus, world: 'ready' } });
     expect(() => validateDraftUpdate(attempt, result)).not.toThrow();
   });
-  it('仅开启世界且没有可复用变量时，补算结果仍只能预览', () => {
+  it('仅开启场外时可直接基于存档取得合法候选', () => {
     const selected = rerollStory(createTurnDraft('save-a', 0, 'turn-a', 'regular', '输入', false, false), story);
     const attempt = startStageAttempt(selected, ['world'], { useWorldStage: true });
     const result = { ...withCandidates().world, basedOnVariableRevision: undefined, requestRevision: attempt.stageRequestRevisions.world };
-    expect(TurnDraftSchema.safeParse({ ...attempt, world: result, stageStatus: { ...attempt.stageStatus, world: 'ready' } }).success).toBe(false);
+    expect(TurnDraftSchema.safeParse({ ...attempt, world: result, stageStatus: { ...attempt.stageStatus, world: 'ready' } }).success).toBe(true);
     expect(TurnDraftSchema.safeParse({ ...attempt, world: { ...result, validation: 'preview' }, stageStatus: { ...attempt.stageStatus, world: 'preview' } }).success).toBe(true);
   });
   it('相同配置重新请求也创建新执行版本，旧响应即使重新读取草稿后回写仍被拒绝', () => {

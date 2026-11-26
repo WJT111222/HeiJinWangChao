@@ -1,3 +1,4 @@
+import { sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { variableReply } from './fixtures/variableReply';
 import { describe, it, expect, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
@@ -15,7 +16,7 @@ import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import type { Protocol } from '../services/ai/configuration';
 import { newChannel, defaultAiConfig } from '../services/ai/configuration';
-import { createTurnDraft, rerollStory, TurnDraftSchema, startStageAttempt } from '../domain/drafts';
+import { rerollStory, TurnDraftSchema, startStageAttempt } from '../domain/drafts';
 import { StorySchema } from '../domain/state';
 import { DomainCommandSchema } from '../domain/commands';
 import type { DomainCommand } from '../domain/commands';

@@ -1,3 +1,7 @@
+import { checkEntityCommands, effectiveEntityCandidate } from '../../domain/entityCandidate';
+import { IdSchema } from '../../domain/common';
+import { commandsForPhase } from '../../domain/stageCommands';
+import { hasVisibleNarrative } from '../../domain/storyContent';
 import { storySceneAuthority, validateNarrationClock } from '../../domain/events/narration';
 import { nestedStoryTag, storyEnvelopeDiagnostic, storySchemaError } from './storyDiagnostics';
 import { recoverStoryEnvelope, repairUnclosedTags } from './storyEnvelopeRecovery';
@@ -51,12 +55,46 @@ export async function parseTextVariables(text: string, state: GameState, draft: 
   return validateVariableStatements(ast.value, state, draft, Boolean(envelope.value.description.trim()));
 }
 
-export async function validateVariableStatements(ast: readonly ParsedVariableCommand[], state: GameState, draft: TurnDraft, hasDescription: boolean) {
+export function entityEnvelope(text: string) {
+  const tag = /^\s*<接触者>([^<]*)<\/接触者>/u.exec(text);
+  const declared = tag ? IdSchema.array().safeParse(json(tag[1])) : undefined;
+  if (declared && !declared.success) throw new AiError('schema_fields');
+  return { contactedNpcIds: declared?.data ?? [], text: tag ? text.slice(tag[0].length) : text };
+}
+
+export async function parseEntities(text: string, state: GameState, draft: TurnDraft) {
+  const envelope = entityEnvelope(text);
+  const ast = parseVariableText(envelope.text);
+  if (!ast.ok) throw new AiError('variable_text_syntax', undefined, { variableStep: 'commands' });
+  const result = await validateEntityStatements(ast.value, state, draft, envelope.contactedNpcIds);
+  return { ...result, contactedNpcIds: envelope.contactedNpcIds };
+}
+
+export async function validateEntityStatements(ast: readonly ParsedVariableCommand[], state: GameState, draft: TurnDraft, contactedNpcIds: string[]) {
+  const plan = await compileVariableCommands(ast, state, { draft, expectedRevision: state.revision, phase: 'entities' });
+  if (!plan.ok) throw textExecutionError(plan.error, 'mapping');
+  // System opening clocks belong to the scene/Story path, never to this candidate.
+  const commands = plan.value.commands.filter((_, index) => plan.value.origins[index] !== null);
+  try { checkEntityCommands(state, draft, contactedNpcIds, commands); }
+  catch (error) { throw variableFailure(error, 'simulation'); }
+  return VariableResultSchema.parse({ commands, rejectedSuggestions: [], unresolved: [] });
+}
+
+export async function validateVariableStatements(ast: readonly ParsedVariableCommand[], state: GameState, draft: TurnDraft, hasDescription: boolean, sceneOnly = false) {
   const context = { draft, expectedRevision: state.revision };
   const compiled = await compileVariableCommands(ast, state, context);
   if (!compiled.ok) throw textExecutionError(compiled.error, 'mapping');
+  if (sceneOnly || draft.requestedStages.includes('variables')) {
+    const allowed = new Set(commandsForPhase('scene', draft.turnKind));
+    for (const [index, command] of compiled.value.commands.entries())
+      if (!allowed.has(command.type)) {
+        const origin = compiled.value.origins[index];
+        throw new AiError('permission', undefined, { commandIndex: origin ? origin.commandIndex - 1 : undefined, commandType: command.type });
+      }
+  }
   try { validateTimeCommands(state, draft, compiled.value.commands); }
   catch (error) { throw variableFailure(error, 'simulation'); }
+  if (draft.entities) effectiveEntityCandidate(state, draft, compiled.value.commands);
   const simulated = await simulateVariablePlan(compiled.value, state, context);
   if (!simulated.ok) throw textExecutionError(simulated.error, 'simulation');
   for (const [index, command] of compiled.value.commands.entries()) {
@@ -90,7 +128,7 @@ export function worldJson(text: string): unknown {
 }
 // 只解析结构；叙事规划不属于 StorySchema，也不检查文学步骤的内容质量。
 // 可选项目规划与确定性标签恢复只影响封套解析，原文仍在临时原文视图保留。
-export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', settings: Settings) {
+export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', settings: Settings, minimum: number | null = settings.prompts.minNarrativeChars) {
   const actions = settings.prompts.actionOptions;
   const pattern = actions
     ? /^\s*(?:<thinking>([\s\S]*?)<\/thinking>\s*)?<正文>([\s\S]*?)<\/正文>\s*<短期记忆>([\s\S]*?)<\/短期记忆>\s*(?:<变量规划>([\s\S]*?)<\/变量规划>)?\s*<行动选项>([\s\S]*?)<\/行动选项>\s*$/
@@ -131,9 +169,11 @@ export function parseStoryEnvelope(text: string, mode: 'opening' | 'regular', se
   const summary = envelope[3].trim();
   // 100～200 汉字为质量目标，偏离仅提示；空摘要不能充当有效的本回合事实记录。
   if (assessSummary(summary).status === 'empty') fail(new AiError('invalid_output', undefined, { storyRule: 'summary_empty', storyTag: '短期记忆' }));
+  if (!hasVisibleNarrative(narrative))
+    fail(new AiError('invalid_output', undefined, { storyRule: 'narrative_empty', storyTag: '正文' }));
   const narrativeChars = Array.from(narrative.replace(/\s/gu, '')).length;
-  if (narrativeChars < settings.prompts.minNarrativeChars)
-    fail(new AiError('invalid_output', undefined, { storyRule: 'narrative_short', actualCount: narrativeChars, minimumCount: settings.prompts.minNarrativeChars }));
+  if (minimum !== null && narrativeChars < minimum)
+    fail(new AiError('invalid_output', undefined, { storyRule: 'narrative_short', actualCount: narrativeChars, minimumCount: minimum }));
   const actionOptions = actions
     ? envelope[5]
         .split('\n')
@@ -162,7 +202,7 @@ export function parseVariables(text: string, state: GameState, draft: TurnDraft)
   const checked = VariableResultSchema.safeParse(raw);
   if (!checked.success) throw variableValidationError(checked.error, raw);
   if (checked.data.settlement && checked.data.settlement.accepted !== checked.data.commands.filter(command => command.commandId.startsWith('text-v1:')).length) throw new AiError('candidate_conflict');
-  if(checked.data.commands.some(c=>c.type==='DeleteEvent'||c.type==='RecordHistory'))throw new AiError('permission');
+  if (checked.data.commands.some(c => c.type === 'DeleteEvent' || c.type === 'RecordHistory')) throw new AiError('permission');
   if (!draft.story) throw new AiError('candidate_conflict');
   try { state = openingTimeBase(state, draft, checked.data.commands); } catch (error) { throw variableValidationError(error); }
   if (new Set(checked.data.commands.map((c) => c.commandId)).size !== checked.data.commands.length) throw new AiError('candidate_conflict');

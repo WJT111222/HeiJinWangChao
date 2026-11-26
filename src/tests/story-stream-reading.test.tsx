@@ -1,3 +1,4 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { IDBFactory } from 'fake-indexeddb';
@@ -15,9 +16,7 @@ import { CredentialVault } from '../services/ai/credentials';
 import { stageResponses, safeStreamResponseText, StageResponseStore } from '../services/ai/stageResponses';
 import { storyInspections } from '../services/ai/storyInspection';
 import { SaveRepository } from '../services/storage/saveRepository';
-import { createTurnDraft } from '../domain/drafts';
 import { parseStoryEnvelope } from '../services/validation/aiOutputs';
-import { defaultSettings } from '../ui/settings/model';
 import { game } from './fixtures/game';
 
 const body = '【旁白】雨落在站台，主角看着驶来的公交车。';

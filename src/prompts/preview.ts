@@ -6,7 +6,7 @@ import type { AiConfig, AiStage } from '../services/ai/configuration';
 import { cotSupported, resolveModelRoute } from '../services/ai/snapshot';
 import { safeAiError } from '../services/ai/errors';
 
-export const inspectionStages: AiStage[] = ['story', 'variables', 'world'];
+export const inspectionStages: AiStage[] = ['story', 'entities', 'variables', 'world'];
 export function previewRoute(config: AiConfig, stage: AiStage) {
   try {
     const { channel, model } = resolveModelRoute(config, stage);
@@ -50,6 +50,7 @@ export function previewRequirement(
   if (input.draft.turnKind !== input.mode)
     return '现有草稿的回合模式不匹配，不能伪造另一种模式的阶段数据。';
   if (
+    (input.stage === 'entities' && !input.draft.useEntityStage) ||
     (input.stage === 'variables' && !input.draft.useVariableStage) ||
     (input.stage === 'world' && !input.draft.useWorldStage)
   )

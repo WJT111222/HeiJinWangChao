@@ -1,3 +1,4 @@
+import { stagedFixture } from './fixtures/stageScope';
 import { describe, expect, it } from 'vitest';
 import { commitCommands, DomainCommandSchema } from '../domain/commands';
 import type { GameState } from '../domain/state';
@@ -23,10 +24,10 @@ function offstage(count = 4) {
 }
 function selected(state: GameState, variableCommands: unknown[] = []) {
   const draft = worldDraft(false, 'opening');
-  return { ...draft, baseSaveRevision: state.revision,
+  return stagedFixture({ ...draft, useEntityStage:true, baseSaveRevision: state.revision,
     stageStatus: { ...draft.stageStatus, variables: 'ready' as const },
     variables: { storyRevision: draft.storyRevision, candidateRevision: 1, requestRevision: 0, validation: 'validated' as const,
-      result: { commands: variableCommands.map(c => DomainCommandSchema.parse(c)), rejectedSuggestions: [], unresolved: [] } } };
+      result: { commands: variableCommands.map(c => DomainCommandSchema.parse(c)), rejectedSuggestions: [], unresolved: [] } } });
 }
 const world = (commands: unknown[]) => JSON.stringify({ ...worldResult(), worldCommands: commands });
 

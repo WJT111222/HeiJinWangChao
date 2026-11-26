@@ -19,9 +19,9 @@ import { protagonistKnownEvent } from '../../domain/events/knowledge';
 import { worldTypes } from './commandCatalog';
 import { requireWorld, safeWorldPath, worldValidationError } from './worldDiagnostics';
 import { worldProjectionError } from './worldProjectionDiagnostics';
-import { worldNpcAllowed } from '../../domain/npc/worldAccess';
+import { worldNpcAllowed, worldTaskNpcAllowed } from '../../domain/npc/worldAccess';
 import { NpcSchema } from '../../domain/npc/schema';
-import { stripVariableSceneWrites, worldForbiddenNpcChange, worldNormalizationNotes } from './worldSceneWrites';
+import { conflictingSceneField, sceneEventWriteFields, stripVariableSceneWrites, worldForbiddenNpcChange, worldNormalizationNotes } from './worldSceneWrites';
 import { keepTaskIdentity, sameTaskInstant, sameTaskText } from './worldTaskIdentity';
 
 function sameActor(a: ActorRef, b: ActorRef) { return a.kind === b.kind && a.id === b.id; }
@@ -108,9 +108,12 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
   const createdNpcs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateNpc' ? [[c.npc.id, c.npc] as const] : []));
   const createdOrgs = new Map(result.worldCommands.flatMap(c => c.type === 'CreateOrganization' ? [[c.organization.id, c.organization] as const] : []));
   const actorAllowed = (ref: ActorRef) =>
-    (ref.kind === 'npc' ? worldNpcAllowed(base, draft, ref.id) : offscreen(base, ref))
+    (ref.kind === 'npc' ? worldNpcAllowed(base, draft, ref.id, original) : offscreen(base, ref))
     || (ref.kind === 'npc' && createdNpcs.has(ref.id) && !createdNpcs.get(ref.id)?.onScene)
     || (ref.kind === 'organization' && createdOrgs.has(ref.id));
+  const taskActorAllowed = (ref: ActorRef) => actorAllowed(ref) ||
+    (ref.kind === 'npc' && worldTaskNpcAllowed(base, draft, ref.id));
+  const eventWrites = sceneEventWriteFields(state, draft);
   const causal = structuredClone(base);
   // Only structured ID dependencies are ordered. Evidence is a non-executing explanation.
   for (const command of orderWorldCommands(commands)) {
@@ -166,12 +169,15 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         case 'CreateLocation': break; // Domain validation enforces hierarchy and references.
         case 'SaveTask': {
           const task = command.task, old = base.tasks[task.id], formal = state.tasks[task.id];
+          const sceneWrite = draft.variables?.result.commands.find(c => c.type === 'SaveTask' && c.task.id === task.id);
+          const conflict = sceneWrite?.type === 'SaveTask' && conflictingSceneField(formal, sceneWrite.task, task);
+          requireWorld(!conflict, 'permission', 'actor_permission', conflict ? `task.${conflict}` : undefined);
           requireWorld(!formal || sameActor(formal.actorRef, task.actorRef), 'permission','actor_permission','task.actorRef');
-          requireWorld(actorAllowed(task.actorRef) && (!old || sameActor(old.actorRef, task.actorRef)), 'permission', 'actor_permission', 'task.actorRef');
+          requireWorld(taskActorAllowed(task.actorRef) && (!old || sameActor(old.actorRef, task.actorRef)), 'permission', 'actor_permission', 'task.actorRef');
           if (task.handoff && !old) {
             const transfer = task.handoff, prior = causal.tasks[transfer.fromTaskId];
             requireWorld(prior?.resolution && ['completed','cancelled'].includes(prior.status), 'invalid_output', 'task_state','task.handoff.fromTaskId');
-            requireWorld(actorAllowed(prior.actorRef), 'permission','actor_permission','task.handoff.fromTaskId');
+            requireWorld(taskActorAllowed(prior.actorRef), 'permission','actor_permission','task.handoff.fromTaskId');
             requireWorld(Date.parse(transfer.at) >= Date.parse(state.worldClock)
               && Date.parse(prior.resolution.at) <= Date.parse(transfer.at)
               && Date.parse(transfer.at) <= Date.parse(task.startAt) && Date.parse(transfer.at) <= now, 'invalid_output', 'event_time','task.handoff.at');
@@ -197,6 +203,9 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         }
         case 'SaveEvent': {
           const event = command.event, old = base.events[event.id];
+          const conflict = old && [...(eventWrites.get(event.id) ?? [])].find(key =>
+            fingerprint(Reflect.get(old,key)) !== fingerprint(Reflect.get(event,key)));
+          requireWorld(!conflict, 'permission', 'actor_permission', conflict ? `event.${conflict}` : undefined);
           if(event.eventKind==='sub' && old && terminalEvent(old))
             requireWorld(false,'invalid_output','event_transition',changedRecordField('event',old,event));
           if(event.eventKind==='sub' && (!old || !terminalEvent(old))) {
@@ -259,15 +268,15 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
         case 'RecordHistory': break; // 只记录，不广播知识；引用/日期/ID由同一领域投影验证。
         case 'ApplyHaremBackground': {
           // 场外推进：只碰离场成员；Variables 本回合已写的同一计划、成员对或总体局势不得覆盖。
-          const variableEdits = (draft.variables?.validation === 'validated' ? draft.variables.result.commands : [])
+          const variableEdits = (draft.entities?.result.commands ?? [])
             .flatMap(c => c.type === 'ApplyHaremChanges' ? c.changes : []);
           const pairKey = (a: string, b: string) => JSON.stringify([a, b].sort());
           for (const [index, edit] of command.changes.entries()) {
             if (edit.op === 'plan') {
-              requireWorld(worldNpcAllowed(base, draft, edit.npcId), 'permission','actor_permission', `changes.${index}.npcId`);
+              requireWorld(worldNpcAllowed(base, draft, edit.npcId, original), 'permission','actor_permission', `changes.${index}.npcId`);
               requireWorld(!variableEdits.some(v => v.op === 'plan' && v.npcId === edit.npcId), 'permission','actor_permission', `changes.${index}.npcId`);
             } else if (edit.op === 'pair') {
-              requireWorld(worldNpcAllowed(base, draft, edit.value.leftNpcId) && worldNpcAllowed(base, draft, edit.value.rightNpcId),
+              requireWorld(worldNpcAllowed(base, draft, edit.value.leftNpcId, original) && worldNpcAllowed(base, draft, edit.value.rightNpcId, original),
                 'permission','actor_permission', `changes.${index}.value`);
               const key = pairKey(edit.value.leftNpcId, edit.value.rightNpcId);
               requireWorld(!variableEdits.some(v => v.op === 'pair' && pairKey(v.value.leftNpcId, v.value.rightNpcId) === key),
@@ -313,7 +322,7 @@ function validateWorldOutputChecked(raw: unknown, state: GameState, draft: TurnD
     try { projected = projectTurn(original, draft, retained); }
     catch (error) { throw worldProjectionError(error, result, original, draft, source); }
   }
-  if (draft.variables?.validation === 'validated' && !historicalPerspective(state,draft)) {
+  if ((!draft.useVariableStage || draft.variables?.validation === 'validated') && !historicalPerspective(state,draft)) {
     const deferredStages = allowDeferred ? deferredStageIds(base, projected) : [];
     const deferred = [...deferredStages];
     for (const due of worldEventSchedule(state,base).due.filter(event => event.eventKind !== 'sub')) {

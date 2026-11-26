@@ -7,7 +7,7 @@ export function talentAi(protocol: Protocol = 'deepseek') {
   const channel = newChannel(protocol), config = defaultAiConfig();
   channel.baseUrl = 'http://127.0.0.1:1/v1'; channel.defaultModel = 'talent-mock'; channel.compatibility.cotMode = 'off';
   config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'story' };
-  for (const stage of ['variables', 'world'] as const) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
+  for (const stage of ['entities', 'variables', 'world'] as const) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
   const values = new Map<string, string>(), storage = {
     getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => { values.set(key, value); },

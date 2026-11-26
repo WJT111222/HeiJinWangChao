@@ -14,7 +14,7 @@ type JsonObject = { [key: string]: Json };
 
 const GAME_TIME_NOTE = 'ISO 8601 游戏时间，必须带时区偏移，例如 2026-10-18T09:00:00+08:00；不使用设备日期。';
 const DATE_NOTE = 'YYYY-MM-DD 格式的日历日期，例如 2026-10-18。';
-const MIN_SAVING = 150;
+const MIN_SAVING = 20;
 
 const isObject = (value: Json | undefined): value is JsonObject =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -36,6 +36,18 @@ export function describeTimeFormats<T>(schema: T): T {
     void _pattern;
     const note = node.format === 'date-time' ? GAME_TIME_NOTE : DATE_NOTE;
     return { ...rest, description: typeof rest.description === 'string' ? `${rest.description} ${note}` : note };
+  }) as T;
+}
+
+// A string enum or constant already imposes its value type under JSON Schema draft 7.
+export function compactWorldCommandSchema<T>(schema: T): T {
+  return mapJson(schema as Json, node => {
+    if (node.type !== 'string') return undefined;
+    if (typeof node.const !== 'string' && !(Array.isArray(node.enum) && node.enum.length > 0 && node.enum.every(value => typeof value === 'string')))
+      return undefined;
+    const { type: _type, ...constraints } = node;
+    void _type;
+    return constraints;
   }) as T;
 }
 
@@ -102,7 +114,10 @@ export function factorRepeatedSchemas<T>(schema: { $schema?: string; oneOf: T[] 
     let best: [string, Candidate, number] | undefined;
     for (const [key, candidate] of collect(roots)) {
       if (candidate.count < 2) continue;
-      const saving = candidate.count * candidate.length - (candidate.length + candidate.count * 40 + 24);
+      const name = suggestName(JSON.parse(key), candidate.firstPath, names);
+      const refChars = JSON.stringify({ $ref: '#/definitions/' + name }).length;
+      const definitionChars = JSON.stringify(name).length + 2 + candidate.length;
+      const saving = candidate.count * (candidate.length - refChars) - definitionChars;
       if (saving > MIN_SAVING && (!best || saving > best[2])) best = [key, candidate, saving];
     }
     if (!best) break;

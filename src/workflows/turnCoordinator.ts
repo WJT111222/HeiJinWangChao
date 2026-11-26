@@ -1,3 +1,4 @@
+import type { LegacyContinuationConsent } from './legacyContinuation';
 import { completeTurnDraft, settlementDraft } from '../domain/turnCommit';
 import { DataError } from '../domain/common';
 import { fingerprint } from '../domain/commands';
@@ -9,7 +10,7 @@ import { AiClient } from '../services/ai/client';
 import { AiConfigSchema } from '../services/ai/configuration';
 import type { AiConfig, AiStage } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
-import { AiError } from '../services/ai/errors';
+import { AiError, isContinuationDeliveryUnknown } from '../services/ai/errors';
 import { freeze, requestSnapshot } from '../services/ai/snapshot';
 import type { CompanionProfile } from '../services/local/companionProfile';
 import type { SaveRepository } from '../services/storage/saveRepository';
@@ -19,7 +20,7 @@ import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { reserveStageSession, withBrowserLock } from './stageGuard';
 import { StoryStage, storyPartialAfterFailure } from './storyStage';
-import { canContinueStory } from '../domain/storyContinuation';
+import { canContinueStory, storyPartialVisible } from '../domain/storyContinuation';
 import { VariableStage } from './variableStage';
 import { WorldStage } from './worldStage';
 import { planRetry, recordedRetryable, retryStopError, waitForRetry, extendedStageRetryable, transientStageError } from './stageRetry';
@@ -47,6 +48,7 @@ export interface TurnOutcome {
   skipped: AiStage[];
 }
 export interface TurnInput {
+  consent?: LegacyContinuationConsent;
   draft: TurnDraft;
   settings: Settings;
   config: AiConfig;
@@ -95,6 +97,7 @@ export class TurnCoordinator {
 
   async generate(input: TurnInput): Promise<TurnOutcome> {
     if (this.attempt) throw new DataError('STORY_BUSY', '此存档已有工作流');
+    input.consent?.check(input.draft);
     const session = reserveStageSession(input.draft.saveId);
     const attempt: ActiveTurn = {
       cancelled: false,
@@ -147,6 +150,14 @@ export class TurnCoordinator {
           return state;
         };
         const state = await reread();
+        const saved = (next: TurnDraft) => {
+          check();
+          draft = next;
+          input.onDraft?.(next);
+        };
+        const configured = configureTurnStages(draft, settings.runtime);
+        const beforeConfiguration = draft;
+        if (!input.consent) draft = configured;
         const storyReady = () => Boolean(draft.story && draft.stageStatus.story === 'ready');
         const variableReady = () =>
           draft.stageStatus.variables === 'ready' && draft.variables?.validation === 'validated';
@@ -157,33 +168,30 @@ export class TurnCoordinator {
         if (worldReady()) revalidateWorld(state, draft);
         const needed: AiStage[] = [];
         if (!storyReady()) needed.push('story');
-        if (settings.runtime.useVariableStage && (!variableReady() || needed.includes('story')))
+        if (settings.runtime.useEntityStage && (!draft.entities || needed.includes('story'))) needed.push('entities');
+        if (settings.runtime.useVariableStage && (!variableReady() || needed.length > 0))
           needed.push('variables');
         if (
           settings.runtime.useWorldStage &&
-          (!worldReady() || needed.includes('variables') || needed.includes('story'))
+          (!worldReady() || needed.length > 0)
         )
           needed.push('world');
         // 全部所需路由及凭证在首次付费前检查，关闭/已经合法完成的阶段不要求配置。
+        if (needed.includes('story') && storyPartialVisible(draft) && !draft.storyPartial?.writing
+          && (!input.consent || !canContinueStory(draft, settings.prompts.minNarrativeChars)))
+          throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_unknown' });
         for (const stage of needed) requestSnapshot(config, stage, vault);
-        // 在同一执行锁内CAS保存本次设置，之后所有阶段只使用此快照。
-        const configured = configureTurnStages(draft, settings.runtime);
-        if (configured.draftRevision !== draft.draftRevision) {
-          draft = await this.repository.saveDraft(configured, draft.draftRevision, attempt.controller.signal, draft);
+        if (!input.consent && configured.draftRevision !== beforeConfiguration.draftRevision) {
+          saved(await this.repository.saveDraft(configured, beforeConfiguration.draftRevision, attempt.controller.signal, beforeConfiguration));
           check();
-          input.onDraft?.(draft);
         }
         // 本次运行是否续写在开始时固定（玩家点「续写正文」）：自动重试也只能续写，绝不悄悄改成从头生成。
         const continueStory = canContinueStory(draft, settings.prompts.minNarrativeChars);
         const secrets = config.channels.map((channel) => vault.get(channel.id)).filter(Boolean);
         const story = new StoryStage(this.repository, this.client, session.guard(scope));
+        const entities = new VariableStage(this.repository, this.client, session.guard(scope), 'entities');
         const variables = new VariableStage(this.repository, this.client, session.guard(scope));
         const world = new WorldStage(this.repository, this.client, session.guard(scope));
-        const saved = (next: TurnDraft) => {
-          check();
-          draft = next;
-          input.onDraft?.(next);
-        };
         for (const stage of needed) {
           let previousFailure: unknown;
           for (let number = 1; ; number += 1) {
@@ -202,15 +210,20 @@ export class TurnCoordinator {
                   await story.generate({
                     ...common,
                     companionProfile,
-                    continuation: continueStory,
+                    continuation: continueStory, consent: input.consent,
                     onProgress: (progress) => {
                       check();
                       input.onProgress?.({ stage, attempt: number, ...progress });
                     },
                   }),
                 );
+                if (input.consent) {
+                  const next = configureTurnStages(draft, settings.runtime);
+                  if (next.draftRevision !== draft.draftRevision)
+                    saved(await this.repository.saveDraft(next, draft.draftRevision, attempt.controller.signal, draft));
+                }
               } else {
-                const runner = stage === 'variables' ? variables : world;
+                const runner = stage === 'entities' ? entities : stage === 'variables' ? variables : world;
                 attempt.stage = runner;
                 saved(await runner.generate({ ...common, onDraft: saved, onProgress }));
               }
@@ -220,17 +233,19 @@ export class TurnCoordinator {
             } catch (error) {
               check();
               attempt.stage = undefined;
-              const continuationStops = stage === 'story' && continueStory && error instanceof AiError && error.code !== 'cancelled'
+              if (stage === 'story' && input.consent && !input.consent.sent) throw error;
+              const continuationStops = stage === 'story' && (Boolean(input.consent) || continueStory && error instanceof AiError && error.code !== 'cancelled'
                 && !canContinueStory({
                   ...draft,
                   stageStatus: { ...draft.stageStatus, story: 'failed' },
                   storyPartial: storyPartialAfterFailure(draft, error, true, secrets),
-                }, settings.prompts.minNarrativeChars);
+                }, settings.prompts.minNarrativeChars));
               if (!(error instanceof AiError && error.code === 'cancelled')) {
                 const plan = continuationStops ? { action: 'stop' as const, reason: 'not_retryable' as const } : planRetry(error, settings, number);
                 noteRetryDecision(error, settings, number, plan, settings.runtime.failureAutoRetry ? extendedStageRetryable(error) : transientStageError(error));
                 input.onAttemptFailure?.(stage, error);
               }
+              if (stage === 'story' && input.consent && isContinuationDeliveryUnknown(error)) throw error;
               if (stage === 'story' && error instanceof AiError && error.code !== 'cancelled') {
                 // 原 StoryStage 只保存成功正文；协调器额外记录安全失败码，刷新后仍可恢复。
                 await reread();
@@ -265,7 +280,7 @@ export class TurnCoordinator {
                 }
               }
               // 续写次数已用完：停下并保留已写部分，由玩家决定是否重新生成。
-              if (stage === 'story' && continueStory && !canContinueStory(draft, settings.prompts.minNarrativeChars)) throw error;
+              if (stage === 'story' && (input.consent || continueStory && !canContinueStory(draft, settings.prompts.minNarrativeChars))) throw error;
               const plan = planRetry(error, settings, number);
               if (plan.action === 'stop') {
                 const stopped = plan.reason === 'retry_after' && error instanceof AiError ? retryStopError(error) : error;
@@ -291,6 +306,7 @@ export class TurnCoordinator {
         const complete = completeTurnDraft(draft);
         if (complete && finalState.openingTimePending) requireOpeningSettlement(finalState, settlementDraft(draft));
         const skipped: AiStage[] = [];
+        if (draft.stageStatus.entities === 'skipped') skipped.push('entities');
         if (draft.stageStatus.variables === 'skipped') skipped.push('variables');
         if (draft.stageStatus.world === 'skipped') skipped.push('world');
         return {
