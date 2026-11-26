@@ -64,6 +64,12 @@ for (const fixture of [native, preset]) {
       if (exerciseRewrite) {
         await partial.getByRole('button',{name:'重新生成正文'}).click();
         await expect.poll(() => calls.length).toBe(1);
+        if (test.info().project.name === 'mobile') {
+          const details = page.getByRole('dialog').filter({has:page.getByRole('heading',{name:'重试与变更详情'})});
+          await expect(details).toContainText('invalid_output');
+          await details.getByRole('button',{name:'关闭资料界面'}).click();
+          await expect(details).toBeHidden();
+        }
         await expect(resume).toBeEnabled();
         await expect(partial).toContainText(prefix);
         expect(calls[0]).not.toContain('【续写】');

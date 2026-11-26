@@ -804,7 +804,7 @@ it('开始请求后停用预设仍按发出时的归属保存；下一次主动�
   } finally { vi.unstubAllGlobals(); }
 });
 
-it('旧断点没有确认或确认时的配置已经失效：零请求，原始片段及正式版本保留', async () => {
+it('旧断点未确认或配置变化时零请求；确认后保存候选并标记旧片段来源未知', async () => {
   const fixture = setup();
   const old = await repo.saveDraft({
     ...draft, draftRevision: draft.draftRevision + 1, stageStatus: {...draft.stageStatus,story:'failed'},
@@ -821,5 +821,13 @@ it('旧断点没有确认或确认时的配置已经失效：零请求，原始�
   await expect(stage.generate({...input,confirmedWriting})).rejects.toMatchObject({details:{fieldPath:'tavern.writing_changed'}});
   expect(transport).not.toHaveBeenCalled();
   expect(await repo.loadDraft(old.saveId)).toEqual(old);
+  expect(await repo.load(old.saveId)).toEqual(before);
+  fixture.settings.prompts.minNarrativeChars -= 1;
+  fixture.settings.runtime.streamStory = false;
+  transport.mockResolvedValueOnce(Response.json({choices:[{message:{content:output().split('<正文>')[1]},finish_reason:'stop'}]}));
+  const completed = await stage.generate({...input,confirmedWriting});
+  expect(completed.story?.narrative).toBe(old.storyPartial!.text.slice('<正文>'.length) + narrative);
+  expect((await repo.loadDraft(old.saveId))?.storyWriting).toEqual({...confirmedWriting,prefixSource:'unknown'});
+  expect(transport).toHaveBeenCalledTimes(1);
   expect(await repo.load(old.saveId)).toEqual(before);
 });
