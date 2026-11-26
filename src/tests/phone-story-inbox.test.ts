@@ -66,6 +66,29 @@ async function candidates() {
   return { state, draft, end, later, entity };
 }
 describe('正文消息和场外来信', () => {
+  it('地点写入被隔离时，仅独立声明的接触者获得出场标记', async () => {
+    const state = await repo.load('save-a');
+    expect(state.npc.scene.appearedInStory).toBeUndefined();
+    const clock = await elapsedVariables(repo, '在原地等候', 60);
+    const invalidLocation: DomainCommand = {
+      type: 'UpdateNpc', commandId: 'clear-location', npcId: 'scene', expectedRevision: state.revision,
+      changes: { locationId: null }, evidence: '仍在场的人物缺少地点',
+    };
+    const draft = await completeDraft(repo, {
+      variables: { ...clock, commands: [invalidLocation, ...clock.commands] }, world: worldResult(),
+    });
+    for (const contactedNpcIds of [[], ['scene']]) {
+      const candidate = { ...draft, entities: { ...draft.entities!, contactedNpcIds } };
+      const expected = contactedNpcIds.length ? { ...state.npc.scene, appearedInStory: true } : state.npc.scene;
+      expect(projectTurn(state, candidate).npc.scene).toEqual(expected);
+      const settled = settleTurn(state, candidate, state.updatedAt);
+      expect(settled.npc.scene).toEqual(expected);
+      expect(settled.journal.at(-1)?.settlement?.entities).toMatchObject({
+        accepted: 0, skipped: [{ commandIndex: 0, field: 'locationId', reason: 'constraint' }],
+      });
+    }
+    expect(await repo.load('save-a')).toEqual(state);
+  });
   it('人物文本协议保留通话原文；仅提及可标出场，未授权其他人物字段', async () => {
     const { state, draft, end } = await candidates();
     const text = (commands: string) => variableTextEnvelope('<命令>\n' + commands + '\n</命令>');

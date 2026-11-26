@@ -124,7 +124,9 @@ test('NPC场景位置与World字段错误各自隔离，独立主角状态照常
   await expect(page.getByText(/人物与实体第 1 条.*人物/u)).toBeVisible();
   await expect(page.getByText(/场外与网络第 1 条.*事件/u)).toBeVisible();
   const settledGame=await stored(page);
-  expect(settledGame.state.npc.scene).toEqual(before.state.npc.scene);
+  expect(server.responses.entities).toContain('<接触者>["scene"]</接触者>');
+  expect(before.state.npc.scene.appearedInStory).toBeUndefined();
+  expect(settledGame.state.npc.scene).toEqual({ ...before.state.npc.scene, appearedInStory: true });
   expect(settledGame.state.protagonist.emotionText).toBe('安心');
   expect(settledGame.state.events.review).toBeUndefined();
   expect(server.calls).toEqual(['story','entities','variables','world']);
