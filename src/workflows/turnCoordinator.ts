@@ -166,8 +166,9 @@ export class TurnCoordinator {
           draft.stageStatus.variables === 'ready' && draft.variables?.validation === 'validated';
         const worldReady = () =>
           ['ready', 'preview'].includes(draft.stageStatus.world) && Boolean(draft.world);
+        // 世界观来源按库中草稿核对；本次阶段配置尚未保存，不参与比对。
         if (storyReady() || draft.stageStatus.story === 'failed' || draft.storyPartial)
-          await this.repository.prepareWorldview(draft,true);
+          await this.repository.prepareWorldview(beforeConfiguration,true);
         // 复用之前的结果前重新执行安全验证，不只信任持久化的 validated 字样。
         if (variableReady()) parseVariables(JSON.stringify(draft.variables!.result), state, draft);
         if (worldReady()) revalidateWorld(state, draft);

@@ -185,7 +185,7 @@ it('待返回的家庭变更在 Variables 取消后不能复活或写入正式�
   try {
     await repo.create(a.state);
     await repo.saveDraft(createTurnDraft(a.state.saveId, a.state.revision, a.draft.turnId, 'regular', ''), null);
-    const draft = await repo.saveDraft(a.draft, 0);
+    const draft = await saveFixtureStory(repo, a.draft, 0);
     const rejected = expect(runner.generate({...a, draft})).rejects.toMatchObject({code:'cancelled'});
     await vi.waitFor(() => expect(transport).toHaveBeenCalledTimes(1));
     runner.cancel(); await rejected;

@@ -108,7 +108,7 @@ describe('正式协调器 → 文本编译 → World JSON → 原子Commit → �
       });
       const done = await runner.generate(a);
       expect(done.status).toBe('complete');
-      expect(t.calls.map(c => c.stage)).toEqual(['story','variables','world']);
+      expect(t.calls.map(c => c.stage)).toEqual(['story','entities','variables','world']);
       for (const call of t.calls) {
         expect(JSON.stringify(call.body).split('月海潮历样本')).toHaveLength(2);
         expect(JSON.stringify(call.body)).not.toContain('中国城市与地域差异');
