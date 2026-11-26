@@ -363,3 +363,46 @@
 .ph-post-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; }
 .ph-post-actions > span { flex:1 1 100%; padding:.5rem .75rem; border:1px solid var(--line); border-radius:1rem; color:var(--muted); }
 .ph-invite .ph-warning { border-inline-start:3px solid currentColor; padding-inline-start:.65rem; }
+.ph-feed ol {
+  margin:0;
+  padding:0;
+  list-style:none;
+  counter-reset:phone-hot-rank;
+}
+.ph-feed ol li {
+  counter-increment:phone-hot-rank;
+  border-bottom:1px solid var(--line);
+}
+.ph-feed ol button {
+  display:grid;
+  grid-template-columns:20px minmax(0,1fr);
+  column-gap:10px;
+  width:100%;
+  padding:10px 2px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  text-align:start;
+}
+.ph-feed ol button::before {
+  content:counter(phone-hot-rank);
+  grid-row:1 / span 3;
+  align-self:start;
+  color:var(--gold);
+  font-variant-numeric:tabular-nums;
+}
+.ph-feed ol li small {
+  grid-column:2;
+  padding:2px 0;
+}
+.ph-feed .ph-cards:has(> button) {
+  display:block;
+  columns:2;
+  column-gap:8px;
+}
+.ph-cards > button {
+  display:inline-block;
+  width:100%;
+  margin-bottom:8px;
+  break-inside:avoid;
+}
