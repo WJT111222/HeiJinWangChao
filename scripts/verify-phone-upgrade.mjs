@@ -170,7 +170,7 @@ try {
         }
         assert.deepEqual(after, before);
         assert.equal(oldPackage.version, oldDb === 8 ? 3 : 4);
-        assert.equal(newPackage.version, 5);
+        assert.equal(newPackage.version, 6);
         assert.equal(after.images.pictures.length, 1);
         for (const file of [oldPackage, newPackage]) {
           const restored = await page.evaluate(
@@ -273,7 +273,7 @@ try {
             candidate: sha(candidate),
             from: oldDb,
             to: newVersion,
-            backup: [oldPackage.version, 5],
+            backup: [oldPackage.version, newPackage.version],
             images: 1,
             storedTurns: 2,
             historyNodes: after.nodes.length,
