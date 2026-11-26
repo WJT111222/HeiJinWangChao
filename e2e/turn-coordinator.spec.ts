@@ -255,13 +255,13 @@ test('取消世界后保留上游；快速双击不重复，旧回包不能推�
 test('关闭两个阶段只生成正文，再开启后补算不 Roll', async ({ page }) => {
   const before = await seed(page),
     plan = await mock(page);
-  await page.getByLabel('变量管理', { exact: true }).uncheck();
-  await page.getByLabel('动态世界', { exact: true }).uncheck();
+  await page.getByLabel('主角与现场', { exact: true }).uncheck();
+  await page.getByLabel('场外与网络', { exact: true }).uncheck();
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await expect(workflow(page).getByRole('status')).toContainText('阶段已关闭');
   expect(plan.calls).toEqual(['story']);
-  await page.getByLabel('变量管理', { exact: true }).check();
-  await page.getByLabel('动态世界', { exact: true }).check();
+  await page.getByLabel('主角与现场', { exact: true }).check();
+  await page.getByLabel('场外与网络', { exact: true }).check();
   await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'variables', 'world']);
@@ -273,8 +273,8 @@ test('运行中切换开关不会改变本次冻结配置', async ({ page }) => 
   const plan = await mock(page, { slow: 'story', hold: waiting.hold });
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await expect.poll(() => plan.calls.length).toBe(1);
-  await page.getByLabel('变量管理', { exact: true }).uncheck();
-  await page.getByLabel('动态世界', { exact: true }).uncheck();
+  await page.getByLabel('主角与现场', { exact: true }).uncheck();
+  await page.getByLabel('场外与网络', { exact: true }).uncheck();
   waiting.release();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'variables', 'world']);
@@ -335,12 +335,12 @@ test('正文失败不启动下游，安全失败状态刷新后仍保留并可�
 test('只开启世界时明确预览；补开变量会失效旧世界并顺序重算', async ({ page }) => {
   const before = await seed(page),
     plan = await mock(page);
-  await page.getByLabel('变量管理', { exact: true }).uncheck();
+  await page.getByLabel('主角与现场', { exact: true }).uncheck();
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await expect(workflow(page).getByRole('status')).toContainText('世界仅为预览');
   expect(plan.calls).toEqual(['story', 'world']);
   expect((await stored(page)).draft.world.validation).toBe('preview');
-  await page.getByLabel('变量管理', { exact: true }).check();
+  await page.getByLabel('主角与现场', { exact: true }).check();
   await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'world', 'variables', 'world']);

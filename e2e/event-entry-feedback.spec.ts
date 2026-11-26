@@ -7,12 +7,12 @@ async function seed(page:Page) {
   await page.evaluate(async()=>{
     const p='/src/services/storage/saveRepository.ts',w='/src/tests/fixtures/world.ts',d='/src/domain/drafts.ts',c='/src/services/ai/configuration.ts',v='/src/services/ai/credentials.ts',s='/src/ui/settings/model.ts';
     const {SaveRepository}=await import(p),{worldState}=await import(w),{createTurnDraft}=await import(d),{defaultAiConfig,newChannel,saveAiConfig}=await import(c),{CredentialVault}=await import(v),{defaultSettings,settingsKey}=await import(s);
-    const settings=defaultSettings();settings.prompts.minNarrativeChars=1;settings.prompts.actionOptions=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+    const settings=defaultSettings();settings.runtime.useEntityStage=false;settings.prompts.minNarrativeChars=1;settings.prompts.actionOptions=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
     const channel=newChannel(),config=defaultAiConfig();channel.baseUrl='https://entry-feedback.mock.invalid/v1';channel.defaultModel='story';
     config.channels=[channel];config.routes.story={channelId:channel.id,modelId:'story'};
     config.routes.variables={mode:'independent',channelId:channel.id,modelId:'variables'};config.routes.world={mode:'independent',channelId:channel.id,modelId:'world'};
     saveAiConfig(localStorage,config);new CredentialVault(sessionStorage,localStorage).set(channel.id,'mock-entry-only-key');
-    const repo=await SaveRepository.open();try{const state=worldState();await repo.create(state);await repo.saveDraft(createTurnDraft('save-a',0,'entry-opening','opening',''),null);}finally{repo.close();}
+    const repo=await SaveRepository.open();try{const state=worldState();await repo.create(state);await repo.saveDraft(createTurnDraft('save-a',0,'entry-opening','opening','',true,true,false),null);}finally{repo.close();}
   });
   await page.goto('/#game/save-a');await page.reload();await openGameTools(page);
 }

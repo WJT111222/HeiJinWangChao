@@ -1,6 +1,6 @@
 // Construct identical formal data using APIs shared by the release and feature checkouts.
 export async function comparisonFixture(load, scenario = 'ordinary') {
-  const [{ worldState, worldNarrative, projectedTime }, { historyState }, { event },
+  const [{ worldState, worldNarrative, projectedTime }, { historyState }, { event, organizations },
     { createTurnDraft, rerollStory }, { GameStateSchema }] = await Promise.all([
     load('tests/fixtures/world'), load('tests/fixtures/history'), load('tests/fixtures/game'),
     load('domain/drafts'), load('domain/state'),
@@ -8,6 +8,14 @@ export async function comparisonFixture(load, scenario = 'ordinary') {
   const state = worldState(), prior = historyState(1);
   Object.assign(state, { journal: prior.journal, revision: 1, turnNumber: 1,
     createdAt: '2026-10-18T00:00:00.000Z', updatedAt: '2026-10-18T00:00:00.000Z' });
+  const mode = scenario.startsWith('opening') ? 'opening' : 'regular';
+  if (mode === 'opening') Object.assign(state, { journal: [], revision: 0, turnNumber: 0 });
+  if (scenario.includes('organizations')) {
+    for (const template of organizations) {
+      const id = 'compare-' + template.kind;
+      state.organizations[id] = { ...template, id };
+    }
+  }
   let userInput = '和现场人物吃饭，用现金付30元。';
   let narrative = worldNarrative, variableGuide = [];
   const scene = [{ type: 'SetWorldClock', commandId: 'clock', worldClock: projectedTime, evidence: '经过十分钟' },
@@ -27,8 +35,8 @@ export async function comparisonFixture(load, scenario = 'ordinary') {
       ...priorEvent, status: 'resolved', resolvedAt: projectedTime, resolutionText: '会谈完成', sourceTurnIds: ['history-1', 'compare-turn'],
     } });
   }
-  const draft = rerollStory(createTurnDraft(state.saveId, state.revision, 'compare-turn', 'regular', userInput), {
-    turnKind: 'regular', narrative, summary: narrative, variableGuide,
+  const draft = rerollStory(createTurnDraft(state.saveId, state.revision, 'compare-turn', mode, userInput), {
+    turnKind: mode, narrative, summary: narrative, variableGuide,
   });
   return { state: GameStateSchema.parse(state), draft, scene };
 }

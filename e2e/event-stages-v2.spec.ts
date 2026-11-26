@@ -6,7 +6,7 @@ async function seed(page:Page,clock?:string,unseen=false) {
   const response=await page.evaluate(async({clock,unseen})=>{
     const paths=['/src/services/storage/saveRepository.ts','/src/tests/fixtures/eventStages.ts','/src/domain/drafts.ts','/src/services/ai/configuration.ts','/src/services/ai/credentials.ts','/src/ui/settings/model.ts'];
     const [{SaveRepository},{stageContext,endStage,stageCommand},{createTurnDraft,rerollStory},{defaultAiConfig,newChannel,saveAiConfig},{CredentialVault},{defaultSettings,settingsKey}]=await Promise.all(paths.map(path=>import(path)));
-    const settings=defaultSettings();settings.prompts.minNarrativeChars=1;settings.prompts.actionOptions=false;
+    const settings=defaultSettings();settings.runtime.useEntityStage=false;settings.prompts.minNarrativeChars=1;settings.prompts.actionOptions=false;
     for(const value of Object.values(settings.memory.summaries) as {automatic:boolean}[])value.automatic=false;
     localStorage.setItem(settingsKey,JSON.stringify(settings));
     const config=defaultAiConfig(),channel=newChannel();channel.baseUrl='https://event-stages.mock.invalid/v1';channel.defaultModel='world-stage-mock';
@@ -14,7 +14,7 @@ async function seed(page:Page,clock?:string,unseen=false) {
     new CredentialVault(sessionStorage,localStorage).set(channel.id,'stage-browser-test-only');
     const a=stageContext(clock),repo=await SaveRepository.open();
     if(unseen){const stage=a.state.events['stage-one'];stage.sourceTurnIds=[a.draft.turnId];stage.protagonistEntry={id:'unseen-stage-entry',sourceTurnId:a.draft.turnId,queuedAt:a.state.worldClock,channel:'电话',cue:'尚未呈现的旧安排',status:'pending'};}
-    try {await repo.create(a.state);const initial=createTurnDraft('save-a',0,a.draft.turnId,'opening','');await repo.saveDraft(initial,null);await repo.saveDraft(rerollStory(initial,a.draft.story),0);await repo.saveDraft({...a.draft,draftRevision:2},1);}finally{repo.close();}
+    try {await repo.create(a.state);const initial=createTurnDraft('save-a',0,a.draft.turnId,'opening','',true,true,false);await repo.saveDraft(initial,null);await repo.saveDraft(rerollStory(initial,a.draft.story),0);await repo.saveDraft({...a.draft,draftRevision:2},1);}finally{repo.close();}
     return {...a.response,eventCommands:[stageCommand(endStage(a.state.events['stage-one'])),{type:'DeleteEvent',commandId:'cleanup-stage',eventId:'stage-one',expectedStatus:'resolved',reason:'阶段成果保留后清理',evidence:'合成测试'}]};
   },{clock,unseen});
   await page.goto('/#game/save-a');await page.reload();await openGameTools(page);return response;

@@ -197,7 +197,7 @@ test('正文未完成不能运行；双阶段关闭后仅补算变量，正文�
     repo.close();
   });
   await page.reload(); await openGameTools(page);
-  await page.getByLabel('动态世界', { exact: true }).uncheck();
+  await page.getByLabel('场外与网络', { exact: true }).uncheck();
   await page.route('https://variables.mock.invalid/**', (route) =>
     route.fulfill({ contentType: 'application/json', body: response() }),
   );

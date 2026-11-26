@@ -62,7 +62,7 @@ test('完整原文可读，开局与下一条行动各自动结算一次，刷�
   await openStageRaw(page, 'variables');
   await expect(page.getByLabel('变量模型完整原文')).toHaveText(server.responses.variables, { useInnerText: false });
   expect(await page.getByLabel('变量模型完整原文').textContent()).toBe(server.responses.variables);
-  await openStageRaw(page, 'world'); expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
+  await openStageRaw(page, 'world'); expect(await page.getByLabel('场外与网络模型完整原文').textContent()).toBe(server.responses.world);
   await page.getByLabel('你的行动', { exact: true }).fill('继续在街边用餐'); await page.getByRole('button', { name: '发送', exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
   await settled(page); data = await stored(page); expect(data.state.turnNumber).toBe(2); expect(data.state.economy.cash).toBe(4000); expect(data.state.journal).toHaveLength(2); expect(data.draft.userInput).toBe(''); expect(server.calls).toHaveLength(8);
@@ -81,7 +81,7 @@ test('World字段错误定位为跳过，临时原文可读，合规更新一次
   expect(storedGame.state.turnNumber).toBe(1);
   expect(server.calls).toEqual(['story','entities','variables','world']);
   await openStageRaw(page,'world');
-  expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
+  expect(await page.getByLabel('场外与网络模型完整原文').textContent()).toBe(server.responses.world);
 });
 
 test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段完成才开始', async ({ page, isMobile }) => {
@@ -225,7 +225,7 @@ test('#186 World重复写入Variables本轮组织字段：以Variables为准剔�
   expect(server.calls).toEqual(['story', 'entities', 'variables', 'world']);
   await openWorkflowDiagnostics(page); await expect(page.getByTestId('runtime-log')).not.toContainText('scene_write_conflict');
   // 模型原文保持原样（含被忽略的字段），处理说明只出现在“校验结果”。
-  await openStageRaw(page, 'world'); expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
+  await openStageRaw(page, 'world'); expect(await page.getByLabel('场外与网络模型完整原文').textContent()).toBe(server.responses.world);
   await openStageTab(page, 'world', '校验结果');
   const notes = page.locator('.wf-stage .stage-notes');
   await expect(notes).toContainText('程序处理说明'); await expect(notes).toContainText('operatingStatus 的值与变量阶段不同，以变量阶段为准');
@@ -249,7 +249,7 @@ for (const group of ['taskCommands','eventCommands'] as const) {
     expect(saved.state.revision).toBe(1);expect(saved.state.journal).toHaveLength(1);
     expect(server.calls).toEqual(['story','entities','variables','world']);
     await openStageRaw(page,'world');
-    expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
+    expect(await page.getByLabel('场外与网络模型完整原文').textContent()).toBe(server.responses.world);
     expect(await stored(page)).toEqual(saved);
     await page.screenshot({path:info.outputPath(`world-skipped-${group}.png`)});
   });

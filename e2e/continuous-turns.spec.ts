@@ -321,7 +321,7 @@ test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', a
   }, before.state.revision);
   await page.getByLabel('你的行动', { exact: true }).fill('等待下一轮');
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(() => server.calls.length).toBe(6);
+  await expect.poll(() => server.calls.length).toBe(8);
   if (isMobile) {
     const diagnostic = page.getByRole('dialog', { name: '重试与变更详情' });
     await expect(diagnostic).toBeVisible();

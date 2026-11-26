@@ -10,7 +10,7 @@ async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decis
       '/src/tests/fixtures/eventStages.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/ui/settings/model.ts', '/src/domain/drafts.ts'];
     const [{ SaveRepository }, { issue194 }, { stageCommand }, { defaultAiConfig, newChannel, saveAiConfig },
       { CredentialVault }, { defaultSettings, settingsKey }, { createTurnDraft }] = await Promise.all(paths.map(path => import(path)));
-    const settings = defaultSettings();
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false;
     settings.prompts.minNarrativeChars = 1;
     settings.prompts.actionOptions = false;
     if (notification === 'partial' || notification === 'location-isolation') settings.runtime.streamWorld = streamWorld;
@@ -54,7 +54,7 @@ async function seed(page: Page, notification: boolean | 'legacy' | 'legacy-decis
     const repo = await SaveRepository.open();
     try {
       const entry = { state, draft: notification === true || notification === 'partial' || notification === 'location-isolation'
-        ? createTurnDraft(state.saveId, state.revision, draft.turnId, 'regular', '') : draft };
+        ? createTurnDraft(state.saveId, state.revision, draft.turnId, 'regular', '', true, true, false) : draft };
       await repo.importBackup(entry, (await repo.compareBackup(entry)).confirmation);
     } finally { repo.close(); }
     return { response, successor: stageCommand(successor) };

@@ -5,7 +5,7 @@ import { organizationChangeFields } from '../../domain/organizations/schema';
 import { DomainCommandSchema } from '../../domain/commands';
 import { OrdinaryNpcCreationSchema, SpecialNpcCreationSchema } from '../../domain/npc/schema';
 import { WorldResultSchema } from '../../domain/drafts';
-import type { factorRepeatedSchemas } from './catalogCompaction';
+import { compactWorldCommandSchema, type factorRepeatedSchemas } from './catalogCompaction';
 import generatedSchemas from './commandCatalogSchemas.json';
 import { offscreenGroups, stageCommands } from '../../domain/stageCommands';
 export const worldTypes = offscreenGroups.worldCommands;
@@ -95,6 +95,11 @@ export function inlineCommandCatalog(stage: CatalogStage, historical = true) {
               for (const field of ['departments', 'members', 'protagonistKnown']) delete variant.properties[field];
             }
           }
+        }
+        if (stage === 'world') {
+          // The containing catalog declares the same draft-07 meta-schema once.
+          delete schema.$schema;
+          return compactWorldCommandSchema(schema);
         }
         return schema;
       }),

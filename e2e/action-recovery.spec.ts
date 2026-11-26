@@ -240,7 +240,7 @@ test('reference-only old options, shortcuts and no fabricated options preserve b
     expect(await calls(page)).toHaveLength(0);
     await button(page).click();
     await expect.poll(async () => (await data(page)).state.turnNumber,{timeout:20_000}).toBe(2);
-    expect((await calls(page)).map(c => c.stage)).toEqual(['variables', 'world']);
+    expect((await calls(page)).map(c => c.stage)).toEqual(['entities', 'variables', 'world']);
     // This newly committed Story had no suggestions. Do not search older journal entries or invent any.
     await expect(page.locator('.action-options')).toHaveCount(0);
 });

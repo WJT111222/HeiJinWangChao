@@ -11,20 +11,23 @@ try {
   const [{ composePrompt }, { defaultSettings }, { estimateTokens }, { promptManifest }, { selectVariableDomains },
     { selectWorldDomains }, { projectTurn }] = await Promise.all([load('prompts/composer'), load('ui/settings/model'),
     load('prompts/statistics'), load('prompts/manifest'), load('prompts/variableDomains'), load('prompts/worldDomains'), load('domain/turnProjection')]);
+  const { contextMessage } = await load('prompts/contextMessage');
   const settings = defaultSettings(), rows = [];
-  for (const scenario of ['ordinary', 'scene-closure', 'historical']) {
+  for (const scenario of ['ordinary', 'scene-closure', 'historical', 'opening', 'organizations', 'opening-organizations']) {
     const { state, draft, scene } = await comparisonFixture(load, scenario);
     const stages = 'useEntityStage' in draft ? ['entities', 'variables', 'world'] : ['variables', 'world'];
     for (const stage of stages) {
       if (stage === 'variables') fixedEntityCandidate(draft);
       if (stage === 'world') fixedSceneCandidate(draft, scene);
       const { domains } = stage === 'world' ? selectWorldDomains(projectTurn(state, draft), draft) : selectVariableDomains(state, draft, stage);
-      const { messages, context, modules } = await composePrompt({ stage, mode: 'regular', state, draft, settings, userInput: draft.userInput, domains });
+      const { messages, context, modules } = await composePrompt({ stage, mode: draft.turnKind, state, draft, settings, userInput: draft.userInput, domains });
       const special = modules.flatMap((record, index) => {
         const category = promptManifest.modules.find(module => module.id === record.id).category;
         return ['stage', 'output', 'variable_group'].includes(category) ? [messages[index].content] : [];
       });
-      const dedicated = [...special, JSON.stringify(context.TEXT_COMMAND_CATALOG ?? context.COMMAND_CATALOG), messages.at(-1).content].join('\n');
+      const catalog = contextMessage(context.TEXT_COMMAND_CATALOG ?? context.COMMAND_CATALOG);
+      const wireCatalog = catalog.slice(catalog.indexOf('\n') + 1, catalog.lastIndexOf('\n'));
+      const dedicated = [...special, wireCatalog, messages.at(-1).content].join('\n');
       const all = messages.map(message => message.content).join('\n');
       rows.push({ scenario, stage, dedicatedChars: Array.from(dedicated).length, dedicatedTokenEstimate: estimateTokens(dedicated).estimatedTokens,
         totalChars: Array.from(all).length, totalTokenEstimate: estimateTokens(all).estimatedTokens });

@@ -24,7 +24,7 @@ export async function seedSummary(page: Page, options: { count?: number; publicL
     });
     if (options.ready) { const storage = await SaveRepository.open(); const { completeDraft, elapsedVariables } = await import(tp);
       try { await completeDraft(storage, { variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); } finally { storage.close(); } }
-    const settings = defaultSettings(); settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
     if (options.automatic === false) for (const item of Object.values(settings.memory.summaries) as { automatic: boolean }[]) item.automatic = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = 'https://summary.mock.invalid/v1'; channel.defaultModel = 'story'; config.channels = [channel];

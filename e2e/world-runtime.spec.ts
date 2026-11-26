@@ -149,7 +149,7 @@ test('世界生成、补算、只读查看与刷新恢复，真实路由和快�
     bodies.push(route.request().postDataJSON());
     await route.fulfill({ contentType: 'application/json', body: response() });
   });
-  await page.getByLabel('变量管理', { exact: true }).uncheck();
+  await page.getByLabel('主角与现场', { exact: true }).uncheck();
   await openWorkflowStage(page, 'world'); await page.getByRole('button', { name: '生成世界候选', exact: true }).click();
   await ready(page);
   const first = await stored(page);
@@ -198,7 +198,7 @@ test('双开关关闭后只补算世界，无变量时明确预览；不 Roll �
   const before = await seed(page, false, true),
     initial = await stored(page);
   await openWorkflowStage(page, 'world'); await expect(page.getByRole('button', { name: '启用并补算世界', exact: true })).toBeDisabled();
-  await page.getByLabel('动态世界', { exact: true }).check();
+  await page.getByLabel('场外与网络', { exact: true }).check();
   const planned = {
     ...result,
     worldCommands: [

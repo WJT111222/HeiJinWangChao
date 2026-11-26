@@ -327,8 +327,8 @@ test('四类设置可键盘操作、保存恢复，七项提示词与两个运�
   await page.getByRole('button', { name: '保存记忆设置', exact: true }).click();
   await expect(page.getByText(/记忆设置已保存/)).toBeVisible();
   await settingsCategory(page, '运行');
-  await page.getByLabel('变量管理', { exact: true }).uncheck();
-  await expect(page.getByLabel('动态世界', { exact: true })).toBeChecked();
+  await page.getByLabel('主角与现场', { exact: true }).uncheck();
+  await expect(page.getByLabel('场外与网络', { exact: true })).toBeChecked();
   await page.getByRole('button', { name: '保存本地设置' }).click();
   await page.keyboard.press('Escape');
   await page.reload(); await openGameTools(page);
@@ -340,7 +340,7 @@ test('四类设置可键盘操作、保存恢复，七项提示词与两个运�
   await settingsCategory(page, '记忆');
   await expect(page.getByLabel('即时记忆完整回合数')).toHaveValue('12');
   await settingsCategory(page, '运行');
-  await expect(page.getByLabel('变量管理', { exact: true })).not.toBeChecked();
-  await expect(page.getByLabel('动态世界', { exact: true })).toBeChecked();
+  await expect(page.getByLabel('主角与现场', { exact: true })).not.toBeChecked();
+  await expect(page.getByLabel('场外与网络', { exact: true })).toBeChecked();
   expect(external).toEqual([]);
 });

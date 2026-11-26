@@ -22,7 +22,8 @@ async function seed(page: Page) {
       await repo.create(a.state);
       const initial = createTurnDraft(a.state.saveId, 0, a.draft.turnId, 'opening', '');
       await repo.saveDraft(initial, null); await repo.saveDraft(rerollStory(initial, a.draft.story), 0);
-      await repo.saveDraft({ ...a.draft, draftRevision: 2 }, 1);
+      const { persistSceneFixture } = await import('/src/tests/fixtures/stageScope.ts' as string);
+      await persistSceneFixture(repo, a.draft);
     } finally { repo.close(); }
     return { response: a.response, task: a.task, event: a.event };
   });

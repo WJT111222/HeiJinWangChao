@@ -258,7 +258,7 @@ test('已合并主干的纯小说设置在历史回溯后仍只请求正文并�
   await page.evaluate(async () => {
     const path = '/src/ui/settings/model.ts', { settingsKey } = await import(path);
     const settings = JSON.parse(localStorage.getItem(settingsKey)!);
-    settings.runtime.useVariableStage = false; settings.runtime.useWorldStage = false;
+    settings.runtime.useEntityStage = false; settings.runtime.useVariableStage = false; settings.runtime.useWorldStage = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
   });
   await page.reload(); const server = await mock(page); await open(page); await choose(page, 2);
