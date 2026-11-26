@@ -2,6 +2,36 @@
 
 基线为 `release/1.0` 的 `f6ca1ca8e961652ea8cdb8a490e3e8d653cd0482`。本批使用已有的《我即浪潮 · 1118 peinture》王朝适配版。所有模型传输均由浏览器路由或测试传输层返回合成数据。
 
+## 第二轮定向整改
+
+在 `628b1d3c2dd85752f8e8fec948081f8f4be2a640` 上分别运行独立审查端的切档、跨标签修改节奏、历史占位文本探针。桌面与手机模拟的六个用例均失败。修复后同六项全部通过，首次独立审查的 11 个原始用例也已复跑通过。两套 V10 断点在独立安装锁文件的发布基线上重新生成，并核实了当时的出站请求。[HTTP 与 IndexedDB 前后对照](literary-ownership/review-round2.json)
+
+| 故障路径 | 修复前 | 修复后 |
+| --- | --- | --- |
+| A 等待配置摘要时切至 B | B 弹出确认，发出 1 次含 A 断点的 POST，A 的回合和 revision 均由 1 变为 2 | 0 次弹框、0 次 POST，两档均保持 (1, 1)，原断点仍可读 |
+| 确认后另一标签保存新节奏，随后才放行历史读取 | 已确认 1 次，仍发送 1 次并结算 A | 确认 1 次、0 次 POST，两档正式状态及草稿保持原值。原文可复制，可重新确认 |
+| 仅修改历史占位文本后恢复断点 | 两份请求均为 99,919 字节，SHA-256 相同；v2 指纹相异，阻止续写 | 同一独立探针的请求仍逐字节相同，v3 指纹也相同，合法续写只发 1 次并保留原文 |
+
+**操作与发送边界。** `GameScreen.continueWorkflow` 在摘要计算前为当前操作创建唯一标识，页面卸载、路由变化、存档或草稿更换、主动重写或放弃都会撤销旧操作。重复点击沿用正在等待的交互。离开 A 再返回 A，需要重新确认。`workflows/legacyContinuation.ts` 在展示确认前和发送前复核正式 revision、完整草稿及断点；确认与领取只能各成功一次。草稿绑定覆盖存档、回合、草稿及正文版本和已写片段。
+
+`TurnCoordinator` 和 `StoryStage` 在原有执行锁内领取授权。对这种旧断点，阶段配置的草稿写入延后至成功生成，避免发送前失效导致草稿 revision 变化。提示词、世界书和包装器完成准备后，`AiClient` 在统一传输入口调用授权的 `dispatch`。重新读取 IndexedDB，再同步比较持久化配置与宿主实际配置，核对取消及页面状态后直接调用传输；模型请求计数也从实际发送时开始。合法发送后仍使用原冻结配置，旧片段继续标为 `prefixSource: "unknown"`。该人工授权只放行一个旧断点的首次传输；失败后由玩家决定下一步。其他生成保留原有重试设置。
+
+**指纹与实际装配。** `presets/messages.ts` 的 `literaryEntry` 供消息装配和 v3 指纹共用。历史槽只表示插入历史；八个宿主资料槽使用实际材料、角色及位置；普通条目使用原提示词及角色。绝对插入保留深度与顺序，禁用和锁定关闭的条目不参与。包加载器提供有效条目顺序，已启用脚本按宿主顺序、脚本文本和该预设声明的生成配置投影参与计算。每回合资料、历史、随机展开结果和控制台界面状态均不进入摘要。有效文本、顺序、角色、位置、脚本或节奏变化仍会阻止按旧配置续写。
+
+`presets/library.ts` 的 `canResumeWriting` 分版本验证。对 v1 覆盖摘要、v2 有效条目摘要，以各自旧算法复算当前覆盖，或证明旧摘要来自发行默认且当前 v3 配置与默认等价；同时比对预设 ID 和版本。无法证明的摘要保留断点并提示恢复配置或重新生成。只在产生新内容后写入 v3。以下历史验收段落的“第 2 版”指首次整改时的实现。
+
+**复审复跑。** 在 Node 24、锁文件依赖和独立 Chromium 存储下执行。Playwright 使用仓库配置的 5174 端口、一个 worker 和零次重试。三份浏览器套件分别验证可控摘要及历史读取屏障、旧原生与旧浪潮的四种续写组合、三种模式的实际出站与异常结算。既有的“手动重新生成缺标签导致旧候选仍在但阶段为 failed，提交返回 TURN_INCOMPLETE”在发布基线与修复后均可复现，继续作为正式版单独待办。
+
+```sh
+npm ci
+npm run check
+npm run prompts:check
+npx vitest run src/tests/story-writing-repair.test.ts src/tests/story-stage.test.ts src/tests/story-continuation*.test.ts src/tests/turn-commit.test.ts src/tests/preset-story.test.ts
+npx playwright test e2e/story-continuation-consent.spec.ts e2e/story-legacy-writing.spec.ts e2e/story-literary-ownership.spec.ts --workers=1 --retries=0
+node e2e/fixtures/story-writing/verify-baseline.mjs /path/to/clean-installed-f6ca1ca
+git diff --check 628b1d3c2dd85752f8e8fec948081f8f4be2a640 HEAD
+```
+
 ## 首轮开发验收的出站与结算
 
 同一份合成存档、同一普通回合，玩家设置为第一人称、冷硬黑色、4000～5678 字。Playwright 截取页面真实脚本和协议转换之后发向模拟渠道的 HTTP POST。每种模式各在桌面和手机模拟环境执行，先返回一份完整短正文，再依次返回空正文、截断、拒答及标签错误。

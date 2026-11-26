@@ -106,7 +106,7 @@ for (const destination of ['other', 'return', 'home', 'replace', 'double'] as co
   });
 }
 
-type Change = 'pace' | 'mode' | 'ui' | 'restore' | 'after-send';
+type Change = 'pace' | 'mode' | 'version' | 'ui' | 'restore' | 'after-send';
 async function edit(page: Page, change: Change) {
   await page.evaluate(async change => {
     const [host, lib, ui, prefs] = await Promise.all(['/src/presets/tavern/hostState.ts','/src/presets/library.ts',
@@ -115,6 +115,11 @@ async function edit(page: Page, change: Change) {
     const id = pack.definition.id, old = host.readEditorOverride(id), initial = old ?? ui.emptyOverride(pack);
     if (change === 'mode') {
       prefs.savePresetSettings({...prefs.readPresetSettings(),enabled:false,selected:null});
+      return;
+    }
+    if (change === 'version') {
+      const saved = prefs.readPresetSettings();
+      prefs.savePresetSettings({...saved, packages:{...saved.packages,[id]:{...initial,version:'another-package-version'}}});
       return;
     }
     if (change === 'ui') {
@@ -130,7 +135,7 @@ async function edit(page: Page, change: Change) {
   }, change);
 }
 for (const tab of ['same', 'other'] as const) {
-  for (const change of ['pace','mode','ui','restore','after-send'] as const) {
+  for (const change of ['pace','mode','version','ui','restore','after-send'] as const) {
     test(`确认到首次 POST 的有效配置 · ${tab} · ${change}`, async ({ page, context }) => {
       await open(page);
       const editor = tab === 'same' ? page : await context.newPage();
@@ -154,7 +159,7 @@ for (const tab of ['same', 'other'] as const) {
       expect(wires).toHaveLength(0);
       if (change !== 'after-send') await edit(editor,change);
       await release(page);
-      if (change === 'pace' || change === 'mode') {
+      if (change === 'pace' || change === 'mode' || change === 'version') {
         await expect(page.locator('.story-partial').getByText(/本次续写确认已失效|正文模式已在其他页面变更|文学设置与当前选择不同/)).toBeVisible();
         expect(wires).toHaveLength(0);
         expect(await snapshot(page)).toEqual(before);

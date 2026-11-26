@@ -5,7 +5,7 @@ import { createTurnDraft, rerollStory } from '../domain/drafts';
 import { completeTurnDraft } from '../domain/turnCommit';
 import { parseStoryEnvelope } from '../services/validation/aiOutputs';
 import { SaveRepository } from '../services/storage/saveRepository';
-import { builtInPresets, canResumeWriting, captureStoryWriting, legacyWritingDigest, resolveStoryPreset } from '../presets/library';
+import { builtInPresets, canResumeWriting, captureStoryWriting, legacyWritingDigest, resolveStoryPreset, writingWitness } from '../presets/library';
 import { controls, editOutput, emptyOverride, toggleEntry } from '../presets/peintureSettings';
 import { talentPromptInput } from './fixtures/talentPrompt';
 
@@ -98,4 +98,12 @@ it('有效字段投影保留角色和绝对插入语义，历史槽不读取位�
   expect(literaryEntry({...absolute,injection_depth:12})).not.toEqual(literaryEntry({...absolute,injection_depth:13}));
   expect(literaryEntry({...absolute,injection_order:7})).not.toEqual(literaryEntry({...absolute,injection_order:9}));
   expect(literaryEntry(absolute)).not.toEqual(literaryEntry({...material,injection_position:0}));
+});
+
+
+it('已确认的文学来源不能跨预设版本或预设标识发送', async () => {
+  const witness = await writingWitness(selected,settings.prompts);
+  for (const difference of [{version:'heijin.2'},{id:'another-preset'}]) {
+    expect(witness.matches({definition:{...selected.definition,...difference}},settings.prompts)).toBe(false);
+  }
 });
