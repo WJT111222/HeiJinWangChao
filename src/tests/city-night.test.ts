@@ -32,9 +32,10 @@ describe('固定城市身份：创建、兼容、原子补齐、并发和撤回'
   });
   it('缺少开局城市的 V10 档按标题恢复一次，移动、标题和重载不再影响身份', async () => {
     const state = game(); delete state.openingCityId; state.title = '人物 · 上海';
-    await put({ ...state, schemaVersion: 10 });
+    const { phone, ...legacy } = state; void phone;
+    await put({ ...legacy, schemaVersion: 10 });
     const loaded = await repo.load('save-a');
-    expect(loaded.openingCityId).toBe('shanghai'); expect(loaded.schemaVersion).toBe(10);
+    expect(loaded.openingCityId).toBe('shanghai'); expect(loaded.schemaVersion).toBe(11);
     expect(await raw()).toEqual(loaded); expect(loaded.revision).toBe(0);
     await put({ ...loaded, title: '改名 · 广州' });
     expect((await repo.loadGame('save-a')).state.openingCityId).toBe('shanghai');

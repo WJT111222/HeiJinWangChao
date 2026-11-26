@@ -32,6 +32,7 @@ const base = {
 };
 // Absence in legacy saves means unknown, never inferred from the contact registry.
 const publicVariables = {
+  appearedInStory: z.literal(true).optional(),
   importancePreference: z.enum(['ordinary', 'special']).optional(),
   phoneContact: z.strictObject({ status: z.enum(['unknown', 'known', 'invalid']), note: z.string().optional() }).optional(),
   usualLocations: z.array(z.strictObject({
@@ -57,8 +58,8 @@ export type NPC = z.infer<typeof NpcSchema>;
 export const DormantNpcProfileSchema = z.strictObject({ id: IdSchema, identityKey: TextSchema, profile: SpecialProfileSchema });
 
 // Batch 1 adds persistence only. Existing AI creation/update protocols remain unchanged.
-export const OrdinaryNpcCreationSchema = OrdinaryNpcSchema.omit({ importancePreference: true, phoneContact:true, usualLocations:true });
-export const SpecialNpcCreationSchema = SpecialNpcSchema.omit({ importancePreference: true, profilePending: true, phoneContact:true, usualLocations:true, relationshipNetwork:true })
+export const OrdinaryNpcCreationSchema = OrdinaryNpcSchema.omit({ appearedInStory: true, importancePreference: true, phoneContact:true, usualLocations:true });
+export const SpecialNpcCreationSchema = SpecialNpcSchema.omit({ appearedInStory: true, importancePreference: true, profilePending: true, phoneContact:true, usualLocations:true, relationshipNetwork:true })
   .extend({ longTermMemories: z.array(NpcMemorySchema).optional() }); // old commands retain their original fingerprint
 export const NpcCreationSchema = z.discriminatedUnion('kind', [OrdinaryNpcCreationSchema, SpecialNpcCreationSchema]);
 

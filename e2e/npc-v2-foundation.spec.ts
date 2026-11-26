@@ -26,7 +26,7 @@ test('NPC新字段与休眠档案真实持久化、刷新及原子撤回；零�
   });
   await page.goto('/#game/save-a'); await page.reload(); await expect(page.locator('.game-layout')).toBeVisible();
   const before = await stored(page);
-  expect(before.state.schemaVersion).toBe(10); expect(before.undo.available).toBe(1);
+  expect(before.state.schemaVersion).toBe(11); expect(before.undo.available).toBe(1);
   expect(before.state.npc.person.usualLocations[0]).toMatchObject({ locationId: 'home', knownToProtagonist: false });
   expect(before.state.npc.special.kind).toBe('ordinary'); expect(before.state.dormantNpcProfiles.special.profile).toHaveProperty('privateProfile');
   await page.getByRole('button', { name: '撤回（1）', exact: true }).click();
@@ -69,7 +69,7 @@ test('V6旧档不可读且原样保留；V10档上旧RetireNpc拒绝，刷新不
   expect(legacyChecked.status).toBe('unreadable'); expect(legacyChecked.loadError).toContain('只支持 V10 存档');
   await page.goto('/#game/save-a'); await page.reload(); await expect(page.locator('.game-layout')).toBeVisible();
   const current = (await stored(page)).state;
-  expect(current.schemaVersion).toBe(10); expect(current.initialCompanionId).toBe('npc-a'); expect(current.contactNpcIds).toEqual(['npc-a']);
+  expect(current.schemaVersion).toBe(11); expect(current.initialCompanionId).toBe('npc-a'); expect(current.contactNpcIds).toEqual(['npc-a']);
   const failed = await page.evaluate(async () => {
     const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open();
     try {

@@ -14,7 +14,7 @@ import { migrateSave } from './migrations';
  * 含游戏进度、未结算草稿和独立小剧场；不含 AI 密钥、渠道配置、全局设置、提示词排序、撤回快照与提交回执。
  */
 export const backupFormat = 'heijin-backup';
-export const backupVersion = 3;
+export const backupVersion = 4;
 
 export interface BackupEntry {
   summary: { title: string; turnNumber: number; revision: number; schemaVersion: number; updatedAt: string };
@@ -28,7 +28,7 @@ export interface BackupEntry {
 }
 export interface BackupFile {
   format: typeof backupFormat;
-  version: 1 | 2 | typeof backupVersion;
+  version: 1 | 2 | 3 | typeof backupVersion;
   app: string;
   exportedAt: string;
   saves: BackupEntry[];
@@ -124,7 +124,7 @@ export async function serializeBackup(entries: readonly BackupEntry[], app: stri
   if (utf8ByteLength(serializedSaves, maxBackupBytes) > maxBackupBytes) throw exportTooLarge();
   const checksum = await sha256(serializedSaves);
   const file: BackupFile = {
-    format: backupFormat, version: entries.some(e=>e.images) ? backupVersion : withTheaters ? 2 : 1, app, exportedAt: now.toISOString(),
+    format: backupFormat, version: withTheaters || entries.some(entry => entry.images) ? backupVersion : 1, app, exportedAt: now.toISOString(),
     saves, ...(checksum ? { checksum } : {}),
   };
   const text = JSON.stringify(file);
@@ -159,7 +159,7 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
   if (format.success && format.data.format === backupFormat && format.data.version > backupVersion)
     throw new DataError('BACKUP_FUTURE', '这份备份来自更新的游戏版本，请先更新游戏再导入；本机存档没有任何改动。');
   const envelope = EnvelopeSchema.safeParse(raw);
-  if (!envelope.success || ![1, 2, backupVersion].includes(envelope.data.version))
+  if (!envelope.success || ![1, 2, 3, backupVersion].includes(envelope.data.version))
     throw new DataError('BACKUP_INVALID', '这不是黑金王朝的备份文件。请选择导出时得到的 .heijin.json 文件。');
   const { saves, checksum } = envelope.data;
   let checksumStatus: BackupChecksumStatus = 'unverified';
@@ -180,7 +180,7 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
       }
       let images: PortableImages | undefined;
       if(save.images!==undefined){
-        try { if(envelope.data.version!==3) throw new Error(); images=parseImages(save.images,state); }
+        try { if(envelope.data.version < 3) throw new Error(); images=parseImages(save.images,state); }
         catch { return {ok:false,title,error:'图片资源或关联校验失败，本份存档未导入。',code:'IMAGE_BACKUP'}; }
       }
       return { ok: true, ...(images?{images}:{}), title: state.title, state, ...(draft ? { draft } : {}), ...(dropped ? { draftDropped: dropped } : {}),

@@ -25,7 +25,8 @@ export function storyForSubsequentStages(story: GameState['journal'][number]['st
 /** 三阶段共用的模型只读背景。调用方决定正式基线或合法 Variables 投影；
  * 阅读范围不参与任何命令授权。永久 journal 保持现有窗口/检索，幂等凭据不注入。 */
 export function sharedContext(state: GameState, windowSize: number, query: string, recall: boolean, cues: RecallCues = { stage: 'story', playerInput: query }) {
-  const { harem, journal, appliedCommands, dormantNpcProfiles, npc, memories, openingCityProfile, ...snapshot } = state;
+  const { phone, harem, journal, appliedCommands, dormantNpcProfiles, npc, memories, openingCityProfile, ...snapshot } = state;
+  void phone; // Read-only phone UI has no model context in this step.
   void npc;
   void openingCityProfile; // 由 OPENING_CITY 统一提供，不在 SAVE_STATE 重复。
   void appliedCommands;

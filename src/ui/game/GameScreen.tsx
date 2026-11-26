@@ -84,6 +84,8 @@ import type { StageAction, WorkflowStage, WorkflowTab, WorkflowView } from './Wo
 import type { MemoryFailureObservation } from '../../services/ai/memoryObservation';
 import { MemoryIssueDetails } from './MemoryResponses';
 import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
+import { GamePhone, PhoneEntry } from '../phone/GamePhone';
+import { usePhoneReminders } from '../phone/usePhoneReminders';
 import { CityAtmosphere, CityBar, CityChapter } from './CityNight';
 import { deriveAtmosphere } from './atmosphere';
 import './city-night.css';
@@ -157,7 +159,7 @@ export function GameScreen({
     if (panel !== '世界事件') archiveSelection.current[panel] = id;
     setArchiveTarget({panel,id}); setPanel(panel);
   };
-  const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产' | '小剧场'>();
+  const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产' | '小剧场' | '手机'>();
   useEffect(() => () => stageResponses.clearSave(state.saveId), [state.saveId]);
   const compactSidebars = useSyncExternalStore(subscribeSidebarSize, () => window.matchMedia(sidebarMedia).matches, () => false);
   const desktopSettings=!compactSidebars&&Boolean(renderSettings);
@@ -170,6 +172,10 @@ export function GameScreen({
     if (desktopSettings && onCloseSettings) onCloseSettings(action);
     else outsideTheater(action);
   }
+  const phone = usePhoneReminders(state);
+  const phoneOpen = panel === '手机' && !desktopSettings;
+  const phoneButton = (mobile: boolean) => <PhoneEntry mobile={mobile} count={phone.unread.length} open={phoneOpen}
+    onClick={() => outsideSettings(() => setPanel(phoneOpen ? undefined : '手机'))}/>;
   const theaterActive = panel === '小剧场' && !desktopSettings;
   const desktopArchive = !compactSidebars && !desktopSettings && (panel === 'NPC' || panel === '势力组织' || panel === '我的势力' || panel === '人物档案' || panel === '物品栏' || panel === '经济与资产' || panel === '世界事件' || panel === '历史时间轴' || panel === '记忆' || panel === '地图' || panel === '后宫') ? panel : undefined;
   function openChange(target:ChangeTarget){
@@ -907,15 +913,15 @@ export function GameScreen({
           event.preventDefault(); void send(); return;
         }
         if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey ||
-          (event.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
+          (event.target as HTMLElement).closest('input, textarea, select, [contenteditable], .game-phone')) return;
         if (/^[1-5]$/.test(event.key) && settings.prompts.actionOptions && !busy && !progress && !referenceOptions && options && options.length >= 3 && options.length <= 5) {
           const option = options[Number(event.key) - 1];
           if (option) { event.preventDefault(); setInput((current) => appendActionOption(current, option)); document.getElementById('player-input')?.focus(); }
         }
       }}>
       <CityAtmosphere state={state} />
-      {compactSidebars?<MobileCityBar state={state} mini={mobileMini} onStatus={()=>setMobileStatusOpen(true)}/>:<CityBar state={state} />}
-      {!compactSidebars&&<PlayerStatus state={state} equipment={equipment} activePanel={compactSidebars || desktopSettings ? undefined : panel} onProfile={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined); setPanel(desktopArchive === '人物档案' ? undefined : '人物档案'); })} onEconomy={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);setPanel(desktopArchive === '经济与资产' ? undefined : '经济与资产'); })} />}
+      {compactSidebars?<MobileCityBar state={state} mini={mobileMini} onStatus={()=>setMobileStatusOpen(true)}/>:<CityBar state={state} phone={phoneButton(false)} />}
+      {!compactSidebars&&<PlayerStatus state={state} equipment={equipment} activePanel={compactSidebars || desktopSettings || panel === '手机' ? undefined : panel} onProfile={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined); setPanel(desktopArchive === '人物档案' ? undefined : '人物档案'); })} onEconomy={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);setPanel(desktopArchive === '经济与资产' ? undefined : '经济与资产'); })} />}
       <section inert={Boolean(desktopArchive || desktopSettings || theaterActive)} className="story-column" aria-label="剧情与行动">
         <div
           className={`reader ${!view.journal.length && !draft?.story && !streamingPreview && !storyRetryWait ? 'reader-empty' : ''}`}
@@ -1155,9 +1161,16 @@ export function GameScreen({
         <button aria-current={!panel && !mobileStatusOpen && !worldDirectoryOpen && !renderSettings ? 'page' : undefined}
           onClick={() => { reader.current?.focus({ preventScroll: true }); }}><span className="mobile-seal" aria-hidden="true">文</span>故事</button>
         <button data-mobile-tab="hero" aria-current={mobileStatusOpen||panel==='人物档案'||panel==='经济与资产'?'page':undefined} onClick={() => setMobileStatusOpen(true)}><span className="mobile-seal" aria-hidden="true">我</span>人物</button>
-        <button data-mobile-tab="world" aria-current={worldDirectoryOpen||(panel&&panel!=='人物档案'&&panel!=='经济与资产')?'page':undefined} onClick={() => setWorldDirectoryOpen(true)}><span className="mobile-seal" aria-hidden="true">世</span>世界资料</button>
+        <button data-mobile-tab="world" aria-current={worldDirectoryOpen||(panel&&panel!=='手机'&&panel!=='人物档案'&&panel!=='经济与资产')?'page':undefined} onClick={() => setWorldDirectoryOpen(true)}><span className="mobile-seal" aria-hidden="true">世</span>世界资料</button>
+        {compactSidebars && phoneButton(true)}
         <button data-settings-open aria-current={renderSettings?'page':undefined} onClick={onOpenSettings}><span className="mobile-seal" aria-hidden="true">设</span>设置</button>
       </nav>
+      {phoneOpen && <GamePhone key={JSON.stringify([state.saveId,state.createdAt,instance])} state={state} view={view} mobile={compactSidebars} data={phone}
+        close={action => {
+          setPanel(undefined);
+          requestAnimationFrame(() => (action ? inputElement.current : document.querySelector<HTMLButtonElement>('[data-phone-entry]'))?.focus());
+        }}
+        showNpc={id => { changeOpener.current = document.querySelector('[data-phone-entry]'); openArchive('NPC', id); }}/>}
       {legacyRecoveryDialog && legacyRecoveryDialog === recoveryDraftKey && draft?.story && legacyRecoveryOptions.length > 0 && (
         <LegacyNotificationRecoveryDialog options={legacyRecoveryOptions} narrative={draft.story.narrative}
           onClose={() => setLegacyRecoveryDialog(undefined)} onConfirm={selection => {
@@ -1199,7 +1212,7 @@ export function GameScreen({
           repository={repository.theaters} owner={{ saveId: state.saveId, createdAt: state.createdAt, instance: instance ?? null }} settings={settings}
           latest={{ turn: state.turnNumber, time: state.openingTimePending ? null : state.worldClock }} />
       </Dialog>}
-      {panel && panel !== '小剧场' && !desktopArchive && !desktopSettings && (
+      {panel && panel !== '手机' && panel !== '小剧场' && !desktopArchive && !desktopSettings && (
         <Dialog title={panel} mobileVariant="sheet" sheetFull seal={{NPC:'人',势力组织:'势',我的势力:'盟',地图:'图',物品栏:'物',世界事件:'事',历史时间轴:'史',记忆:'忆',后宫:'家',人物档案:'人',经济与资产:'财'}[panel]} eyebrow="WORLD · ARCHIVE" returnFocus={()=>changeOpener.current?.isConnected?changeOpener.current:mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={`mobile-archive ${panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : panel === '我的势力' ? 'faction-dialog' : ''}`} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
           {panel === '人物档案' ? (
             <>

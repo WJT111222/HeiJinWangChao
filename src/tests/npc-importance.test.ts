@@ -144,7 +144,7 @@ it('新能力不扩大World权限，不允许World升级或填写新的Variables
 
 it('V10存档保留身份/原始记忆/初始同伴，读取不自动声明玩家选择',()=>{
   const raw=unifiedNpcMemories();
-  const before=structuredClone(raw),state=migrateSave(raw);expect(state.schemaVersion).toBe(10);expect(raw).toEqual(before);
+  const before=structuredClone(raw),state=migrateSave(raw);expect(state.schemaVersion).toBe(11);expect(raw).toEqual(before);
   expect(state.npc['npc-a'].memories).toHaveLength(21);expect(state.npc['npc-a'].importancePreference).toBeUndefined();
 });
 

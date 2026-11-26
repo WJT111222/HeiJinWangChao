@@ -11,14 +11,14 @@ import { checkDimensions, decode, encode } from './raster';
 export const imageStores = ['imageCollections', 'imageFiles', 'imageJobs', 'imageVersions'] as const;
 export const imageChange = 'heijin.images.changed.v1';
 // An existing V8 may be malformed. Inspect metadata only; creation is restricted to the upgrade transaction.
-export function checkImageStores(db: IDBDatabase, upgrade?: IDBTransaction) {
+export function checkImageStores(db: IDBDatabase, upgrade?: IDBTransaction, createMissing = Boolean(upgrade)) {
   function invalid(name: string): never {
     throw new DataError(
       'STORAGE_SCHEMA',
       `本地图片数据库结构异常（${name}）。原数据已保留。请关闭其他游戏页面并刷新。若仍失败，可在独立浏览器配置恢复已有备份，或保留本站数据等待结构升级。`,
     );
   }
-  if (!upgrade) {
+  if (!createMissing) {
     for (const name of imageStores) if (!db.objectStoreNames.contains(name)) invalid(name);
   }
   const tx = upgrade ?? db.transaction([...imageStores], 'readonly');
@@ -31,7 +31,7 @@ export function checkImageStores(db: IDBDatabase, upgrade?: IDBTransaction) {
     if (store.autoIncrement || JSON.stringify(store.keyPath) !== JSON.stringify(keyPath)) invalid(name);
     const checkIndex = (indexName: string, path: string | string[]) => {
       if (!store.indexNames.contains(indexName)) {
-        if (!upgrade) invalid(name + '.' + indexName);
+        if (!createMissing) invalid(name + '.' + indexName);
         store.createIndex(indexName, path);
       } else {
         const index = store.index(indexName);

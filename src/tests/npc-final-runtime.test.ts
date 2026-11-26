@@ -147,7 +147,7 @@ it('V10真实读档→Runtime继续→Commit→旧快照按需恢复，来源与
   await rawStore(a.factory, a.name, 'saveControls', s => s.put(control));
   const reopened = await SaveRepository.open(a.name, a.factory); closed.push(() => reopened.close());
   const restored = await reopened.undoTurn({ saveId: 'save-a', expectedRevision: committed.state.revision, expectedDraft: committed.draft, operationId: 'old-restore' });
-  expect(restored.state.schemaVersion).toBe(10); expect(restored.state.npc).toEqual(baseline.npc); expect(restored.state.memories).toEqual(baseline.memories);
+  expect(restored.state.schemaVersion).toBe(11); expect(restored.state.npc).toEqual(baseline.npc); expect(restored.state.memories).toEqual(baseline.memories);
   expect(restored.state.journal).toEqual(baseline.journal); expect(restored.state.worldClock).toBe(baseline.worldClock);
   expect(restored.state.npc['npc-a']).toMatchObject({ privateProfile: fullPrivateProfile }); expect(fetcher).toHaveBeenCalledTimes(4);
   expect((await reopened.exportRaw('save-a')).records.turnUndo).toHaveLength(0);
