@@ -1,3 +1,4 @@
+import { commandsForPhase } from '../../domain/stageCommands';
 import { describeTimeFormats } from '../../services/validation/catalogCompaction';
 import { HaremChangesSchema } from '../../domain/harem/schema';
 import { PromotionProfileSchema } from '../../domain/npc/schema';
@@ -83,14 +84,17 @@ const haremValueSchema = describeTimeFormats(z.toJSONSchema(HaremChangesSchema, 
   target: 'draft-7', unrepresentable: 'any', reused: 'ref',
 }));
 /** 正式及离线文本组装共用的值结构目录；不执行、审批或写入状态。 */
-export function textVariableCatalog(mode: 'opening' | 'regular' = 'regular') {
+export function textVariableCatalog(mode: 'opening' | 'regular' = 'regular', phase?: 'entities' | 'scene') {
   const sceneEntries = mode === 'regular' ? SceneDescriptionField.options.map((path): Entry => ({
     operation: 'set', path, commandType: 'SetSceneDescription', value: SaveShape[path],
   })) : [];
+  const allowed = new Set(phase ? commandsForPhase(phase, mode) :
+    [...commandsForPhase('entities', mode), ...commandsForPhase('scene', mode)]);
+  const activeEntries = [...entries, ...sceneEntries].filter(entry => allowed.has(entry.commandType));
   return { protocol:'VARIABLE_TEXT_V1', currencyUnit:'CNY_FEN_INTEGER', limits:variableTextLimits,
     organizationUpdateFields: organizationChangeFields,
     itemDetailsGuide: { categoryGroups: itemCategoryGroup, suggestedStringFields: itemDetailFields },
-    entries:[...entries, ...sceneEntries].map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...(value === HaremChangesSchema ? haremValueSchema : z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'})),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
+    entries:activeEntries.map(({value,...entry})=>({...entry,...(entry.operation==='delete'?{valueRequired:false}:{}),valueSchema:{...(value === HaremChangesSchema ? haremValueSchema : z.toJSONSchema(value,{target:'draft-7',unrepresentable:'any'})),...(entry.commandType==='SaveTask'?{anyOf:[{required:['dueAt']},{required:['completionCondition'],properties:{completionCondition:{type:'string',pattern:'\\S'}}}]}:{})}})),
     usageExamples: {
       addressing: 'set npc[example-npc].addressing = {"npcToPlayer":"老大"}；根据本回合剧情更新适用方向。playerToNpc 是主角称呼该人物，npcToPlayer 是该人物称呼主角。省略的方向保持原值。',
       affinityChange: 'set npc[example-npc].affinityChange = {"to":35,"reason":"共同核对材料后彼此更信任","relationshipText":"愿意继续协作"}',

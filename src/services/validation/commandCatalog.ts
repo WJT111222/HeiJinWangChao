@@ -8,17 +8,8 @@ import { WorldResultSchema } from '../../domain/drafts';
 import type { AiStage } from '../ai/configuration';
 import type { factorRepeatedSchemas } from './catalogCompaction';
 import generatedSchemas from './commandCatalogSchemas.json';
-export const worldTypes = [
-  'CreateNpc',
-  'UpdateNpc',
-  'RecordNpcMemory',
-  'CreateLocation',
-  'CreateOrganization',
-  'UpdateOrganization',
-  'RecordOrgRelation',
-  'RecordHistory',
-  'ApplyHaremBackground',
-] as const;
+import { offscreenGroups, stageCommands } from '../../domain/stageCommands';
+export const worldTypes = offscreenGroups.worldCommands;
 type CatalogStage = Exclude<AiStage, 'story'>;
 const CATALOG_REF_RULE = 'schema.definitions 是只写一次的公共结构；字段写作 {"$ref":"#/definitions/名称"} 时，表示它的格式与该同名定义完全相同，按展开后的结构填写，输出中不要写 $ref。';
 const compactCatalogs = new Map<CatalogStage, ReturnType<typeof compactCatalog>>();
@@ -38,11 +29,10 @@ export function commandCatalog(stage: CatalogStage) {
 }
 /** 未合并重复结构的原始内联目录，仅供测试核对合并前后逐字段等价。 */
 export function inlineCommandCatalog(stage: CatalogStage) {
-  const options = DomainCommandSchema.options.filter(
-    (option) =>
-      (stage === 'variables' && !['DeleteEvent','RecordHistory','ApplyHaremChanges','ApplyHaremBackground'].includes(option.shape.type.value)) ||
-      (stage === 'world' && [...worldTypes, 'SaveTask', 'SaveEvent','DeleteEvent'].includes(option.shape.type.value)),
-  );
+  // The legacy JSON Variables catalog predates the household text operation.
+  const types = new Set<string>(stage === 'world' ? stageCommands.offscreen :
+    [...stageCommands.entities, ...stageCommands.scene].filter(type => type !== 'ApplyHaremChanges'));
+  const options = DomainCommandSchema.options.filter(option => types.has(option.shape.type.value));
   return {
     currencyUnit: 'CNY_FEN_INTEGER',
     commandTypes: options.map((option) => option.shape.type.value),
