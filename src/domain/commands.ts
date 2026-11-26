@@ -76,6 +76,14 @@ function balance(s: GameState, account: 'cash' | 'onlineBalance', change: number
 function ownedByProtagonist(s: GameState, ref: z.infer<typeof ActorRefSchema> | undefined) {
   requireData(ref?.kind === 'protagonist' && ref.id === s.protagonist.id, 'OWNERSHIP', '购买对象必须归主角持有');
 }
+/** 本批新登记的房产关联了房贷时，由程序把房产补进该房贷的抵押物；不因模型漏写而拒绝。只处理本批新登记的房产。 */
+function linkMortgages(s: GameState, commands: readonly DomainCommand[]) {
+  for (const c of commands) {
+    const property = c.type === 'PurchaseProperty' ? c.property : c.type === 'AcquireAsset' && c.asset.kind === 'property' ? c.asset : undefined;
+    const debt = property?.mortgageDebtId ? s.economy.debts[property.mortgageDebtId] : undefined;
+    if (property && debt && !debt.collateralAssetIds.includes(property.id)) debt.collateralAssetIds.push(property.id);
+  }
+}
 function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedReceipts: ReadonlySet<string>) {
   switch (c.type) {
     case 'InitializeOpeningState': initializeOpeningState(s, c.changes, (id) => newEntity(s, id)); break;
@@ -237,6 +245,7 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
     }
     current.appliedCommands.push({ turnId, commandId: command.commandId, fingerprint: fingerprint(command) });
   }
+  linkMortgages(current, fresh);
   validateTaskTransitions(state, current, fresh.flatMap((c) => c.type === 'SaveTask' ? [c.task] : []));
   completeTaskEventLinks(state, current);
   maintainSceneTransition(state, current, fresh);

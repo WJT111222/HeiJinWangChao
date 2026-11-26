@@ -37,6 +37,25 @@ function saveWorld(draft: TurnDraft, result: NonNullable<TurnDraft['world']>['re
 }
 
 describe('隔离结构、依赖和事务', () => {
+  it('按揭房贷与所购房产互相引用，另一条坏资产被隔离时两者一起保留', async () => {
+    const {state,draft}=issue194();
+    state.economy.onlineBalance=20000;
+    const hero={kind:'protagonist',id:state.protagonist.id};
+    const house=(extra={})=>({kind:'property',name:'江景别墅',ownerRef:hero,estimatedValue:110000,source:'购买',statusText:'可入住',locationId:'chongqing',ownershipText:'主角名下，抵押给银行',...extra});
+    const mortgage={account:'onlineBalance',debt:{creditor:'银行',principal:100000,outstanding:100000,status:'active',repaymentTerms:'按月还款',collateralAssetIds:['villa'],autoPaymentAuthorized:false,source:'购房按揭'}};
+    const result=await parsePartialVariables(wrap([
+      `set economy.debts[mortgage] = ${JSON.stringify(mortgage)}`,
+      `set economy.properties[villa].purchase = ${JSON.stringify({account:'onlineBalance',price:110000,property:house({mortgageDebtId:'mortgage'})})}`,
+      `set economy.properties[broken] = ${JSON.stringify(house({name:'坏房产',locationId:'missing'}))}`,
+    ].join('\n')),state,draft);
+    expect(result.settlement?.skipped).toMatchObject([{commandIndex:2,category:'economy'}]);
+    const projected=projectTurn(state,withVariables(draft,result));
+    expect(projected.economy.onlineBalance).toBe(10000);
+    expect(projected.economy.properties.villa.mortgageDebtId).toBe('mortgage');
+    expect(projected.economy.debts.mortgage.collateralAssetIds).toEqual(['villa']);
+    expect(projected.economy.properties.broken).toBeUndefined();
+  });
+
   it('包含多行对象的无归属物品和对它的操作一起跳过，人物与正常物品保留', async () => {
     const {state,draft}=issue194();
     const transfer='set items[note].transfer = {"from":{"kind":"protagonist","id":"hero"},"to":{"kind":"organization","id":"org-stage-a"}}';

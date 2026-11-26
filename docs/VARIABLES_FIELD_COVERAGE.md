@@ -46,6 +46,6 @@
 ## 已有覆盖边界与后续建议
 
 - **明确缺失且本次已补齐**：普通回合有剧情变化时，天气和环境此前只能沿用开局值或由玩家手动改。新增的两条路径独立生效。
-- **经济领域已有明确记录的缺口**：购房和登记既有资产没有对应事务。已有 expected 收入也不能用同 ID 的 ReceiveIncome 转为到账，后者要求新 ID。若要表达这些业务，建议先界定预期与实收的关联、余额影响和幂等条件，再添加专用事务。当前模型可把无法执行的事项写进说明。[经济提示词](../prompts/variableGroups/economy/update.md) · [收入与资产结构](../src/domain/economy/schema.ts) · [交易执行](../src/domain/commands.ts)
+- **经济领域已有明确记录的缺口**：已登记资产的出售和估值变化没有对应事务（购房、其他资产购买及既有资产登记已由 PurchaseProperty／PurchaseOtherAsset／AcquireAsset 补齐）。已有 expected 收入也不能用同 ID 的 ReceiveIncome 转为到账，后者要求新 ID。若要表达这些业务，建议先界定预期与实收的关联、余额影响和幂等条件，再添加专用事务。当前模型可把无法执行的事项写进说明。[经济提示词](../prompts/variableGroups/economy/update.md) · [收入与资产结构](../src/domain/economy/schema.ts) · [交易执行](../src/domain/commands.ts)
 - **需要产品确认的字段**：既有人物的外貌、基础技能及已有地点名等可以由玩家修订，目前没有普通 Variables 更新命令。若产品需要持续追踪这类变化，应逐项确认归属。特殊人物的场外任务仍可通过 task.actorRef 查询，不能仅因 offscreenTaskIds 缺少独立写入口就判定任务丢失。[人物结构](../src/domain/npc/schema.ts) · [人物面板任务读取](../src/ui/panels/NpcPanel.tsx)
 - **保留只读**：正式回合、历史、总结来源、稳定身份、幂等账本、管理版本与回执都有各自的维护流程。覆盖盘点没有发现把它们开放为通用 set 的依据。V10 旧档继续使用原有字段；此前已经不支持的旧主版本仍按仓库既有策略处理。[存档兼容测试](../src/tests/saveRepository.test.ts) · [回合结算](../src/domain/turnCommit.ts)

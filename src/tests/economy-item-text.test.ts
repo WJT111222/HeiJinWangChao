@@ -82,6 +82,11 @@ describe('M8-P0C-3C2 资金与物品流转',()=>{
     expect(r.after.economy.onlineBalance).toBe(10000);
     expect(r.after.economy.properties.villa.mortgageDebtId).toBe('mortgage'); expect(r.after.economy.debts.mortgage.collateralAssetIds).toEqual(['villa']);
   });
+  it('房贷漏写抵押物时，程序把新登记的房产补进该房贷，不拒绝购房',async()=>{
+    const r=await execute(set('economy.debts[mortgage]',{account:'onlineBalance',debt:debt({creditor:'银行',principal:100000,outstanding:100000,collateralAssetIds:[],source:'购房按揭'})})
+      +'\n'+set('economy.properties[villa].purchase',{account:'onlineBalance',price:110000,property:property({mortgageDebtId:'mortgage'})}));
+    expect(r.after.economy.debts.mortgage.collateralAssetIds).toEqual(['villa']); expect(r.after.economy.properties.villa.mortgageDebtId).toBe('mortgage');
+  });
   it('购入其他资产同时扣款和登记',async()=>{
     const r=await execute(set('economy.otherAssets[shares].purchase',{account:'cash',price:5000,asset:other()}));
     expect(r.after.economy.cash).toBe(5000); expect(r.after.economy.otherAssets.shares).toEqual({id:'shares',...other()});
