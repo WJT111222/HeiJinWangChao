@@ -27,7 +27,7 @@ test('跨标签保存叙事视角不会重新打开另一页关闭的动态世�
   await perspective.selectOption('first');
   const other = await context.newPage();
   const b = await settings(other, '运行');
-  const world = b.getByRole('checkbox', { name: '动态世界', exact: true });
+  const world = b.getByRole('checkbox', { name: '场外与网络', exact: true });
   await expect(world).toBeChecked();
   await world.uncheck();
   await b.getByRole('button', { name: '保存本地设置' }).click();

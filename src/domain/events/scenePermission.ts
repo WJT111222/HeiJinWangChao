@@ -11,13 +11,21 @@ type SceneState = GameState;
 /** Variables现场权限：只读正式现场与整批合法投影，不从正文或组织归属推断在场。 */
 export function validateSceneEventUpdate(before: SceneState, after: SceneState, event: WorldEvent, turnId: string, story?:TurnDraft['story']) {
   const original = before.events[event.id];
-  requireData(original, 'SCENE_PERMISSION', '变量只能更新已有现场事件');
+
   const presentNpc = (id: string) => before.npc[id]?.onScene === true || after.npc[id]?.onScene === true;
-  const sceneRelated = original.actorRefs.some(ref =>
+  const participants = (original ?? event).actorRefs;
+  const sceneRelated = participants.some(ref =>
     ref.kind === 'protagonist' ? ref.id === before.protagonist.id : ref.kind === 'npc' && presentNpc(ref.id),
   );
   // 一名现场人物不能替混入的纯场外人物授予Variables权限。
-  const allNpcsPresent = original.actorRefs.every(ref => ref.kind !== 'npc' || presentNpc(ref.id));
+  const allNpcsPresent = participants.every(ref => ref.kind !== 'npc' || presentNpc(ref.id));
+  if (!original) {
+    requireData(sceneRelated && allNpcsPresent && !event.protagonistEntry && !event.protagonistKnowledge &&
+      !event.continuation && !event.eventKind && !event.predecessorEventIds && !event.entryIntent &&
+      event.sourceTurnIds.length === 1 && event.sourceTurnIds[0] === turnId,
+    'SCENE_PERMISSION', '新建现场事件仅能记录本回合现场参与者及事实');
+    return;
+  }
   const entry=original.protagonistEntry, actual=after.events[event.id]?.protagonistEntry;
   const intervention=original.eventKind==='sub' && entry && actual?.id===entry.id && actual.handledTurnId===turnId
     && isSceneEntryReceipt(actual.status);

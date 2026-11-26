@@ -52,7 +52,7 @@ it('正式 Repository 重验终态复述后的候选，只结算真实事件，�
   const repo=await SaveRepository.open('world-193-replay',new IDBFactory());
   try {
     await repo.create(state);
-    const blank=await repo.saveDraft(createTurnDraft(state.saveId,state.revision,draft.turnId,'opening',''),null);
+    const blank=await repo.saveDraft(createTurnDraft(state.saveId,state.revision,draft.turnId,'opening','',draft.useVariableStage,draft.useWorldStage,draft.useEntityStage),null);
     const story=await repo.saveDraft(rerollStory(blank,draft.story!),blank.draftRevision);
     const variables=await repo.saveDraft({...draft,draftRevision:story.draftRevision+1},story.draftRevision);
     const result=parseWorld(JSON.stringify(response),state,variables);

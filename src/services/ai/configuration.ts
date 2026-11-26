@@ -8,7 +8,7 @@ export type Protocol = z.infer<typeof ProtocolSchema>;
 /** DeepSeek 官方 Chat Completions 兼容 OpenAI 的传输与响应结构，保留独立协议标识。 */
 export const isOpenAiCompatible = (protocol: Protocol): protocol is 'openai' | 'deepseek' =>
   protocol === 'openai' || protocol === 'deepseek';
-export type AiStage = 'story' | 'variables' | 'world';
+export type AiStage = 'story' | 'entities' | 'variables' | 'world';
 export type AiTask = AiStage | 'memory';
 export const modelIdSchema = z
   .string()
@@ -65,8 +65,8 @@ export const AiConfigSchema = z
   .strictObject({
     version: z.literal(1),
     channels: z.array(ChannelSchema),
-    routes: z.strictObject({ story: direct, variables: optionalRoute, world: optionalRoute,
-      memory: optionalRoute.default({ mode: 'follow-story' }) }),
+    routes: z.strictObject({ story: direct, entities: optionalRoute.optional(), variables: optionalRoute, world: optionalRoute,
+      memory: optionalRoute.default({ mode: 'follow-story' }) }).transform(routes => ({ ...routes, entities: routes.entities ?? structuredClone(routes.variables) })),
   })
   .superRefine((config, ctx) => {
     if (new Set(config.channels.map((c) => c.id)).size !== config.channels.length)
@@ -90,6 +90,7 @@ export function defaultAiConfig(): AiConfig {
     channels: [],
     routes: {
       story: { channelId: '', modelId: '' },
+      entities: { mode: 'follow-story' },
       variables: { mode: 'follow-story' },
       world: { mode: 'follow-story' },
       memory: { mode: 'follow-story' },
@@ -145,6 +146,7 @@ export function removeChannel(config: AiConfig, id: string): AiConfig {
     routes: {
       story:
         config.routes.story.channelId === id ? { channelId: '', modelId: '' } : config.routes.story,
+      entities: remainingRoute(config.routes.entities),
       variables: remainingRoute(config.routes.variables),
       world: remainingRoute(config.routes.world),
       memory: remainingRoute(config.routes.memory),

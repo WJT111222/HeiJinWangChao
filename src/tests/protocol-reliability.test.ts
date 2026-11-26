@@ -54,11 +54,13 @@ describe('已知协议混用的同类复现', () => {
 describe('实际 Composer 输出契约', () => {
   it.each(['opening', 'regular'] as const)('%s 共享文本协议明确知晓信息与只读存档格式的区别，即使没选NPC组', async mode => {
     const state = worldState(), draft = worldDraft(false, mode);
-    const prompt = await composePrompt({ stage: 'variables', mode, state, draft, settings: defaultSettings(), userInput: '', domains: ['protagonist'] });
+    const input = {mode,state,draft:{...draft,useEntityStage:true,stageStatus:{...draft.stageStatus,entities:'pending' as const}},settings:defaultSettings(),userInput:'',domains:[]};
+    const prompt = await composePrompt({...input,stage:'entities'});
+    const scene = await composePrompt({...input,stage:'variables'});
     const systems = prompt.messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
     expect(systems).toContain('source/learnedAt');
     expect(systems).toContain('push npc[lin].knownInformation = {"text":"得知值班安排","knowledgeKind":"reported","knowledgeSource":"当面告知","visibility":"npc_private"}');
-    expect(systems).toContain('先输出 set worldClock');
+    expect(scene.messages.map(message=>message.content).join('\n')).toContain('先输出 set worldClock');
   });
   it.each(['opening', 'regular'] as const)('%s World 顶层数组及创建约束出现在真实请求中', async mode => {
     const state = worldState(), draft = worldDraft(true, mode);

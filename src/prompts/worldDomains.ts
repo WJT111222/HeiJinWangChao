@@ -11,16 +11,10 @@ const organizationDomains = {
   business: 'org_business',
 };
 export function selectWorldDomains(state: GameState, draft: TurnDraft) {
-  // 自主行动可能新建相关组织/人物，不能仅凭当前正文没有类别词排除规则。
-  // 九域原文体积有限；保守加载、一次世界请求，不增加 AI 分类请求。
-  const domains = [
-    ...new Set(
-      promptManifest.modules
-        .filter((module) => module.applicableStages.includes('world') && module.domain)
-        .map((module) => module.domain)
-        .filter((domain): domain is string => domain !== null),
-    ),
-  ];
+  const kinds = new Set(Object.values(state.organizations).map(org => organizationDomains[org.kind]));
+  const domains = [...new Set(promptManifest.modules.flatMap(module =>
+    module.applicableStages.includes('world') && module.domain && (module.domain.startsWith('npc_') || kinds.has(module.domain))
+      ? [module.domain] : []))];
   return {
     domains,
     reasons: domains.map((domain) => ({
@@ -43,7 +37,7 @@ export function assertWorldCoverage(
         : command.type === 'UpdateNpc' || command.type === 'RecordNpcMemory'
           ? `npc_${state.npc[command.npcId]?.kind ?? createdKinds.get(command.npcId)}`
           : command.type === 'CreateOrganization'
-            ? organizationDomains[command.organization.kind]
+            ? undefined // Creation has its own complete schema, including previously absent organization kinds.
             : command.type === 'RecordOrgRelation' || command.type === 'UpdateOrganization'
               ? organizationDomains[state.organizations[command.organizationId]?.kind]
               : undefined;

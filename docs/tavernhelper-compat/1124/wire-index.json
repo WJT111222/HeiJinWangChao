@@ -1,0 +1,1250 @@
+[
+  {
+    "version": "1118",
+    "protocol": "anthropic",
+    "stream": false,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "4d045ed85f91e142a55f382aa4f6fa2940021e6c5b4bcfa9e1de43bef551ce86",
+    "bytes": 97864,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "anthropic",
+    "stream": false,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "4d045ed85f91e142a55f382aa4f6fa2940021e6c5b4bcfa9e1de43bef551ce86",
+    "bytes": 97864,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "anthropic",
+    "stream": true,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "ebefe74bbc1868622440596599ddf189e083b0ab67f385e44c0e5c00f4e4a641",
+    "bytes": 97863,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "anthropic",
+    "stream": true,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "ebefe74bbc1868622440596599ddf189e083b0ab67f385e44c0e5c00f4e4a641",
+    "bytes": 97863,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "deepseek",
+    "stream": false,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "739dfd2d14196b602449e754a52e74e8440ee66476a88a07d5d7845aebf68dec",
+    "bytes": 98417,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "deepseek",
+    "stream": false,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "739dfd2d14196b602449e754a52e74e8440ee66476a88a07d5d7845aebf68dec",
+    "bytes": 98417,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "deepseek",
+    "stream": true,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "23153e928e679b3f583e32dab5f1c879fc849788055b29cb0df81d0e76d1384a",
+    "bytes": 98416,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "deepseek",
+    "stream": true,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "23153e928e679b3f583e32dab5f1c879fc849788055b29cb0df81d0e76d1384a",
+    "bytes": 98416,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "gemini",
+    "stream": false,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "a7c6df68a4a16f23a4778828cce1ec0ed1c263e23d1c2f38713eadd79759401c",
+    "bytes": 98030,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "gemini",
+    "stream": false,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "a7c6df68a4a16f23a4778828cce1ec0ed1c263e23d1c2f38713eadd79759401c",
+    "bytes": 98030,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "gemini",
+    "stream": true,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "a7c6df68a4a16f23a4778828cce1ec0ed1c263e23d1c2f38713eadd79759401c",
+    "bytes": 98030,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "gemini",
+    "stream": true,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "a7c6df68a4a16f23a4778828cce1ec0ed1c263e23d1c2f38713eadd79759401c",
+    "bytes": 98030,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "openai",
+    "stream": false,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "739dfd2d14196b602449e754a52e74e8440ee66476a88a07d5d7845aebf68dec",
+    "bytes": 98417,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "openai",
+    "stream": false,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "739dfd2d14196b602449e754a52e74e8440ee66476a88a07d5d7845aebf68dec",
+    "bytes": 98417,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "openai",
+    "stream": true,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "23153e928e679b3f583e32dab5f1c879fc849788055b29cb0df81d0e76d1384a",
+    "bytes": 98416,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1118",
+    "protocol": "openai",
+    "stream": true,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "23153e928e679b3f583e32dab5f1c879fc849788055b29cb0df81d0e76d1384a",
+    "bytes": 98416,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": true
+      },
+      {
+        "value": "沈潮汐",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "2026-10-18",
+        "messages": false,
+        "reference": true
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": false,
+        "reference": true
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "anthropic",
+    "stream": false,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "319ff3dfc9e6ac0629c9a4ee0c2ca3358710824e365317cc949e1b803099341c",
+    "bytes": 109356,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "anthropic",
+    "stream": false,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "319ff3dfc9e6ac0629c9a4ee0c2ca3358710824e365317cc949e1b803099341c",
+    "bytes": 109356,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "anthropic",
+    "stream": true,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "9d2d2fe899f250ab7fe343abc97b9d9ddbf4d5476bf75ee6be1a48db40f9e03a",
+    "bytes": 109355,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "anthropic",
+    "stream": true,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "9d2d2fe899f250ab7fe343abc97b9d9ddbf4d5476bf75ee6be1a48db40f9e03a",
+    "bytes": 109355,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "deepseek",
+    "stream": false,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "7cea431f9ead27006ad9b1c7abc35a9dbfc082a3a52e9a5eadb90da91cfa7cdd",
+    "bytes": 110071,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "deepseek",
+    "stream": false,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "7cea431f9ead27006ad9b1c7abc35a9dbfc082a3a52e9a5eadb90da91cfa7cdd",
+    "bytes": 110071,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "deepseek",
+    "stream": true,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "6f0f0854fc5c78bf8c490726a7aa85fdae9949ce30f7d96d28cf788de64ae954",
+    "bytes": 110070,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "deepseek",
+    "stream": true,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "6f0f0854fc5c78bf8c490726a7aa85fdae9949ce30f7d96d28cf788de64ae954",
+    "bytes": 110070,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "gemini",
+    "stream": false,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "45d6f48abf3b172dc99f53dce62c4d5accc1ca468a04ee08058228c9102cd6a7",
+    "bytes": 109522,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "gemini",
+    "stream": false,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "45d6f48abf3b172dc99f53dce62c4d5accc1ca468a04ee08058228c9102cd6a7",
+    "bytes": 109522,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "gemini",
+    "stream": true,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "45d6f48abf3b172dc99f53dce62c4d5accc1ca468a04ee08058228c9102cd6a7",
+    "bytes": 109522,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "gemini",
+    "stream": true,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "45d6f48abf3b172dc99f53dce62c4d5accc1ca468a04ee08058228c9102cd6a7",
+    "bytes": 109522,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "openai",
+    "stream": false,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "7cea431f9ead27006ad9b1c7abc35a9dbfc082a3a52e9a5eadb90da91cfa7cdd",
+    "bytes": 110071,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "openai",
+    "stream": false,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "7cea431f9ead27006ad9b1c7abc35a9dbfc082a3a52e9a5eadb90da91cfa7cdd",
+    "bytes": 110071,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "openai",
+    "stream": true,
+    "device": "desktop",
+    "posts": 1,
+    "sha256": "6f0f0854fc5c78bf8c490726a7aa85fdae9949ce30f7d96d28cf788de64ae954",
+    "bytes": 110070,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  },
+  {
+    "version": "1124",
+    "protocol": "openai",
+    "stream": true,
+    "device": "mobile",
+    "posts": 1,
+    "sha256": "6f0f0854fc5c78bf8c490726a7aa85fdae9949ce30f7d96d28cf788de64ae954",
+    "bytes": 110070,
+    "fields": [
+      {
+        "value": "林舟",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "沈潮汐",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "铜铃封存在第三座灯塔",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "2026-10-18",
+        "messages": true,
+        "reference": false
+      },
+      {
+        "value": "中国城市与地域差异",
+        "messages": true,
+        "reference": false
+      }
+    ],
+    "referenceHistory": "我立即拿起手机，联系仓库负责人，询问货物现在的具体位置。",
+    "referenceAction": "我去市博物馆，向馆员核对展品编号。",
+    "saved": "船靠岸了，林舟沿着石阶往上走。"
+  }
+]

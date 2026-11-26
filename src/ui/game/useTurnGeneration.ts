@@ -85,7 +85,7 @@ export function useTurnGeneration(
           if (token.current === id) {
             // Only a newly saved ready stage retires its earlier diagnostic errors.
             // A ready candidate by itself must not hide a later failed preflight.
-            for (const stage of ['story', 'variables', 'world'] as const)
+            for (const stage of ['story', 'entities', 'variables', 'world'] as const)
               if (next.stageStatus[stage] === 'ready' && observed.stageStatus[stage] !== 'ready')
                 onRuntimeEvent?.(stage, 'completed', undefined, expected.turnId);
             observed = next;
@@ -126,7 +126,7 @@ export function useTurnGeneration(
         const stage = saving.current || diagnostic?.phase === 'commit_validation' ? 'commit' : lastProgress()?.stage;
         if (failure !== reported) onRuntimeEvent?.(stage ?? 'workflow', 'failed', failure, expected.turnId);
         if (!diagnostic?.openingTime) setError(
-          `${stage ? { story: '正文生成', variables: '变量管理', world: '动态世界', commit: '正式结算' }[stage] + '：' : ''}${storyError(failure)}`,
+          `${stage ? { story: '正文生成', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', commit: '正式结算' }[stage] + '：' : ''}${storyError(failure)}`,
         );
         chimeIfWanted(chimeMode(), chimeForFailure(failure));
         if (consent && (!consent.sent || isContinuationDeliveryUnknown(failure))) return storyError(failure);

@@ -34,10 +34,10 @@ async function seed(page: Page, count = 31, automatic = false, ready = false) {
     });
     if (ready) {
       const storage = await SaveRepository.open();
-      try { await completeDraft(storage, { variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); }
+      try { await completeDraft(storage, { useEntityStage:false, variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); }
       finally { storage.close(); }
     }
-    const settings = defaultSettings(); settings.memory.automaticMaintenance = automatic;
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.memory.automaticMaintenance = automatic;
     for (const config of Object.values(settings.memory.summaries) as { automatic: boolean }[]) config.automatic = automatic;
     settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
@@ -218,7 +218,7 @@ test('阈值以下设置保存和刷新不请求，正式提交触发后不阻�
   await expect.poll(() => calls.filter((call) => call === 'memory').length).toBe(1);
   // 维护网络尚未完成，下一正式回合的三阶段生成仍能完成。
   await expect.poll(() => calls.filter((call) => call !== 'memory')).toEqual(['story', 'variables', 'world']);
-  await expect(page.getByRole('region', { name: '三阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
+  await expect(page.getByRole('region', { name: '四阶段工作流' }).getByRole('status')).toContainText('本回合已结算');
   await page.getByLabel('你的行动', { exact: true }).fill('继续等待');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
   // 旧候选由发送结算为31；新生成回合自动结算为32，且等待新行动，不再自动生成。

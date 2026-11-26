@@ -26,7 +26,7 @@ async function seed(page: Page, turns = 7) {
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = 'https://history.mock.invalid/v1'; config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: 'story' };
-    for (const stage of ['variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
+    for (const stage of ['entities', 'variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'synthetic-history-key');
   }, turns);
   await page.reload();
@@ -54,7 +54,7 @@ async function mock(page: Page) {
     const stage = String(route.request().postDataJSON().model); calls.push(stage);
     const state = (await read(page)).state;
     const text = stage === 'story' ? control.failStory ? '<正文>不完整' : '<thinking>继续当前选择。</thinking><正文>【旁白】主角来到公园，沿着小路慢慢散步。</正文><短期记忆>在公园散步。</短期记忆><变量规划>[]</变量规划>'
-      : stage === 'variables' ? `<thinking>记录时间。</thinking><说明>时间经过。</说明><命令>\nset worldClock = "${new Date(Date.parse(state.worldClock) + 60000).toISOString()}"\n</命令>`
+      : stage === 'entities' ? '<接触者>[]</接触者><thinking>无人物变化。</thinking><说明></说明><命令></命令>' : stage === 'variables' ? `<thinking>记录时间。</thinking><说明>时间经过。</说明><命令>\nset worldClock = "${new Date(Date.parse(state.worldClock) + 60000).toISOString()}"\n</命令>`
         : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
     await route.fulfill({ contentType: stage === 'story' ? 'text/event-stream' : 'application/json', body: stage === 'story'
       ? `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: 'stop' }] })}\n\ndata: [DONE]\n\n`
@@ -223,14 +223,14 @@ test('手动收藏命名重开改名删除，完整状态导出，确认后单�
   const downloaded = page.waitForEvent('download'); await page.getByRole('button', { name: '导出节点备份' }).click();
   expect((await downloaded).suggestedFilename()).toContain('.heijin.json');
   await page.getByRole('button', { name: '自动历史', exact: true }).click(); await choose(page, 2); await confirm(page);
-  await expect(page.locator('.game-layout')).toBeVisible(); await expect.poll(async () => (await read(page)).state.turnNumber).toBe(3);
-  expect(server.calls).toEqual(['story', 'variables', 'world']); expect((await read(page)).undo.available).toBe(1);
+  await expect(page.locator('.game-layout')).toBeVisible(); await expect.poll(async () => (await read(page)).state.turnNumber,{timeout:15000}).toBe(3);
+  expect(server.calls).toEqual(['story', 'entities', 'variables', 'world']); expect((await read(page)).undo.available).toBe(1);
   await page.getByLabel('你的行动', { exact: true }).fill('继续去公园散步'); await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(async () => (await read(page)).state.turnNumber).toBe(4);
-  expect(server.calls).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
+  await expect.poll(async () => (await read(page)).state.turnNumber,{timeout:15000}).toBe(4);
+  expect(server.calls).toEqual(['story', 'entities', 'variables', 'world', 'story', 'entities', 'variables', 'world']);
   const fresh = await read(page); expect(fresh.undo.available).toBe(2); expect(fresh.raw.records.turnReceipts).toHaveLength(2);
   expect(fresh.history.nodes.find((n: { kind: string }) => n.kind === 'manual').oldTimeline).toBe(true);
-  await page.reload(); expect((await read(page)).state).toEqual(fresh.state); expect(server.calls).toHaveLength(6);
+  await page.reload(); expect((await read(page)).state).toEqual(fresh.state); expect(server.calls).toHaveLength(8);
   await page.goto('/'); await open(page); await page.getByRole('button', { name: '手动收藏', exact: true }).click();
   await expect(page.locator('.history-node-list')).toContainText('旧时间线收藏'); await page.screenshot({ path: info.outputPath('old-timeline-collection.png') });
   await page.getByRole('button', { name: '删除收藏', exact: true }).click(); await page.getByRole('button', { name: '保留收藏', exact: true }).click();
@@ -249,8 +249,8 @@ test('确认后正文失败保留历史基线及输入；刷新不自动请求�
   await page.screenshot({ path: info.outputPath('restored-failure.png') });
   server.control.failStory = false;
   await page.getByLabel('你的行动', { exact: true }).fill('重新在公园散步'); await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(async () => (await read(page)).state.turnNumber).toBe(3);
-  expect(server.calls).toEqual(['story', 'story', 'variables', 'world']);
+  await expect.poll(async () => (await read(page)).state.turnNumber,{timeout:15000}).toBe(3);
+  expect(server.calls).toEqual(['story', 'story', 'entities', 'variables', 'world']);
 });
 
 test('已合并主干的纯小说设置在历史回溯后仍只请求正文并正式结算一次', async ({ page }) => {
@@ -258,7 +258,7 @@ test('已合并主干的纯小说设置在历史回溯后仍只请求正文并�
   await page.evaluate(async () => {
     const path = '/src/ui/settings/model.ts', { settingsKey } = await import(path);
     const settings = JSON.parse(localStorage.getItem(settingsKey)!);
-    settings.runtime.useVariableStage = false; settings.runtime.useWorldStage = false;
+    settings.runtime.useEntityStage = false; settings.runtime.useVariableStage = false; settings.runtime.useWorldStage = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
   });
   await page.reload(); const server = await mock(page); await open(page); await choose(page, 2);
@@ -270,7 +270,7 @@ test('已合并主干的纯小说设置在历史回溯后仍只请求正文并�
     } finally { repo.close(); }
   });
   await confirm(page);
-  await expect.poll(async () => (await read(page)).state.turnNumber).toBe(3);
+  await expect.poll(async () => (await read(page)).state.turnNumber,{timeout:15000}).toBe(3);
   const result = await read(page);
   expect(server.calls).toEqual(['story']); expect(result.state.worldClock).toBe(expectedClock);
   expect(result.undo.available).toBe(1); expect(result.raw.records.turnReceipts).toHaveLength(1);
@@ -375,7 +375,7 @@ test('断点续写草稿在历史浏览、取消和刷新后保持原样；只�
 
 test('从历史根重新积累五个恢复点，UI 连续五次撤回后不能越界', async ({ page }) => {
   await seed(page); const server = await mock(page); await open(page); await choose(page, 2); await confirm(page);
-  await expect.poll(async () => (await read(page)).state.turnNumber).toBe(3);
+  await expect.poll(async () => (await read(page)).state.turnNumber,{timeout:15000}).toBe(3);
   await page.goto('/');
   await page.evaluate(async () => {
     const rp = '/src/services/storage/saveRepository.ts', fp = '/src/tests/fixtures/turn.ts';
@@ -391,5 +391,5 @@ test('从历史根重新积累五个恢复点，UI 连续五次撤回后不能�
     await expect.poll(async () => (await read(page)).undo.available).toBe(count - 1);
   }
   await expect(page.getByRole('button', { name: '撤回', exact: true })).toBeDisabled();
-  expect((await read(page)).state.turnNumber).toBe(3); expect(server.calls).toEqual(['story', 'variables', 'world']);
+  expect((await read(page)).state.turnNumber).toBe(3); expect(server.calls).toEqual(['story', 'entities', 'variables', 'world']);
 });

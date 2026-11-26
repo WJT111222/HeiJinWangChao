@@ -35,7 +35,7 @@ test('编辑、差异、取消和保存；跨标签锁拒绝写入，重载后�
       { SaveRepository } = await import(repoPath),
       { createTurnDraft } = await import(draftPath);
     const settings = JSON.parse(localStorage.getItem(settingsKey)!);
-    settings.runtime.useVariableStage = false;
+    settings.runtime.useEntityStage = false; settings.runtime.useVariableStage = false;
     settings.runtime.useWorldStage = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const repo = await SaveRepository.open();

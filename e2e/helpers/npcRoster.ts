@@ -1,3 +1,4 @@
+import { stageFixtureReply } from '../../src/tests/fixtures/variableReply';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { seedSummary } from './memorySummary';
@@ -29,7 +30,7 @@ export async function rosterGame(page: Page) {
   });
 }
 export async function seedRoster(page: Page, ready = false) {
-  await seedSummary(page, { count: 10, automatic: false });
+  await seedSummary(page, { count: 10, automatic: false, entities:true });
   await page.evaluate(async ready => {
     const paths = ['/src/tests/fixtures/npcRoster.ts', '/src/services/storage/saveRepository.ts', '/src/domain/drafts.ts', '/src/tests/fixtures/turn.ts'];
     const [{ npcRosterState }, { SaveRepository }, { createTurnDraft }, { completeDraft }] = await Promise.all(paths.map(path => import(path)));
@@ -62,7 +63,7 @@ export async function mockRosterTurn(page: Page, hold = false) {
       await route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n` }); return;
     }
     const profile = context.SAVE_STATE.npc.person?.profilePending ? '\nset npc[person].specialProfile = '+JSON.stringify({detailedBackground:'从社区成长为设计师，保持独立判断。',activeGoals:['完成合作'],habits:['记录草图'],offscreenTaskIds:[],relationshipNetwork:[]}) : '';
-    const content = stage === 'variables' ? `<thinking>记录实际时间。</thinking><说明></说明><命令>\nset worldClock = "${new Date(Date.parse(context.SAVE_STATE.worldClock) + 60_000).toISOString()}"${profile}\n</命令>`
+    const content = (stage === 'variables' || stage === 'entities') ? stageFixtureReply(stage,`<thinking>记录实际时间。</thinking><说明></说明><命令>\nset worldClock = "${new Date(Date.parse(context.SAVE_STATE.worldClock) + 60_000).toISOString()}"${profile}\n</命令>`)
       : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
     await route.fulfill({ json: { choices: [{ message: { content }, finish_reason: 'stop' }] } });
   });

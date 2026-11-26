@@ -1,9 +1,9 @@
-import { malformedSceneResponse } from '../src/tests/fixtures/spresetTerminal';
+import { malformedSceneResponse, terminalFaults } from '../src/tests/fixtures/spresetTerminal';
 import { test, expect } from './helpers/test';
 
 for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
   for (const stream of [false, true]) test(protocol + (stream ? ' SSE' : ' JSON') + ' 异常终端调用无收据、无候选、无结算', async ({ page }, info) => {
-    const faults = ['duplicate', 'foreign-end'] as const;
+    const faults = terminalFaults(protocol, stream);
     let posts = 0;
     await page.route('https://spreset.mock.invalid/**', async route => {
       const fault = faults[posts++];

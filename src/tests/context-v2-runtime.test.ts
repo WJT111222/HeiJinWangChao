@@ -1,3 +1,5 @@
+import {stagedFixture,persistSceneFixture} from './fixtures/stageScope';
+import {createTurnDraft} from '../domain/drafts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { SaveRepository } from '../services/storage/saveRepository';
@@ -8,7 +10,7 @@ import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
 import { array, record, string } from '../services/ai/protocols';
 import { stageResponses } from '../services/ai/stageResponses';
-import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { rerollStory } from '../domain/drafts';
 import { projectTurn } from '../domain/turnProjection';
 import { composePrompt } from '../prompts/composer';
 import { contextV2Fixture } from './fixtures/contextV2';
@@ -19,7 +21,7 @@ import { worldResult } from './fixtures/world';
 
 const resources: { dispose: () => void }[] = [];
 afterEach(() => { resources.splice(0).forEach(resource => resource.dispose()); stageResponses.clear(); });
-async function setup() {
+async function setup(withEntities=false) {
   const a = contextV2Fixture(), factory = new IDBFactory();
   const repo = await SaveRepository.open('context-v2-runtime', factory); resources.push({ dispose: () => repo.close() });
   // 模拟重载已有V6存档；create只允许全新空历史，不能冒充已提交八轮的新游戏。
@@ -33,7 +35,7 @@ async function setup() {
       tx.onerror = () => { db.close(); reject(tx.error); };
     };
   });
-  const initial = createTurnDraft(a.state.saveId, a.state.revision, a.draft.turnId, 'regular', a.draft.userInput);
+  const initial = createTurnDraft(a.state.saveId, a.state.revision, a.draft.turnId, 'regular', a.draft.userInput,true,true,withEntities);
   await repo.saveDraft(initial, null);
   const config = defaultAiConfig(), channel = newChannel(); channel.defaultModel = 'story';
   config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'story' };
@@ -42,7 +44,7 @@ async function setup() {
   const data = new Map<string, string>(), store = { getItem: (key: string) => data.get(key) ?? null,
     setItem: (key: string, value: string) => { data.set(key, value); }, removeItem: (key: string) => { data.delete(key); } };
   const vault = new CredentialVault(store, store); vault.set(channel.id, 'mock-only-context-v2');
-  a.settings.prompts.minNarrativeChars = 1; a.settings.prompts.actionOptions = false;
+  a.settings.runtime.useEntityStage = withEntities; a.settings.prompts.minNarrativeChars = 1; a.settings.prompts.actionOptions = false;
   return { ...a, initial, factory, repo, config, vault };
 }
 function request(init?: RequestInit) {
@@ -57,18 +59,18 @@ const response = (text: string) => Response.json({ choices: [{ message: { conten
 
 describe('上下文 V2经真实Coordinator、Runtime、Mock传输与原子提交', () => {
   it('正式revision8的离场与时钟投影仍提供revision8，模型据此生成UpdateNpc可验证并Commit', async () => {
-    const a = await setup(); expect(a.state.revision).toBe(8);
+    const a = await setup(true); expect(a.state.revision).toBe(8);
     const ready = await a.repo.saveDraft(rerollStory(a.initial, {
       ...a.draft.story!, narrative: `${a.draft.story!.narrative}scene-ordinary姓名随后离开现场。`,
     }), a.initial.draftRevision);
-    const variables = await a.repo.saveDraft({
+    const variables = await persistSceneFixture(a.repo,stagedFixture({
       ...ready, draftRevision: ready.draftRevision + 1,
       variables: { ...a.draft.variables!, result: { ...a.draft.variables!.result, commands: [
         ...a.draft.variables!.result.commands,
         { type: 'UpdateNpc', commandId: 'validated-leave', npcId: 'scene-ordinary', expectedRevision: a.state.revision, changes: { onScene: false }, evidence: '人物已经离场' },
       ] } },
       stageStatus: { ...ready.stageStatus, variables: 'ready' },
-    }, ready.draftRevision);
+    }));
     const calls: ReturnType<typeof request>[] = [];
     const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
       const call = request(init); calls.push(call);
@@ -76,7 +78,7 @@ describe('上下文 V2经真实Coordinator、Runtime、Mock传输与原子提交
       const expectedRevision = record(call.context.SAVE_STATE).revision;
       if (typeof expectedRevision !== 'number') throw Error('missing request revision');
       return response(JSON.stringify(worldResult([{ type: 'UpdateNpc', commandId: 'world-rest',
-        npcId: 'scene-ordinary', expectedRevision,
+        npcId: 'off-ordinary', expectedRevision,
         changes: { healthText: '离场后休息，精神恢复' }, evidence: '人物离场后自主休息' }])));
     });
     const stage = new WorldStage(a.repo, new AiClient(fetcher)); resources.push(stage);
@@ -87,13 +89,15 @@ describe('上下文 V2经真实Coordinator、Runtime、Mock传输与原子提交
     expect(context.BASE_SAVE_REVISION).toBe(8); expect(record(context.TURN_CONTEXT).baseSaveRevision).toBe(8);
     expect(record(context.SAVE_STATE).worldClock).toBe('2026-10-18T08:10:00+08:00');
     expect(record(record(record(context.SAVE_STATE).npc)['scene-ordinary']).onScene).toBe(false);
-    expect(record(context.PROTECTED_SCENE).sceneNpcIds).not.toContain('scene-ordinary');
+    expect(record(context.PROTECTED_SCENE).sceneNpcIds).toContain('scene-ordinary');
+    expect(record(context.OFFSCREEN_STATE).taskNpcIds).toContain('scene-ordinary');
     expect(candidate.world!.validation).toBe('validated');
     expect(candidate.world!.result.worldCommands[0]).toMatchObject({ type: 'UpdateNpc', expectedRevision: 8 });
     expect(await a.repo.load(a.state.saveId)).toEqual(a.state);
     const committed = await a.repo.commitTurn(submission(candidate));
     expect(committed.state.revision).toBe(9); expect(committed.state.worldClock).toBe(projection.worldClock);
-    expect(committed.state.npc['scene-ordinary']).toMatchObject({ onScene: false, healthText: '离场后休息，精神恢复' });
+    expect(committed.state.npc['scene-ordinary'].onScene).toBe(false);
+    expect(committed.state.npc['off-ordinary'].healthText).toBe('离场后休息，精神恢复');
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 

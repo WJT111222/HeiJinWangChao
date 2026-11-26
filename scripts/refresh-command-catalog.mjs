@@ -10,8 +10,8 @@ const server = await createServer({ server: { middlewareMode: true }, appType: '
 try {
   const { inlineCommandCatalog } = await server.ssrLoadModule('/src/services/validation/commandCatalog.ts');
   const { describeTimeFormats, factorRepeatedSchemas } = await server.ssrLoadModule('/src/services/validation/catalogCompaction.ts');
-  const schemas = Object.fromEntries(['world', 'variables'].map(stage => [stage,
-    factorRepeatedSchemas(describeTimeFormats(inlineCommandCatalog(stage).schema)),
+  const schemas = Object.fromEntries(['world', 'variables', 'regularWorld'].map(stage => [stage,
+    factorRepeatedSchemas(describeTimeFormats(inlineCommandCatalog(stage === 'regularWorld' ? 'world' : stage, stage !== 'regularWorld').schema)),
   ]));
   const output = new URL('../src/services/validation/commandCatalogSchemas.json', import.meta.url);
   const expected = JSON.stringify(schemas) + '\n';

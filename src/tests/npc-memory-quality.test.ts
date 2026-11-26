@@ -1,3 +1,4 @@
+import {stageFixtureReply} from './fixtures/variableReply';
 import { afterEach, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { selectVariableDomains } from '../prompts/variableDomains';
@@ -39,18 +40,18 @@ function expectQuality(text: string) { for (const marker of markers) expect(text
 it.each(['opening', 'regular'] as const)('%s实际Variables/World请求使用相同质量标准，不改变协议和权限', async mode => {
   const state = npcRosterState(), settings = defaultSettings();
   const draft = rerollStory(createTurnDraft(state.saveId, state.revision, 'quality-turn', mode, '核对清单'), { turnKind: mode, narrative: qualityStory, summary: '费用暂缓，待核算', variableGuide: [] });
-  for (const stage of ['variables', 'world'] as const) {
-    const prompt = await composePrompt({ state, draft, settings, stage, mode, domains: stage === 'variables' ? selectVariableDomains(state, draft).domains : [], userInput: draft.userInput });
+  for (const stage of ['entities', 'world'] as const) {
+    const prompt = await composePrompt({ state, draft, settings, stage, mode, domains: stage === 'entities' ? selectVariableDomains(state, draft).domains : [], userInput: draft.userInput });
     const instructions = prompt.messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
     expectQuality(instructions);
     expect(instructions).toContain('普通和特殊NPC使用相同标准');
     expect(instructions).not.toMatch(/"text":"(?:共同处理了?现场问题|记住共同作出的约定)"/);
-    if (stage === 'variables') {
-      expect(instructions).toContain('VARIABLE_TEXT_V1'); expect(instructions).toContain('长期离场后重新出现');
+    if (stage === 'entities') {
+      expect(prompt.context.TEXT_COMMAND_CATALOG).toBeDefined(); expect(instructions).toContain('长期离场后重新出现');
       expect(instructions).toContain('npc_ordinary /'); expect(instructions).toContain('npc_special /');
       expect(instructions).toContain('knownInformation');
     } else {
-      expect(instructions).toContain('受保护的现场NPC与开局同伴不能通过UpdateNpc、RecordNpcMemory或任务改写');
+      expect(instructions).toContain('离场后也不能改写');
       expect(instructions).toContain('不额外请求AI');
       expect(instructions).toContain('合法场外行动不要求Story已逐项写出');
     }
@@ -94,25 +95,25 @@ it('详细记忆经文本编译/候选模拟/World/原子提交/重载原样保�
   expect(new Set(saved.state.npc.person.memories.map(m => m.id)).size).toBe(saved.state.npc.person.memories.length);
 });
 
-it('真实Coordinator→Runtime→Mock→候选→Commit：亲历/推测/转述分属本人，恰好三次请求', async () => {
+it('真实Coordinator→Runtime→Mock→候选→Commit：亲历/推测/转述分属本人，恰好四次请求', async () => {
   const factory = new IDBFactory(), name = 'quality-runtime', repo = await SaveRepository.open(name, factory); repositories.push(repo);
   const state = npcRosterState(); await seedExisting(factory, name, state);
   const initial = createTurnDraft(state.saveId, state.revision, 'quality-runtime-turn', 'regular', '核对费用'); await repo.saveDraft(initial, null);
   const settings = defaultSettings(); settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
   const config = defaultAiConfig(), channel = newChannel(); channel.defaultModel = 'story'; config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'story' };
-  for (const stage of ['variables', 'world'] as const) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
+  for (const stage of ['entities','variables', 'world'] as const) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
   const data = new Map<string, string>(), storage = { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => { data.set(k, v); }, removeItem: (k: string) => { data.delete(k); } };
   const vault = new CredentialVault(storage, storage); vault.set(channel.id, 'mock-only-quality');
   const calls: string[] = [];
   const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
     const body = JSON.parse(String(init?.body)), stage = String(body.model); calls.push(stage);
-    if (stage !== 'story') expectQuality(body.messages.filter((m: { role: string }) => m.role === 'system').map((m: { content: string }) => m.content).join('\n'));
+    if (stage === 'entities' || stage === 'world') expectQuality(body.messages.filter((m: { role: string }) => m.role === 'system').map((m: { content: string }) => m.content).join('\n'));
     if (stage === 'story') {
       const content = `<thinking>依据已有经历创作。</thinking><正文>${qualityStory}</正文><短期记忆>暂缓收费，待核算。</短期记忆><变量规划>[]</变量规划>`;
       return new Response(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n`, { headers: { 'content-type': 'text/event-stream' } });
     }
     const context = sentContext(body.messages);
-    const content = stage === 'variables' ? qualityVariables() : JSON.stringify({ ...emptyWorld(), worldCommands: [{ type: 'RecordNpcMemory', commandId: 'offscreen-message', expectedRevision: state.revision, npcId: 'other', evidence: '离场记者收到消息', addToKnownInformation: false, knowledgeKind: 'reported', memory: { id: 'other-reported', text: '[转述]' + reportedMemory, knowledgeSource: '林澄发来的消息', visibility: 'npc_private', sourceTurnIds: [initial.turnId], affectedEntityRefs: [{ kind: 'npc', id: 'other' }], createdAtGameTime: (context.SAVE_STATE as { worldClock: string }).worldClock } }] });
+    const content = stage === 'variables' || stage === 'entities' ? stageFixtureReply(stage, qualityVariables()) : JSON.stringify({ ...emptyWorld(), worldCommands: [{ type: 'RecordNpcMemory', commandId: 'offscreen-message', expectedRevision: state.revision, npcId: 'other', evidence: '离场记者收到消息', addToKnownInformation: false, knowledgeKind: 'reported', memory: { id: 'other-reported', text: '[转述]' + reportedMemory, knowledgeSource: '林澄发来的消息', visibility: 'npc_private', sourceTurnIds: [initial.turnId], affectedEntityRefs: [{ kind: 'npc', id: 'other' }], createdAtGameTime: (context.SAVE_STATE as { worldClock: string }).worldClock } }] });
     return Response.json({ choices: [{ message: { content }, finish_reason: 'stop' }] });
   });
   const coordinator = new TurnCoordinator(repo, new AiClient(fetcher));
@@ -123,7 +124,7 @@ it('真实Coordinator→Runtime→Mock→候选→Commit：亲历/推测/转述�
     expect(saved.state.npc.person.memories.at(-1)?.text).toBe(experiencedMemory);
     expect(saved.state.npc.special.memories.at(-1)?.text).toBe('[推测]' + suspectedMemory);
     expect(saved.state.npc.other.memories.at(-1)).toMatchObject({ text: '[转述]' + reportedMemory, knowledgeKind: 'reported', knowledgeSource: '林澄发来的消息', visibility: 'npc_private', sourceTurnIds: [initial.turnId] });
-    expect(calls).toEqual(['story', 'variables', 'world']); expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(calls).toEqual(['story', 'entities', 'variables', 'world']); expect(fetcher).toHaveBeenCalledTimes(4);
   } finally { coordinator.dispose(); }
 });
 

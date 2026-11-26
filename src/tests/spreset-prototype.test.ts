@@ -89,3 +89,32 @@ describe('真实供应商边界优先于输出处理器', () => {
     await expect(pending).rejects.toMatchObject({ code: 'cancelled' });
   });
 });
+
+for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
+  it.each([false, true])(protocol + ' 完整纯文本经实际处理器正常交付，收据为空（stream=%s）', async streaming => {
+    const content = '<正文>杯。</正文><短期记忆>核对杯子。</短期记忆><变量规划>[]</变量规划>';
+    let json: unknown, events: unknown[];
+    if (protocol === 'anthropic') {
+      const block = { type: 'text', text: content };
+      json = { type: 'message', role: 'assistant', content: [block], stop_reason: 'end_turn' };
+      events = [{ type: 'message_start', message: { role: 'assistant' } },
+        { type: 'content_block_start', index: 0, content_block: { ...block, text: '' } },
+        { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: content } },
+        { type: 'content_block_stop', index: 0 }, { type: 'message_delta', delta: { stop_reason: 'end_turn' } }, { type: 'message_stop' }];
+    } else if (protocol === 'gemini') {
+      json = { candidates: [{ content: { role: 'model', parts: [{ text: content }] }, finishReason: 'STOP' }] };
+      events = [json];
+    } else {
+      json = { choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }] };
+      events = [{ choices: [{ delta: { role: 'assistant', content } }] }, { choices: [{ delta: {}, finish_reason: 'stop' }] }];
+    }
+    const response = streaming ? sse(...events.map(e => JSON.stringify(e)),
+      ...(protocol === 'openai' || protocol === 'deepseek' ? ['[DONE]'] : [])) : Response.json(json);
+    const processor = await start();
+    processor('prepare', request);
+    const upstream = await readPrototypeResponse(response, protocol, signal);
+    expect(upstream.text).toBe(content);
+    expect(upstream.call).toBeUndefined();
+    expect(processor('finish', { text: upstream.text, call: upstream.call })).toEqual({ output: content, receipt: null });
+  });
+}

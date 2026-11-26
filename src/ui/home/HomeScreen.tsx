@@ -67,7 +67,7 @@ export function HomeScreen({ count, loading, canCreate, active, hasDraft, notice
         </div>
         {notices}{hasDraft && <p className="hint">有尚未完成的创角资料，开始新游戏可继续填写。</p>}
       </div>
-      <footer className="cover-foot"><div className="notes"><span>八座城市 · 自定义起点 · 开放人生</span><span>三阶段生成 · 原子结算 · 连续回合</span></div><nav className="cities" aria-label="封面城市">{ORDER.map(c => <button key={c} aria-pressed={current === c} disabled={reduced && c !== 'cq'} onClick={() => { setCity(c); restart(); }}>{CITY[c][0]}</button>)}</nav></footer>
+      <footer className="cover-foot"><div className="notes"><span>八座城市 · 自定义起点 · 开放人生</span><span>四阶段生成 · 原子结算 · 连续回合</span></div><nav className="cities" aria-label="封面城市">{ORDER.map(c => <button key={c} aria-pressed={current === c} disabled={reduced && c !== 'cq'} onClick={() => { setCity(c); restart(); }}>{CITY[c][0]}</button>)}</nav></footer>
     </section>
     <section id="library" className={`screen library ${library ? 'on' : ''}`} hidden={!library} inert={!library} aria-label="已有存档">
       <div className="lib-skyline" aria-hidden="true" dangerouslySetInnerHTML={{ __html: skyline('cq', 'aria-hidden="true"') }} />

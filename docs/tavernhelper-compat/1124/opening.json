@@ -1,0 +1,146 @@
+[
+  {
+    "protocol": "anthropic",
+    "stream": false,
+    "device": "desktop",
+    "bytes": 105966,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "anthropic",
+    "stream": false,
+    "device": "mobile",
+    "bytes": 105966,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "anthropic",
+    "stream": true,
+    "device": "desktop",
+    "bytes": 105965,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "anthropic",
+    "stream": true,
+    "device": "mobile",
+    "bytes": 105965,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "deepseek",
+    "stream": false,
+    "device": "desktop",
+    "bytes": 106605,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "deepseek",
+    "stream": false,
+    "device": "mobile",
+    "bytes": 106605,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "deepseek",
+    "stream": true,
+    "device": "desktop",
+    "bytes": 106604,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "deepseek",
+    "stream": true,
+    "device": "mobile",
+    "bytes": 106604,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "gemini",
+    "stream": false,
+    "device": "desktop",
+    "bytes": 106055,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "gemini",
+    "stream": false,
+    "device": "mobile",
+    "bytes": 106055,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "gemini",
+    "stream": true,
+    "device": "desktop",
+    "bytes": 106055,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "gemini",
+    "stream": true,
+    "device": "mobile",
+    "bytes": 106055,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "openai",
+    "stream": false,
+    "device": "desktop",
+    "bytes": 106605,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "openai",
+    "stream": false,
+    "device": "mobile",
+    "bytes": 106605,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "openai",
+    "stream": true,
+    "device": "desktop",
+    "bytes": 106604,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  },
+  {
+    "protocol": "openai",
+    "stream": true,
+    "device": "mobile",
+    "bytes": 106604,
+    "tools": [],
+    "posts": 1,
+    "saved": true
+  }
+]

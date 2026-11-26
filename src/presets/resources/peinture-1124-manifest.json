@@ -1,0 +1,39 @@
+{
+  "id": "peinture-1124",
+  "version": "heijin.1",
+  "lockedOff": [
+    "wave-noise-anchor",
+    "wave-attention-dilution",
+    "main",
+    "wave-license",
+    "nsfw",
+    "wave-timebar",
+    "wave-extra-options",
+    "wave-extra-summary",
+    "wave-extra-review",
+    "wave-extra-comment",
+    "wave-extra-parallel",
+    "wave-mvu-adapter",
+    "wave-custom-format",
+    "wave-custom-content",
+    "wave-custom-cot",
+    "wave-archive-memory",
+    "wave-native-thinking-detour",
+    "wave-summary-all",
+    "wave-chat-with-wave",
+    "wave-extra-weather",
+    "wave-extra-physiology"
+  ],
+  "title": "我即浪潮 · 1124 anime",
+  "author": "⁺✞ʚ界徐盛重度依赖ɞ✟",
+  "credits": {
+    "outputTruncationSource": "S喵 昆仑",
+    "compatibilityGuidance": "小猫之神"
+  },
+  "sourceSha256": "039a40e88709ecc7c61b6a25ea5a13511cfd6b5a4ae1de3756992a47bc1c267f",
+  "scriptEditions": {
+    "86ab574f-a083-4590-944d-88e90585034f": "王朝适配 · 1124",
+    "2fd98e2e-bd2b-4b18-a720-f52ce74a4a35": "潮汐控制台 · 1124",
+    "f80c9901-cdef-4511-a234-123104501103": "王朝只读时序 · 1124"
+  }
+}

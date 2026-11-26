@@ -2,7 +2,7 @@ import {useDesktopFeedback} from '../Feedback';
 import { useSyncExternalStore } from 'react';
 import { requestInspections } from '../../services/ai/inspection';
 
-const names = { story: '正文', variables: '变量', world: '动态世界', memory: '记忆维护', theater: '小剧场' };
+const names = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', memory: '记忆维护', theater: '小剧场' };
 // 只读数字和已脱敏模型名；不展示输入正文、NPC身份或私有内容，也不合并多次请求。
 // stage：PC 三阶段面板在各阶段概览里只显示该阶段的请求；完整列表仍在运行诊断。
 /** 供应商返回缓存统计时才显示；命中与写入都已包含在实际输入里，不是另外收费的数量。 */
@@ -10,7 +10,7 @@ function cacheText(actual: { cacheReadTokens?: number; cacheWriteTokens?: number
   const parts = [actual.cacheReadTokens !== undefined ? `缓存命中：${actual.cacheReadTokens}` : '', actual.cacheWriteTokens !== undefined ? `缓存写入：${actual.cacheWriteTokens}` : ''].filter(Boolean);
   return parts.length ? `；${parts.join('；')}（已含在实际输入内）` : '';
 }
-export function RequestUsage({ saveId, memoryOnly = false, stage }: { saveId: string; memoryOnly?: boolean; stage?: 'story' | 'variables' | 'world' }) {
+export function RequestUsage({ saveId, memoryOnly = false, stage }: { saveId: string; memoryOnly?: boolean; stage?: 'story' | 'entities' | 'variables' | 'world' }) {
   const desktop=useDesktopFeedback();
   const records = useSyncExternalStore(requestInspections.subscribe, requestInspections.getSnapshot);
   const selected = records.filter((item) => item.scope?.saveId === saveId && (stage ? item.stage === stage : memoryOnly ? item.stage === 'memory' : item.stage !== 'memory')).slice(0, 6);

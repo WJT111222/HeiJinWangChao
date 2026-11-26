@@ -101,7 +101,7 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
     expect(wires[0]).toContain('我在博物馆核对蓝釉瓷杯。');
     expect(wires[0]).not.toContain('c2-fixture-credential');
     expect(result.afterCandidate).toBe(result.before);
-    expect(result).toMatchObject({ turnDelta: 1, revisionDelta: 1, writing: { source: 'preset', id: 'spreset-c2', configurationVersion: 3 },
+    expect(result).toMatchObject({ turnDelta: 1, revisionDelta: 1, writing: { source: 'preset', id: 'spreset-c2', configurationVersion: 4 },
       candidate: narrative, committed: narrative, replayed: false });
     await info.attach('c2-wire', { contentType: 'application/json', body: JSON.stringify({ protocol, stream, name, choice, posts: wires.length,
       endpoint: new URL(response.url()).pathname, responseBytes: bytes.length,
@@ -195,12 +195,12 @@ test('刷新与预设切换清除实验会话，非正文阶段继续使用原�
     const channel = newChannel('openai');
     channel.baseUrl = 'https://spreset.mock.invalid'; channel.defaultModel = 'synthetic';
     const vault = new CredentialVault(sessionStorage, localStorage); vault.set(channel.id, 'fixture-only');
-    for (const stage of ['variables', 'world', 'memory', 'theater']) {
+    for (const stage of ['entities', 'variables', 'world', 'memory', 'theater']) {
       const snapshot = channelSnapshot(channel, vault, channel.defaultModel, stage);
       await new AiClient().generate(snapshot, [{ role: 'user', content: stage }], { stream: false, spresetPrototype: true });
     }
   });
-  expect(wires).toHaveLength(4);
+  expect(wires).toHaveLength(5);
   for (const body of wires) { expect(JSON.parse(body)).not.toHaveProperty('tools'); expect(body).not.toContain('submit_scene'); }
   expect(workers).toBe(0);
   await page.goto('/');

@@ -71,7 +71,7 @@ async function seed(page: Page, endpoint: string, appearance: 'day' | 'night') {
     } finally { repo.close(); }
     const settings = defaultSettings();
     settings.display.appearance = appearance;
-    settings.runtime.useVariableStage = false;
+    settings.runtime.useEntityStage = false; settings.runtime.useVariableStage = false;
     settings.runtime.useWorldStage = false;
     settings.runtime.streamStory = true;
     settings.prompts.actionOptions = false;

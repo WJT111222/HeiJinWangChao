@@ -1,3 +1,4 @@
+import { stageFixtureReply } from '../src/tests/fixtures/variableReply';
 import { openNpcRoster, closeNpcRoster, selectNpc, rosterGame } from './helpers/npcRoster';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -5,7 +6,7 @@ import { seedSummary, summaryState } from './helpers/memorySummary';
 
 const profile={detailedBackground:'在海边长大，学习设计后进入工作室，仍与家人保持联系。',activeGoals:['完成一项长期合作'],habits:['随身记录灵感'],offscreenTaskIds:[],relationshipNetwork:[{name:'顾林',relationship:'旧同学',description:'偶尔联系',affinity:null}]};
 async function seedPlayable(page:Page){
- await seedSummary(page,{count:10,npcCount:3,automatic:false});
+ await seedSummary(page,{entities:true,count:10,npcCount:3,automatic:false});
  await page.evaluate(async()=>{
   const r='/src/services/storage/saveRepository.ts',d='/src/domain/drafts.ts';
   const {SaveRepository}=await import(r),{createTurnDraft}=await import(d),repo=await SaveRepository.open();
@@ -33,9 +34,9 @@ async function mock(page:Page){
    await route.fulfill({contentType:'text/event-stream',body:`data: ${JSON.stringify({choices:[{delta:{content:story}}]})}\n\ndata: [DONE]\n\n`});return;
   }
   const owner=context.SAVE_STATE.npc['npc-a'];
-  const commands=stage==='variables'&&owner.importancePreference!=='ordinary'?
+  const commands=stage==='entities'&&owner.importancePreference!=='ordinary'?
     `set npc[npc-a].specialProfile = ${JSON.stringify(profile)}\nset npc[npc-a].phoneContact = {"status":"known","note":"本人提供可用联系方式"}\nset npc[npc-a].usualLocations = [{"locationId":"${context.SAVE_STATE.protagonist.locationId}","role":"work","knownToProtagonist":true}]`:'';
-  const content=stage==='variables'?`<thinking>依据正文更新。</thinking><说明></说明><命令>\n${commands}\n</命令>`:JSON.stringify({worldCommands:[],taskCommands:[],eventCommands:[],visibleHooks:[],unresolved:[]});
+  const content=stage==='entities'||stage==='variables'?stageFixtureReply(stage,`<thinking>依据正文更新。</thinking><说明></说明><命令>\n${commands}\n</命令>`):JSON.stringify({worldCommands:[],taskCommands:[],eventCommands:[],visibleHooks:[],unresolved:[]});
   await route.fulfill({json:{choices:[{message:{content},finish_reason:'stop'}]}});
  });return {calls,contexts};
 }
@@ -45,16 +46,16 @@ test('真实发送自动升级→玩家取消→下一回合不重新升级→�
  const before=await summaryState(page);await page.getByLabel('你的行动',{exact:true}).fill('继续了解对方并讨论合作');await page.getByRole('button',{name:'发送',exact:true}).click();
  await expect.poll(async()=>(await summaryState(page)).turnNumber,{timeout:15000}).toBe(before.turnNumber+1);
  const upgraded=await summaryState(page);expect(upgraded.npc['npc-a']).toMatchObject({kind:'special',detailedBackground:profile.detailedBackground,phoneContact:{status:'known'}});
- expect(upgraded.npc['npc-a'].identityKey).toBe(before.npc['npc-a'].identityKey);expect(upgraded.npc['npc-a'].memories).toEqual(before.npc['npc-a'].memories);expect(calls).toEqual(['story','variables','world']);
+ expect(upgraded.npc['npc-a'].identityKey).toBe(before.npc['npc-a'].identityKey);expect(upgraded.npc['npc-a'].memories).toEqual(before.npc['npc-a'].memories);expect(calls).toEqual(['story','entities','variables','world']);
  await manage(page,'ordinary');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
- expect((await summaryState(page)).npc['npc-a'].kind).toBe('ordinary');expect(calls).toHaveLength(3);
+ expect((await summaryState(page)).npc['npc-a'].kind).toBe('ordinary');expect(calls).toHaveLength(4);
  await page.getByLabel('你的行动',{exact:true}).fill('与对方继续普通交谈');await page.getByRole('button',{name:'发送',exact:true}).click();
  await expect.poll(async()=>(await summaryState(page)).turnNumber,{timeout:15000}).toBe(before.turnNumber+2);
  const ordinary=await summaryState(page);expect(ordinary.npc['npc-a'].importancePreference).toBe('ordinary');expect(ordinary.npc['npc-a'].kind).toBe('ordinary');
  const context=contexts.filter(c=>c.NPC_IMPORTANCE).at(-1)!;expect(context.NPC_IMPORTANCE).toEqual(expect.arrayContaining([expect.objectContaining({npcId:'npc-a',playerPreference:'ordinary',canRestoreProfile:true})]));
  expect(JSON.stringify(context)).not.toContain(profile.detailedBackground);
  const restored=await manage(page,'special');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
- expect(restored.state.npc['npc-a']).toEqual({...upgraded.npc['npc-a'],importancePreference:'special'});expect(restored.state.turnNumber).toBe(ordinary.turnNumber);expect(restored.state.worldClock).toBe(ordinary.worldClock);expect(calls).toEqual(['story','variables','world','story','variables','world']);
+ expect(restored.state.npc['npc-a']).toEqual({...upgraded.npc['npc-a'],importancePreference:'special'});expect(restored.state.turnNumber).toBe(ordinary.turnNumber);expect(restored.state.worldClock).toBe(ordinary.worldClock);expect(calls).toEqual(['story','entities','variables','world','story','entities','variables','world']);
 });
 
 test('玩家首升立即持久化待完善，正常Variables补齐且没有独立资料AI请求',async({page})=>{
@@ -65,7 +66,7 @@ test('玩家首升立即持久化待完善，正常Variables补齐且没有独�
  await expect.poll(async()=>(await summaryState(page)).turnNumber,{timeout:15000}).toBe(before.turnNumber+1);
  const saved=await summaryState(page);expect(saved.npc['npc-a']).not.toHaveProperty('profilePending');expect(saved.npc['npc-a'].detailedBackground).toBe(profile.detailedBackground);
  expect(contexts.find(c=>c.NPC_IMPORTANCE)!.NPC_IMPORTANCE).toEqual(expect.arrayContaining([expect.objectContaining({npcId:'npc-a',profilePending:true,playerPreference:'special'})]));
- expect(calls).toEqual(['story','variables','world']);await page.reload();await expect(page.locator('.game-layout')).toBeVisible();expect(await summaryState(page)).toEqual(saved);expect(calls).toHaveLength(3);
+ expect(calls).toEqual(['story','entities','variables','world']);await page.reload();await expect(page.locator('.game-layout')).toBeVisible();expect(await summaryState(page)).toEqual(saved);expect(calls).toHaveLength(4);
 });
 
 test('双标签页管理CAS与待输入草稿持久化，操作不发请求也不推进时间',async({page,context})=>{

@@ -18,7 +18,7 @@ async function seed(page: Page) {
     const [{ SaveRepository }, { worldState }, { completeDraft }, { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }, { defaultSettings, settingsKey }] = await Promise.all(paths.map((p) => import(p)));
     const settings = defaultSettings();
     const saved = JSON.parse(localStorage.getItem(settingsKey) ?? 'null') as { runtime?: object } | null;
-    settings.runtime = { ...settings.runtime, ...saved?.runtime };
+    settings.runtime = { ...settings.runtime, ...saved?.runtime, useEntityStage:false };
     settings.prompts.minNarrativeChars = 5;
     settings.prompts.actionOptions = false;
     for (const summary of Object.values(settings.memory.summaries) as { automatic: boolean }[]) summary.automatic = false;

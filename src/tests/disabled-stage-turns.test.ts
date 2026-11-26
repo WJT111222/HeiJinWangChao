@@ -1,6 +1,7 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
-import { configureTurnStages, createTurnDraft, rerollStory } from '../domain/drafts';
+import { configureTurnStages, rerollStory } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import { completeTurnDraft, settlementDraft } from '../domain/turnCommit';
 import { openingSettlementIssue } from '../services/validation/turnCommit';
@@ -14,7 +15,7 @@ import { CredentialVault } from '../services/ai/credentials';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
 import { generateAndSettleTurn } from '../workflows/automaticTurn';
 import { buildCreationState, newCreation } from '../ui/creation/model';
-import { defaultSettings } from '../ui/settings/model';
+
 import { worldState, worldResult } from './fixtures/world';
 import { completeDraft } from './fixtures/turn';
 import { variableReply } from './fixtures/variableReply';
@@ -127,7 +128,7 @@ it('切换为纯小说独立重验时间；重新启用 Variables 时零请求�
   const noTransport = vi.fn<typeof fetch>(), resumed = runner(noTransport);
   await expect(run(resumed, generated.draft)).rejects.toMatchObject({ code: 'OPENING_TIME' });
   const switched = (await repo.loadDraft(state.saveId))!;
-  expect(switched).toMatchObject({ useVariableStage: false, useWorldStage: false, variables: generated.draft.variables });
+  expect(switched).toMatchObject({ useVariableStage: false, useWorldStage: false, inactiveCandidates: {variables: generated.draft.variables} });
   expect(openingSettlementIssue(state, settlementDraft(switched))?.diagnostic).toMatchObject({ reason: 'opening_missing', clockSource: 'none' });
   expect(await repo.load(state.saveId)).toEqual(state);
   const recovery = (await run(resumed, switched, setup(true))).committed!;
@@ -156,8 +157,8 @@ it.each([true, false])('普通回合结构化 time:pause=%s 也不更新纯小�
 it('已有合法三阶段候选关闭后仍保存以供复用，纯小说结算不应用其现金及世界变化', async () => {
   const { state } = await seed(), original = await completeDraft(repo);
   const transport = vi.fn<typeof fetch>(); const result = await run(runner(transport), original);
-  expect(transport).not.toHaveBeenCalled(); expect(result.outcome.draft.variables).toEqual(original.variables);
-  expect(result.outcome.draft.world).toEqual(original.world);
+  expect(transport).not.toHaveBeenCalled(); expect(result.outcome.draft.inactiveCandidates?.variables).toEqual(original.variables);
+  expect(result.outcome.draft.inactiveCandidates?.world).toEqual(original.world);
   expect(result.committed?.state.economy).toEqual(state.economy); expect(result.committed?.state.worldClock).toBe(state.worldClock);
   expect(result.committed?.state.appliedCommands).toEqual(state.appliedCommands);
 });
@@ -181,15 +182,20 @@ it('设置只冻结一次：运行中启用两个下游不能改变本次已保�
   expect(calls).toEqual(['story']); expect(result.committed?.draft.useVariableStage).toBe(false);
 });
 
-it('World-only只能预览，不伪造变量，不提交；改为纯小说丢弃preview后无请求结算', async () => {
-  const { draft, state } = await seed(), calls: string[] = [];
-  const r = runner(async (_url, init) => { const stage = JSON.parse(String(init!.body)).model; calls.push(stage); return json(stage === 'story' ? story() : JSON.stringify(worldResult())); });
-  const preview = await run(r, draft, setup(false, true));
-  expect(preview.outcome.status).toBe('preview'); expect(preview.committed).toBeUndefined();
-  expect(preview.outcome.draft.variables).toBeUndefined(); expect(completeTurnDraft(preview.outcome.draft)).toBe(false);
-  expect(await repo.load(state.saveId)).toEqual(state);
-  expect((await run(r, preview.outcome.draft)).committed?.state.turnNumber).toBe(1);
-  expect(calls).toEqual(['story', 'world']);
+it('单独启用场外只发送正文与场外请求，基于已有时钟结算一次', async () => {
+  const {draft,state}=await seed(), calls:string[]=[];
+  const r=runner(async (_url,init)=>{
+    const stage=JSON.parse(String(init!.body)).model;
+    calls.push(stage);
+    return json(stage==='story' ? story() : JSON.stringify(worldResult()));
+  });
+  const result=await run(r,draft,setup(false,true));
+  expect(result.outcome.status).toBe('complete');
+  expect(result.outcome.draft.variables).toBeUndefined();
+  expect(completeTurnDraft(result.outcome.draft)).toBe(true);
+  expect(result.committed?.state.turnNumber).toBe(1);
+  expect((await repo.load(state.saveId)).economy).toEqual(state.economy);
+  expect(calls).toEqual(['story','world']);
 });
 
 it.each(['empty', 'short', 'network', 'truncated'] as const)('Story %s 不提前提交，正式世界完全不变', async mode => {

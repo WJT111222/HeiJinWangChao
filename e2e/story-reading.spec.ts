@@ -10,7 +10,7 @@ async function seed(page: Page, options: { history?: string; draft?: string; bas
   await page.evaluate(async options => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/world.ts', '/src/domain/drafts.ts', '/src/tests/fixtures/turn.ts', '/src/ui/settings/model.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts'];
     const [{ SaveRepository }, { worldState }, { createTurnDraft, rerollStory }, { completeDraft, submission }, { defaultSettings, settingsKey }, { defaultAiConfig, newChannel, saveAiConfig }, { CredentialVault }] = await Promise.all(paths.map(path => import(path)));
-    const settings = defaultSettings(); settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     if (options.baseUrl) {
       const channel = newChannel(), config = defaultAiConfig(); channel.baseUrl = options.baseUrl;
@@ -27,7 +27,7 @@ async function seed(page: Page, options: { history?: string; draft?: string; bas
       if (options.history) {
         const complete = await completeDraft(repo, { narrative: options.history, variables: { commands: [], rejectedSuggestions: [], unresolved: [] } });
         draft = (await repo.commitTurn(submission(complete, '看窗外'))).draft;
-      } else { draft = createTurnDraft('save-a', 0, 'reading-opening', 'opening', ''); await repo.saveDraft(draft, null); }
+      } else { draft = createTurnDraft('save-a', 0, 'reading-opening', 'opening', '', true, true, false); await repo.saveDraft(draft, null); }
       if (options.draft) await repo.saveDraft(rerollStory(draft, { turnKind: draft.turnKind, narrative: options.draft, summary: '等雨停。', variableGuide: [] }), draft.draftRevision);
     } finally { repo.close(); }
   }, options);

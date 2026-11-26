@@ -5,9 +5,9 @@ import { currentStanding, type Harem, type HaremBackgroundCommandSchema, type Ha
 import { householdIssue } from './validation';
 
 // commitCommands owns the parsed working copy. No intermediate operation writes to storage.
-export function applyHarem(state: GameState, command: z.infer<typeof HaremCommandSchema>, turnId: string) {
+export function applyHarem(state: GameState, command: z.infer<typeof HaremCommandSchema>, turnId: string, pendingSceneClock = false) {
   requireData(command.expectedRevision === state.revision, 'REVISION_CONFLICT', '后宫候选的存档版本已改变');
-  applyHouseholdEdits(state, command.changes, turnId);
+  applyHouseholdEdits(state, command.changes, turnId, pendingSceneClock);
 }
 
 /** World 的场外推进：只接受计划、成员关系与总体局势，且必须已有现役成员。 */
@@ -17,7 +17,7 @@ export function applyHaremBackground(state: GameState, command: z.infer<typeof H
   applyHouseholdEdits(state, command.changes, turnId);
 }
 
-function applyHouseholdEdits(state: GameState, changes: z.infer<typeof HaremCommandSchema>['changes'], turnId: string) {
+function applyHouseholdEdits(state: GameState, changes: z.infer<typeof HaremCommandSchema>['changes'], turnId: string, pendingSceneClock = false) {
   const h: Harem = state.harem ?? { members: {}, pairs: [], children: [] };
   const editedPairs = new Set<string>();
   for (const edit of changes) {
@@ -98,7 +98,7 @@ function applyHouseholdEdits(state: GameState, changes: z.infer<typeof HaremComm
     member.changes.push({ ...source, from, to: edit.op === 'leave' ? null : edit.to });
     if (edit.op === 'leave') delete member.plan;
   }
-  const issue = householdIssue(h, state.npc, state.worldClock);
+  const issue = householdIssue(h, state.npc, state.worldClock, pendingSceneClock ? turnId : undefined);
   requireData(!issue, 'HAREM_STATE', issue ?? '');
   state.harem = h;
 }

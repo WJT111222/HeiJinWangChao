@@ -1,3 +1,4 @@
+import { sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { describe, expect, it } from 'vitest';
 import { GameStateSchema } from '../domain/state';
 import type { WorldEvent } from '../domain/events/schema';
@@ -33,7 +34,7 @@ describe('due continuation candidates',()=>{
   });
 });
 
-import { createTurnDraft, rerollStory, TurnDraftSchema } from '../domain/drafts';
+import { rerollStory, TurnDraftSchema } from '../domain/drafts';
 import { validateStoryEventInteractions, pendingEventEntries } from '../domain/events/interactions';
 import { contextFor } from '../prompts/context';
 import { defaultSettings } from '../ui/settings/model';

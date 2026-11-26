@@ -251,3 +251,27 @@
 @media (prefers-reduced-motion: reduce) {
   .peinture-panel :is(button, input, textarea) { transition: none; }
 }
+
+/* Independent tide palette. The surrounding game retains its selected appearance. */
+:root .app-shell dialog.modal.peinture-panel.peinture-anime.tide-night {
+  --sheet: #192c35; --card: #243b42; --field: #17272e; --head: #f4e8d3; --muted: #c2ccc3;
+  --line: #678083; --hair: #c1cfc443; --gold: #a6d6cc; --selected: #354d50;
+  --pos: #a6d6cc; --neg: #ffb5a2; --confirm: #3c3935; --key-bg: #b7d8c8; --key-text: #192b2b;
+  --switch-off: #687d7c; --link: #c3e3dc; color-scheme: dark;
+}
+:root .app-shell dialog.modal.peinture-panel.peinture-anime.tide-day {
+  --sheet: #e8eee8; --card: #f4f4eb; --field: #fffdf5; --head: #183235; --muted: #425b58;
+  --line: #708983; --hair: #355d5340; --gold: #265b59; --selected: #d1e2d9;
+  --pos: #285d4d; --neg: #793b35; --confirm: #efe4d2; --key-bg: #294f50; --key-text: #f7f3e6;
+  --switch-off: #657b73; --link: #27575a; color-scheme: light;
+}
+.peinture-anime .peinture-identity { border-inline-start: 3px solid var(--gold); padding-inline-start: .8rem; }
+.peinture-entry-editor { margin-block: 1rem; }
+.peinture-entry-editor summary { width: fit-content; cursor: pointer; color: var(--link); }
+.peinture-entry-editor label { display: grid; gap: .35rem; margin-block: .75rem; }
+.peinture-entry-editor :is(select, textarea) { width: 100%; min-width: 0; color: var(--head); background: var(--field); }
+
+.peinture-anime .peinture-frame { color: var(--head); background-color: var(--sheet); }
+.peinture-anime .tide-mark { width: clamp(2rem, 5vw, 3.6rem); height: auto; flex: none; object-fit: contain; }
+.peinture-anime .tide-appearance label { display: flex; align-items: center; gap: .7rem; margin-block: .65rem; flex-wrap: wrap; }
+.peinture-anime .peinture-chips button:disabled { opacity: .65; cursor: default; }

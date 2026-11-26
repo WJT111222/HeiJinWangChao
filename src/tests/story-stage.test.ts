@@ -149,7 +149,7 @@ describe('真实正文入口与草稿原子替换', () => {
       expect(saved.turnId).toBe(draft.turnId);
       expect(saved.userInput).toBe('');
       expect(saved.useVariableStage).toBe(false);
-      expect(saved.stageStatus).toEqual({ story: 'ready', variables: 'skipped', world: 'pending' });
+      expect(saved.stageStatus).toEqual({ story: 'ready', entities: 'skipped', variables: 'skipped', world: 'pending' });
       expect(visible.some((text) => text.length > 0 && text.length < narrative.length)).toBe(true);
       expect(visible.every((text) => narrative.startsWith(text))).toBe(true);
       expect(await repo.loadDraft(draft.saveId)).toEqual(saved);
@@ -319,7 +319,7 @@ describe('真实正文入口与草稿原子替换', () => {
   });
   it('重新 Roll 成功后递增版本，清除两种旧候选；同一回合、输入与执行开关保持不变', async () => {
     await repo.deleteDraft(draft.saveId, 0);
-    draft = createTurnDraft(draft.saveId, 0, 'both-stages', 'opening', '本回合绑定输入');
+    draft = createTurnDraft(draft.saveId, 0, 'both-stages', 'opening', '本回合绑定输入', true, true, false);
     await repo.saveDraft(draft, null);
     let old = rerollStory(draft, {
       turnKind: 'opening',

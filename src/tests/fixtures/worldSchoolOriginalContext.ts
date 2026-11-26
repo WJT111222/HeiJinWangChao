@@ -1,6 +1,7 @@
+import { stagedFixture } from './stageScope';
 import original from './world-school-original.json';
 import { GameStateSchema } from '../../domain/state';
-import { TurnDraftSchema, WorldResultSchema } from '../../domain/drafts';
+import { WorldResultSchema } from '../../domain/drafts';
 import { npc, organizationBase } from './game';
 import { worldDraft, worldState } from './world';
 
@@ -28,7 +29,7 @@ export function originalSchoolContext(actorsOnScene = true) {
   });
   const draftBase = worldDraft(true, 'opening');
   const facts = [...original.taskCommands, ...original.eventCommands].map(command => JSON.parse(command.evidence).fact);
-  const draft = TurnDraftSchema.parse({ ...draftBase, turnId: original.eventCommands[0].event.sourceTurnIds[0],
+  const draft = stagedFixture({ ...draftBase, turnId: original.eventCommands[0].event.sourceTurnIds[0],
     story: { ...draftBase.story, narrative: facts.join('\n'), summary: '合成来源旁白，仅用于隔离校验路径，不代表原始正文。' },
     variables: { ...draftBase.variables, result: { commands: [{ type: 'SetWorldClock', commandId: 'clock',
       worldClock: at, evidence: '测试回合时间' }], rejectedSuggestions: [], unresolved: [] } },

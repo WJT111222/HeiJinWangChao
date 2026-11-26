@@ -150,6 +150,14 @@ export class TurnCoordinator {
           return state;
         };
         const state = await reread();
+        const saved = (next: TurnDraft) => {
+          check();
+          draft = next;
+          input.onDraft?.(next);
+        };
+        const configured = configureTurnStages(draft, settings.runtime);
+        const beforeConfiguration = draft;
+        if (!input.consent) draft = configured;
         const storyReady = () => Boolean(draft.story && draft.stageStatus.story === 'ready');
         const variableReady = () =>
           draft.stageStatus.variables === 'ready' && draft.variables?.validation === 'validated';
@@ -160,11 +168,12 @@ export class TurnCoordinator {
         if (worldReady()) revalidateWorld(state, draft);
         const needed: AiStage[] = [];
         if (!storyReady()) needed.push('story');
-        if (settings.runtime.useVariableStage && (!variableReady() || needed.includes('story')))
+        if (settings.runtime.useEntityStage && (!draft.entities || needed.includes('story'))) needed.push('entities');
+        if (settings.runtime.useVariableStage && (!variableReady() || needed.length > 0))
           needed.push('variables');
         if (
           settings.runtime.useWorldStage &&
-          (!worldReady() || needed.includes('variables') || needed.includes('story'))
+          (!worldReady() || needed.length > 0)
         )
           needed.push('world');
         // 全部所需路由及凭证在首次付费前检查，关闭/已经合法完成的阶段不要求配置。
@@ -172,24 +181,17 @@ export class TurnCoordinator {
           && (!input.consent || !canContinueStory(draft, settings.prompts.minNarrativeChars)))
           throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_unknown' });
         for (const stage of needed) requestSnapshot(config, stage, vault);
-        // 在同一执行锁内CAS保存本次设置，之后所有阶段只使用此快照。
-        const configured = configureTurnStages(draft, settings.runtime);
-        if (!input.consent && configured.draftRevision !== draft.draftRevision) {
-          draft = await this.repository.saveDraft(configured, draft.draftRevision, attempt.controller.signal, draft);
+        if (!input.consent && configured.draftRevision !== beforeConfiguration.draftRevision) {
+          saved(await this.repository.saveDraft(configured, beforeConfiguration.draftRevision, attempt.controller.signal, beforeConfiguration));
           check();
-          input.onDraft?.(draft);
         }
         // 本次运行是否续写在开始时固定（玩家点「续写正文」）：自动重试也只能续写，绝不悄悄改成从头生成。
         const continueStory = canContinueStory(draft, settings.prompts.minNarrativeChars);
         const secrets = config.channels.map((channel) => vault.get(channel.id)).filter(Boolean);
         const story = new StoryStage(this.repository, this.client, session.guard(scope));
+        const entities = new VariableStage(this.repository, this.client, session.guard(scope), 'entities');
         const variables = new VariableStage(this.repository, this.client, session.guard(scope));
         const world = new WorldStage(this.repository, this.client, session.guard(scope));
-        const saved = (next: TurnDraft) => {
-          check();
-          draft = next;
-          input.onDraft?.(next);
-        };
         for (const stage of needed) {
           let previousFailure: unknown;
           for (let number = 1; ; number += 1) {
@@ -221,7 +223,7 @@ export class TurnCoordinator {
                     saved(await this.repository.saveDraft(next, draft.draftRevision, attempt.controller.signal, draft));
                 }
               } else {
-                const runner = stage === 'variables' ? variables : world;
+                const runner = stage === 'entities' ? entities : stage === 'variables' ? variables : world;
                 attempt.stage = runner;
                 saved(await runner.generate({ ...common, onDraft: saved, onProgress }));
               }
@@ -304,6 +306,7 @@ export class TurnCoordinator {
         const complete = completeTurnDraft(draft);
         if (complete && finalState.openingTimePending) requireOpeningSettlement(finalState, settlementDraft(draft));
         const skipped: AiStage[] = [];
+        if (draft.stageStatus.entities === 'skipped') skipped.push('entities');
         if (draft.stageStatus.variables === 'skipped') skipped.push('variables');
         if (draft.stageStatus.world === 'skipped') skipped.push('world');
         return {

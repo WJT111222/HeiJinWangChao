@@ -27,7 +27,7 @@ async function configure(page: Page, useWorldStage = true) {
     channel.baseUrl = 'https://loop.mock.invalid/v1';
     config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: 'story' };
-    config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' };
+    config.routes.entities = {mode:'independent',channelId:channel.id,modelId:'entities'}; config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' };
     config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
     saveAiConfig(localStorage, config);
     new CredentialVault(sessionStorage, localStorage).set(channel.id, 'mock-loop-secret');
@@ -98,7 +98,9 @@ async function mock(page: Page) {
       });
       return;
     }
-    if (stage === 'variables') {
+    if (stage === 'entities') {
+      text = variableReply({commands:[]});
+    } else if (stage === 'variables') {
       const state = variableRequestState.parse(ctx.SAVE_STATE),
         story = StorySchema.parse(ctx.STORY_RESULT);
       const opening = record(ctx.OPENING_TIME);
@@ -184,7 +186,7 @@ async function stored(page: Page) {
   });
   return { state: GameStateSchema.parse(saved.state), draft: TurnDraftSchema.parse(saved.draft) };
 }
-const workflow = (page: Page) => page.getByRole('region', { name: '三阶段工作流' });
+const workflow = (page: Page) => page.getByRole('region', { name: '四阶段工作流' });
 async function ready(page: Page, number = 1) {
   await expect(page.getByTestId('story-reader').locator('article').last()).toContainText(
     `第${number}幕`,
@@ -192,7 +194,7 @@ async function ready(page: Page, number = 1) {
   if ((page.viewportSize()?.width ?? 1000) <= 900) {
     await closeWorkflowSheet(page);
     await expect(page.getByRole('status').filter({ hasText: '本回合已结算' })).toBeVisible();
-  } else await expect(workflow(page)).toContainText('本回合已结算');
+  } else await expect(workflow(page)).toContainText('本回合已结算',{timeout:20_000});
 }
 async function opening(page: Page) {
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
@@ -252,7 +254,7 @@ test('真实创角后连续正式游玩十回合；输入、资料、正文历�
     }
   }
   const final = await stored(page);
-  expect(server.calls).toHaveLength(30);
+  expect(server.calls).toHaveLength(40);
   expect(final.state.journal[0].story.turnKind).toBe('opening');
   expect(final.state.journal.slice(1).every((j) => j.story.turnKind === 'regular')).toBe(true);
   expect(JSON.stringify(final.state)).not.toContain('绝不自动发布的后台线索');
@@ -286,10 +288,12 @@ test('下一轮生成失败不回滚上轮结算；刷新后只恢复尚未完�
   expect((await stored(page)).state.journal[0]).toEqual(failed.state.journal[0]);
   expect(server.calls).toEqual([
     'story',
+    'entities',
     'variables',
     'world',
     'story',
     'story',
+    'entities',
     'variables',
     'world',
   ]);
@@ -317,7 +321,7 @@ test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', a
   }, before.state.revision);
   await page.getByLabel('你的行动', { exact: true }).fill('等待下一轮');
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(() => server.calls.length).toBe(6);
+  await expect.poll(() => server.calls.length).toBe(8);
   if (isMobile) {
     const diagnostic = page.getByRole('dialog', { name: '重试与变更详情' });
     await expect(diagnostic).toBeVisible();
@@ -343,7 +347,7 @@ test('提交事务中途失败 UI 不虚报成功；重试后只结算一次', a
   expect(saved.state.turnNumber).toBe(2);
   expect(saved.state.revision).toBe(before.state.revision + 1);
   expect(saved.draft.baseSaveRevision).toBe(saved.state.revision);
-  expect(server.calls).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
+  expect(server.calls).toEqual(['story', 'entities', 'variables', 'world', 'story', 'entities', 'variables', 'world']);
 });
 
 test('快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿', async ({
@@ -392,7 +396,7 @@ test('快速双击与另一标签发送最多结算一次；成功后数据库�
   expect(result.state.journal).toHaveLength(2);
   expect(result.draft.baseSaveRevision).toBe(2);
   expect(result.draft.userInput).toBe('');
-  expect(server.calls).toEqual(['story', 'variables', 'world', 'story', 'variables', 'world']);
+  expect(server.calls).toEqual(['story', 'entities', 'variables', 'world', 'story', 'entities', 'variables', 'world']);
   await other.close();
 });
 
@@ -400,16 +404,16 @@ test('阶段未完成或主动关闭时，即使填写行动也不能部分结�
   await configure(page, false);
   const server = await mock(page);
   await createCharacter(page);
-  await expect(page.getByLabel('动态世界', { exact: true })).not.toBeChecked();
+  await expect(page.getByLabel('场外与网络', { exact: true })).not.toBeChecked();
   await expect(workflow(page).getByRole('status')).toContainText('阶段已关闭');
   await page.getByLabel('你的行动', { exact: true }).fill('等待');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
   expect((await stored(page)).state.turnNumber).toBe(0);
-  await page.getByLabel('动态世界', { exact: true }).check();
+  await page.getByLabel('场外与网络', { exact: true }).check();
   await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await ready(page);
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
-  expect(server.calls).toEqual(['story', 'variables', 'world']);
+  expect(server.calls).toEqual(['story', 'entities', 'variables', 'world']);
 });
 
 test('正式资金与时间显示新版本，结算后刷新不重复扣款', async ({ page }) => {

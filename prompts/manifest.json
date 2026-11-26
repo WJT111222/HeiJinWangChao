@@ -86,6 +86,7 @@
       "kind": "prompt",
       "applicableStages": [
         "story",
+        "entities",
         "variables",
         "world"
       ],
@@ -115,6 +116,7 @@
       "kind": "prompt",
       "applicableStages": [
         "story",
+        "entities",
         "variables",
         "world"
       ],
@@ -144,6 +146,7 @@
       "kind": "prompt",
       "applicableStages": [
         "story",
+        "entities",
         "variables",
         "world"
       ],
@@ -173,6 +176,7 @@
       "kind": "prompt",
       "applicableStages": [
         "story",
+        "entities",
         "variables",
         "world"
       ],
@@ -202,6 +206,7 @@
       "kind": "prompt",
       "applicableStages": [
         "story",
+        "entities",
         "variables",
         "world"
       ],
@@ -267,7 +272,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 10441,
+      "characters": 5460,
       "version": "0.8.0-m8-p0a",
       "messageRole": "system",
       "activation": "always",
@@ -277,7 +282,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "73e9f2d96a04f1fd75d82a88b2fe7d4e15e5959072f2e806baaa3f19271a2fd5",
+      "contentSha256": "1acf8f87f5199fb21bbfb7b97a0129b6d398e1ad603f477e730cbae8b1bf03d6",
       "placeholders": []
     },
     {
@@ -294,7 +299,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 17317,
+      "characters": 7631,
       "version": "1.0.0-world-freedom",
       "messageRole": "system",
       "activation": "always",
@@ -304,7 +309,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "b9433d3cad9e51ac23f3305a8fc074acc92fa62ab7d8771a49079b7c7c2d4ce0",
+      "contentSha256": "b827884472d6284db9995c0a5c334a557c8a40d9133d1bf56cb5093824327031",
       "placeholders": []
     },
     {
@@ -348,7 +353,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 1232,
+      "characters": 168,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "always",
@@ -358,7 +363,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "0880d1cd44027f54eafd72b4cc6ddbe1f7568b26c27d12389fc3859fb28a2ef6",
+      "contentSha256": "b2fe612bebef7695f97f921e56de486d0c894cfe4508351358a72b1bf2f72ca3",
       "placeholders": []
     },
     {
@@ -429,7 +434,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 401,
+      "characters": 124,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "always",
@@ -439,7 +444,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "c622cb517ec456dd989e5dbe5975286845901bd6cd7d4428a11ef957ee21e864",
+      "contentSha256": "e6278f9ce959129be871411df820d8ee8e168cba439f0e2d010d84c0a4541d83",
       "placeholders": []
     },
     {
@@ -579,14 +584,14 @@
       "title": "普通NPC｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
-        "variables"
+        "entities"
       ],
       "modes": [
         "opening"
       ],
       "toggle": null,
       "domain": "npc_ordinary",
-      "characters": 2355,
+      "characters": 2377,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "relevant-domain",
@@ -596,7 +601,7 @@
       "orderGroup": "variable_group",
       "reorderable": false,
       "category": "variable_group",
-      "contentSha256": "10329eac059c7f74e176f90dc844d32f2df50a4c690766cfb14dbc63f0395bf3",
+      "contentSha256": "acc885943d44439d15b35c2d6824804786b341465081103960e68b943528e959",
       "placeholders": []
     },
     {
@@ -605,14 +610,14 @@
       "title": "普通NPC｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
-        "variables"
+        "entities"
       ],
       "modes": [
         "regular"
       ],
       "toggle": null,
       "domain": "npc_ordinary",
-      "characters": 2346,
+      "characters": 2368,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "relevant-domain",
@@ -622,7 +627,7 @@
       "orderGroup": "variable_group",
       "reorderable": false,
       "category": "variable_group",
-      "contentSha256": "81ef99821493f0b8f4c86aa7ac41e5d75f25b5abf03b1aa8f9f18752602155d6",
+      "contentSha256": "f7060c8e766b9c7fcc35bea944ef7adaa9a1c9ffe659d5067b4228a5d5a84e8c",
       "placeholders": []
     },
     {
@@ -658,14 +663,14 @@
       "title": "特殊NPC｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
-        "variables"
+        "entities"
       ],
       "modes": [
         "opening"
       ],
       "toggle": null,
       "domain": "npc_special",
-      "characters": 3456,
+      "characters": 3478,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "relevant-domain",
@@ -675,7 +680,7 @@
       "orderGroup": "variable_group",
       "reorderable": false,
       "category": "variable_group",
-      "contentSha256": "c3a15471a55015ac10150a6e281c4260c05c55c02262ae621479e024fa2bd147",
+      "contentSha256": "53aab355e6c50a0227035cbb3962bc1cdd682e0293d40924dc2fc56888728930",
       "placeholders": []
     },
     {
@@ -684,14 +689,14 @@
       "title": "特殊NPC｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
-        "variables"
+        "entities"
       ],
       "modes": [
         "regular"
       ],
       "toggle": null,
       "domain": "npc_special",
-      "characters": 3447,
+      "characters": 3469,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "relevant-domain",
@@ -701,7 +706,7 @@
       "orderGroup": "variable_group",
       "reorderable": false,
       "category": "variable_group",
-      "contentSha256": "aa4692daa7d22f9177773704a82877e115e6d45e1a96b0ab8e2a0e0462bd7a92",
+      "contentSha256": "1a4bdf5a380c8c8c08eeac8207b94c96df03edcd9885dc08d0ec6d8de296fc1d",
       "placeholders": []
     },
     {
@@ -921,6 +926,7 @@
       "title": "黑帮势力｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
+        "entities",
         "variables"
       ],
       "modes": [
@@ -1000,6 +1006,7 @@
       "title": "官方势力｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
+        "entities",
         "variables"
       ],
       "modes": [
@@ -1079,6 +1086,7 @@
       "title": "民间组织｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
+        "entities",
         "variables"
       ],
       "modes": [
@@ -1158,6 +1166,7 @@
       "title": "企业与资本势力｜常规更新（文本变量）",
       "kind": "prompt",
       "applicableStages": [
+        "entities",
         "variables"
       ],
       "modes": [
@@ -1983,6 +1992,7 @@
       "kind": "prompt",
       "applicableStages": [
         "story",
+        "entities",
         "variables",
         "world"
       ],
@@ -2012,6 +2022,7 @@
       "kind": "prompt",
       "applicableStages": [
         "story",
+        "entities",
         "variables",
         "world"
       ],
@@ -2332,6 +2343,7 @@
       "title": "黑帮势力｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
+        "entities",
         "variables"
       ],
       "modes": [
@@ -2358,6 +2370,7 @@
       "title": "官方势力｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
+        "entities",
         "variables"
       ],
       "modes": [
@@ -2384,6 +2397,7 @@
       "title": "民间组织｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
+        "entities",
         "variables"
       ],
       "modes": [
@@ -2410,6 +2424,7 @@
       "title": "企业与资本势力｜初始化（文本变量）",
       "kind": "prompt",
       "applicableStages": [
+        "entities",
         "variables"
       ],
       "modes": [
@@ -2564,6 +2579,112 @@
       "reorderable": false,
       "category": "stage",
       "contentSha256": "a98cb1c3fd2601bd7cf60c69fe2f9dadfb9ff07631c3b8385c04748e598eaaee",
+      "placeholders": []
+    },
+    {
+      "id": "stages.opening.entities",
+      "path": "stages/opening/entities.md",
+      "title": "人物与实体",
+      "kind": "prompt",
+      "applicableStages": [
+        "entities"
+      ],
+      "modes": [
+        "opening"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 263,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 300,
+      "orderGroup": "stage",
+      "reorderable": false,
+      "category": "stage",
+      "contentSha256": "418677bd03c3e0291b29809274fbf6803ed8f0d926e86dfc1e53a4e317e029fd",
+      "placeholders": []
+    },
+    {
+      "id": "stages.regular.entities",
+      "path": "stages/regular/entities.md",
+      "title": "人物与实体",
+      "kind": "prompt",
+      "applicableStages": [
+        "entities"
+      ],
+      "modes": [
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 191,
+      "version": "0.1.0-m3-p1",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 300,
+      "orderGroup": "stage",
+      "reorderable": false,
+      "category": "stage",
+      "contentSha256": "083b24e8d3aa917d2258fc2804138e8b7f2a3b9ded3c1daf7c6fff65b57fdb86",
+      "placeholders": []
+    },
+    {
+      "id": "shared.entity_output",
+      "path": "shared/entity_output.md",
+      "title": "人物与实体输出规则",
+      "kind": "prompt",
+      "applicableStages": [
+        "entities"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 4066,
+      "version": "0.8.0-m8-p0a",
+      "messageRole": "system",
+      "activation": "always",
+      "permanent": true,
+      "configurable": false,
+      "defaultOrder": 407,
+      "orderGroup": "output",
+      "reorderable": false,
+      "category": "output",
+      "contentSha256": "4a4a854b87c302604de97018f2180de93da980de7bd9204ebb3ff302b605fd3d",
+      "placeholders": []
+    },
+    {
+      "id": "shared.history_output",
+      "path": "shared/history_output.md",
+      "title": "回顾往事输出规则",
+      "kind": "prompt",
+      "applicableStages": [
+        "world"
+      ],
+      "modes": [
+        "opening",
+        "regular"
+      ],
+      "toggle": null,
+      "domain": null,
+      "characters": 2106,
+      "version": "1.0.0-world-freedom",
+      "messageRole": "system",
+      "activation": "history-recording",
+      "permanent": false,
+      "configurable": false,
+      "defaultOrder": 408,
+      "orderGroup": "output",
+      "reorderable": false,
+      "category": "output",
+      "contentSha256": "ee49bf9535aefb5a43ace743daca645d3933a8aeb41dcac363b7c25f65dea544",
       "placeholders": []
     }
   ]

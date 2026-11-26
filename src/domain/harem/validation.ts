@@ -2,7 +2,7 @@ import type { NPC } from '../npc/schema';
 import { currentStanding } from './schema';
 import type { Harem } from './schema';
 
-export function householdIssue(h: Harem, people: Record<string, NPC>, clock: string): string | undefined {
+export function householdIssue(h: Harem, people: Record<string, NPC>, clock: string, pendingClockTurn?: string): string | undefined {
   const now = Date.parse(clock),
     members = Object.values(h.members);
   let active = 0,
@@ -35,7 +35,7 @@ export function householdIssue(h: Harem, people: Record<string, NPC>, clock: str
       due = p.estimatedDueAt && Date.parse(p.estimatedDueAt);
     if (
       at > now ||
-      [start, confirmed, end].some((t) => typeof t === 'number' && t > at) ||
+      (p.turnId !== pendingClockTurn && [start, confirmed, end].some((t) => typeof t === 'number' && t > at)) ||
       (typeof start === 'number' && [confirmed, end, due].some((t) => typeof t === 'number' && t < start)) ||
       (typeof confirmed === 'number' && typeof end === 'number' && end < confirmed) ||
       (p.status !== 'ended' && (p.endedAt || p.outcome)) ||
@@ -67,7 +67,7 @@ export function householdIssue(h: Harem, people: Record<string, NPC>, clock: str
       !Object.hasOwn(people, c.childNpcId) ||
       !Object.hasOwn(h.members, c.parentNpcId) ||
       Date.parse(c.at) > now ||
-      (c.bornAt && Date.parse(c.bornAt) > Date.parse(c.at))
+      (c.turnId !== pendingClockTurn && c.bornAt && Date.parse(c.bornAt) > Date.parse(c.at))
     )
       return '子嗣必须是已出生、无重复且引用有效的独立人物';
     const person = people[c.childNpcId];

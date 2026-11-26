@@ -36,8 +36,8 @@ async function seed(page: Page, automatic = false) {
         tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
       }; request.onerror = () => reject(request.error);
     });
-    if (automatic) { const storage = await SaveRepository.open(); try { await completeDraft(storage, { variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); } finally { storage.close(); } }
-    const settings = defaultSettings(); settings.memory.automaticMaintenance = automatic;
+    if (automatic) { const storage = await SaveRepository.open(); try { await completeDraft(storage, { useEntityStage:false, variables: await elapsedVariables(storage, '经过十分钟，主角完成用餐。', 600) }); } finally { storage.close(); } }
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.memory.automaticMaintenance = automatic;
     settings.memory.summaries.short.automatic = automatic; settings.memory.summaries.medium.automatic = automatic; settings.memory.summaries.npc.automatic = false;
     settings.prompts.minNarrativeChars = 1; settings.prompts.actionOptions = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
@@ -172,7 +172,7 @@ test('公开自动维护开关不授权NPC额外收费；新正式回合和下�
   });
   await seed(page, true); await page.reload(); await openGameTools(page); expect(tasks).toEqual([]);
   await page.getByLabel('你的行动', { exact: true }).fill('继续观察'); await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(() => stages.filter((model) => model !== 'memory')).toEqual(['story', 'variables', 'world']);
+  await expect.poll(() => stages.filter((model) => model !== 'memory'),{timeout:20000}).toEqual(['story', 'variables', 'world']);
   await expect.poll(async () => (await load(page)).memories.medium.length).toBe(1);
   await page.getByLabel('你的行动', { exact: true }).fill('继续等待'); await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
   expect(tasks).toEqual(['memory.short_to_medium']);

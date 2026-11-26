@@ -1,3 +1,4 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { AiClient } from '../services/ai/client';
@@ -6,8 +7,8 @@ import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
 import { buildCreationState, newCreation } from '../ui/creation/model';
-import { defaultSettings } from '../ui/settings/model';
-import { createTurnDraft } from '../domain/drafts';
+
+
 import { projectTurn } from '../domain/turnProjection';
 import { composePrompt } from '../prompts/composer';
 import { openingLives, openingValues, openingStart, openingEnd } from './fixtures/openingLives';

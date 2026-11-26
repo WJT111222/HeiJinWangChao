@@ -1,4 +1,4 @@
-import { checkFinish } from '../../services/ai/compat';
+import { checkFinish, providerToolFinish } from '../../services/ai/compat';
 import { isOpenAiCompatible, type Protocol } from '../../services/ai/configuration';
 import { AiError } from '../../services/ai/errors';
 import { array, record, nativeReasoning } from '../../services/ai/protocols';
@@ -65,7 +65,7 @@ export async function readPrototypeResponse(response: Response, protocol: Protoc
   }
   signal.throwIfAborted();
   if (!trace.finish) throw new AiError('stream_interrupted');
-  if (!['tool_calls', 'tool_use'].includes(trace.finish)) checkFinish(trace.finish);
+  if (!providerToolFinish(protocol, trace.finish)) checkFinish(trace.finish);
   frames.finish(streaming);
   if (trace.error) throw trace.error;
   // #252 validates the original protocol, the unique terminal call and its content schema.

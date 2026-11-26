@@ -1,0 +1,279 @@
+import { settleTurn } from '../domain/turnCommit';
+import { effectiveEntityCandidate } from '../domain/entityCandidate';
+import { parsePartialEntities, parsePartialVariables, parsePartialWorld } from '../services/validation/partialOutputs';
+import { describe, expect, it } from 'vitest';
+import { configureTurnStages, createTurnDraft, rerollStory, startStageAttempt, TurnDraftSchema } from '../domain/drafts';
+import { historyCatalogReason } from '../prompts/historyCatalog';
+import { composePrompt } from '../prompts/composer';
+import { defaultSettings, SettingsSchema } from '../ui/settings/model';
+import { defaultAiConfig, AiConfigSchema } from '../services/ai/configuration';
+import { parseEntities, parseTextVariables, parseWorld } from '../services/validation/aiOutputs';
+import {organizationUpdate,organizationWorld} from './fixtures/organizations';
+import {worldNormalizationNotes} from '../services/validation/worldSceneWrites';
+import { projectTurn } from '../domain/turnProjection';
+import { validateTurnCandidates } from '../services/validation/turnCommit';
+import { variableTextEnvelope } from './fixtures/variableReply';
+import { event, organizations, task } from './fixtures/game';
+import { historyState } from './fixtures/history';
+import { actionTime, projectedTime, worldState, worldResult, npcUpdate } from './fixtures/world';
+
+function turn() {
+  const prior = historyState(1);
+  const state = { ...worldState(), journal:prior.journal, revision:1, turnNumber:1 };
+  const draft = rerollStory(createTurnDraft(state.saveId, 1, 'stage-test', 'regular', '从现场人物的视角回顾去年'), {
+    turnKind:'regular', narrative:'两人在现场会面。', summary:'会面', variableGuide:[],
+  });
+  return { state, draft };
+}
+const envelope = (commands:string) => variableTextEnvelope('<命令>\n' + commands + '\n</命令>');
+
+describe('三段依赖与权限', () => {
+  it('复用阶段一新建组织，阶段二写经营字段，候选直到结算都不修改存档', async () => {
+    const {state,draft} = turn();
+    const org = {...organizations[3], id:'new-org', relationHistory:[]};
+    const {id,...creation} = org;
+    const entities = await parseEntities('<接触者>[]</接触者>' + envelope('set organizations[' + id + '] = ' + JSON.stringify(creation)),state,draft);
+    const {contactedNpcIds,...result} = entities;
+    const withEntities = TurnDraftSchema.parse({...draft,entities:{contactedNpcIds,result,storyRevision:1,requestRevision:0,candidateRevision:1,validation:'structural'},stageStatus:{...draft.stageStatus,entities:'ready'}});
+    const scene = startStageAttempt(withEntities,['variables']);
+    await expect(parseTextVariables(envelope('set organizations[new-org].state = {"description":"替换建档说明"}'), state, scene)).rejects.toThrow();
+    const candidate = await parseTextVariables(envelope('set organizations[new-org].state = {"operatingAreaText":"社区商铺"}'),state,scene);
+    const ready = TurnDraftSchema.parse({...scene,variables:{result:candidate,storyRevision:1,requestRevision:scene.stageRequestRevisions.variables,candidateRevision:2,basedOnEntityRevision:1,validation:'validated'},stageStatus:{...scene.stageStatus,variables:'ready'}});
+    expect(projectTurn(state,ready).organizations[id]).toMatchObject({operatingAreaText:'社区商铺'});
+    const mixed = organizationUpdate(id,{description:'场外替换说明',operatingAreaText:'场外重复区域',ownershipText:'新增的后台持股资料'},state.revision);
+    const world = parseWorld(JSON.stringify(organizationWorld([mixed])),state,ready);
+    expect(world.worldCommands).toMatchObject([{type:'UpdateOrganization',changes:{ownershipText:'新增的后台持股资料'}}]);
+    expect(world.worldCommands[0]).not.toHaveProperty('changes.description');
+    expect(world.worldCommands[0]).not.toHaveProperty('changes.operatingAreaText');
+    expect(worldNormalizationNotes.get(world)?.join(' ')).toMatch(/description.*operatingAreaText/);
+    expect(parseWorld(JSON.stringify(world),state,ready)).toEqual(world);
+    expect(state.organizations[id]).toBeUndefined();
+    expect(startStageAttempt(ready,['entities']).variables).toBeUndefined();
+    expect(TurnDraftSchema.safeParse({...ready, entities:undefined,stageStatus:{...ready.stageStatus,entities:'pending'}}).success).toBe(false);
+  });
+  it('现场关闭时用已有合法时钟逐条隔离，接触归属始终保留', async () => {
+    const {state,draft} = turn();
+    const payload = await parseEntities('<接触者>["npc-a"]</接触者>'+envelope('set npc[npc-a].lastInteractionAt = "'+actionTime+'"'),state,draft);
+    const {contactedNpcIds,...result} = payload;
+    const ready = TurnDraftSchema.parse({...draft,useVariableStage:false,useWorldStage:false,
+      entities:{result,contactedNpcIds,storyRevision:1,candidateRevision:1,requestRevision:0,validation:'structural'},
+      stageStatus:{story:'ready',entities:'ready',variables:'skipped',world:'skipped'}});
+    validateTurnCandidates(state,ready);
+    expect(effectiveEntityCandidate(state,ready,[]).settlement?.skipped).toMatchObject([{field:'lastInteractionAt', reason:'time'}]);
+    expect(projectTurn(state,ready).npc['npc-a'].lastInteractionAt).toBeUndefined();
+    expect(()=>parseWorld(JSON.stringify(worldResult([{...npcUpdate(),expectedRevision:1}])),{...state,worldClock:projectedTime},ready)).toThrow();
+    validateTurnCandidates({...state,worldClock:projectedTime},ready);
+    expect(state.npc['npc-a'].lastInteractionAt).toBeUndefined();
+  });
+  it('现场时钟和最终在场位置共同确定有效人物命令，场外与结算读取同一投影', async () => {
+    const {state,draft} = turn();
+    const body = envelope([
+      'set npc[scene].lastInteractionAt = "2026-10-18T12:00:00+08:00"',
+      'set npc[scene].locationId = null',
+      'set npc[scene].healthText = "精神好"',
+    ].join('\n'));
+    const { contactedNpcIds, ...result } = await parsePartialEntities(body,state,draft);
+    const entities = { storyRevision:1, requestRevision:0, candidateRevision:1, validation:'structural', contactedNpcIds, result };
+    const withEntities = TurnDraftSchema.parse({...draft,entities,stageStatus:{...draft.stageStatus,entities:'ready'}});
+    const scene = await parsePartialVariables(envelope('set worldClock = "'+projectedTime+'"\nset protagonist.emotionText = "安心"'),state,withEntities);
+    const ready = TurnDraftSchema.parse({...withEntities,useWorldStage:false,variables:{storyRevision:1,requestRevision:0,candidateRevision:2,
+      basedOnEntityRevision:1,validation:'validated',result:scene},stageStatus:{...withEntities.stageStatus,variables:'ready',world:'skipped'}});
+    const pristine = structuredClone(ready);
+    const worldPrompt = await composePrompt({stage:'world',mode:'regular',state,draft:{...ready,useWorldStage:true,stageStatus:{...ready.stageStatus,world:'pending'}},settings:defaultSettings(),userInput:'',domains:[]});
+    expect(worldPrompt.context.ENTITY_CANDIDATE).toEqual([entities.result.commands[2]]);
+    const effective = projectTurn(state,ready);
+    validateTurnCandidates(state,ready);
+    const next = settleTurn(state,ready,state.updatedAt);
+    expect(next.npc.scene).toEqual(effective.npc.scene);
+    expect(next.npc.scene).toMatchObject({healthText:'精神好',locationId:state.npc.scene.locationId,onScene:true});
+    expect(next.protagonist.emotionText).toBe('安心');
+    expect(next.journal.at(-1)?.settlement?.entities).toMatchObject({accepted:1,skipped:[
+      {commandIndex:0,reason:'time',field:'lastInteractionAt'},{commandIndex:1,reason:'constraint',field:'locationId'},
+    ]});
+    expect(ready).toEqual(pristine);
+    expect(state.npc.scene.healthText).not.toBe('精神好');
+  });
+  it('无法定位地点冲突或移除建档会破坏后续引用时，明确失败并保留原始候选', async () => {
+    const {state,draft} = turn();
+    const person = {...state.npc.scene,id:'late-new',name:'新来者',identityKey:'late-new',lastInteractionAt:'2026-10-18T12:00:00+08:00'};
+    const {id,...fields} = person;
+    const {contactedNpcIds,...result} = await parseEntities('<接触者>["late-new"]</接触者>'+envelope('set npc['+id+'] = '+JSON.stringify(fields)),state,draft);
+    const entities = { storyRevision:1, requestRevision:0, candidateRevision:1, validation:'structural', contactedNpcIds, result };
+    const ready = TurnDraftSchema.parse({...draft,useVariableStage:false,entities,stageStatus:{...draft.stageStatus,entities:'ready',variables:'skipped'}});
+    const world = {...worldResult(),taskCommands:[{type:'SaveTask',commandId:'orphan',evidence:'记录',task:{...task(),actorRef:{kind:'npc',id}}}]};
+    await expect(parsePartialWorld(JSON.stringify(world),state,ready)).rejects.toMatchObject({code:'ENTITY_DEPENDENCY'});
+    expect(() => effectiveEntityCandidate(state,ready,[{type:'SaveTask',commandId:'orphan',evidence:'记录',task:{...task(),actorRef:{kind:'npc',id}}}])).toThrow();
+    const both = await parseEntities(envelope('set npc[scene].onScene = true\nset npc[scene].locationId = null'),state,draft);
+    const ambiguous = {...ready,entities:{...ready.entities!,contactedNpcIds:both.contactedNpcIds,result:both}};
+    expect(() => effectiveEntityCandidate(state,ambiguous,[])).toThrow();
+    const takeover = {...worldResult(),worldCommands:[{type:'CreateNpc',commandId:'takeover',evidence:'登记',npc:person}]};
+    await expect(parsePartialWorld(JSON.stringify(takeover),state,ready)).rejects.toMatchObject({code:'ENTITY_DEPENDENCY'});
+    const departure = {...ready,entities:{...ready.entities!,contactedNpcIds:['scene'],result:{...result,commands:[{
+      type:'UpdateNpc' as const,npcId:'scene',commandId:'late-departure',evidence:'离场',expectedRevision:state.revision,
+      changes:{onScene:false,lastInteractionAt:person.lastInteractionAt},
+    }]}}};
+    const errand = {...worldResult(),taskCommands:[{...world.taskCommands[0],task:{...task(),actorRef:{kind:'npc',id:'scene'}}}]};
+    await expect(parsePartialWorld(JSON.stringify(errand),state,departure)).rejects.toMatchObject({code:'ENTITY_DEPENDENCY'});
+    state.tasks['prior-duty'] = {...task('prior-duty'),actorRef:{kind:'npc',id:'scene'}};
+    const handoff = {...errand,taskCommands:[{...errand.taskCommands[0],task:{...task(),actorRef:{kind:'npc',id:'npc-a'},
+      handoff:{fromTaskId:'prior-duty',at:state.worldClock,reason:'工作交接'}}}]};
+    await expect(parsePartialWorld(JSON.stringify(handoff),state,departure)).rejects.toMatchObject({code:'ENTITY_DEPENDENCY'});
+    expect(ready.entities?.result.commands).toHaveLength(1);
+    expect(state.npc[id]).toBeUndefined();
+  });
+  it('入场更新被隔离后，依赖这名参与者的现场事件阻止整轮结算', async () => {
+    const {state,draft} = turn();
+    const id = 'npc-a';
+    const arrival = {type:'UpdateNpc' as const,commandId:'arrival',npcId:id,evidence:'到场',expectedRevision:state.revision,
+      changes:{onScene:true,locationId:state.protagonist.locationId,lastInteractionAt:'2026-10-18T12:00:00+08:00'}};
+    const entities = {storyRevision:1,requestRevision:0,candidateRevision:1,validation:'structural',
+      contactedNpcIds:[id],result:{commands:[arrival],rejectedSuggestions:[],unresolved:[]}};
+    const ready = TurnDraftSchema.parse({...draft,entities,stageStatus:{...draft.stageStatus,entities:'ready'}});
+    const meeting = {...event('meeting'),actorRefs:[{kind:'npc' as const,id}],sourceTurnIds:[draft.turnId]};
+    state.events.meeting = meeting;
+    expect(() => effectiveEntityCandidate(state,ready,[{type:'SaveEvent',commandId:'scene-meeting',evidence:'会面',event:meeting}]))
+      .toThrowError(expect.objectContaining({code:'ENTITY_DEPENDENCY'}));
+    expect(ready.entities?.result.commands).toEqual([arrival]);
+  });
+  it('同一接触者离场可开始任务，档案和记忆仍归人物阶段',async()=>{
+    const {state,draft}=turn(), person='scene';
+    const {contactedNpcIds,...result}=await parseEntities(envelope('set npc[scene].onScene = false'),state,draft);
+    const before=TurnDraftSchema.parse({...draft,useVariableStage:false,entities:{contactedNpcIds,result,
+      storyRevision:1,requestRevision:0,candidateRevision:1,validation:'structural'},stageStatus:{...draft.stageStatus,entities:'ready',variables:'skipped'}});
+    const work={...worldResult(),taskCommands:[{type:'SaveTask',commandId:'errand',evidence:'离场办事',task:{
+      ...task(),actorRef:{kind:'npc',id:person}}}]};
+    expect(()=>parseWorld(JSON.stringify(work),state,before)).not.toThrow();
+    expect(()=>parseWorld(JSON.stringify(work),state,draft)).toThrow();
+    expect(()=>parseWorld(JSON.stringify(worldResult([{...npcUpdate(),expectedRevision:1,npcId:person}])),state,before)).toThrow();
+    const note={type:'RecordNpcMemory',npcId:person,commandId:'note',evidence:'记录',knowledgeKind:'observed',
+      memory:{id:'note-memory',text:'办事',createdAtGameTime:state.worldClock,sourceTurnIds:[draft.turnId],affectedEntityRefs:[{kind:'npc',id:person}],visibility:'npc_private',knowledgeSource:'本人'}};
+    expect(()=>parseWorld(JSON.stringify({...worldResult(),worldCommands:[note]}),state,before)).toThrow();
+  });
+  it('人物阶段拒绝主角消费及没有登记为接触者的离场人物写入', async () => {
+    const {state,draft}=turn();
+    await expect(parseEntities(envelope('add economy.cash = -10'),state,draft)).rejects.toThrow();
+    await expect(parseEntities(envelope('set npc[npc-a].healthText = "疲倦"'),state,draft)).rejects.toThrow();
+  });
+  it('实体候选保存前拒绝跨表重号、循环地点以及不存在的上级', async () => {
+    const {state,draft}=turn();
+    for (const lines of [
+      ['set locations[hero] = {"name":"重号地点"}'],
+      ['set locations[hall] = {"name":"大厅","parentId":"room"}','set locations[room] = {"name":"房间","parentId":"hall"}'],
+      ['set locations[hall] = {"name":"大厅","parentId":"unknown"}'],
+    ]) {
+      await expect(parseEntities(envelope(lines.join('\n')),state,draft)).rejects.toThrow();
+      expect(state.locations.hall).toBeUndefined();
+    }
+  });
+  it('旧阶段配置复制为两份独立选择；旧协议候选作废并保留正文', () => {
+    const settings = defaultSettings(), config = defaultAiConfig();
+    const {useEntityStage:_e,streamEntities:_s,...legacy} = settings.runtime;
+    const {entities:_r,...routes} = config.routes;
+    void _e; void _s; void _r;
+    const migrated = SettingsSchema.parse({...settings,runtime:{...legacy,useVariableStage:false,streamVariables:true}});
+    expect(migrated.runtime).toMatchObject({useEntityStage:false,useVariableStage:false,streamEntities:true,streamVariables:true});
+    const restored=AiConfigSchema.parse({...config,routes});
+    expect(restored.routes.entities).toEqual(restored.routes.variables);
+    expect(restored.routes.entities).not.toBe(restored.routes.variables);
+    const {draft}=turn();
+    const {useEntityStage:_discard,...oldDraft}=draft;void _discard;
+    const recovered=TurnDraftSchema.parse({...oldDraft,variables:{oldProtocol:true},world:{oldProtocol:true}});
+    expect(recovered.story).toEqual(draft.story);
+    expect([recovered.entities,recovered.variables,recovered.world]).toEqual([undefined,undefined,undefined]);
+  });
+});
+describe('场外纪事按需加载', () => {
+  it.each(['historical','scene','world'] as const)('%s 同一份场外请求包含规则与可执行目录',async scenario=>{
+    const {state,draft}=turn();
+    if(scenario==='historical') draft.story!.variableGuide.push({group:'time',subjectHint:'time:retrospective',textEvidence:'回顾去年',
+      observedFact:JSON.stringify({npcId:'scene',perspectiveRequest:'现场人物的视角',pastRequest:'回顾去年',temporalScope:'past_only',currentPlotAdvances:false})});
+    if(scenario==='scene') {
+      const source={...event('closing'),sourceTurnIds:['history-1']}; state.events[source.id]=source;
+      draft.useEntityStage=false;draft.stageStatus.entities='skipped';
+      draft.variables={storyRevision:1,candidateRevision:1,requestRevision:0,validation:'validated',result:{
+        commands:[{type:'SaveEvent',commandId:'close',evidence:'现场结束',event:{...source,status:'resolved',resolvedAt:state.worldClock,resolutionText:'已结案',sourceTurnIds:['history-1',draft.turnId]}}],rejectedSuggestions:[],unresolved:[]}};
+      draft.stageStatus.variables='ready';
+    }
+    expect(historyCatalogReason(state,draft)).toBe(scenario==='scene'?'现场阶段已有结案候选':scenario==='historical'?'回顾往事':'场外阶段可在本批结案');
+    const prompt=await composePrompt({stage:'world',state,draft,mode:'regular',userInput:draft.userInput,settings:defaultSettings()});
+    expect(prompt.modules.some(item=>item.id==='shared.history_output')).toBe(true);
+    expect(prompt.context.COMMAND_CATALOG).toMatchObject({ commandTypes:expect.arrayContaining(['RecordHistory']) });
+  });
+});
+
+describe('第一轮复审的跨阶段反例', () => {
+  it('旧暂停时钟随现场开关、恢复和重做取值',async()=>{
+    const {state,draft}=turn();
+    draft.story!.variableGuide=[{group:'time',subjectHint:'time:pause',textEvidence:'停下',observedFact:projectedTime}];
+    const {contactedNpcIds,...result}=await parsePartialEntities(envelope('set npc[scene].lastInteractionAt = '+JSON.stringify(actionTime)),state,draft);
+    const first=TurnDraftSchema.parse({...draft,entities:{storyRevision:1,candidateRevision:1,validation:'structural',contactedNpcIds,result},stageStatus:{...draft.stageStatus,entities:'ready'}});
+    const scene=await parsePartialVariables(envelope(''),state,first);
+    const ready=TurnDraftSchema.parse({...first,useWorldStage:false,variables:{storyRevision:1,candidateRevision:2,basedOnEntityRevision:1,validation:'validated',result:scene},stageStatus:{...first.stageStatus,variables:'ready',world:'skipped'}});
+    const off=configureTurnStages(ready,{useVariableStage:false});
+    expect.soft(settleTurn(state,off,state.updatedAt).worldClock).toBe(state.worldClock);
+    expect(settleTurn(state,off,state.updatedAt).npc.scene.lastInteractionAt).toBeUndefined();
+    const restored=configureTurnStages(off,{useVariableStage:true});
+    for (const current of [ready,restored]){
+      const next=settleTurn(state,current,state.updatedAt);
+      expect.soft(next.worldClock).toBe(projectedTime);
+      expect.soft(next.npc.scene.lastInteractionAt).toBe(actionTime);
+    }
+    const redo=startStageAttempt(restored,['variables']);
+    expect(redo.variables).toBeUndefined();
+    expect(redo.entities).toEqual(ready.entities);
+    const rerun=await parsePartialVariables(envelope(''),state,redo);
+    const rerunReady=TurnDraftSchema.parse({...redo,variables:{...ready.variables,requestRevision:redo.stageRequestRevisions.variables,candidateRevision:redo.executionRevision,result:rerun},stageStatus:{...redo.stageStatus,variables:'ready'}});
+    expect(settleTurn(state,rerunReady,state.updatedAt).npc.scene.lastInteractionAt).toBe(actionTime);
+  });
+  it('新建组织可在相同关系值上正式绑定，改写该值仍被拒绝', async()=>{
+    const {state,draft}=turn();
+    const {id,...org}=organizations[3];
+    const {contactedNpcIds,...result}=await parsePartialEntities(envelope('set organizations['+id+'] = '+JSON.stringify({...org,protagonistRelation:'正式成员',relationHistory:[]})),state,draft);
+    const first=TurnDraftSchema.parse({...draft,entities:{storyRevision:1,candidateRevision:1,validation:'structural',contactedNpcIds,result},stageStatus:{...draft.stageStatus,entities:'ready'}});
+    for (const relation of ['正式成员','另一种关系']){
+      const bind={relation,reason:'本幕入职',faction:{action:'bind',position:'职员',bondText:'入职'}};
+      const scene=await parsePartialVariables(envelope('set organizations['+id+'].protagonistRelation = '+JSON.stringify(bind)),state,first);
+      const ready=TurnDraftSchema.parse({...first,useWorldStage:false,variables:{storyRevision:1,candidateRevision:2,validation:'validated',basedOnEntityRevision:1,result:scene},stageStatus:{...first.stageStatus,variables:'ready',world:'skipped'}});
+      expect(settleTurn(state,ready,state.updatedAt).protagonistFaction?.organizationId).toBe(relation==='正式成员'?id:undefined);
+    }
+  });
+  it.each(['blocked','active'] as const)('场外保留现场事件最终字段，拒绝回退 %s', async status=>{
+    const {state,draft}=turn();
+    state.events.review={...event('review'),estimatedEndAt:'2026-10-20T08:00:00+08:00',sourceTurnIds:['history-1']};
+    const first=configureTurnStages(draft,{useEntityStage:false});
+    const result=await parsePartialVariables(envelope('set events[review].sceneState = {"status":"active"}\nset events[review].sceneState = {"status":"blocked"}'),state,first);
+    const ready=TurnDraftSchema.parse({...first,variables:{storyRevision:1,candidateRevision:1,validation:'validated',result},stageStatus:{...first.stageStatus,variables:'ready'}});
+    const last=projectTurn(state,ready).events.review;
+    expect(last.status).toBe('blocked');
+    const independent = {type:'CreateLocation',commandId:'independent',evidence:'新会场',location:{id:'meeting-room',name:'会场'}};
+    const world=await parsePartialWorld(JSON.stringify({...worldResult(),worldCommands:[independent],eventCommands:[{type:'SaveEvent',commandId:'outside',evidence:'补充会议背景',event:{...last,status,backgroundText:'新的会场信息'}}]}),state,ready);
+    expect(world.worldCommands).toEqual([independent]);
+    expect(world.eventCommands.length).toBe(status==='blocked'?1:0);
+    expect(world.settlement?.skipped.length??0).toBe(status==='blocked'?0:1);
+  });
+  it('家庭候选保留内部日期顺序校验，最终时钟未到时整组不能落库', async()=>{
+    const {state,draft}=turn();
+    state.npc.scene={...state.npc.scene,age:28,gender:'female'};
+    const join={op:'join',npcId:'scene',identityKey:state.npc.scene.identityKey,to:100,reason:'加入家庭'};
+    const pregnancy=(startedAt:string)=>({op:'pregnancy',npcId:'scene',reason:'已确认',value:{
+      status:'confirmed',visibility:'player_known',startedAt,confirmedAt:projectedTime}});
+    const family=(start:string)=>envelope('set harem.changes = '+JSON.stringify([join,pregnancy(start)]));
+    expect((await parsePartialEntities(family('2026-10-19T08:00:00+08:00'),state,draft)).commands).toHaveLength(0);
+    const {contactedNpcIds,...result}=await parsePartialEntities(family(actionTime),state,draft);
+    expect(result.commands.map(c=>c.type)).toEqual(['ApplyHaremChanges']);
+    const first=TurnDraftSchema.parse({...draft,entities:{storyRevision:1,candidateRevision:1,validation:'structural',contactedNpcIds,result},stageStatus:{...draft.stageStatus,entities:'ready'}});
+    const scene=configureTurnStages(first,{useVariableStage:false,useWorldStage:false});
+    expect(()=>settleTurn(state,scene,state.updatedAt)).toThrow();
+    expect(state.harem).toBeUndefined();
+    expect(first.entities?.result.commands).toHaveLength(1);
+  });
+  it('新目录和发送提示不推荐旧联系人登记，旧文本仍可解析', async()=>{
+    const {state,draft}=turn();
+    const prompt=await composePrompt({stage:'entities',state,draft,mode:'regular',settings:defaultSettings(),userInput:'交换电话号码',domains:['npc_ordinary','npc_special']});
+    const sent=prompt.messages.map(m=>m.content).join('\n');
+    expect.soft(sent).not.toMatch(/npc\[[^\]]+\]\.contact\b|RegisterContact/u);
+    expect(sent).toContain('phoneContact');
+    const result=await parsePartialEntities(envelope('set npc[scene].contact = {"reason":"既有登记"}'),state,draft);
+    expect(result.commands.map(command=>command.type)).toEqual(['RegisterContact']);
+  });
+});

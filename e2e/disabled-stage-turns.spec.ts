@@ -18,7 +18,7 @@ async function seed(page: Page) {
     localStorage.setItem(settingsKey,JSON.stringify(settings));
     const channel = newChannel(), config = defaultAiConfig(); channel.baseUrl = 'https://disabled-stage.mock.invalid/v1'; config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: 'story' };
-    for (const stage of ['variables','world']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
+    for (const stage of ['entities','variables','world']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     saveAiConfig(localStorage,config); new CredentialVault(sessionStorage,localStorage).set(channel.id,'mock-disabled-key');
     const state = buildCreationState({ ...newCreation(), person: { name:'林舟',age:'30',gender:'女性',appearance:'',personality:'' },profession:'教师' },settings);
     state.saveId = 'pure-novel'; const repo = await SaveRepository.open();
@@ -29,14 +29,15 @@ async function seed(page: Page) {
 async function stored(page: Page) {
   return page.evaluate(async () => { const p='/src/services/storage/saveRepository.ts', { SaveRepository }=await import(p),repo=await SaveRepository.open(); try { return await repo.loadGame('pure-novel'); } finally { repo.close(); } });
 }
-async function switches(page: Page, variables: boolean, world: boolean) {
+async function switches(page: Page, variables: boolean, world: boolean, entities = variables) {
   await openStageSwitches(page);
-  await page.getByRole('checkbox',{name:'变量管理',exact:true}).setChecked(variables);
-  await page.getByRole('checkbox',{name:'动态世界',exact:true}).setChecked(world);
+  await page.getByRole('checkbox',{name:'人物与实体',exact:true}).setChecked(entities);
+  await page.getByRole('checkbox',{name:'主角与现场',exact:true}).setChecked(variables);
+  await page.getByRole('checkbox',{name:'场外与网络',exact:true}).setChecked(world);
 }
 async function close(page: Page) {
   await closeWorkflowSheet(page);
-  const closeButton = page.getByRole('button',{name:'关闭三阶段详情',exact:true});
+  const closeButton = page.getByRole('button',{name:'收起四阶段详情',exact:true});
   if(await closeButton.isVisible())await closeButton.click();
   else if(await page.locator('.workflow-disclosure[open]').isVisible())await page.keyboard.press('Escape');
 }
@@ -63,7 +64,8 @@ async function wire(page: Page, truncated = false) {
       if(truncated&&stories===1){content='<正文>林舟平静地站在门口';finish='length';}
       else if(truncated&&stories===2){expect(request.messages.at(-1).content).toContain('【续写】');content=`，望着街边行人。</正文><短期记忆>林舟观察行人。</短期记忆><变量规划>${JSON.stringify(guide)}</变量规划>`;}
       else content=text(stories===1);
-    } else if(stage==='variables')content=variableTextEnvelope('<说明>林舟平静地观察行人。</说明><命令>set protagonist.emotionText = "平静"</命令>');
+    } else if(stage==='entities')content=variableTextEnvelope('<命令></命令>');
+    else if(stage==='variables')content=variableTextEnvelope('<说明>林舟平静地观察行人。</说明><命令>set protagonist.emotionText = "平静"</命令>');
     else {expect(stage).toBe('world');content=JSON.stringify({worldCommands:[],taskCommands:[],eventCommands:[],visibleHooks:[],unresolved:[]});}
     await route.fulfill({contentType:'application/json',body:JSON.stringify({choices:[{message:{content},finish_reason:finish}]})});
   });return calls;
@@ -84,24 +86,21 @@ test('开局通过真实开关关闭两阶段，连续三章保存、刷新不�
   await shot(page,'three-chapters');await page.reload();await expect(page.locator('#player-input')).toBeEditable();
   expect(calls).toHaveLength(3);await switches(page,true,true);await close(page);
   await page.locator('#player-input').fill('继续看街景');await page.getByRole('button',{name:'发送',exact:true}).click();await waitTurn(page,4);
-  expect(calls).toEqual(['story','story','story','story','variables','world']);
+  expect(calls).toEqual(['story','story','story','story','entities','variables','world']);
   expect((await stored(page)).state.protagonist.emotionText).toBe('平静');
 });
 
 test('只关闭World：变量仍严格执行并正式结算，关闭状态可见',async({page})=>{
   await seed(page);const calls=await wire(page);await switches(page,true,false);await start(page);await waitTurn(page,1);
-  expect(calls).toEqual(['story','variables']);expect((await stored(page)).state.protagonist.emotionText).toBe('平静');
-  await openStageSwitches(page);await expect(page.locator('.workflow-stages>li').nth(2)).toContainText('已关闭');await shot(page,'variables-only');
+  expect(calls).toEqual(['story','entities','variables']);expect((await stored(page)).state.protagonist.emotionText).toBe('平静');
+  await openStageSwitches(page);await expect(page.locator('.workflow-stages>li').nth(3)).toContainText('已跳过');await shot(page,'variables-only');
 });
 
-test('World-only说明变量依赖且不提交；关闭World后无额外AI请求完成本章',async({page})=>{
+test('只启用场外阶段时直接读取已选正文的合法开局时钟并完成本章',async({page})=>{
   await seed(page);const calls=await wire(page);await switches(page,false,true);await start(page);
-  await expect.poll(async()=>(await stored(page)).draft?.stageStatus.world).toBe('preview');
-  expect((await stored(page)).state.turnNumber).toBe(0);expect(calls).toEqual(['story','world']);
-  await expect(page.getByRole('note',{name:'阶段设置提示'})).toContainText('世界结果仅供预览，不能正式结算');await shot(page,'world-preview');
-  await switches(page,false,false);
-  await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();await waitTurn(page,1);
-  expect(calls).toEqual(['story','world']);expect((await stored(page)).state.protagonist.emotionText).not.toBe('平静');
+  await waitTurn(page,1);
+  expect(calls).toEqual(['story','world']);
+  expect((await stored(page)).state.protagonist.emotionText).not.toBe('平静');
 });
 
 test('纯小说截断不提交，刷新保留，续写完整后一次正式保存',async({page})=>{
@@ -142,13 +141,13 @@ test('旧完整候选切为纯小说须先CAS应用开关，不能通过发送�
     const diagnostics=page.getByRole('dialog').filter({has:page.getByRole('heading',{name:'重试与变更详情'})});
     await expect(diagnostics).toBeVisible();await diagnostics.getByRole('button',{name:'关闭资料界面',exact:true}).click();
   }
-  expect(calls).toEqual(['story','variables','world']);await switches(page,false,false);await close(page);
+  expect(calls).toEqual(['story','entities','variables','world']);await switches(page,false,false);await close(page);
   await page.locator('#player-input').fill('下一回合的行动');
   await expect(page.getByRole('button',{name:'发送',exact:true})).toBeDisabled();
   await page.getByRole('button',{name:'应用阶段设置并继续',exact:true}).click();await waitTurn(page,1);
   const current=await stored(page);expect(current.state.protagonist).toEqual(initial.protagonist);
   expect(current.state.economy).toEqual(initial.economy);expect(current.draft.variables).toBeUndefined();expect(current.draft.world).toBeUndefined();
-  expect(calls).toEqual(['story','variables','world']);await expect(page.locator('#player-input')).toBeEditable();
+  expect(calls).toEqual(['story','entities','variables','world']);await expect(page.locator('#player-input')).toBeEditable();
 });
 
 test('纯小说双标签由Web Locks阻止第二次请求；取消后迟到响应不提交',async({page,context})=>{

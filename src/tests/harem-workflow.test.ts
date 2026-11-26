@@ -7,12 +7,15 @@ import { projectTurn } from '../domain/turnProjection';
 import { composePrompt } from '../prompts/composer';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { parseWorld } from '../services/validation/aiOutputs';
-import { parsePartialVariables } from '../services/validation/partialOutputs';
+import { parseVariableBatch } from '../services/validation/partialOutputs';
 import { defaultSettings } from '../ui/settings/model';
 import { game, npc } from './fixtures/game';
 import { joinFamily } from './fixtures/harem';
 import { worldDraft, worldResult } from './fixtures/world';
 import { completeDraft, submission } from './fixtures/turn';
+
+const parsePartialVariables = (text: string, state: Parameters<typeof parseVariableBatch>[1], draft: Parameters<typeof parseVariableBatch>[2]) =>
+  parseVariableBatch(text, state, draft, 'combined');
 
 const setup = () => {
   const state = game();

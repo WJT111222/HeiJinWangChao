@@ -12,7 +12,11 @@ function frames(protocol: Protocol, stream: boolean, reason: string | null, call
     if (!stream) return [{ role: 'assistant', content: [...content, ...(text ? [{type:'text',text}] : [])], stop_reason: reason }];
     return [...content.flatMap((block,index) => [
       {type:'content_block_start',index,content_block:block}, {type:'content_block_stop',index},
-    ]), ...(text ? [{type:'content_block_delta',index:content.length,delta:{type:'text_delta',text}}] : []),
+    ]), ...(text ? [
+      {type:'content_block_start',index:content.length,content_block:{type:'text',text:''}},
+      {type:'content_block_delta',index:content.length,delta:{type:'text_delta',text}},
+      {type:'content_block_stop',index:content.length},
+    ] : []),
     {type:'message_delta',delta:{stop_reason:reason}}, {type:'message_stop'}];
   }
   const tool_calls = calls.map((c,index) => ({index,id:c.id,type:'function',function:{name:c.name,arguments:JSON.stringify(c.args)}}));

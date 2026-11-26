@@ -26,10 +26,10 @@ async function seed(page: Page, daylight: boolean) {
     const repo = await SaveRepository.open();
     try {
       await repo.create(worldState());
-      await repo.saveDraft(createTurnDraft('save-a', 0, 'turn-a', 'opening', '合成动作不上传'), null);
+      await repo.saveDraft(createTurnDraft('save-a', 0, 'turn-a', 'opening', '合成动作不上传', true, true, false), null);
       await repo.saveDraft({ ...worldDraft(false, 'opening'), userInput: '合成动作不上传' }, 0);
     } finally { repo.close(); }
-    const settings = defaultSettings();
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false;
     settings.display.appearance = daylight ? 'day' : 'night';
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel('deepseek'), config = defaultAiConfig();
