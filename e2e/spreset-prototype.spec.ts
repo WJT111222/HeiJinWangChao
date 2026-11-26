@@ -301,6 +301,11 @@ test('A 档在途操作卸载，B 档独立结算，刷新后核对两个正式�
         b: { turn: b.turnNumber, revision: b.revision, narrative: b.journal.at(-1).story.narrative } };
     } finally { repo.close(); }
   });
+  const leases = await page.evaluate(async () => {
+    const { snapshots } = await import('/src/tests/fixtures/worldviewFaults.ts' as string);
+    return snapshots('read');
+  });
+  expect(leases).toEqual([]);
   expect(stored.a).toEqual(state[0]);
   expect(stored.b).toEqual({ turn: state[1].turn + 1, revision: state[1].revision + 1, narrative });
 });

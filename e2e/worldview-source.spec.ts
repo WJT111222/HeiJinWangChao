@@ -3,7 +3,7 @@ import { gzipSync } from 'node:zlib';
 import { openGameTools } from './helpers/gameLayout';
 import type { Page } from '@playwright/test';
 import { test, expect } from './helpers/test';
-import { variableReply } from '../src/tests/fixtures/variableReply';
+import { stageFixtureReply, variableReply } from '../src/tests/fixtures/variableReply';
 import type * as Fixture from '../src/tests/fixtures/worldviewBrowser';
 
 const modulePath = '/src/tests/fixtures/worldviewBrowser.ts';
@@ -32,6 +32,7 @@ async function action(page: Page, op: Operation, backup?: string, id?: string) {
 interface MockControl {
   next?: 'partial' | 'fail';
   time?: string;
+  registerProperty?: boolean;
 }
 async function setup(page: Page, marker?: string, bodies: unknown[] = [], control: MockControl = {}) {
   const calls: { stage: string; origin: string; narrative: string }[] = [];
@@ -55,8 +56,10 @@ async function setup(page: Page, marker?: string, bodies: unknown[] = [], contro
       return route.fulfill({
         json: { choices: [{ message: { content: '<正文>张先生来到车站。' }, finish_reason: 'length' }] },
       });
-    const content =
-      body.model === 'story'
+    let content =
+      body.model === 'entities'
+        ? stageFixtureReply('entities', variableReply({ commands: [] }))
+        : body.model === 'story'
         ? '<thinking>本轮创作提纲：保持人物与场景连续。</thinking><正文>' +
           narrative +
           '</正文><短期记忆>用餐</短期记忆><变量规划>[]</变量规划>'
@@ -80,7 +83,14 @@ async function setup(page: Page, marker?: string, bodies: unknown[] = [], contro
               rejectedSuggestions: [],
               unresolved: [],
             });
-    if (body.tools?.some((tool: { function?: { name?: string } }) => tool.function?.name === 'actual_content')) {
+    if (body.model === 'variables' && control.registerProperty) {
+      const property = { name: '月港旧居', ownerRef: { kind: 'protagonist', id: 'hero' }, estimatedValue: 10000,
+        source: '继承', statusText: '可入住', locationId: 'chongqing', ownershipText: '主角名下' };
+      content = content.replace('</命令>', 'set economy.properties[old_house] = ' + JSON.stringify(property) + '\n</命令>');
+    }
+    const names = body.tools?.map((tool: { function: { name: string } }) => tool.function.name) ?? [];
+    const delivery = names.find((name: string) => name === 'actual_content' || name === 'submit_scene');
+    if (delivery) {
       return route.fulfill({
         json: {
           choices: [
@@ -90,7 +100,7 @@ async function setup(page: Page, marker?: string, bodies: unknown[] = [], contro
                   {
                     id: 'mock-story',
                     type: 'function',
-                    function: { name: 'actual_content', arguments: JSON.stringify({ content }) },
+                    function: { name: delivery, arguments: JSON.stringify({ content }) },
                   },
                 ],
               },
@@ -147,9 +157,10 @@ for (const scenario of ['overwrite', 'default'] as const) {
           expect(b.story.narrative).not.toBe(a.story.narrative);
         }
         // Use a complete but unsettled backup so even direct commit must verify provenance.
+        await action(source, 'entities');
         await action(source, 'variables');
         await action(source, 'world');
-        expect(sent.map((c) => c.origin)).toEqual(Array(3).fill('device-A-world'));
+        expect(sent.map((c) => c.origin)).toEqual(Array(4).fill('device-A-world'));
         const stale = scenario === 'overwrite' ? await snapshots(page, 'read') : [];
         const backup = await action(source, 'export');
         await action(page, 'import', backup);
@@ -159,7 +170,7 @@ for (const scenario of ['overwrite', 'default'] as const) {
           await snapshots(page, 'restore', stale);
         }
         await page.reload();
-        for (const op of ['variables', 'world', 'commit'] as const) {
+        for (const op of ['entities', 'variables', 'world', 'commit'] as const) {
           const before = await action(page, 'view'),
             callCount = local.length;
           let error = '';
@@ -203,11 +214,12 @@ for (const scenario of ['overwrite', 'default'] as const) {
         await recovery.click();
         await expect.poll(async () => (await action(page, 'view')).draft.storyRevision).toBe(a.storyRevision + 1);
         await page.reload();
+        await action(page, 'entities');
         await action(page, 'variables');
         await action(page, 'world');
         await action(page, 'commit');
         expect(local.slice(start).map((c) => [c.stage, c.origin])).toEqual(
-          ['story', 'variables', 'world'].map((stage) => [
+          ['story', 'entities', 'variables', 'world'].map((stage) => [
             stage,
             scenario === 'overwrite' ? 'device-B-world' : '中国城市与地域差异',
           ]),
@@ -240,20 +252,22 @@ test('截断、重试、删除原书及显式重新生成使用各自的世界�
   await expect(action(page, 'continue')).rejects.toThrow();
   await page.reload();
   await action(page, 'continue');
+  await action(page, 'entities');
   await action(page, 'variables');
   await action(page, 'world');
-  expect(calls.map((c) => c.origin)).toEqual(Array(5).fill('device-A-world'));
+  expect(calls.map((c) => c.origin)).toEqual(Array(6).fill('device-A-world'));
   await action(page, 'replace');
+  await action(page, 'entities');
   await action(page, 'variables');
   await action(page, 'world');
-  expect(calls.slice(-3).map((c) => c.origin)).toEqual(Array(3).fill('中国城市与地域差异'));
+  expect(calls.slice(-4).map((c) => c.origin)).toEqual(Array(4).fill('中国城市与地域差异'));
   expect((await action(page, 'commit')).state.revision).toBe(1);
 });
 
 test('官方正文快照损坏或缺失时阻止结算，删除重导也不会继承', async ({ page }) => {
   const calls = await setup(page);
   await action(page, 'seed');
-  for (const op of ['story', 'variables', 'world'] as const) await action(page, op);
+  for (const op of ['story', 'entities', 'variables', 'world'] as const) await action(page, op);
   const backup = await action(page, 'export'),
     before = await action(page, 'view');
   const rows = await snapshots(page, 'read');
@@ -272,7 +286,7 @@ test('官方正文快照损坏或缺失时阻止结算，删除重导也不会�
   await expect(action(page, 'world')).rejects.toThrow(/worldbook.unbound/);
   await expect(action(page, 'commit')).rejects.toThrow(/worldbook.unbound/);
   expect(await action(page, 'view')).toEqual(restored);
-  expect(calls.map((c) => c.stage)).toEqual(['story', 'variables', 'world']);
+  expect(calls.map((c) => c.stage)).toEqual(['story', 'entities', 'variables', 'world']);
 });
 
 test('同名存档、历史回溯、撤回与失败后的行动重绑', async ({ page }) => {
@@ -282,11 +296,11 @@ test('同名存档、历史回溯、撤回与失败后的行动重绑', async ({
   await action(page, 'seed', undefined, 'other-save');
   await action(page, 'story', undefined, 'other-save');
   const other = await action(page, 'view', undefined, 'other-save');
-  for (const op of ['story', 'variables', 'world', 'commit'] as const) await action(page, op);
+  for (const op of ['story', 'entities', 'variables', 'world', 'commit'] as const) await action(page, op);
   const mark = await action(page, 'bookmark');
   await page.evaluate(async (path) => (await import(path)).officialOnly(), faultsPath);
   control.time = '2026-10-18T08:20:00+08:00';
-  for (const op of ['story', 'variables', 'world', 'commit'] as const) await action(page, op);
+  for (const op of ['story', 'entities', 'variables', 'world', 'commit'] as const) await action(page, op);
   const undone = await action(page, 'undo');
   expect(undone.state.turnNumber).toBe(1);
   await action(page, 'bind', '去码头');
@@ -303,6 +317,7 @@ test('同名存档、历史回溯、撤回与失败后的行动重绑', async ({
   await action(page, 'story');
   expect(calls.at(-1)?.origin).toBe('中国城市与地域差异');
   expect((await action(page, 'view', undefined, 'other-save')).draft).toEqual(other.draft);
+  await action(page, 'entities', undefined, 'other-save');
   await action(page, 'variables', undefined, 'other-save');
   expect(calls.at(-1)?.origin).toBe('device-A-world');
 });
@@ -362,10 +377,130 @@ test('文学脚本正文保存后删除原书，刷新再补算两阶段', async
   });
   await page.evaluate(async (path) => (await import(path)).officialOnly(), faultsPath);
   await page.reload();
+  await action(page, 'entities');
   await action(page, 'variables');
   await action(page, 'world');
   expect(calls.map((c) => [c.stage, c.origin])).toEqual(
-    ['story', 'variables', 'world'].map((s) => [s, 'device-A-world']),
+    ['story', 'entities', 'variables', 'world'].map((s) => [s, 'device-A-world']),
   );
   expect((await action(page, 'commit')).state.turnNumber).toBe(1);
+});
+
+interface StoryWire {
+  messages: { role: string; content: string }[];
+  tools?: { function: { name: string } }[];
+}
+
+async function expectFoundation(wire: StoryWire, page: Page) {
+  const rows = await snapshots(page, 'read');
+  expect(rows).toHaveLength(1);
+  const { books } = rows[0].value as import('../src/domain/worldbook/mainWorldbook').MainWorldview;
+  expect(books).toHaveLength(1);
+  const open = '<MAIN_WORLDBOOK>\n', close = '\n</MAIN_WORLDBOOK>';
+  const messages = wire.messages.filter(message => message.content?.startsWith(open));
+  expect(messages).toHaveLength(1);
+  expect(messages[0].role).toBe('user');
+  expect(messages[0].content.endsWith(close)).toBe(true);
+  expect(JSON.parse(messages[0].content.slice(open.length, -close.length)).books).toEqual(books);
+  // Book IDs are also embedded in the frozen lease, but never in a second model message or tool.
+  const rest = { ...wire, messages: wire.messages.filter(message => message !== messages[0]) };
+  expect(JSON.stringify(rest)).not.toContain(books[0].bookId);
+  expect(JSON.stringify(rest)).not.toContain('<MAIN_WORLDBOOK>');
+}
+
+for (const mode of ['native', 'native-delivery', 'peinture-1118', 'peinture-1124', 'spreset-c2'] as const) {
+  test('主世界观合流 · ' + mode + ' 使用独立的 Story 交付路径', async ({ page }) => {
+    const wires: StoryWire[] = [];
+    const calls = await setup(page, 'device-A-world', wires, { registerProperty: true });
+    await page.evaluate(async mode => {
+      const presets = await import('/src/presets/settings.ts' as string);
+      const settings = presets.readPresetSettings();
+      if (mode === 'native-delivery') presets.enableNativeDelivery(settings);
+      if (mode.startsWith('peinture-')) Object.assign(settings, { enabled: true, selected: mode });
+      presets.savePresetSettings(settings);
+    }, mode);
+    const workers: string[] = [];
+    page.on('worker', worker => { if (worker.url().startsWith('blob:null/')) workers.push(worker.url()); });
+    await page.goto(mode === 'spreset-c2' ? '/?spreset=prototype' : '/');
+    await action(page, 'seed');
+    const before = (await action(page, 'view')).state;
+    const candidate = await action(page, 'story');
+    expect(wires).toHaveLength(1);
+    await expectFoundation(wires[0], page);
+    const toolNames = wires[0].tools?.map(tool => tool.function.name) ?? [];
+    if (mode === 'spreset-c2') expect(toolNames).toEqual(['submit_scene']);
+    else if (mode === 'native') expect(toolNames).toEqual([]);
+    else {
+      expect(toolNames).toContain('actual_content');
+      expect(toolNames).not.toContain('submit_scene');
+    }
+    expect(candidate.storyWriting).toMatchObject(mode.startsWith('native') ? { source: 'native' } : { source: 'preset', id: mode });
+    expect(candidate.story.narrative).toContain('月港');
+    expect((await action(page, 'view')).state).toEqual(before);
+    for (const stage of ['entities', 'variables', 'world'] as const) await action(page, stage);
+    expect(calls.map(call => [call.stage, call.origin])).toEqual(
+      ['story', 'entities', 'variables', 'world'].map(stage => [stage, 'device-A-world']),
+    );
+    expect(wires.slice(1).every(wire => !wire.tools)).toBe(true);
+    expect(workers).toHaveLength(mode === 'spreset-c2' ? 1 : 0);
+    const { state } = await action(page, 'commit');
+    expect(state.revision).toBe(before.revision + 1);
+    expect(state.turnNumber).toBe(before.turnNumber + 1);
+    expect(state.journal.at(-1).story.narrative).toBe(candidate.story.narrative);
+    expect(state.economy.properties.old_house).toMatchObject({ kind: 'property', name: '月港旧居', source: '继承' });
+    expect(state.economy.cash).toBe(before.economy.cash);
+    expect(await snapshots(page, 'read')).toEqual([]);
+  });
+}
+
+test('主世界观合流 · C2 失败和取消的重生成只释放本次租约，旧候选刷新后可提交', async ({ page }) => {
+  const control: MockControl = { next: 'fail' };
+  const calls = await setup(page, 'device-A-world', [], control);
+  await page.goto('/?spreset=prototype');
+  await action(page, 'seed');
+  await expect(action(page, 'story')).rejects.toThrow();
+  const source = await snapshots(page, 'read');
+  expect(source).toHaveLength(1);
+  await page.evaluate(async path => (await import(path)).officialOnly(), faultsPath);
+  await page.evaluate(async path => (await import(path)).book('device-B-world'), modulePath);
+  await page.reload();
+  await action(page, 'story');
+  expect(calls.map(call => call.origin)).toEqual(['device-A-world', 'device-A-world']);
+  expect(await snapshots(page, 'read')).toEqual(source);
+  const prior = await action(page, 'view');
+  for (const outcome of ['invalid', 'cancel'] as const) {
+    let seen!: (wire: StoryWire) => void, release!: () => void;
+    const received = new Promise<StoryWire>(resolve => { seen = resolve; });
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    await page.route('https://worldview-source.mock.invalid/**', async route => {
+      seen(route.request().postDataJSON());
+      await gate;
+      if (outcome === 'cancel') return route.abort().catch(() => {});
+      await route.fulfill({ json: { choices: [{ message: { content: '合成的无效正文' }, finish_reason: 'stop' }] } });
+    }, { times: 1 });
+    const attempt = action(page, 'replace').then(() => false, () => true);
+    try {
+      const wire = await received;
+      expect(JSON.stringify(wire.messages)).toContain('device-B-world');
+      expect(JSON.stringify(wire.messages)).not.toContain('device-A-world');
+      const pending = await snapshots(page, 'read');
+      expect(pending).toHaveLength(2);
+      expect(pending).toContainEqual(source[0]);
+      if (outcome === 'cancel')
+        expect(await page.evaluate(async path => (await import(path)).cancelStory(), modulePath)).toBe(true);
+    } finally { release(); }
+    expect(await attempt).toBe(true);
+    expect(await snapshots(page, 'read')).toEqual(source);
+    expect(await action(page, 'view')).toEqual(prior);
+  }
+  await page.reload();
+  await action(page, 'entities');
+  await action(page, 'variables');
+  await action(page, 'world');
+  expect(calls.slice(-3).map(call => call.origin)).toEqual(Array(3).fill('device-A-world'));
+  const { state } = await action(page, 'commit');
+  expect(state.turnNumber).toBe(prior.state.turnNumber + 1);
+  expect(state.revision).toBe(prior.state.revision + 1);
+  expect(state.journal.at(-1).story.narrative).toBe(prior.draft.story.narrative);
+  expect(await snapshots(page, 'read')).toEqual([]);
 });
