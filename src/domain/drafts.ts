@@ -1,3 +1,4 @@
+import { ChatPending, ChatFreeze, sameChatFreeze } from './phoneChat';
 import { hasVisibleNarrative } from './storyContent';
 import { DeferredEventIdsSchema, UpdateSettlementSchema } from './updateSettlement';
 import { StoryWritingSchema, type StoryWriting } from './storyWriting';
@@ -40,6 +41,7 @@ const candidateFields = {
 };
 const draftSchema = z.strictObject({
   saveId: IdSchema, turnId: IdSchema, baseSaveRevision: CountSchema, draftRevision: CountSchema,
+  phonePending: ChatPending.optional(), phoneFreeze: ChatFreeze.optional(),
   storyRevision: CountSchema, turnKind: z.enum(['opening', 'regular']), userInput: z.string(),
   useEntityStage: z.boolean(), useVariableStage: z.boolean(), useWorldStage: z.boolean(), story: StorySchema.optional(),
   // 执行尝试与正文版本独立。默认 0 兼容本 PR 先前保存的草稿，不改变已有正文/候选。
@@ -69,6 +71,8 @@ const draftSchema = z.strictObject({
   }).optional(),
 }).superRefine((draft, ctx) => {
   function check(ok: unknown, message: string) { if (!ok) ctx.addIssue({ code: 'custom', message }); }
+  if (draft.phonePending?.length) check(draft.turnKind === 'regular' && (draft.userInput || (!draft.storyRevision && !draft.executionRevision && !draft.failures.length)), '待结算聊天需要普通待输入回合或绑定行动');
+  if (draft.phoneFreeze || draft.phonePending?.length && draft.userInput) check(draft.turnKind === 'regular' && Boolean(draft.userInput) && sameChatFreeze(draft.phonePending ?? [], draft.phoneFreeze), '私聊冻结清单与待结算操作不一致');
   if (draft.legacyNotificationRecovery) check(
     draft.turnKind === 'regular' && draft.stageStatus.story === 'ready' && draft.useVariableStage && draft.useWorldStage
       && recoveryMatchesDraft(draft.legacyNotificationRecovery,draft), '旧通知恢复授权引用过期的正文或回合');
@@ -208,6 +212,7 @@ export function configureTurnStages(draft: TurnDraft, config: StageConfig): Turn
 // 仅校验持久化前后的版本关系，不执行阶段、自动重试或候选提交。
 export function validateDraftUpdate(old: TurnDraft, next: TurnDraft) {
   requireData(next.draftRevision === old.draftRevision + 1, 'DRAFT_CONFLICT', '草稿版本冲突');
+  requireData(fingerprint(old.phonePending) === fingerprint(next.phonePending) && fingerprint(old.phoneFreeze) === fingerprint(next.phoneFreeze), 'DRAFT_CONFLICT', '私聊清单只能随行动绑定或通过私聊事务更新');
   for (const key of ['saveId', 'turnId', 'baseSaveRevision', 'turnKind', 'userInput'] as const) {
     requireData(old[key] === next[key], 'DRAFT_CONTEXT', '同次草稿的输入不可悄然改变');
   }

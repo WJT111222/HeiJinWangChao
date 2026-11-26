@@ -22,7 +22,7 @@ export function usePhoneReminders(state: GameState) {
       Object.values(state.phone.threads)
         .flatMap((thread) =>
           thread.messages
-            .filter((message) => message.sender === 'npc')
+            .filter((message) => message.sender === 'npc' && message.source !== 'chat')
             .map((message) => ({
               npcId: thread.npcId,
               message,

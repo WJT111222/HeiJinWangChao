@@ -7,7 +7,7 @@ function wireJson(context: Record<string, unknown>) {
   const json = JSON.stringify(context);
   if (
     !json.includes('{{') ||
-    !('PHONE_STORY' in context || 'PHONE_INBOX' in context || 'ENTITY_CANDIDATE' in context)
+    !('PHONE_CHAT' in context || 'PHONE_STORY' in context || 'PHONE_INBOX' in context || 'ENTITY_CANDIDATE' in context)
   )
     return json;
 
@@ -15,7 +15,7 @@ function wireJson(context: Record<string, unknown>) {
   for (const [key, value] of Object.entries(context)) {
     let field = JSON.stringify(value);
     if (field === undefined) continue;
-    if (key === 'PHONE_STORY' || key === 'PHONE_INBOX') {
+    if (key === 'PHONE_CHAT' || key === 'PHONE_STORY' || key === 'PHONE_INBOX') {
       field = quoteBraces(field);
     } else if (key === 'ENTITY_CANDIDATE' && Array.isArray(value)) {
       field =

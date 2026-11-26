@@ -1,3 +1,4 @@
+import { chatBase } from './phone';
 import { assertWorldEntityDependencies, effectiveEntityCandidate, markStoryPeople, sceneAndEntityCommands } from './entityCandidate';
 import { storySceneAuthority, validateNarrationClock } from './events/narration';
 import { effectiveTurnClock, historicalPerspective, validateTimeCommands } from './timePreflight';
@@ -72,7 +73,8 @@ export function projectTurnCandidates(state: GameState, draft: TurnDraft, worldC
   const prepared = validated || draft.entities ? prepareVariableProjection(state,draft,variables)
     : { commands:variableCommandsForTurn(state,draft,variables), acknowledgedReceipts:undefined, entities:undefined };
   if (prepared.entities) assertWorldEntityDependencies(prepared.entities, worldCommands, state.tasks);
-  const projected = commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision,
+  const baseline = chatBase(openingTimeBase(state, draft), draft.phoneFreeze ? draft.phonePending ?? [] : [], draft.turnId);
+  const projected = commitCommands(baseline, draft.turnId, state.revision,
     prepared.commands, state.updatedAt, validated ? storySceneAuthority(state,draft,variables) : undefined,
     prepared.acknowledgedReceipts, worldCommands);
   if (draft.entities && prepared.entities && !historicalPerspective(state,draft)) markStoryPeople(projected, draft.entities.contactedNpcIds.filter(id => !prepared.entities?.removedIds.has(id)), prepared.entities.commands);

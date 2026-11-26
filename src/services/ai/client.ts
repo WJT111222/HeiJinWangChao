@@ -313,7 +313,7 @@ export class AiClient {
     const prototype = import.meta.env.DEV && options.spresetPrototype && snapshot.stage === 'story';
     let session: PrototypeSession | undefined;
     // Theater keeps a single paid transport. A failed direct POST is not replayed through a relay.
-    const relay = theater || (prototype && !options.confirmedTransmission) ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
+    const relay = theater || snapshot.stage === 'phone' || (prototype && !options.confirmedTransmission) ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
     const allowOutputLimit = options.validateStoryOutputLimit === true || theater;
     const relayEnabled = relayMode() === 'auto';
     const started = performance.now();

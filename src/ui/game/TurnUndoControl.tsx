@@ -7,6 +7,7 @@ import type { SaveRepository, TurnUndoResult } from '../../services/storage/save
 import type { UndoStatus } from '../../services/storage/turnUndo';
 import { DataError } from '../../domain/common';
 import { Feedback, useDesktopFeedback } from '../Feedback';
+import { ChatTimelineChoice } from '../phone/ChatTimelineChoice';
 import { Dialog } from '../Dialog';
 
 export function TurnUndoControl({ repository, state, draft, busy, input, onInput, onUndone, cancelMemory, onNotice, compact=false }: {
@@ -18,6 +19,7 @@ export function TurnUndoControl({ repository, state, draft, busy, input, onInput
   const [status, setStatus] = useState<UndoStatus>();
   const [confirm, setConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [chatChoice,setChatChoice] = useState<'discard'|'keep'>('discard');
   const [error, setError] = useState('');
   const active = useRef(false), operation = useRef<string | undefined>(undefined);
   const current = useRef({ input, onInput, onUndone }); current.current = { input, onInput, onUndone };
@@ -53,12 +55,13 @@ export function TurnUndoControl({ repository, state, draft, busy, input, onInput
     operation.current ??= `undo-${crypto.randomUUID()}`;
     try {
       const result = await repository.undoTurn({ saveId: state.saveId, expectedRevision: state.revision,
-        expectedDraft: draft, operationId: operation.current });
+        expectedDraft: draft, chatChoice, operationId: operation.current });
       current.current.onUndone(result);
       setConfirm(false);
     } catch (failure) {
       // A rejected/stale confirmation is not proof that the previously displayed
       // checkpoint is still available. Reload before authorizing another undo.
+      if (failure instanceof DataError && failure.code === 'PHONE_TIMELINE') { setError(failure.message); return; }
       setStatus(undefined);
       setError(failure instanceof DataError && ['REVISION_CONFLICT', 'DRAFT_CONFLICT', 'STORY_BUSY'].includes(failure.code)
         ? '存档或草稿正在另一处操作，请重新读取后再撤回。'
@@ -69,7 +72,7 @@ export function TurnUndoControl({ repository, state, draft, busy, input, onInput
     : status.unavailable === 'chain' ? '恢复点不连续，请重新读取存档' : '没有可靠的回合恢复点';
   return <>
     <button aria-label={compact?`撤回${status?.available?`（${status.available}）`:""}`:undefined} disabled={busy || saving || !status?.available} title={status?.available ? `可连续撤回 ${status.available} 回合` : reason}
-      onClick={() => setConfirm(true)}>{compact?<span aria-hidden="true">撤</span>:<>撤回{status?.available ? `（${status.available}）` : ''}</>}</button>
+      onClick={() => {setChatChoice('discard'); setConfirm(true);}}>{compact?<span aria-hidden="true">撤</span>:<>撤回{status?.available ? `（${status.available}）` : ''}</>}</button>
     {confirm && <Dialog title="撤回上一回合" small mobileVariant="confirm" footer={<button disabled={saving} onClick={()=>setConfirm(false)}>保留当前回合</button>} feedback="warn" seal="撤" onClose={() => { if (!saving) setConfirm(false); }}>
       {desktop ? <><p>恢复到第 {state.turnNumber - 1} 回合结束，回填原行动。</p><ul className="dialog-consequences"><li>已撤回的剧情无法重做；此操作不调用 AI。</li>
         {draft && !awaitingPlayerAction(state, draft) && <li>当前未结算草稿会被丢弃。</li>}
@@ -79,6 +82,7 @@ export function TurnUndoControl({ repository, state, draft, busy, input, onInput
         {storyPartialVisible(draft) && <li>这会连上一回合一起撤回。如果只是不想要那段没写完的正文，请用阅读区的「放弃这段」。</li>}
       {input && <li>输入框现有文字会被本次回填替换。</li>}</ul>
 </>}
+      {Boolean(draft?.phonePending?.length) && <ChatTimelineChoice value={chatChoice} onChange={setChatChoice}/>}
       {desktop && error && <Feedback level="err" role="alert">{error}</Feedback>}
       <div className="button-row feedback-dialog-actions">
         {desktop&&<button disabled={saving} onClick={() => setConfirm(false)}>保留当前回合</button>}

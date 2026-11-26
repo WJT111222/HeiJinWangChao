@@ -1,3 +1,4 @@
+import type { ChatExchange } from './phoneChat';
 import { z } from 'zod';
 import { GameTimeSchema, IdSchema, requireData } from './common';
 import type { GameState } from './state';
@@ -27,7 +28,8 @@ const Message = z.strictObject({
   text: content,
   status: receipt.optional(),
   at: GameTimeSchema,
-  source: z.enum(['story', 'offscreen']),
+  source: z.enum(['story', 'offscreen','chat']),
+  chatOutcome: z.enum(['replied','later','read_unanswered','unread']).optional(),
   sourceTurnId: IdSchema,
   deliveredTurnId: IdSchema,
 });
@@ -89,6 +91,26 @@ function append(s: GameState, npcId: string, message: PhoneMessage) {
       messages: [],
     };
   s.phone.threads[npcId].messages.push(message);
+}
+export function chatMessages(row: ChatExchange, turnId: string): PhoneMessage[] {
+  const shared = { at: row.at, source: 'chat' as const, medium: 'text' as const, sourceTurnId: row.baseTurnId, deliveredTurnId: turnId };
+  const outgoing: PhoneMessage = { ...shared, id: row.id, sender:'protagonist', text:row.text, chatOutcome:row.reply.status,
+    status: row.reply.status === 'replied' ? 'read' : row.reply.status === 'unread' ? 'delivered' : 'read_unanswered' };
+  return row.reply.status === 'replied'
+    ? [outgoing, { ...shared, id:row.id + ':reply', sender:'npc', text:row.reply.text }] : [outgoing];
+}
+// Project the frozen transcript before model commands. Only commitTurn persists this private copy.
+export function chatBase(state: GameState, rows: readonly ChatExchange[], turnId: string): GameState {
+  if (!rows.length) return state;
+  const next = { ...state, phone: structuredClone(state.phone) };
+  for (const row of rows) {
+    const peer = row.reply.npcId;
+    requireData(Object.hasOwn(state.npc, peer) && row.baseTurnId === state.journal.at(-1)?.turnId &&
+      Date.parse(row.at) === Date.parse(state.worldClock), 'PHONE_TIMELINE', '私聊不属于当前时间线');
+    for (const message of chatMessages(row, turnId)) append(next, peer, message);
+  }
+  requireData(validPhone(next), 'PHONE_CONFLICT', '私聊消息 ID 或会话引用冲突');
+  return next;
 }
 export function recordPhone(
   s: GameState,
