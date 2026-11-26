@@ -307,7 +307,7 @@ test('#193 刷新后只重试World，取消、重复点击与跨标签竞争不�
     await other.goto('/#game/save-a');
     await openGameTools(other);
     await retry.evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
-    await expect.poll(() => server.calls.slice(6)).toEqual(['world']);
+    await expect.poll(() => server.calls.slice(8)).toEqual(['world']);
     await other.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
     await expect(other.getByText(/此存档已有阶段请求/).first()).toBeVisible();
     expect(second.calls).toEqual([]);

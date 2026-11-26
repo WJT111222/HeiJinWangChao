@@ -60,7 +60,7 @@ async function mock(page: Page, startAt: string, endAt: string) {
       const guide = opening ? [{ group: 'time', subjectHint: 'time:opening', observedFact: JSON.stringify({ startAt: plan.badDate ? '2023-02-29T08:00:00+08:00' : startAt, endAt }), textEvidence: plan.minimal ? '本幕时间由场景安排，无需逐字引用。' : anchor }] : [];
       text = `<thinking>本轮创作提纲：时间和人物连续。</thinking><正文>${anchor}主角在街边喝了一口水。</正文><短期记忆>主角在街边喝水。</短期记忆><变量规划>${JSON.stringify(guide)}</变量规划>`;
     } else {
-      const opening = Boolean(context.OPENING_TIME), hero = record(record(context.SAVE_STATE).protagonist);
+      const opening = Boolean(context.OPENING_TIME) || record(context.SAVE_STATE).worldClock === null, hero = record(record(context.SAVE_STATE).protagonist);
       const minimalCommands = !opening || plan.variableCase === 'empty' ? [] : plan.variableCase === 'npc'
         ? [{ type: 'CreateNpc', commandId: 'scene-person', evidence: '本幕在场服务人员', npc: { id: 'new-npc', identityKey: 'identity-new-npc', kind: 'ordinary', name: '店员', aliases: [], skills: [], onScene: true, locationId: hero.locationId, affinity: 0, relationshipText: '初次见面', memories: [], knownInformation: [] } }]
         : [{ type: 'AcquireItem', commandId: 'gift', evidence: '临别得到一份证件', item: { id: 'gift', name: '证件', category: 'document', quantity: 1, conditionText: '完好', ownerRef: { kind: 'protagonist', id: hero.id } } }];

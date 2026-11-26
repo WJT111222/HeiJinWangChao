@@ -84,7 +84,7 @@ test('记忆失败操作表：保留来源、重试授权与暂停条件',async(
 test('长响应、私有候选与规划：主动展开、凭证脱敏、全文可达和刷新清除',async({page})=>{
  await page.setViewportSize({width:375,height:667});await seedReady(page);const before=await nightSealStored(page);await page.evaluate(async()=>{
   const p='/src/services/ai/stageResponses.ts',r='/src/services/storage/saveRepository.ts';const {stageResponses}=await import(p),{SaveRepository}=await import(r),repo=await SaveRepository.open(),draft=await repo.loadDraft('save-a');repo.close();
-  const id=stageResponses.begin({saveId:'save-a',turnId:draft.turnId,stage:'variables'});stageResponses.update(id,{status:'validated',text:'临时原文开头 '+('长原文'.repeat(9000))+' Bearer fictional-mobile-test-value 原文终点',normalized:'{"normalized":"独立规范化终点"}'},['fictional-mobile-test-value']);
+  const id=stageResponses.begin({saveId:'save-a',turnId:draft.turnId,stage:'variables',storyRevision:draft.storyRevision,stageRequestRevision:draft.stageRequestRevisions.variables,basedOnEntityRevision:draft.entities?.candidateRevision});stageResponses.update(id,{status:'validated',text:'临时原文开头 '+('长原文'.repeat(9000))+' Bearer fictional-mobile-test-value 原文终点',normalized:'{"normalized":"独立规范化终点"}'},['fictional-mobile-test-value']);
   const x=stageResponses.begin({saveId:'save-a',turnId:draft.turnId,stage:'story'});stageResponses.update(x,{text:'<thinking>主动规划终点</thinking>',nativeReasoning:'供应商公开摘要',status:'failed'},[]);
  });
  let calls=0;await page.route('https://mobile2.mock.invalid/**',route=>{calls++;return route.abort();});

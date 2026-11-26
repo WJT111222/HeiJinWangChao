@@ -34,7 +34,7 @@ test('世界书与变量设置保护未保存修改，保存后同时进入下�
     const repo = await SaveRepository.open();
     try {
       const { state } = await repo.loadGame('save-a');
-      await repo.saveDraft(createTurnDraft(state.saveId, state.revision, 'worldbook-variable-turn', 'regular', action), null);
+      await repo.saveDraft(createTurnDraft(state.saveId, state.revision, 'worldbook-variable-turn', 'regular', action, false, false, false), null);
     } finally { repo.close(); }
   }, action);
   await page.reload();

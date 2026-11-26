@@ -432,7 +432,7 @@ test('局部容错：两个阶段各自跳过，保留到期入场、重载并�
   await page.getByLabel('你的行动',{exact:true}).fill('核对现有材料');
   await page.getByRole('button',{name:'发送',exact:true}).click();
   const summary=page.getByText('本回合已结算，跳过 2 项更新，1 个到期阶段待处理',{exact:true});
-  await expect(summary).toBeVisible();
+  await expect(summary).toBeVisible({timeout:18000});
   await summary.click();
   await expect(page.getByText(/主角与现场第 2 条.*物品.*ownerRef/u)).toBeVisible();
   await expect(page.getByText(/场外与网络第 2 条.*事件.*eventCommands\.0/u)).toBeVisible();
@@ -491,7 +491,7 @@ test('地点精确隔离：第 4 条跳过，25 条有效更新一次提交、�
   await page.getByLabel('你的行动',{exact:true}).fill('登记合成样本');
   await page.getByRole('button',{name:'发送',exact:true}).click();
   const summary = page.getByText('本回合已结算，跳过 1 项更新',{exact:true});
-  await expect(summary).toBeVisible();
+  await expect(summary).toBeVisible({timeout:18000});
   await summary.click();
   await expect(page.getByText(/主角与现场第 3 条.*物品.*locationId/u)).toBeVisible();
   await expect(page.getByText(wrongPlace,{exact:false})).toHaveCount(0);

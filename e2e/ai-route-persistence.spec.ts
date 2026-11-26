@@ -68,7 +68,7 @@ test('三阶段独立选择在启用跟随、保存和刷新后仍能恢复，�
 test('旧跟随配置没有独立选择时明确留空，不默默使用正文渠道默认模型',async({page})=>{
   const posts=await seed(page,false);
   for(const [,label] of tasks){await setFollow(page,label,false);await selected(page,`${label}渠道`,'');await selected(page,`${label}模型`,'');}
-  await expect(saveBar(page).getByRole('status')).toContainText('主角与现场选了「单独指定」但还没选模型');
+  await expect(saveBar(page).getByRole('status')).toContainText('人物与实体选了「单独指定」但还没选模型');
   await expect(settingsOf(page).getByRole('button',{name:'保存 AI 配置',exact:true})).toBeDisabled();
   expect(posts).toHaveLength(0);
 });
@@ -168,6 +168,6 @@ test('删除单独指定用的渠道后该阶段改回跟随正文，其他渠�
   await save(page);await close(page);await page.reload();await open(page);await following(page,'主角与现场');
   await setFollow(page,'主角与现场',false);await selected(page,'主角与现场渠道','');
   await selected(page,'场外与网络模型','world-model');await selected(page,'记忆维护模型','memory-model');
-  await expect(settings.getByRole('button',{name:/^编辑渠道：/})).toHaveCount(3);
+  await expect(settings.getByRole('button',{name:/^编辑渠道：/})).toHaveCount(4);
   expect(posts).toHaveLength(0);
 });
