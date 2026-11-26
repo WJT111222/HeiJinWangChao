@@ -1,3 +1,4 @@
+import { toolReply } from './helpers/literaryTool';
 import { createHash } from 'node:crypto';
 import { estimateTokens } from '../src/prompts/statistics';
 import { expect, test } from './helpers/test';
@@ -5,37 +6,6 @@ import { expect, test } from './helpers/test';
 const narrative = '林舟在博物馆核对蓝釉瓷杯。';
 const envelope = '<正文>' + narrative + '</正文><短期记忆>核对瓷杯。</短期记忆><变量规划>[]</变量规划>';
 const content = '<think>合成兼容文本</think>' + envelope;
-type Protocol = 'openai' | 'deepseek' | 'anthropic' | 'gemini';
-
-function reply(protocol: Protocol, stream: boolean, payload = content, padding: readonly string[] = []) {
-  const args = { content: payload }, fn = { name: 'submit_scene', arguments: JSON.stringify(args) };
-  let json: unknown, events: unknown[];
-  if (protocol === 'anthropic') {
-    const tool = { id: 'fixture-tool', type: 'tool_use', name: fn.name, input: args };
-    json = { type: 'message', content: [tool], stop_reason: 'tool_use' };
-    const index = padding.length ? 1 : 0;
-    const prefix = padding.length ? [
-      { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
-      ...padding.map(text => ({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } })),
-      { type: 'content_block_stop', index: 0 },
-    ] : [];
-    events = [{ type: 'message_start', message: { role: 'assistant', content: [] } }, ...prefix,
-      { type: 'content_block_start', index, content_block: { ...tool, input: {} } },
-      ...[fn.arguments.slice(0, 8), fn.arguments.slice(8)].map(partial_json => ({ type: 'content_block_delta', index, delta: { type: 'input_json_delta', partial_json } })),
-      { type: 'content_block_stop', index }, { type: 'message_delta', delta: { stop_reason: 'tool_use' } }, { type: 'message_stop' }];
-  } else if (protocol === 'gemini') {
-    json = { candidates: [{ content: { role: 'model', parts: [{ functionCall: { name: fn.name, args } }] }, finishReason: 'STOP' }] };
-    events = [...padding.map(text => ({ candidates: [{ content: { role: 'model', parts: [{ text }] } }] })), json];
-  } else {
-    const tool = { id: 'fixture-tool', type: 'function', function: fn };
-    json = { choices: [{ message: { role: 'assistant', tool_calls: [tool] }, finish_reason: 'tool_calls' }] };
-    events = [...padding.map(text => ({ choices: [{ delta: { content: text } }] })),
-      { choices: [{ delta: { tool_calls: [{ ...tool, index: 0, function: { name: fn.name, arguments: fn.arguments.slice(0, 8) } }] } }] },
-      { choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: fn.arguments.slice(8) } }] }, finish_reason: 'tool_calls' }] }];
-  }
-  return stream ? { contentType: 'text/event-stream', body: events.map(e => 'data: ' + JSON.stringify(e) + '\n\n').join('')
-    + (protocol === 'openai' || protocol === 'deepseek' ? 'data: [DONE]\n\n' : '') } : { json };
-}
 
 for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
   for (const format of ['JSON', 'SSE', 'SSE 多段排版空白']) test(protocol + ' ' + format + ' 正式正文及结算', async ({ page }, info) => {
@@ -51,7 +21,7 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
       const url = new URL(route.request().url());
       if (url.hostname === 'spreset.mock.invalid' && route.request().method() === 'POST') {
         wires.push(route.request().postData()!);
-        const fixture = reply(protocol, stream, payload, padding);
+        const fixture = toolReply(protocol, stream, { content: payload }, 'submit_scene', padding);
         const bytes = Buffer.from(fixture.body ?? JSON.stringify(fixture.json), 'utf8');
         replies.push(bytes);
         return route.fulfill({ contentType: stream ? 'text/event-stream' : 'application/json', body: bytes });
@@ -135,8 +105,15 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
   });
 }
 
-test('失败与取消只结束本次 Worker，旧候选及正式档保持可读', async ({ page }) => {
-  await page.goto('/?spreset=prototype');
+for (const oracle of [false,true]) test((oracle ? '神域 · ' : '') + '失败与取消只结束本次 Worker，旧候选及正式档保持可读', async ({ page }) => {
+  await page.goto(oracle ? '/' : '/?spreset=prototype');
+  if (oracle) {
+    await page.evaluate(async () => {
+      const { savePresetSettings } = await import('/src/presets/settings.ts' as string);
+      savePresetSettings({enabled:true, selected:'meowssiah', packages:{}});
+    });
+    await page.reload();
+  }
   const cases = ['success', 'limited', 'refused', 'wrong', 'incomplete', 'invalid-story', 'broken', 'cancel'] as const;
   const posts: string[] = [], relays: string[] = [];
   await page.route('**/api/ai-relay**', route => { relays.push(route.request().method()); return route.abort(); });
@@ -150,8 +127,9 @@ test('失败与取消只结束本次 Worker，旧候选及正式档保持可读'
     if (kind === 'broken') return route.abort('connectionreset');
     if (kind === 'success') return route.fulfill({ json: { choices: [{ message: { content: envelope }, finish_reason: 'stop' }] } });
     if (kind === 'refused') return route.fulfill({ json: { choices: [{ message: { refusal: 'fixture' }, finish_reason: 'content_filter' }] } });
-    const args = kind === 'incomplete' ? '{"content":' : JSON.stringify({ content: kind === 'invalid-story' ? '没有标签' : envelope });
-    const message = { tool_calls: [{ id: 'issued', type: 'function', function: { name: kind === 'wrong' ? 'other_tool' : 'submit_scene', arguments: args } }] };
+    const field = oracle ? 'game_content' : 'content';
+    const args = kind === 'incomplete' ? '{' + JSON.stringify(field) + ':' : JSON.stringify({ [field]: kind === 'invalid-story' ? '没有标签' : envelope });
+    const message = { tool_calls: [{ id: 'issued', type: 'function', function: { name: kind === 'wrong' ? 'other_tool' : oracle ? 'soliumbra_reply' : 'submit_scene', arguments: args } }] };
     return route.fulfill({ json: { choices: [{ message, finish_reason: kind === 'limited' ? 'length' : 'tool_calls' }] } });
   });
   const result = await page.evaluate(async count => {
@@ -251,7 +229,7 @@ test('A 档在途操作卸载，B 档独立结算，刷新后核对两个正式�
       await page.evaluate(() => window.dispatchEvent(new Event('c2-leave-first-save')));
       return route.abort();
     }
-    return route.fulfill(reply('openai', true));
+    return route.fulfill(toolReply('openai', true, { content }, 'submit_scene'));
   });
   const state = await page.evaluate(async () => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/talentPrompt.ts', '/src/domain/drafts.ts',

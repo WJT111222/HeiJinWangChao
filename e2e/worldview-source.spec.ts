@@ -89,7 +89,7 @@ async function setup(page: Page, marker?: string, bodies: unknown[] = [], contro
       content = content.replace('</命令>', 'set economy.properties[old_house] = ' + JSON.stringify(property) + '\n</命令>');
     }
     const names = body.tools?.map((tool: { function: { name: string } }) => tool.function.name) ?? [];
-    const delivery = names.find((name: string) => name === 'actual_content' || name === 'submit_scene');
+    const delivery = names.find((name: string) => ['actual_content','submit_scene','soliumbra_reply'].includes(name));
     if (delivery) {
       return route.fulfill({
         json: {
@@ -100,7 +100,7 @@ async function setup(page: Page, marker?: string, bodies: unknown[] = [], contro
                   {
                     id: 'mock-story',
                     type: 'function',
-                    function: { name: delivery, arguments: JSON.stringify({ content }) },
+                    function: { name: delivery, arguments: JSON.stringify(delivery === 'soliumbra_reply' ? { game_content: content } : { content }) },
                   },
                 ],
               },
@@ -233,9 +233,16 @@ for (const scenario of ['overwrite', 'default'] as const) {
   );
 }
 
-test('截断、重试、删除原书及显式重新生成使用各自的世界观', async ({ page }) => {
+for (const oracle of [false,true]) test((oracle ? '神域 · ' : '') + '截断、重试、删除原书及显式重新生成使用各自的世界观', async ({ page }) => {
   const control: MockControl = { next: 'partial' };
   const calls = await setup(page, 'device-A-world', [], control);
+  if (oracle) {
+    await page.evaluate(async () => {
+      const { savePresetSettings } = await import('/src/presets/settings.ts' as string);
+      savePresetSettings({ enabled: true, selected: 'meowssiah', packages: {} });
+    });
+    await page.reload();
+  }
   await action(page, 'seed');
   await expect(action(page, 'story')).rejects.toThrow();
   const partial = await action(page, 'view');
@@ -408,7 +415,7 @@ async function expectFoundation(wire: StoryWire, page: Page) {
   expect(JSON.stringify(rest)).not.toContain('<MAIN_WORLDBOOK>');
 }
 
-for (const mode of ['native', 'native-delivery', 'peinture-1118', 'peinture-1124', 'spreset-c2'] as const) {
+for (const mode of ['native', 'native-delivery', 'peinture-1118', 'peinture-1124', 'spreset-c2', 'meowssiah'] as const) {
   test('主世界观合流 · ' + mode + ' 使用独立的 Story 交付路径', async ({ page }) => {
     const wires: StoryWire[] = [];
     const calls = await setup(page, 'device-A-world', wires, { registerProperty: true });
@@ -416,7 +423,7 @@ for (const mode of ['native', 'native-delivery', 'peinture-1118', 'peinture-1124
       const presets = await import('/src/presets/settings.ts' as string);
       const settings = presets.readPresetSettings();
       if (mode === 'native-delivery') presets.enableNativeDelivery(settings);
-      if (mode.startsWith('peinture-')) Object.assign(settings, { enabled: true, selected: mode });
+      if (mode.startsWith('peinture-') || mode === 'meowssiah') Object.assign(settings, { enabled: true, selected: mode });
       presets.savePresetSettings(settings);
     }, mode);
     const workers: string[] = [];
@@ -429,6 +436,7 @@ for (const mode of ['native', 'native-delivery', 'peinture-1118', 'peinture-1124
     await expectFoundation(wires[0], page);
     const toolNames = wires[0].tools?.map(tool => tool.function.name) ?? [];
     if (mode === 'spreset-c2') expect(toolNames).toEqual(['submit_scene']);
+    else if (mode === 'meowssiah') expect(toolNames).toEqual(['soliumbra_reply']);
     else if (mode === 'native') expect(toolNames).toEqual([]);
     else {
       expect(toolNames).toContain('actual_content');
@@ -442,7 +450,7 @@ for (const mode of ['native', 'native-delivery', 'peinture-1118', 'peinture-1124
       ['story', 'entities', 'variables', 'world'].map(stage => [stage, 'device-A-world']),
     );
     expect(wires.slice(1).every(wire => !wire.tools)).toBe(true);
-    expect(workers).toHaveLength(mode === 'spreset-c2' ? 1 : 0);
+    expect(workers).toHaveLength(mode === 'spreset-c2' || mode === 'meowssiah' ? 1 : 0);
     const { state } = await action(page, 'commit');
     expect(state.revision).toBe(before.revision + 1);
     expect(state.turnNumber).toBe(before.turnNumber + 1);
@@ -453,10 +461,17 @@ for (const mode of ['native', 'native-delivery', 'peinture-1118', 'peinture-1124
   });
 }
 
-test('主世界观合流 · C2 失败和取消的重生成只释放本次租约，旧候选刷新后可提交', async ({ page }) => {
+for (const mode of ['C2', '小猫之神']) test('主世界观合流 · '+ mode +' 失败和取消的重生成只释放本次租约，旧候选刷新后可提交', async ({ page }) => {
   const control: MockControl = { next: 'fail' };
   const calls = await setup(page, 'device-A-world', [], control);
-  await page.goto('/?spreset=prototype');
+  if (mode === 'C2') await page.goto('/?spreset=prototype');
+  else {
+    await page.evaluate(async () => {
+      const { savePresetSettings } = await import('/src/presets/settings.ts' as string);
+      savePresetSettings({enabled:true,selected:'meowssiah',packages:{}});
+    });
+    await page.reload();
+  }
   await action(page, 'seed');
   await expect(action(page, 'story')).rejects.toThrow();
   const source = await snapshots(page, 'read');

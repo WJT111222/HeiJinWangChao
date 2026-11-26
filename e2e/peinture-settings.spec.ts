@@ -1019,3 +1019,34 @@ test('复审：1118 原控制台方案导入、保存、刷新，散文进入下
     requestSha256:createHash('sha256').update(sent[0]).digest('hex'),posts:sent.length,style:'散文随笔',saved:true,
   }));
 });
+
+test('正式设置选择小猫之神并通过隔离工具交付开局候选', async ({ page }, info) => {
+  const sent = await prepare(page, 'openai', false, false);
+  const wires: string[] = [];
+  await page.route('https://peinture.mock.invalid/**', route => {
+    wires.push(route.request().postData()!);
+    return route.fulfill({ json: { choices: [{ finish_reason: 'tool_calls', message: { role:'assistant', tool_calls:[{
+      id:'production-oracle',type:'function',function:{name:'soliumbra_reply',arguments:JSON.stringify({game_content:envelope})},
+    }] } }] } });
+  });
+  const settings = await runtimeSettings(page);
+  await settings.getByLabel('正文预设').selectOption('meowssiah');
+  await applyMode(page,settings);
+  const next = await runtimeSettings(page);
+  await next.getByRole('button',{name:'神域控制台',exact:true}).click();
+  const oracle=page.getByRole('dialog',{name:'神域控制台',exact:true});
+  await oracle.getByLabel('自定义创作要求').fill('沿岸的灯火渐次亮起。');
+  await oracle.getByRole('button',{name:'保存文学配置'}).click();
+  await expect(oracle.getByRole('status')).toContainText('文学配置已保存');
+  await info.attach('production-console',{contentType:'image/png',body:await page.screenshot()});
+  const workerCreated=page.waitForEvent('worker',worker=>worker.url().startsWith('blob:null/'));
+  await generate(page);
+  expect((await workerCreated).url()).toContain('blob:null/');
+  expect(wires).toHaveLength(1);expect(sent).toEqual([]);
+  expect(wires[0]).toContain('沿岸的灯火渐次亮起。');
+  expect(JSON.parse(wires[0]).tools.map((tool:{function:{name:string}})=>tool.function.name)).toEqual(['soliumbra_reply']);
+  const license=await page.request.get('/literature/meowssiah/source/COPYING');
+  expect(await license.text()).toContain('GNU GENERAL PUBLIC LICENSE');
+  const source=await page.request.get('/literature/meowssiah/source/SOURCES.json');
+  expect((await source.json()).commit).toBe('53bd585da14248ba10baaede7fc7ed0cebe1eeeb');
+});
