@@ -93,7 +93,7 @@ test('开局通过真实开关关闭两阶段，连续三章保存、刷新不�
 test('只关闭World：变量仍严格执行并正式结算，关闭状态可见',async({page})=>{
   await seed(page);const calls=await wire(page);await switches(page,true,false);await start(page);await waitTurn(page,1);
   expect(calls).toEqual(['story','entities','variables']);expect((await stored(page)).state.protagonist.emotionText).toBe('平静');
-  await openStageSwitches(page);await expect(page.locator('.workflow-stages>li').nth(3)).toContainText('已关闭');await shot(page,'variables-only');
+  await openStageSwitches(page);await expect(page.locator('.workflow-stages>li').nth(3)).toContainText('已跳过');await shot(page,'variables-only');
 });
 
 test('只启用场外阶段时直接读取已选正文的合法开局时钟并完成本章',async({page})=>{

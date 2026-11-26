@@ -38,9 +38,9 @@ for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
       const [{SaveRepository},{talentPromptInput},{createTurnDraft},{StoryStage},{newChannel,defaultAiConfig},{CredentialVault}] =
         await Promise.all(paths.map(path => import(path)));
       const input = talentPromptInput('story','regular');
-      Object.assign(input.settings.runtime, {streamStory:false, useVariableStage:false, useWorldStage:false});
+      Object.assign(input.settings.runtime, {streamStory:false, useEntityStage:false, useVariableStage:false, useWorldStage:false});
       Object.assign(input.settings.prompts, { minNarrativeChars:4000, maxNarrativeChars:5678, style:'noir', perspective:'first' });
-      let draft = createTurnDraft(input.state.saveId,input.state.revision,'writing-compare','regular',input.userInput,false,false);
+      let draft = createTurnDraft(input.state.saveId,input.state.revision,'writing-compare','regular',input.userInput,false,false,false);
       const repo = await SaveRepository.open(), stage = new StoryStage(repo);
       try {
         const backup = {state:input.state,draft};
@@ -67,7 +67,7 @@ for (const mode of ['原生', '独立防截断', '文学预设'] as const) {
         const revisionUnchanged = (await repo.load(draft.saveId)).revision === initialState.revision;
         if (!draft.story) return {rows, revisionUnchanged, committed:null};
         // Only the complete first candidate is still selected after the failed attempts.
-        const submitted = await repo.commitTurn({draft, nextAction:'', useVariableStage:false, useWorldStage:false});
+        const submitted = await repo.commitTurn({draft, nextAction:'', useEntityStage:false, useVariableStage:false, useWorldStage:false});
         const saved = await repo.load(draft.saveId);
         return {rows, revisionUnchanged, committed:{narrative:saved.journal.at(-1).story.narrative,
           advanced:saved.turnNumber - initialState.turnNumber, replayed:submitted.replayed}};

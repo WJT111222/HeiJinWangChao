@@ -34,7 +34,7 @@ const glyphs: Record<string, string> = { done: '✓', fail: '!', run: '', off: '
 const credentials = () => browserCredentials();
 
 /** 与旧卡片一致：关闭的阶段单独标为 off，其余沿用进度视觉。 */
-export const stepState = (step: WorkflowStep) => (step.visual === 'idle' && step.text === '已关闭' ? 'off' : step.text === '仅预览' ? 'preview' : step.visual);
+export const stepState = (step: WorkflowStep) => (step.text === '仅预览' ? 'preview' : step.visual);
 
 export function DesktopWorkflowPanel(props: {
   layout?: WorkflowLayout;

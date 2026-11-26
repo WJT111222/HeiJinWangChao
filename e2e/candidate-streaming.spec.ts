@@ -76,7 +76,7 @@ test('旧运行设置不重置：两个独立开关默认关闭，显式保存�
   await seed(page, 'variables', true);
   const original = await page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
   await openSettings(page); await page.getByRole('button', { name: '运行', exact: true }).click();
-  const variables = page.getByRole('checkbox', { name: '变量管理 · 流式传输', exact: true }), world = page.getByRole('checkbox', { name: '动态世界 · 流式传输', exact: true });
+  const variables = page.getByRole('checkbox', { name: '主角与现场 · 流式传输', exact: true }), world = page.getByRole('checkbox', { name: '场外与网络 · 流式传输', exact: true });
   await expect(variables).not.toBeChecked(); await expect(world).not.toBeChecked(); await expect(page.getByLabel('请求超时（秒）')).toHaveValue('73');
   expect(await page.evaluate(() => localStorage.getItem('heijin.settings.v1'))).toBe(original);
   await variables.check(); await expect(world).not.toBeChecked(); await page.getByRole('button', { name: '保存本地设置', exact: true }).click();
@@ -90,7 +90,7 @@ test('旧运行设置不重置：两个独立开关默认关闭，显式保存�
 });
 
 for (const stage of ['variables', 'world'] as const) {
-  const label = stage === 'variables' ? '变量' : '世界', rawLabel = stage === 'variables' ? '变量' : '场外与网络';
+  const label = stage === 'variables' ? '变量' : '世界', rawLabel = stage === 'variables' ? '主角与现场' : '场外与网络';
   test(`${stage} 实时只读、主动公开思考、跟随与复制、完整校验后结算`, async ({ page }, info) => {
     const before = await seed(page, stage); await begin(page, stage, label);
     await page.evaluate(async () => {

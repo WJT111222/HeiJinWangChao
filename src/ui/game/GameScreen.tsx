@@ -621,14 +621,14 @@ export function GameScreen({
     const auto = automatic.progress?.stage === stage ? automatic.progress : undefined;
     const skipped = automatic.outcome?.draft.draftRevision === draft?.draftRevision && automatic.outcome?.skipped.includes(stage);
     const enabled = stage === 'story' || (busy && draft ? stage === 'entities' ? draft.useEntityStage : stage === 'variables' ? draft.useVariableStage : draft.useWorldStage : stage === 'entities' ? settings.runtime.useEntityStage : stage === 'variables' ? settings.runtime.useVariableStage : settings.runtime.useWorldStage);
-    const text = !enabled ? '已关闭' : awaitingAction ? '已结算'
+    const text = !enabled ? '已跳过' : awaitingAction ? '已结算'
       : auto ? auto.phase === 'saving' ? '保存中' : auto.phase === 'retrying' ? `重试 ${auto.retry?.count ?? ''}/${auto.retry?.max ?? ''}` : '生成中'
       : activeStage === stage ? activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? `重试 ${retryNotice?.count ?? ''}/${retryNotice?.max ?? ''}` : '生成中'
       : skipped || status === 'skipped' ? '已跳过'
       : status === 'failed' || errorStage === stage && hasWorkflowError ? '失败 · 可重试'
       : status === 'preview' ? '仅预览' : status === 'ready' ? '已完成' : '待生成';
     return { stage, name: ['正文', '人物与实体', '主角与现场', '场外与网络'][i], text,
-      visual: awaitingAction ? 'done' : auto || activeStage === stage ? 'run' : text === '失败 · 可重试' ? 'fail' : status === 'ready' ? 'done' : 'idle' };
+      visual: !enabled ? 'off' : awaitingAction ? 'done' : auto || activeStage === stage ? 'run' : text === '失败 · 可重试' ? 'fail' : status === 'ready' ? 'done' : 'idle' };
   });
   const worldNavigation = <aside className="world-sidebar" aria-label="世界资料">
     <h2>世界资料</h2>

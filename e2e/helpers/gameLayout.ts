@@ -27,7 +27,7 @@ export async function openWorkflow(page: Page) {
 
 // 两端复用阶段页签；手机在 #122 原生模态 Dialog 中提供两层导航。
 const desktopWorkflow = (page: Page) => (page.viewportSize()?.width ?? 0) > 900;
-const stageIndex = { story: 0, variables: 1, world: 2 } as const;
+const stageIndex = { story: 0, entities: 1, variables: 2, world: 3 } as const;
 export type WorkflowStage = keyof typeof stageIndex;
 export async function openStageSwitches(page: Page) {
   await openWorkflow(page);
@@ -51,8 +51,8 @@ export async function openStageRaw(page: Page, stage: WorkflowStage) {
     .getByRole('tabpanel', { name: '模型原文', exact: true })
     .getByRole('region', { name: '模型原文', exact: true });
 }
-export async function openStageCandidates(page:Page,stage:'variables'|'world'){await openStageTab(page,stage,'候选');return page.locator('.wf-stage');}
-export async function openCandidateRaw(page:Page,stage:'variables'|'world'){await openStageTab(page,stage,'模型原文');return page.getByRole('region',{name:'模型原文',exact:true});}
+export async function openStageCandidates(page:Page,stage:'entities'|'variables'|'world'){await openStageTab(page,stage,'候选');return page.locator('.wf-stage');}
+export async function openCandidateRaw(page:Page,stage:'entities'|'variables'|'world'){await openStageTab(page,stage,'模型原文');return page.getByRole('region',{name:'模型原文',exact:true});}
 export async function openStoryInspection(page:Page){return openStageRaw(page,'story');}
 // Candidate is a tab inside the workflow now; return to its first level on phones.
 export async function closeStageCandidates(page:Page){if(!desktopWorkflow(page))await openStageSwitches(page);}

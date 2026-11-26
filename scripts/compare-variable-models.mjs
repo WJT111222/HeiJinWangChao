@@ -8,6 +8,35 @@ import { createHash } from 'node:crypto';
 import { createServer } from 'vite';
 import { comparisonFixture } from './variable-comparison-fixture.mjs';
 
+// Offline scoring for the two facts explicitly fixed by the comparison fixture.
+function fixtureMetrics(report, expected) {
+  const outputs = report.stages.map(stage => stage.result).filter(Boolean);
+  const commands = outputs.flatMap(result => [...(result.commands ?? []), ...(result.worldCommands ?? []),
+    ...(result.taskCommands ?? []), ...(result.eventCommands ?? [])]);
+  const missing = [], incorrect = [], duplicates = [];
+  for (const fact of expected) {
+    const matches = commands.filter(command => command.type === fact.type);
+    if (!matches.length) missing.push(fact.type);
+    if (matches.length > 1) duplicates.push({ type: fact.type, count: matches.length - 1 });
+    for (const command of matches) {
+      const correct = fact.type === 'SetWorldClock'
+        ? Date.parse(command.worldClock) === Date.parse(fact.worldClock)
+        : command.account === fact.account && command.amount === fact.amount;
+      if (!correct) incorrect.push({ type: command.type, commandId: command.commandId });
+    }
+  }
+  const actual = report.stages.map(stage => stage.usage);
+  function sumUsage(field) {
+    return actual.length && actual.every(usage => Number.isFinite(usage?.[field]))
+      ? actual.reduce((sum, usage) => sum + usage[field], 0) : null;
+  }
+  return { missing, incorrect, duplicates,
+    otherCommands: commands.filter(command => !expected.some(fact => fact.type === command.type)).map(command => command.type),
+    skippedCommands: outputs.reduce((count, result) => count + (result.settlement?.skipped?.length ?? 0), 0),
+    failure: report.failure?.code ?? null,
+    reportedUsage: { inputTokens: sumUsage('inputTokens'), outputTokens: sumUsage('outputTokens'), totalTokens: sumUsage('totalTokens') } };
+}
+
 const [checkout = '.', mode = '--mock'] = process.argv.slice(2);
 if (!['--live', '--mock'].includes(mode)) throw new Error('指定 --mock 或 --live');
 const live = mode === '--live';
@@ -76,5 +105,6 @@ try {
     process.exitCode = 1;
   }
   report.totalElapsedMs = Math.round(performance.now()-start);
+  report.metrics = fixtureMetrics(report, fixture.scene);
   log(JSON.stringify(report,null,2));
 } finally { await server.close(); }

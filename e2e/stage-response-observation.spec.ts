@@ -18,11 +18,11 @@ async function seed(page: Page, stage: 'variables' | 'world', deepseekV4?: { str
     const [{ SaveRepository }, { worldState, worldDraft }, { defaultSettings, settingsKey }, { newChannel, defaultAiConfig, saveAiConfig }, { CredentialVault }, { createTurnDraft }] = await Promise.all(paths.map(p => import(p)));
     const repo = await SaveRepository.open(); await repo.create(worldState());
     const mode = deepseekV4 ? 'opening' : 'regular';
-    await repo.saveDraft(createTurnDraft('save-a', 0, 'turn-a', mode, ''), null);
+    await repo.saveDraft(createTurnDraft('save-a', 0, 'turn-a', mode, '', true, true, false), null);
     await repo.saveDraft(worldDraft(false, mode), 0);
     if (stage === 'world') await repo.saveDraft({ ...worldDraft(true), draftRevision: 2 }, 1);
     repo.close();
-    const settings = defaultSettings();
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false;
     if (deepseekV4) settings.runtime.streamVariables = deepseekV4.stream;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel('deepseek'), config = defaultAiConfig();
@@ -54,7 +54,7 @@ for (const stage of ['variables', 'world'] as const) {
     });
     const before = await seed(page, stage);
     await openWorkflowStage(page, stage);
-    const label = stage === 'variables' ? '变量' : '世界', rawLabel = stage === 'variables' ? '变量' : '动态世界';
+    const label = stage === 'variables' ? '变量' : '世界', rawLabel = stage === 'variables' ? '主角与现场' : '场外与网络';
     await page.getByRole('button', { name: `生成${label}候选`, exact: true }).click();
     await expect.poll(async () => (await stored(page)).draft?.failures.length).toBeGreaterThan(0);
     expect(calls).toBe(1);

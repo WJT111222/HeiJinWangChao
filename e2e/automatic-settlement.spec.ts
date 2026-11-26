@@ -65,8 +65,8 @@ test('完整原文可读，开局与下一条行动各自动结算一次，刷�
   await openStageRaw(page, 'world'); expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(server.responses.world);
   await page.getByLabel('你的行动', { exact: true }).fill('继续在街边用餐'); await page.getByRole('button', { name: '发送', exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2);
-  await settled(page); data = await stored(page); expect(data.state.turnNumber).toBe(2); expect(data.state.economy.cash).toBe(4000); expect(data.state.journal).toHaveLength(2); expect(data.draft.userInput).toBe(''); expect(server.calls).toHaveLength(6);
-  await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(data); expect(server.calls).toHaveLength(6);
+  await settled(page); data = await stored(page); expect(data.state.turnNumber).toBe(2); expect(data.state.economy.cash).toBe(4000); expect(data.state.journal).toHaveLength(2); expect(data.draft.userInput).toBe(''); expect(server.calls).toHaveLength(8);
+  await page.reload(); await openGameTools(page); await settled(page); expect(await stored(page)).toEqual(data); expect(server.calls).toHaveLength(8);
   await openStageRaw(page, 'variables'); await expect(page.locator('.stage-responses')).toContainText('本页面没有可恢复的模型原文');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('auto-settlement-raw-output.png') });
@@ -104,14 +104,14 @@ test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段�
   let release!: () => void; server.control.hold = new Promise<void>(resolve => { release = resolve; });
   await page.getByLabel('你的行动', { exact: true }).fill('继续在街边用餐');
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(() => server.calls.length).toBe(6);
+  await expect.poll(() => server.calls.length).toBe(8);
   try {
     expect((await stored(page)).state.turnNumber).toBe(1);
     expect(await commits('started')).toBe(1); expect(await commits('completed')).toBe(1);
   } finally { release(); }
   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2); await settled(page);
   expect(await commits('started')).toBe(2); expect(await commits('completed')).toBe(2);
-  await page.reload(); await openGameTools(page); await settled(page); expect(server.calls).toHaveLength(6);
+  await page.reload(); await openGameTools(page); await settled(page); expect(server.calls).toHaveLength(8);
 });
 
 test('NPC场景位置与World字段错误各自隔离，独立主角状态照常结算', async ({page}) => {
@@ -288,7 +288,7 @@ test('#193 刷新后只重试World，取消、重复点击与跨标签竞争不�
   await page.reload();
   await openGameTools(page);
   expect(await stored(page)).toEqual(failed);
-  expect(server.calls).toHaveLength(6);
+  expect(server.calls).toHaveLength(8);
   const hint = page.locator(isMobile ? '.wf-ft .workflow-fee' : '.workflow-primary small');
   await expect(hint).toBeVisible();
   await expect(hint).toHaveText('本次仅重试动态世界，保留已通过的正文和变量。重新请求可能产生模型费用。');
@@ -320,7 +320,7 @@ test('#193 刷新后只重试World，取消、重复点击与跨标签竞争不�
     expect(cancelled.state).toEqual(failed.state);
     expect(cancelled.draft).toMatchObject({userInput:boundAction,story:failed.draft.story,variables:failed.draft.variables});
     expect(cancelled.draft.world).toBeUndefined();
-    expect(server.calls).toHaveLength(7);
+    expect(server.calls).toHaveLength(9);
     await retry.click();
     await settled(page);
     const committed = await stored(page);
@@ -335,7 +335,7 @@ test('#193 刷新后只重试World，取消、重复点击与跨标签竞争不�
     await page.reload();
     await openGameTools(page);
     expect(await stored(page)).toEqual(committed);
-    expect(server.calls).toHaveLength(8);
+    expect(server.calls).toHaveLength(10);
     expect(second.calls).toEqual([]);
   } finally {
     release();
