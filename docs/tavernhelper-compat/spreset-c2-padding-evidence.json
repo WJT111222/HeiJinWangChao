@@ -1,0 +1,820 @@
+{
+  "reviewedHead": "82dca2fe0e0592deb0595087a3144186f270fb23",
+  "release": "3be381f64808b16d46ed54c6cf1fb0065555c0ed",
+  "merge": "ed4067fa9b524f4ad9fd87be9cab175f84fbd7ed",
+  "code": "e79f3e12890fac3ac76e0ee3147ecccb16ff2022",
+  "environment": {
+    "node": "24.19.0",
+    "chromium": "154.0.8037.57",
+    "playwright": "1.64.1",
+    "port": 5174,
+    "playwrightWorkers": 1,
+    "retries": 0,
+    "model": "local synthetic"
+  },
+  "paired": [
+    {
+      "project": "desktop",
+      "protocol": "openai",
+      "layout": "clean",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      },
+      "responseSha256": "a315c7a3a4b49c51e215427be0b5429355e23b1f0a62b449abead9b19f919ca5",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "desktop",
+      "protocol": "openai",
+      "layout": "padding",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 0,
+        "candidate": 0,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 0,
+        "commitRevisionDelta": 0
+      },
+      "responseSha256": "faca9afecc1f6d6fe0ee1e092504ee0f4bd2f443fa725d0e54fd3a6b71761e4d",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "desktop",
+      "protocol": "deepseek",
+      "layout": "clean",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      },
+      "responseSha256": "a315c7a3a4b49c51e215427be0b5429355e23b1f0a62b449abead9b19f919ca5",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "desktop",
+      "protocol": "deepseek",
+      "layout": "padding",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 0,
+        "candidate": 0,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 0,
+        "commitRevisionDelta": 0
+      },
+      "responseSha256": "faca9afecc1f6d6fe0ee1e092504ee0f4bd2f443fa725d0e54fd3a6b71761e4d",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "desktop",
+      "protocol": "gemini",
+      "layout": "clean",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      },
+      "responseSha256": "4852c6710a55332b19aaad6bb049ee68c23f63a84d5c409b462d114a4d6305d8",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "desktop",
+      "protocol": "gemini",
+      "layout": "padding",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 0,
+        "candidate": 0,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 0,
+        "commitRevisionDelta": 0
+      },
+      "responseSha256": "54f6fe3cd596abe31cc2745bee9e9635274f03ca51462aa3de9374641890f743",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "desktop",
+      "protocol": "anthropic",
+      "layout": "clean",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      },
+      "responseSha256": "43c0c120e13e7307a3020acdb1ce7d41dec3787061aec9ccacf7375fd4ca8415",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "desktop",
+      "protocol": "anthropic",
+      "layout": "padding",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 0,
+        "candidate": 0,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 0,
+        "commitRevisionDelta": 0
+      },
+      "responseSha256": "60bf680b5c8ea787c6d94c641826c977bc684c8c0d532f33b3f66f299442639e",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "openai",
+      "layout": "clean",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      },
+      "responseSha256": "a315c7a3a4b49c51e215427be0b5429355e23b1f0a62b449abead9b19f919ca5",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "openai",
+      "layout": "padding",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 0,
+        "candidate": 0,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 0,
+        "commitRevisionDelta": 0
+      },
+      "responseSha256": "faca9afecc1f6d6fe0ee1e092504ee0f4bd2f443fa725d0e54fd3a6b71761e4d",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "deepseek",
+      "layout": "clean",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      },
+      "responseSha256": "a315c7a3a4b49c51e215427be0b5429355e23b1f0a62b449abead9b19f919ca5",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "deepseek",
+      "layout": "padding",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 0,
+        "candidate": 0,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 0,
+        "commitRevisionDelta": 0
+      },
+      "responseSha256": "faca9afecc1f6d6fe0ee1e092504ee0f4bd2f443fa725d0e54fd3a6b71761e4d",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "gemini",
+      "layout": "clean",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      },
+      "responseSha256": "4852c6710a55332b19aaad6bb049ee68c23f63a84d5c409b462d114a4d6305d8",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "gemini",
+      "layout": "padding",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 0,
+        "candidate": 0,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 0,
+        "commitRevisionDelta": 0
+      },
+      "responseSha256": "54f6fe3cd596abe31cc2745bee9e9635274f03ca51462aa3de9374641890f743",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "anthropic",
+      "layout": "clean",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      },
+      "responseSha256": "43c0c120e13e7307a3020acdb1ce7d41dec3787061aec9ccacf7375fd4ca8415",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "anthropic",
+      "layout": "padding",
+      "before": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 0,
+        "candidate": 0,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 0,
+        "commitRevisionDelta": 0
+      },
+      "responseSha256": "60bf680b5c8ea787c6d94c641826c977bc684c8c0d532f33b3f66f299442639e",
+      "after": {
+        "post": 1,
+        "finish": 1,
+        "receipt": 1,
+        "candidate": 1,
+        "candidateFormalRevisionDelta": 0,
+        "commitTurnDelta": 1,
+        "commitRevisionDelta": 1
+      }
+    }
+  ],
+  "pairedExample": {
+    "before": {
+      "responseSha256": "faca9afecc1f6d6fe0ee1e092504ee0f4bd2f443fa725d0e54fd3a6b71761e4d",
+      "processorText": " \n",
+      "processorArgument": "<正文>林舟核对展馆的目录。</正文><短期记忆>核对目录。</短期记忆><变量规划>[]</变量规划>",
+      "processorOutput": null,
+      "receipt": null,
+      "rawObserver": " \n",
+      "candidate": null,
+      "committedStory": null,
+      "statesTurnRevision": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    "after": {
+      "responseSha256": "faca9afecc1f6d6fe0ee1e092504ee0f4bd2f443fa725d0e54fd3a6b71761e4d",
+      "processorText": "",
+      "processorArgument": "<正文>林舟核对展馆的目录。</正文><短期记忆>核对目录。</短期记忆><变量规划>[]</变量规划>",
+      "processorOutput": "<正文>林舟核对展馆的目录。</正文><短期记忆>核对目录。</短期记忆><变量规划>[]</变量规划>",
+      "receipt": {
+        "id": "local-call",
+        "bytes": 122
+      },
+      "rawObserver": " \n<正文>林舟核对展馆的目录。</正文><短期记忆>核对目录。</短期记忆><变量规划>[]</变量规划>",
+      "candidate": {
+        "turnKind": "regular",
+        "narrative": "林舟核对展馆的目录。",
+        "summary": "核对目录。",
+        "variableGuide": [],
+        "variableGuideRaw": "[]"
+      },
+      "committedStory": {
+        "turnKind": "regular",
+        "narrative": "林舟核对展馆的目录。",
+        "summary": "核对目录。",
+        "variableGuide": [],
+        "variableGuideRaw": "[]"
+      },
+      "statesTurnRevision": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          2
+        ]
+      ]
+    }
+  },
+  "chromium": {
+    "releaseAndImageSelections": {
+      "expected": 172,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "byFile": {
+      "backup-ui.spec.ts": {
+        "passed": 2
+      },
+      "city-expansion.spec.ts": {
+        "passed": 2
+      },
+      "completion-chime.spec.ts": {
+        "passed": 2
+      },
+      "continuous-turns.spec.ts": {
+        "passed": 6
+      },
+      "dynasty-theater.spec.ts": {
+        "passed": 2
+      },
+      "faction-panel.spec.ts": {
+        "passed": 2
+      },
+      "harem.spec.ts": {
+        "passed": 2
+      },
+      "image-finalization.spec.ts": {
+        "passed": 6
+      },
+      "image-generation.spec.ts": {
+        "passed": 4
+      },
+      "image-placements.spec.ts": {
+        "passed": 10
+      },
+      "narrative-length.spec.ts": {
+        "passed": 2
+      },
+      "opening-time-recovery.spec.ts": {
+        "passed": 6
+      },
+      "peinture-settings.spec.ts": {
+        "passed": 8
+      },
+      "settings-readability.spec.ts": {
+        "passed": 4
+      },
+      "settings-stage-sync.spec.ts": {
+        "passed": 2
+      },
+      "spreset-isolation.spec.ts": {
+        "passed": 6
+      },
+      "spreset-prototype.spec.ts": {
+        "passed": 30
+      },
+      "spreset-terminal.spec.ts": {
+        "passed": 16
+      },
+      "story-continuation-consent.spec.ts": {
+        "passed": 36
+      },
+      "story-legacy-writing.spec.ts": {
+        "passed": 8
+      },
+      "story-literary-ownership.spec.ts": {
+        "passed": 8
+      },
+      "tavern-assistant.spec.ts": {
+        "passed": 6
+      },
+      "worldbook-library-tabs.spec.ts": {
+        "passed": 2
+      }
+    },
+    "c2SeparateRun": {
+      "expected": 52,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "variableAndImageSettlement": {
+      "expected": 2,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    }
+  },
+  "splitPadding": [
+    {
+      "project": "desktop",
+      "protocol": "openai",
+      "responseSha256": "9cf96d7255e526a1feb894e171b63d2b35caec1b0ac517a795e14ae3fe35c4ed",
+      "processorText": "",
+      "argumentSha256": "fb98883d5890ca4e61c96d646e891b7f093f5c751530ac49f4b9dd10085a7021",
+      "rawObserverSha256": "2ac68e3e5d4ffff11f05e74c213218cd6293e6739cd96d02c0935dcc7071852c",
+      "receipt": {
+        "id": "fixture-tool",
+        "bytes": 161
+      }
+    },
+    {
+      "project": "desktop",
+      "protocol": "deepseek",
+      "responseSha256": "9cf96d7255e526a1feb894e171b63d2b35caec1b0ac517a795e14ae3fe35c4ed",
+      "processorText": "",
+      "argumentSha256": "fb98883d5890ca4e61c96d646e891b7f093f5c751530ac49f4b9dd10085a7021",
+      "rawObserverSha256": "2ac68e3e5d4ffff11f05e74c213218cd6293e6739cd96d02c0935dcc7071852c",
+      "receipt": {
+        "id": "fixture-tool",
+        "bytes": 161
+      }
+    },
+    {
+      "project": "desktop",
+      "protocol": "gemini",
+      "responseSha256": "1d3e03d0d02578057bc9ed6ec9e0cc3924d08c4d294c1615887d1921de5784e2",
+      "processorText": "",
+      "argumentSha256": "fb98883d5890ca4e61c96d646e891b7f093f5c751530ac49f4b9dd10085a7021",
+      "rawObserverSha256": "2ac68e3e5d4ffff11f05e74c213218cd6293e6739cd96d02c0935dcc7071852c",
+      "receipt": {
+        "id": "gemini-call-0",
+        "bytes": 161
+      }
+    },
+    {
+      "project": "desktop",
+      "protocol": "anthropic",
+      "responseSha256": "c3f6694c8928774a68f0ca6f910e12b2030b7968c6e716b2462f5c06726f1fcd",
+      "processorText": "",
+      "argumentSha256": "fb98883d5890ca4e61c96d646e891b7f093f5c751530ac49f4b9dd10085a7021",
+      "rawObserverSha256": "2ac68e3e5d4ffff11f05e74c213218cd6293e6739cd96d02c0935dcc7071852c",
+      "receipt": {
+        "id": "fixture-tool",
+        "bytes": 161
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "openai",
+      "responseSha256": "9cf96d7255e526a1feb894e171b63d2b35caec1b0ac517a795e14ae3fe35c4ed",
+      "processorText": "",
+      "argumentSha256": "fb98883d5890ca4e61c96d646e891b7f093f5c751530ac49f4b9dd10085a7021",
+      "rawObserverSha256": "2ac68e3e5d4ffff11f05e74c213218cd6293e6739cd96d02c0935dcc7071852c",
+      "receipt": {
+        "id": "fixture-tool",
+        "bytes": 161
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "deepseek",
+      "responseSha256": "9cf96d7255e526a1feb894e171b63d2b35caec1b0ac517a795e14ae3fe35c4ed",
+      "processorText": "",
+      "argumentSha256": "fb98883d5890ca4e61c96d646e891b7f093f5c751530ac49f4b9dd10085a7021",
+      "rawObserverSha256": "2ac68e3e5d4ffff11f05e74c213218cd6293e6739cd96d02c0935dcc7071852c",
+      "receipt": {
+        "id": "fixture-tool",
+        "bytes": 161
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "gemini",
+      "responseSha256": "1d3e03d0d02578057bc9ed6ec9e0cc3924d08c4d294c1615887d1921de5784e2",
+      "processorText": "",
+      "argumentSha256": "fb98883d5890ca4e61c96d646e891b7f093f5c751530ac49f4b9dd10085a7021",
+      "rawObserverSha256": "2ac68e3e5d4ffff11f05e74c213218cd6293e6739cd96d02c0935dcc7071852c",
+      "receipt": {
+        "id": "gemini-call-0",
+        "bytes": 161
+      }
+    },
+    {
+      "project": "mobile",
+      "protocol": "anthropic",
+      "responseSha256": "c3f6694c8928774a68f0ca6f910e12b2030b7968c6e716b2462f5c06726f1fcd",
+      "processorText": "",
+      "argumentSha256": "fb98883d5890ca4e61c96d646e891b7f093f5c751530ac49f4b9dd10085a7021",
+      "rawObserverSha256": "2ac68e3e5d4ffff11f05e74c213218cd6293e6739cd96d02c0935dcc7071852c",
+      "receipt": {
+        "id": "fixture-tool",
+        "bytes": 161
+      }
+    }
+  ],
+  "malformed": {
+    "samples": 34,
+    "finish": 0,
+    "receipts": 0,
+    "candidates": 0,
+    "formalTurnDelta": 0,
+    "formalRevisionDelta": 0,
+    "byFault": {
+      "duplicate": 16,
+      "foreign-end": 16,
+      "null-block-stop": 2
+    }
+  },
+  "competingText": {
+    "fourProtocolDesktopMobile": {
+      "samples": 8,
+      "finish": 0,
+      "receipts": 0,
+      "candidates": 0,
+      "formalChanges": 0
+    }
+  },
+  "independentParser": {
+    "c2-parser": {
+      "deliver": 9,
+      "reject": 36
+    },
+    "c2-close": {
+      "deliver": 1,
+      "reject": 2
+    }
+  },
+  "history": [
+    {
+      "project": "desktop",
+      "phase": "pre",
+      "posts": 1,
+      "version": 3,
+      "turnDelta": 0,
+      "revisionDelta": 0
+    },
+    {
+      "project": "mobile",
+      "phase": "pre",
+      "posts": 1,
+      "version": 3,
+      "turnDelta": 0,
+      "revisionDelta": 0
+    },
+    {
+      "project": "desktop",
+      "phase": "post",
+      "posts": 1,
+      "version": 4,
+      "turnDelta": 1,
+      "revisionDelta": 1
+    },
+    {
+      "project": "mobile",
+      "phase": "post",
+      "posts": 1,
+      "version": 4,
+      "turnDelta": 1,
+      "revisionDelta": 1
+    }
+  ],
+  "productionPreview": [
+    {
+      "name": "desktop",
+      "worker": 0,
+      "sandbox": 0,
+      "frames": 0,
+      "paths": {
+        "/experiments/spreset/sandbox.html": {
+          "status": 200,
+          "type": "text/html",
+          "appShell": true,
+          "processor": false
+        },
+        "/experiments/spreset/worker.mjs": {
+          "status": 200,
+          "type": "text/html",
+          "appShell": true,
+          "processor": false
+        },
+        "/experiments/spreset/core.mjs": {
+          "status": 200,
+          "type": "text/html",
+          "appShell": true,
+          "processor": false
+        },
+        "/src/presets/spreset/definition.ts": {
+          "status": 200,
+          "type": "text/html",
+          "appShell": true,
+          "processor": false
+        }
+      }
+    },
+    {
+      "name": "mobile",
+      "worker": 0,
+      "sandbox": 0,
+      "frames": 0,
+      "paths": {
+        "/experiments/spreset/sandbox.html": {
+          "status": 200,
+          "type": "text/html",
+          "appShell": true,
+          "processor": false
+        },
+        "/experiments/spreset/worker.mjs": {
+          "status": 200,
+          "type": "text/html",
+          "appShell": true,
+          "processor": false
+        },
+        "/experiments/spreset/core.mjs": {
+          "status": 200,
+          "type": "text/html",
+          "appShell": true,
+          "processor": false
+        },
+        "/src/presets/spreset/definition.ts": {
+          "status": 200,
+          "type": "text/html",
+          "appShell": true,
+          "processor": false
+        }
+      }
+    }
+  ],
+  "build": {
+    "files": 141,
+    "hits": {
+      "spreset=prototype": [],
+      "spreset-c2": [],
+      "/experiments/spreset/": [],
+      "submit_scene": [],
+      "normalizeSPresetOutputProcessorResult": [],
+      "SPreset 实验处理器": []
+    },
+    "peinture": [
+      "peinture-1118-BTJ4LJkw.js",
+      "peinture-1124-CmnKZAjJ.js",
+      "peinture-1124-mascot-B8xtUNMy.png"
+    ],
+    "licensedFiles": {
+      "core.mjs": "fa6d15358d1da34264c8b6eb6752a13033132062268dbefca16b0f16cc898b5a",
+      "worker.mjs": "15cc5dedff8de3c229ed6044dd1b9cc145258cf04d4cecd572abb7728298a2df",
+      "COPYING": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "frame.mjs": "644182a6661b79ba9b5f781891abc189a151cd7b33ff7de2d1216d3edfe3be7b"
+    },
+    "notices": "release bytes + existing C2 notice",
+    "noticesSha256": "0543bc969f3831312141025bcf2e19f069d07b57044180605ef9570794e6d4e8"
+  },
+  "vitest": {
+    "full": 5665,
+    "files": 241,
+    "promptsSubset": 93,
+    "focusSubset": 156,
+    "variableStageSubset": 25,
+    "plainTextNoReceiptSubset": 8
+  },
+  "scope": "各行、各套件和单独复跑之间存在重叠。未执行全量 Playwright、真实模型、物理手机或生产部署。"
+}

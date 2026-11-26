@@ -1,5 +1,44 @@
 # SPreset 核心运行时原型（C2）
 
+## 合法工具调用前的排版空白
+
+独立复审使用同一份 `submit_scene` 参数，分别直接交付和在交付前增加空格与换行。在 `82dca2fe` 上，四协议各自在桌面和手机复现误拒。公共解析器已确认唯一完整调用，C2 却将排版空白填入处理器的独立正文字段。处理器收到两种交付后拒发收据。每份失败样本只发送了一次请求。
+
+C2 现在把公共解析器针对原始帧建立的 `matchesDelivery` 核对函数带到 `PrototypeSession.read`。只有已验证的工具参数与伴随文本共同通过核对时，宿主才把传给 `finish` 的独立正文字段设为空串。工具参数和原文观察器继续接收原字串，收据仍按实际输出的 UTF-8 字节数和调用 ID 校验。纯文本保留原有空白。真实竞争正文在进入处理器前失败。[响应读取](../../src/presets/spreset/response.ts) · [处理器入口](../../src/presets/spreset/session.ts) · [公共契约](1124/upstream-contract.md)
+
+| 同一组合的实测结果 | 整改前 | 整改后 |
+| --- | --- | --- |
+| 直接工具交付，四协议 × 双端 | 8/8 结算 | 8/8 结算 |
+| 工具前增加空格与换行，四协议 × 双端 | 0/8 收据，0/8 候选 | 8/8 收据，8/8 候选并结算 |
+| 四协议真实竞争正文 × 双端 | 本轮未重新采集旧树此组 | 8/8 在 `finish` 前拒绝，回合与 revision 增量均为 0 |
+
+本地 Mock 服务记录实际收到的 POST，浏览器通过私有端口观察 `finish` 及收据，再从 IndexedDB 读取候选与正式回合。原配对样本的逐份响应哈希在修复前后相同。一个工具正文为 122 UTF-8 字节的样本，旧宿主发送的 `finish.text` 为一个空格和换行，新宿主发送空串，收据为 `local-call / 122`。候选保存前后回合和 revision 都是 1，显式提交后两者都是 2。另有 8 个多段 SSE 样本检查工具参数首尾、正文内部换行与缩进、原文观察顺序及收据字节数。[逐样本证据](spreset-c2-padding-evidence.json) · [四协议浏览器断言](../../e2e/spreset-prototype.spec.ts)
+
+最新发布基线为 `3be381f64808b16d46ed54c6cf1fb0065555c0ed`。合流提交保留 #248 的完整署名文件，在其后附回原 #251 的 SPreset 署名、GPLv3 许可和对应源码说明。1118、1124、文生图及既有许可记录保留。C2 处理器、Worker、许可文本和 iframe 四个文件的 SHA-256 均与原清单相符。[合流提交](https://github.com/WJT111222/HeiJinWangChao/commit/ed4067fa9b524f4ad9fd87be9cab175f84fbd7ed) · [双方署名](../../THIRD_PARTY_NOTICES.md) · [源码指纹](../../experiments/spreset/SOURCES.json)
+
+### 复跑范围
+
+Node 24.19.0、锁文件依赖、Chromium 154.0.8037.57，5174 端口。所有浏览器用例使用独立上下文和 Mock 模型，单 Worker、零重试。
+
+| 检查 | 实测结果 |
+| --- | --- |
+| `npm run check` | 241 个文件的 5,665 项 Vitest、ESLint、TypeScript、命令目录和生产构建通过 |
+| `npm run prompts:check` | 93 项通过，属于全量单测子集 |
+| 协议、处理器、指纹及图片定向单测 | 156 项通过，含 8 项四协议 JSON/SSE 纯文本原样交付、收据为空。另跑三段变量定向 25 项通过，均计入全量单测 |
+| 正式版与图片 Chromium 定向 | 172 项通过，0 失败、跳过或不稳定。覆盖此前 144 个测试身份、8 个新增分段 SSE 身份和 20 个文生图、人物图库及相册身份 |
+| 三段变量与文生图共同结算 | 双端另测 2 项通过，核对阶段顺序、正式版本与资金、单次图片请求及跨标签去重 |
+| C2 三个套件单独复跑 | 52 项通过，0 失败、跳过或不稳定，包含原 44 项及新增 8 项。34 份畸形响应的处理器调用、收据、候选及正式状态增量均为零 |
+| 独立审查探针 | 原配对 16/16、补充探针 20/20、原解析探针 45/45、Anthropic 关闭块 3/3。各组有重叠 |
+| 历史兼容与生产入口 | 双端从实际 v3 断点继续到 v4，回合与 revision 各加 1。扫描 141 个生产文件，六个实验特征均无命中。双端生产预览中的实验 iframe 和 Worker 均为 0 |
+
+复跑本批维护的浏览器断言：
+
+```sh
+CI=1 CHROMIUM_PATH=/usr/bin/chromium npx playwright test e2e/spreset-prototype.spec.ts e2e/spreset-terminal.spec.ts e2e/spreset-isolation.spec.ts --workers=1 --retries=0
+```
+
+本轮采用合成数据。全量 Playwright、物理手机和真实付费渠道未执行。其他模式的 `TURN_INCOMPLETE`、Chromium 底层 POST 重放，以及 C3 组合分发许可继续作为独立待办。
+
 ## 联合复审整改与正式版合流
 
 #251 的代码合流提交为 `a390d9ad55b3778485d2a6e46df1c693f8cb6c60`。它保留了原 C2 开发历史，第二父提交为 `release/1.0@46b1009f06f17ab610aadd4082e25c4d4cbac0c9`，包含 #252 和 #250。#252 的合并提交为 `d4d35f77930992b78821e3966c02588e257542e1`。[合流源码](https://github.com/WJT111222/HeiJinWangChao/commit/a390d9ad55b3778485d2a6e46df1c693f8cb6c60) · [本次双端 HTTP、收据、IndexedDB 与构建证据](spreset-c2-merge-evidence.json)
