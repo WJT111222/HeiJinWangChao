@@ -16,7 +16,7 @@ import { composePrompt } from '../prompts/composer';
 import { recallV2Fixture } from './fixtures/recallV2';
 import { expectWorldWithNpcProjection, sentContext } from './fixtures/contextAssertions';
 import { variableReply } from './fixtures/variableReply';
-import { submission } from './fixtures/turn';
+import { saveFixtureStory, submission } from './fixtures/turn';
 import { worldResult } from './fixtures/world';
 
 const resources: { dispose: () => void }[] = [];
@@ -117,7 +117,7 @@ describe('200回合共享召回：真实Coordinator、Runtime与Mock网络', () 
 
   it.each(['missing', 'preview'] as const)('World实际请求忽略%s Variables的状态与检索线索，不能提交', async validation => {
     const a = await setup('吃饭。'), initial = a.initial;
-    let ready = await a.repo.saveDraft(rerollStory(initial, { ...a.draft.story!, narrative: '经过十分钟，主角完成用餐。主角已经用现金支付30元吃饭。', variableGuide: [] }), initial.draftRevision);
+    let ready = await saveFixtureStory(a.repo,rerollStory(initial, { ...a.draft.story!, narrative: '经过十分钟，主角完成用餐。主角已经用现金支付30元吃饭。', variableGuide: [] }), initial.draftRevision);
     if (validation === 'preview') ready = await a.repo.saveDraft({
       ...ready, draftRevision: ready.draftRevision + 1,
       variables: { ...a.draft.variables!, validation: 'preview', result: { ...a.draft.variables!.result, commands: [
@@ -143,8 +143,8 @@ describe('200回合共享召回：真实Coordinator、Runtime与Mock网络', () 
 
   it('重Roll后真实Variables请求仅使用当前候选，旧候选不成为永久历史', async () => {
     const a = await setup('吃饭。'), initial = a.initial;
-    const old = await a.repo.saveDraft(rerollStory(initial, { ...a.draft.story!, narrative: `${a.draft.story!.narrative}旧候选独有标记。` }), initial.draftRevision);
-    const fresh = await a.repo.saveDraft(rerollStory(old, { ...a.draft.story!, narrative: '经过十分钟，主角完成用餐。主角已经用现金支付30元吃饭。', variableGuide: [] }), old.draftRevision);
+    const old = await saveFixtureStory(a.repo,rerollStory(initial, { ...a.draft.story!, narrative: `${a.draft.story!.narrative}旧候选独有标记。` }), initial.draftRevision);
+    const fresh = await saveFixtureStory(a.repo,rerollStory(old, { ...a.draft.story!, narrative: '经过十分钟，主角完成用餐。主角已经用现金支付30元吃饭。', variableGuide: [] }), old.draftRevision);
     const before = structuredClone(fresh);
     const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
       const call = request(init);

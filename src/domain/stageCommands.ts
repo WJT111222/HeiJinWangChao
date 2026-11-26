@@ -18,7 +18,7 @@ export const stageCommands = {
   ],
   scene: [
     'UpdateProtagonist', 'SetEquipment', 'SpendFunds', 'TransferFunds', 'ReceiveIncome',
-    'Borrow', 'RepayDebt', 'PurchaseItem', 'PurchaseVehicle', 'AcquireItem', 'UpdateItem',
+    'Borrow', 'RepayDebt', 'PurchaseItem', 'PurchaseVehicle', 'PurchaseProperty', 'PurchaseOtherAsset', 'AcquireAsset', 'AcquireItem', 'UpdateItem',
     'LoseItem', 'TransferItem', 'SetWorldClock', 'SetSceneDescription', 'InitializeOpeningState',
     'UpdateOrganization', 'RecordOrgRelation', 'RecordOrgKnowledge', 'SaveEvent', 'SaveTask',
   ],

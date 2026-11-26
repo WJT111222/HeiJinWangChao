@@ -22,7 +22,7 @@ import { worldValidationError } from '../services/validation/worldDiagnostics';
 
 export class WorldStage {
   constructor(
-    private repository: Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>,
+    private repository: Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft' | 'prepareWorldview'>,
     private client = new AiClient(),
     private guard = new StageGuard(),
   ) {}
@@ -33,6 +33,7 @@ export class WorldStage {
     this.guard.dispose();
   }
   async generate(input: {
+    expectedInstance?: string | null;
     draft: TurnDraft;
     settings: Settings;
     config: AiConfig;
@@ -63,6 +64,8 @@ export class WorldStage {
       if (!current.story || current.stageStatus.story !== 'ready')
         throw new AiError('configuration');
       requestSnapshot(config, 'world', input.vault);
+      const lease = await this.repository.prepareWorldview(current, true, input.expectedInstance);
+      attempt.check();
       const started = startStageAttempt(current, ['world'], {
         useEntityStage: settings.runtime.useEntityStage,
         useVariableStage: settings.runtime.useVariableStage,
@@ -71,7 +74,7 @@ export class WorldStage {
       if (started.useEntityStage && !started.entities) throw new AiError('candidate_conflict');
       if (started.variables?.validation === 'validated')
         parseVariables(JSON.stringify(started.variables.result), state, started);
-      const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal, current);
+      const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal, current, lease);
       attempt.check();
       input.onDraft?.(draft);
       let responseInspectionId: string | undefined;
@@ -81,7 +84,7 @@ export class WorldStage {
         const response = await runStageRequest(
           {
             stage: 'world',
-            mode: draft.turnKind,
+            worldview:lease.worldview, mode: draft.turnKind,
             state,
             draft,
             userInput: '',
@@ -142,7 +145,7 @@ export class WorldStage {
         });
         attempt.saving();
         input.onProgress?.('saving');
-        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal, draft);
+        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal, draft, lease);
         attempt.check();
         return saved;
       } catch (error) {
@@ -175,6 +178,7 @@ export class WorldStage {
             draft.draftRevision,
             attempt.signal,
             draft,
+            lease,
           );
           attempt.check();
           input.onDraft?.(stored);

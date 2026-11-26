@@ -24,6 +24,7 @@ export function useTurnGeneration(
   onSaved: (draft: TurnDraft) => void,
   onRuntimeEvent?: RuntimeLogReporter,
   onSettled?: (result: TurnCommitResult) => void,
+  expectedInstance?: string | null,
 ) {
   const [runner] = useState(() => new TurnCoordinator(repository));
   const [running, setRunning] = useState(false);
@@ -72,7 +73,7 @@ export function useTurnGeneration(
     let reported: unknown;
     try {
       const result = await generateAndSettleTurn(runner, repository, {
-        draft: expected, consent,
+        draft: expected, consent, expectedInstance,
         settings,
         companionProfile,
         config: readAiConfig(localStorage),

@@ -1,5 +1,6 @@
 import type { LegacyContinuationConsent } from './legacyContinuation';
 import { selectedPrototype } from '../presets/spreset/definition';
+import { withWorldbookLibrary } from '../services/worldbook/mainWorldview';
 import { nativeDeliveryId } from '../presets/settings';
 import { StoryClock } from '../presets/tavern/timing';
 import { awaitAssistant, assistantStarting, captureAssistantPreferences } from '../presets/tavern/hostState';
@@ -31,7 +32,7 @@ import { StoryStream } from './storyStream';
 import { StageGuard } from './stageGuard';
 import type { OrderPreferences } from '../prompts/order';
 
-type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>
+type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft' | 'prepareWorldview'>
   & Partial<Pick<SaveRepository,'saveRecoveredStory' | 'recentStoryActions'>>;
 export interface StoryProgress {
   phase: 'generating' | 'saving' | 'retrying';
@@ -42,6 +43,7 @@ export interface StoryProgress {
   compatibilityReasoning?: string;
 }
 interface StoryInput {
+  expectedInstance?: string | null;
   draft: TurnDraft;
   settings: Settings;
   config: AiConfig;
@@ -49,11 +51,13 @@ interface StoryInput {
   companionProfile?: CompanionProfile;
   orderPreferences?: OrderPreferences;
   onProgress?: (progress: StoryProgress) => void;
-  /** Manual UI owns this failure save; Coordinator records its own attempts. */
+  /** Persist a failed attempt and its source before notifying the active runner. */
   onFailureSaved?: (draft: TurnDraft) => void;
   /** 从草稿里保存的截断原文接着写（玩家点「续写正文」）。 */
   continuation?: boolean;
   consent?: LegacyContinuationConsent;
+  /** Explicit replacement starts from current settings, including recovery of an unbound draft. */
+  freshWorldview?: boolean;
   legacyNotificationSelection?: LegacyNotificationSelection;
 }
 
@@ -139,6 +143,7 @@ export class StoryStage {
         ? { ...draft, storyPartial: { ...draft.storyPartial, writing: confirmedWriting } } : draft;
       if (continuation && !canContinueStory(continuationDraft, settings.prompts.minNarrativeChars))
         throw new DataError('DRAFT_CONFLICT', '这段正文已不能续写，请重新生成。');
+      const retry = !input.freshWorldview && draft.stageStatus.story === 'failed';
       const partial = continuation ? trimIncompleteTag(draft.storyPartial!.text) : '';
       const stream = new StoryStream();
       // 续写：先把已写部分放进显示流；续写开头缓冲到能确定拼接方式，去掉重复后再显示。
@@ -148,6 +153,8 @@ export class StoryStage {
         const shown = preview ? preview.push(delta) : delta;
         return shown ? stream.push(shown) : narrative;
       };
+      const resume = continuation || retry;
+      const lease = await this.repository.prepareWorldview(draft, resume, input.expectedInstance);
       const inspectionId = storyInspections.begin({ saveId: draft.saveId, turnId: draft.turnId,
         baseSaveRevision: draft.baseSaveRevision, basedOnStoryRevision: draft.storyRevision });
       let reasoning = '', inspectionReasoning = '', compatibilityReasoning = '';
@@ -155,16 +162,18 @@ export class StoryStage {
         readingPhase: !streaming ? 'waiting' : stream.bodyStarted ? 'body' : 'thinking',
         ...(!streaming || stream.bodyStarted ? {} : { planning: safeStreamResponseText(stream.planning, secrets), nativeReasoning: safeStreamResponseText(reasoning, secrets),
           compatibilityReasoning: safeStreamResponseText(compatibilityReasoning, secrets) }) });
+      let published = false;
       let saving = false;
       let responseInspectionId: string | undefined;
       try {
+        current();
         progress();
         const historyActions = presetSelection && presetSelection !== nativeDeliveryId && state.journal.length
           ? await this.repository.recentStoryActions?.(state, settings.memory.immediateWindowSize) : undefined;
         current();
         const response = await runStageRequest(
           {
-            stage: 'story',
+            stage: 'story', worldview:lease.worldview,
             mode: draft.turnKind,
             state,
             draft,
@@ -240,8 +249,9 @@ export class StoryStage {
         input.onProgress?.({ phase: 'saving', readingPhase: streaming ? 'body' : 'waiting', narrative: streaming ? story.narrative : '' });
         // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
         const saved = selection
-          ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal,response.storyWriting)
-          : await this.repository.saveDraft(rerollStory(draft,story,response.storyWriting), draft.draftRevision, attempt.signal, draft);
+          ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal,lease,response.storyWriting)
+          : await this.repository.saveDraft(rerollStory(draft,story,response.storyWriting), draft.draftRevision, attempt.signal, draft, lease);
+        published = true;
         if (responseInspectionId) {
           try { stageResponses.update(responseInspectionId, { candidateSaved: true, draftSavedMs: clock?.elapsed() }, secrets); } catch { /* Already persisted. */ }
         }
@@ -254,7 +264,7 @@ export class StoryStage {
           ...(!saving && clock ? { validationEndMs: clock.elapsed() } : {}), normalized: undefined, error: safeAiError(storyFailure(error)) }, secrets);
         // An unsuccessful explicit rewrite of an uncredited V10 fragment must leave its only copy intact.
         const keepLegacyPartial = !continuation && draft.storyPartial && !draft.storyPartial.writing;
-        if ((!consent || consent.sent) && !recovery && !keepLegacyPartial && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled'
+        if (!saving && (!consent || consent.sent) && !recovery && !keepLegacyPartial && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled'
           && !isContinuationDeliveryUnknown(error)
           && !(draft.story && (selectedPrototype(presetSelection) || error.details?.storyRule === 'narrative_empty'
             || error.details?.fieldPath?.startsWith('tavern.upstream.')))) {
@@ -272,11 +282,16 @@ export class StoryStage {
           // must remain valid; a failed CAS must never overwrite a newer timeline.
           attempt.saving();
           input.onProgress?.({ phase: 'saving', readingPhase: !streaming ? 'waiting' : stream.bodyStarted ? 'body' : 'thinking', narrative: streaming ? safeStreamResponseText(narrative, secrets) : '' });
-          const saved = await this.repository.saveDraft(failed, draft.draftRevision, attempt.signal, draft);
+          const saved = await this.repository.saveDraft(failed, draft.draftRevision, attempt.signal, draft, lease);
+          published = true;
           current();
           input.onFailureSaved(saved);
         }
         throw error;
+      } finally {
+        if (!resume && !published) {
+          await withWorldbookLibrary(lib => lib.forgetGeneration(lease.saveId, lease.owner, lease.generation)).catch(() => {});
+        }
       }
     });
   }

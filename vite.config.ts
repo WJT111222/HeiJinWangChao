@@ -28,6 +28,7 @@ export default defineConfig(({ command }) => ({
   plugins: [react(), prototypeSandbox()],
   test: {
     environment: 'node',
+    setupFiles: ['fake-indexeddb/auto'],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
 }));

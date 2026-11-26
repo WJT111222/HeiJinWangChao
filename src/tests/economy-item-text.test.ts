@@ -11,6 +11,8 @@ const item = (extra = {}) => ({ name:'手机',category:'device',quantity:1,owner
 const income = (extra = {}) => ({source:'本轮报酬',amount:1000,status:'received',account:'cash',receivedAt:gameTime,...extra});
 const debt = (extra = {}) => ({creditor:'朋友',principal:1000,outstanding:1000,status:'active',repaymentTerms:'协商还款',collateralAssetIds:[],autoPaymentAuthorized:false,source:'本轮借款',...extra});
 const vehicle = (extra = {}) => ({kind:'vehicle',name:'轿车',ownerRef:hero,estimatedValue:2000,acquiredAt:gameTime,source:'购买',statusText:'完好',model:'普通车型',locationId:'chongqing',...extra});
+const property = (extra = {}) => ({kind:'property',name:'江景别墅',ownerRef:hero,estimatedValue:110000,acquiredAt:gameTime,source:'购买',statusText:'可入住',locationId:'chongqing',ownershipText:'主角名下全款产权',...extra});
+const other = (extra = {}) => ({kind:'other',name:'公司股份',ownerRef:hero,estimatedValue:5000,source:'认购',statusText:'持有中',category:'股权',details:'某贸易公司百分之五股份',...extra});
 const set = (path: string, value: unknown) => `set ${path} = ${JSON.stringify(value)}`;
 const push = (path: string, value: unknown) => `push ${path} = ${JSON.stringify(value)}`;
 function setup(body: string) {
@@ -69,6 +71,33 @@ describe('M8-P0C-3C2 资金与物品流转',()=>{
   it('车辆购买同时扣款和登记资产，可设为当前载具',async()=>{
     const r=await execute(set('economy.vehicles[car].purchase',{account:'onlineBalance',price:2000,vehicle:vehicle()})+'\n'+set('protagonist.currentWear',{currentVehicleAssetId:'car',accessoryItemIds:[]}));
     expect(r.after.economy.onlineBalance).toBe(18000); expect(r.after.economy.vehicles.car.ownerRef).toEqual(hero); expect(r.after.items.car).toBeUndefined();
+  });
+  it('全款购房同时扣款和登记房产，不进重要物品表',async()=>{
+    const r=await execute(set('economy.properties[villa].purchase',{account:'onlineBalance',price:15000,property:property()}));
+    expect(r.after.economy.onlineBalance).toBe(5000); expect(r.after.economy.properties.villa).toEqual({id:'villa',...property()}); expect(r.after.items.villa).toBeUndefined();
+  });
+  it('按揭购房：房贷先到账再按总价付款，房产与房贷互相关联',async()=>{
+    const r=await execute(set('economy.debts[mortgage]',{account:'onlineBalance',debt:debt({creditor:'银行',principal:100000,outstanding:100000,repaymentTerms:'按月还款',collateralAssetIds:['villa'],source:'购房按揭'})})
+      +'\n'+set('economy.properties[villa].purchase',{account:'onlineBalance',price:110000,property:property({mortgageDebtId:'mortgage',ownershipText:'主角名下，抵押给银行'})}));
+    expect(r.after.economy.onlineBalance).toBe(10000);
+    expect(r.after.economy.properties.villa.mortgageDebtId).toBe('mortgage'); expect(r.after.economy.debts.mortgage.collateralAssetIds).toEqual(['villa']);
+  });
+  it('房贷漏写抵押物时，程序把新登记的房产补进该房贷，不拒绝购房',async()=>{
+    const r=await execute(set('economy.debts[mortgage]',{account:'onlineBalance',debt:debt({creditor:'银行',principal:100000,outstanding:100000,collateralAssetIds:[],source:'购房按揭'})})
+      +'\n'+set('economy.properties[villa].purchase',{account:'onlineBalance',price:110000,property:property({mortgageDebtId:'mortgage'})}));
+    expect(r.after.economy.debts.mortgage.collateralAssetIds).toEqual(['villa']); expect(r.after.economy.properties.villa.mortgageDebtId).toBe('mortgage');
+  });
+  it('购入其他资产同时扣款和登记',async()=>{
+    const r=await execute(set('economy.otherAssets[shares].purchase',{account:'cash',price:5000,asset:other()}));
+    expect(r.after.economy.cash).toBe(5000); expect(r.after.economy.otherAssets.shares).toEqual({id:'shares',...other()});
+  });
+  it('继承、受赠的资产直接登记，不改余额；kind 可由路径补齐',async()=>{
+    const noKind=(asset:Record<string,unknown>)=>Object.fromEntries(Object.entries(asset).filter(([key])=>key!=='kind'));
+    const house=noKind(property({source:'继承'})),car=noKind(vehicle({source:'受赠'}));
+    const r=await execute(set('economy.properties[old_house]',house)+'\n'+set('economy.vehicles[gift_car]',car)+'\n'+set('economy.otherAssets[stamps]',other({source:'祖传'})));
+    expect(r.after.economy.cash).toBe(10000); expect(r.after.economy.onlineBalance).toBe(20000);
+    expect(r.after.economy.properties.old_house).toMatchObject({id:'old_house',kind:'property',source:'继承'});
+    expect(r.after.economy.vehicles.gift_car).toMatchObject({id:'gift_car',kind:'vehicle'}); expect(r.after.economy.otherAssets.stamps.kind).toBe('other');
   });
 });
 
@@ -178,6 +207,14 @@ const invalid = [
   set('economy.vehicles[car].purchase',{account:'cash',price:1,vehicle:vehicle({ownerRef:person()})}),
   set('economy.vehicles[car].purchase',{account:'onlineBalance',price:20001,vehicle:vehicle()}),
   set('economy.vehicles[car].purchase',{account:'cash',price:1,vehicle:vehicle({kind:'property'})}),
+  set('economy.properties[villa].purchase',{account:'cash',price:1,property:property({ownerRef:person()})}),
+  set('economy.properties[villa].purchase',{account:'onlineBalance',price:20001,property:property()}),
+  set('economy.properties[villa].purchase',{account:'cash',price:1,property:property({locationId:'missing'})}),
+  set('economy.properties[villa].purchase',{account:'cash',price:1,property:property({mortgageDebtId:'missing'})}),
+  set('economy.properties[villa].purchase',{account:'cash',price:1,property:property({ownershipText:undefined})}),
+  set('economy.otherAssets[shares].purchase',{account:'cash',price:10001,asset:other()}),
+  set('economy.properties[villa]',vehicle()),set('economy.properties[villa]',property({id:'villa'})),
+  set('economy.vehicles[car]',vehicle({ownerRef:person()})),set('economy.otherAssets[shares]',other({category:''})),
   set('items[phone]',item({name:'汽车',category:'other'})),set('items[phone]',item({name:'房产',category:'other'})),
 ];
 describe('原数据规则的整批拒绝',()=>{

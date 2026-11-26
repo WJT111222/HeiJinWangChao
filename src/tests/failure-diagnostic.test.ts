@@ -11,7 +11,8 @@ import {
   markRetryIssued, noteRetryDecision, publishDiagnosticModel, safeFailureDiagnostic, scanStoryTags,
 } from '../services/ai/failureDiagnostic';
 import { requestInspections } from '../services/ai/inspection';
-import { runStageRequest, storyFailureText } from '../services/ai/runtime';
+import { requestFixtureStage } from './fixtures/stageRequest';
+import { storyFailureText } from '../services/ai/runtime';
 import { splitLeadingThink } from '../services/ai/compat';
 import { mergeContinuation } from '../domain/storyContinuation';
 import { createTurnDraft } from '../domain/drafts';
@@ -619,7 +620,7 @@ it('成功响应之后的正文校验仍保留请求事实，并分开原文、�
     const state = game();
     const draft = createTurnDraft(state.saveId, state.revision, 'diag-turn', 'regular', '');
     const fetcher = vi.fn<typeof fetch>(async () => new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: text }, finish_reason: 'stop' }] })}\n\ndata: [DONE]\n\n`, { headers: { 'content-type': 'text/event-stream' } }));
-    return fail(runStageRequest(
+    return fail(requestFixtureStage(
       { stage: 'story', mode: 'regular', state, draft, userInput: '继续', settings: settingsFor() },
       config, vault, partial ? { continuation: { partial } } : {}, new AiClient(fetcher),
     ));

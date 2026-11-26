@@ -26,7 +26,7 @@ function stageFailure(error: unknown, step: VariableStep) {
 
 export class VariableStage {
   constructor(
-    private repository: Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft'>,
+    private repository: Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft' | 'prepareWorldview'>,
     private client = new AiClient(),
     private guard = new StageGuard(),
     private stage: 'entities' | 'variables' = 'variables',
@@ -38,6 +38,7 @@ export class VariableStage {
     this.guard.dispose();
   }
   async generate(input: {
+    expectedInstance?: string | null;
     draft: TurnDraft;
     settings: Settings;
     config: AiConfig;
@@ -75,6 +76,8 @@ export class VariableStage {
       step = 'context';
       requestSnapshot(config, stage, input.vault);
       // 每次手动启动都是显式尝试。正文/输入不变，清除旧变量及其世界依赖。
+      const lease = await this.repository.prepareWorldview(current, true, input.expectedInstance);
+      attempt.check();
       const started = startStageAttempt(current, [stage], {
         useEntityStage: settings.runtime.useEntityStage, useVariableStage: settings.runtime.useVariableStage,
         useWorldStage: settings.runtime.useWorldStage,
@@ -82,7 +85,7 @@ export class VariableStage {
       if (stage === 'variables' && started.useEntityStage && !started.entities)
         throw new AiError('candidate_conflict');
       step = 'draft_start';
-      const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal, current);
+      const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal, current, lease);
       attempt.check();
       input.onDraft?.(draft);
       let responseInspectionId: string | undefined;
@@ -93,7 +96,7 @@ export class VariableStage {
         const response = await runStageRequest(
           {
             stage,
-            mode: draft.turnKind,
+            worldview: lease.worldview, mode: draft.turnKind,
             state,
             draft,
             userInput: draft.userInput,
@@ -153,7 +156,7 @@ export class VariableStage {
         attempt.saving();
         input.onProgress?.('saving');
         step = 'candidate_save';
-        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal, draft);
+        const saved = await this.repository.saveDraft(next, draft.draftRevision, attempt.signal, draft, lease);
         attempt.check();
         return saved;
       } catch (error) {
@@ -183,6 +186,7 @@ export class VariableStage {
             draft.draftRevision,
             attempt.signal,
             draft,
+            lease,
           );
           attempt.check();
           input.onDraft?.(stored);

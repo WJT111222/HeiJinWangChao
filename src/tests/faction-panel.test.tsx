@@ -112,4 +112,3 @@ describe('我的势力面板', () => {
     expect(data.ongoing[0].stages.map(s => s.title)).toEqual(['公开阶段：对接新车间']);
   });
 });
-

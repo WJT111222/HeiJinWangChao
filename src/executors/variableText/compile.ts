@@ -246,7 +246,8 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     // 开局一律孤身一人：主势力只能由玩家在后续剧情里明确建立。
     if (c.type === 'RecordOrgRelation' && c.faction && draft.turnKind !== 'regular') return failed('permission_denied', origin);
     const created = c.type === 'AcquireItem' || c.type === 'PurchaseItem' ? c.item.id
-      : c.type === 'PurchaseVehicle' ? c.vehicle.id : c.type === 'ReceiveIncome' ? c.income.id
+      : c.type === 'PurchaseVehicle' ? c.vehicle.id : c.type === 'PurchaseProperty' ? c.property.id
+      : c.type === 'PurchaseOtherAsset' || c.type === 'AcquireAsset' ? c.asset.id : c.type === 'ReceiveIncome' ? c.income.id
       : c.type === 'Borrow' ? c.debt.id : c.type === 'CreateLocation' ? c.location.id
       : c.type === 'CreateNpc' ? c.npc.id : c.type === 'CreateOrganization' ? c.organization.id : undefined;
     if (created !== undefined) {

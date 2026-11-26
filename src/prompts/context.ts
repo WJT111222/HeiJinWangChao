@@ -25,9 +25,11 @@ import { AiError } from '../services/ai/errors';
 import type { AiStage } from '../services/ai/configuration';
 import { planNpcSummary, npcSummaryInput } from '../domain/memories/npcMemory';
 import { sharedContext, storyForSubsequentStages } from './sharedContext';
+import type { MainWorldview } from '../domain/worldbook/mainWorldbook';
 import { timePreflight, turnTimePolicy, historicalPerspective } from '../domain/timePreflight';
 
 export interface ComposeInput {
+  worldview?: MainWorldview;
   stage: AiStage | 'memory';
   mode: 'opening' | 'regular';
   state: GameState;

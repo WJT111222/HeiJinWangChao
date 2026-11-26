@@ -15,6 +15,7 @@ import { generateAndSettleTurn } from '../workflows/automaticTurn';
 import { defaultSettings } from '../ui/settings/model';
 import { worldState, worldDraft, worldNarrative, worldResult } from './fixtures/world';
 import { variableReply } from './fixtures/variableReply';
+import { saveFixtureStory } from './fixtures/turn';
 
 let repo: SaveRepository;
 const runners: TurnCoordinator[] = [];
@@ -202,10 +203,10 @@ it('家庭确认使用现场结束时钟，经三段请求在场外提示词和�
   initial.npc.scene = { ...initial.npc.scene, age:28, gender:'female' };
   await repo.create(initial);
   const opening = await repo.saveDraft(createTurnDraft(initial.saveId, 0, 'family-opening', 'opening', '', false, false, false), null);
-  const story = await repo.saveDraft(rerollStory(opening,{turnKind:'opening',narrative:'一家人会面。',summary:'会面',variableGuide:[]}),opening.draftRevision);
+  const story = await saveFixtureStory(repo,rerollStory(opening,{turnKind:'opening',narrative:'一家人会面。',summary:'会面',variableGuide:[]}),opening.draftRevision);
   const {draft:pending} = await repo.commitTurn({draft:story,nextAction:'确认家庭情况',useEntityStage:true,useVariableStage:true,useWorldStage:true});
   const selected = rerollStory(pending, {turnKind:'regular', narrative:'家庭成员在八点零五分确认了消息。', summary:'家庭确认', variableGuide:[]});
-  const draft = await repo.saveDraft(selected, pending.draftRevision);
+  const draft = await saveFixtureStory(repo, selected, pending.draftRevision);
   const confirmedAt = '2026-10-18T08:05:00+08:00';
   const end = '2026-10-18T08:10:00+08:00';
   const changes = [joinFamily('scene',100), {op:'pregnancy',npcId:'scene',reason:'已确认',

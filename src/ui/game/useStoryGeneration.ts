@@ -22,6 +22,7 @@ export function useStoryGeneration(
   companionProfile: CompanionProfile | undefined,
   onSaved: (draft: TurnDraft) => void,
   onRuntimeEvent?: RuntimeLogReporter,
+  expectedInstance?: string | null,
 ) {
   const [progress, setProgress] = useState<StoryProgress>();
   const [retry, setRetry] = useState<RetryNotice>();
@@ -43,8 +44,10 @@ export function useStoryGeneration(
     },
     [],
   );
-  async function generate(selection?: LegacyNotificationSelection, replaceOpeningTime = false) {
-    if (!draft || running.current || (!selection && !mayStartStory(draft) && !(replaceOpeningTime && draft.turnKind === 'opening'))) return;
+  // openingTime：开局时间异常时重新 Roll 开局正文；worldview：按当前世界观重新生成正文。
+  async function generate(selection?: LegacyNotificationSelection, replace?: 'openingTime' | 'worldview') {
+    if (!draft || running.current || (!selection && replace !== 'worldview' && !mayStartStory(draft)
+      && !(replace === 'openingTime' && draft.turnKind === 'opening'))) return;
     running.current = true;
     errorTurn.current = turnKey(draft);
     const id = ++token.current;
@@ -89,7 +92,8 @@ export function useStoryGeneration(
               }));
             },
             run: () => stage.generate({
-              draft: current,
+              draft: current, expectedInstance,
+              freshWorldview: (replace === 'worldview' || !!selection) && current === draft,
               legacyNotificationSelection: selection,
               settings: frozen.settings,
               companionProfile: frozen.companionProfile,

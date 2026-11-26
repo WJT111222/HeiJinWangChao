@@ -16,7 +16,7 @@ import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { createTurnDraft, rerollStory } from '../domain/drafts';
-import { submission } from './fixtures/turn';
+import { saveFixtureStory, submission } from './fixtures/turn';
 import { stageResponses } from '../services/ai/stageResponses';
 
 const at = '2040-04-18T09:10:00+08:00';
@@ -102,7 +102,7 @@ async function setup(a = worldConditions()) {
   const factory = new IDBFactory(), repo = await SaveRepository.open('conditions-world', factory);
   resources.push({ dispose: () => repo.close() }); await repo.create(a.state);
   const initial = createTurnDraft(a.state.saveId, 0, a.draft.turnId, 'opening', '');
-  await repo.saveDraft(initial, null); await repo.saveDraft(rerollStory(initial, a.draft.story!), 0);
+  await repo.saveDraft(initial, null); await saveFixtureStory(repo,rerollStory(initial, a.draft.story!), 0);
   a.draft = await persistSceneFixture(repo,a.draft);
   const values = new Map<string, string>(), store = { getItem: (k: string) => values.get(k) ?? null, setItem: (k: string, v: string) => { values.set(k, v); }, removeItem: (k: string) => { values.delete(k); } };
   const config = defaultAiConfig(), channel = { ...newChannel(), defaultModel: 'mock-world' }; config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'mock-world' };

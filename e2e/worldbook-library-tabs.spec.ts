@@ -32,7 +32,7 @@ test('多标签页编辑冲突与正则关键词无损编辑', async ({ context 
   await expect(a.getByText('已保存修改', { exact: false })).toBeVisible();
   await expect(a.locator('.wb-savebar')).toHaveCount(0);
 
-  await b.getByRole('button', { name: '保存修改' }).click();
+  // 另一页的保存通知在当前页仍保留草稿时就显示冲突。
   await expect(b.locator('.wb-savebar[data-conflict]')).toBeVisible();
   await expect(b.getByText('已保存修改', { exact: false })).toHaveCount(0);
   await expect(entry(b, '茶楼').getByRole('textbox', { name: '内容' })).toHaveValue('B：茶楼在北街。'); // 草稿保留
@@ -69,8 +69,8 @@ test('多标签页世界书旧删除确认失败，取消和刷新后重新确�
   await entry(b, '茶楼').getByRole('textbox', { name: '内容' }).fill('另一标签已保存的新版本');
   await b.getByRole('button', { name: '保存修改' }).click();
   await expect(b.getByText('已保存修改', { exact: false })).toBeVisible();
-  await confirm.click();
-  await expect(a.getByText('这本书刚在其他页面被修改过', { exact: false })).toBeVisible();
+  // 刷新到新版详情后必须重新确认删除。
+  await expect(confirm).toHaveCount(0);
   expect((await latest(a)).entries.find(e => e.comment === '茶楼')?.content).toBe('另一标签已保存的新版本');
 
   await a.reload();
@@ -78,5 +78,23 @@ test('多标签页世界书旧删除确认失败，取消和刷新后重新确�
   await details.getByRole('button', { name: '删除整本', exact: true }).click();
   await confirm.click();
   await expect(details).not.toBeVisible();
+  await expect(latest(a)).rejects.toThrow('书库为空');
+});
+
+test('远端删除后仍可抄取未保存的内容，关闭详情不会复活书籍', async ({context}) => {
+  const a = await context.newPage(), b = await context.newPage();
+  await a.goto(HARNESS);
+  await a.locator('input[type=file]').setInputFiles({name:'街巷志.json', mimeType:'application/json', buffer:Buffer.from(JSON.stringify(book))});
+  await entry(a,'茶楼').locator('.wb-entry-title').click();
+  const content = entry(a,'茶楼').getByRole('textbox',{name:'内容'});
+  await content.fill('还在编辑的茶楼记录');
+  await b.goto(HARNESS);
+  await b.getByText('街巷志',{exact:true}).click();
+  await b.getByRole('button',{name:'删除整本',exact:true}).click();
+  await b.getByRole('button',{name:'确认删除整本'}).click();
+  await expect(a.locator('.wb-savebar')).toContainText('已在其他标签页删除');
+  await expect(content).toHaveValue('还在编辑的茶楼记录');
+  await a.getByRole('button',{name:'放弃修改并退出详情'}).click();
+  await expect(a.locator('.wb-detail')).toHaveCount(0);
   await expect(latest(a)).rejects.toThrow('书库为空');
 });

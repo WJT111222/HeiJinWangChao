@@ -1,8 +1,8 @@
 import { selectedPrototype } from '../../presets/spreset/definition';
 import { parsePartialEntities } from '../validation/partialOutputs';
 import { canonicalJson } from '../../domain/worldbook/canonical';
-import { logicalMessageCount } from '../../domain/worldbook/timedEffects';
-import { prepareStoryWorldbook } from '../worldbook/storyWorldbook';
+import { prepareStoryWorldbook, storyTriggerInput } from '../worldbook/storyWorldbook';
+import { loadMainWorldview, missingWorldview } from '../worldbook/mainWorldview';
 import type { PlayerWorldbook } from '../../prompts/playerWorldbook';
 import { isPeinture } from '../../presets/peintureSettings';
 import { nativeOutputTool, nativeReferenceRecords } from '../../presets/nativeDelivery';
@@ -96,6 +96,10 @@ async function runStageRequestUnchecked(input: ComposeInput & { stage: AiStage }
   const type = requestedContinuation ? 'continue' : captured.draft?.story || captured.draft?.storyPartial
     || captured.draft?.failures.some(f => f.stage === 'story') ? 'regenerate' : 'normal';
   const generation = stageResponses.generation();
+  // Formal stages supply the snapshot checked by the live repository before any draft mutation.
+  if (!captured.worldview && (requestedContinuation || captured.stage !== 'story')) throw missingWorldview();
+  captured.worldview ??= await loadMainWorldview();
+  if (options.signal?.aborted) throw new AiError('cancelled');
   const run = () => executePrepared(captured, snapshot, presetSelection, type, config, vault, options, requestedContinuation, client, generation, writing);
   if (!presetSelection || captured.stage !== 'story' || selectedPrototype(presetSelection)) return run();
   if (presetSelection === nativeDeliveryId) await ensureNativeDeliveryHost(options.signal);
@@ -116,12 +120,15 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
     : await composePrompt({ ...captured, cotAllowed: snapshot.useCot }, presetSelection);
   // 续写：上下文与原请求完全相同（缓存前缀不变），末尾追加已写部分（assistant）与续写指令（user）。
   const continuation = requestedContinuation ? { partial: trimIncompleteTag(requestedContinuation.partial) } : undefined;
+  const spresetPrototype = captured.stage === 'story' && selectedPrototype(presetSelection);
+  const scripted = captured.stage === 'story' && !!presetSelection && !spresetPrototype;
+  const composed = captured.stage === 'story' && prompt.foundation ? prompt.messages.filter(message => message !== prompt.foundation) : prompt.messages;
   const messages = continuation
-    ? [...prompt.messages, { role: 'assistant' as const, content: continuation.partial },
+    ? [...composed, { role: 'assistant' as const, content: continuation.partial },
       { role: 'user' as const, content: continuationInstruction({ actionOptions: captured.settings.prompts.actionOptions,
         minNarrativeChars: writing?.source === 'native' ? writing.min : undefined, maxNarrativeChars: writing?.source === 'native' ? writing.max : undefined,
         partial: continuation.partial }) }]
-    : prompt.messages;
+    : composed;
   const merged = (text: string) => continuation ? mergeContinuation(continuation.partial, text) : text;
   const responseId = stageResponses.begin({ saveId: captured.state.saveId, turnId: captured.draft?.turnId, stage: captured.stage, storyRevision: captured.draft?.storyRevision, protocol: snapshot.channel.protocol, baseSaveRevision: captured.state.revision,
     draftRevision: captured.draft?.draftRevision, executionRevision: captured.draft?.executionRevision,
@@ -159,36 +166,22 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   let responseReasoning: string | undefined;
   let response: Awaited<ReturnType<AiClient['generate']>> | undefined;
   try {
-  let playerWorldbook: PlayerWorldbook | undefined;
+  let playerWorldbook: PlayerWorldbook | undefined = captured.stage === 'story' && prompt.foundation ? { foundation: prompt.foundation } : undefined;
   const storyNotes: string[] = [];
   if (captured.stage === 'story') {
     if (options.signal?.aborted) throw new AiError('cancelled');
-    const { state, draft, settings } = captured;
-    const failedAttempts = draft?.failures.filter(failure => failure.stage === 'story') ?? [];
-    const retry = draft?.stageStatus.story === 'failed' || failedAttempts.some(f => f.storyRevision === draft?.storyRevision);
     try {
-      const worldbook = await prepareStoryWorldbook({
-        messages: [draft?.userInput ?? captured.userInput,
-          ...state.journal.slice(-Math.min(settings.memory.immediateWindowSize, 10)).reverse().map(entry => entry.story.narrative)],
-        // Routes currently have no verified model context window or input allowance.
-        contextTokens: 32_000,
-        storyRemainingTokens: 4_096,
-        trigger: type === 'continue' ? type : retry ? 'normal' : type,
-        messageCount: logicalMessageCount(state.turnNumber),
-        seed: `${state.saveId}:${draft?.turnId ?? state.turnNumber}:${(draft?.storyRevision ?? 0) + failedAttempts.length + 1}`,
-      }, { signal: options.signal });
+      const worldbook = await prepareStoryWorldbook(storyTriggerInput(captured, type), { signal: options.signal });
       if (worldbook.status === 'ok') {
-        playerWorldbook = { plan: worldbook.plan, history: prompt.presetHistory };
+        playerWorldbook = { ...playerWorldbook, plan: worldbook.plan, history: prompt.presetHistory };
         if (worldbook.incomplete) storyNotes.push('世界书达到扫描工作量上限，本次使用已找到的资料。');
-      } else if (worldbook.status === 'skipped') storyNotes.push(worldbook.message);
+      } else if (worldbook.status === 'skipped') storyNotes.push(prompt.foundation ? worldbook.message.replace('本次未使用玩家世界书', '本次未插入触发条目，主世界书基础资料已保留') : worldbook.message);
     } catch {
-      storyNotes.push('世界书准备失败，本次未使用玩家世界书。');
+      storyNotes.push('世界书触发扫描失败，本次未插入补充条目。');
     }
     if (storyNotes.length) stageResponses.update(responseId, { notes: storyNotes }, secrets);
     if (options.signal?.aborted) throw new AiError('cancelled');
   }
-  const spresetPrototype = captured.stage === 'story' && selectedPrototype(presetSelection);
-  const scripted = captured.stage === 'story' && !!presetSelection && !spresetPrototype;
   if (presetSelection === nativeDeliveryId && !captured.draft)
     throw new AiError('configuration', undefined, { fieldPath: 'tavern.native_delivery.action' });
   const nativeDeliveryReference = presetSelection === nativeDeliveryId ? nativeReferenceRecords(messages) : undefined;
@@ -392,6 +385,7 @@ export async function previewTavernStory(input: ComposeInput & { stage: 'story' 
   const selected = captureAssistantPreferences();
   if (!selected) throw new AiError('configuration');
   const captured = checkedInput(input);
-  return tavernGeneration(type, undefined, true, 0, async () =>
-    promptReady((await composePrompt(captured, selected)).messages, true));
+  captured.worldview = await loadMainWorldview();
+  const { previewStoryMessages } = await import('../../prompts/preview');
+  return previewStoryMessages(captured, await composePrompt(captured, selected), type, true);
 }
