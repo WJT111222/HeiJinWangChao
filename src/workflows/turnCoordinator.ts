@@ -216,6 +216,7 @@ export class TurnCoordinator {
                     ...common,
                     companionProfile,
                     continuation: continueStory, consent: input.consent,
+                    automaticRetry: number > 1,
                     onFailureSaved: saved,
                     onProgress: (progress) => {
                       check();

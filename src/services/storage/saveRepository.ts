@@ -259,6 +259,7 @@ async function publishStoryOrigin(tx: IDBTransaction, saveId: string, lease: Sto
 }
 
 export class SaveRepository {
+  private readonly pendingWorldviews = new WeakMap<StoryWorldview, string>();
   readonly history: HistoryRepository;
   readonly books: BookCache;
   readonly images: ImageLibrary;
@@ -323,7 +324,7 @@ export class SaveRepository {
   close(): void { this.database.close(); }
 
   /** Called under the workflow lock. Read the live draft and its local witness together. */
-  async prepareWorldview(draft: TurnDraft, resume: boolean, expectedInstance?: string | null): Promise<StoryWorldview> {
+  async prepareWorldview(draft: TurnDraft, resume: boolean, expectedInstance?: string | null, pending?: StoryWorldview): Promise<StoryWorldview> {
     const hash = resume ? await storySourceHash(draft) : undefined;
     const scope = await transaction(this.database, ['saves','drafts','saveControls'], resume ? 'readonly' : 'readwrite', async tx => {
       const state = readState(await request(tx.objectStore('saves').get(draft.saveId)),draft.saveId);
@@ -342,6 +343,16 @@ export class SaveRepository {
     const owner = this.database.name;
     const basis = { ...identity, owner, turnId: draft.turnId, baseRevision: draft.baseSaveRevision,
       draftRevision: draft.draftRevision, storyRevision: draft.storyRevision };
+    // A failed replacement leaves the published candidate and its origin intact. Its retry can
+    // reuse only the uncommitted snapshot belonging to this same live draft and save instance.
+    if (pending) {
+      requireData(!resume && this.pendingWorldviews.get(pending) === fingerprint(draft) && Object.entries(basis).every(([key, value]) => pending[key as keyof typeof basis] === value),
+        'DRAFT_CONFLICT', '重试来源已变化，请重新读取存档。');
+      const worldview = await restoreWorldview(draft.saveId, owner, pending.generation, pending.worldviewHash);
+      const retry = Object.freeze({ ...basis, generation: pending.generation, worldviewHash: pending.worldviewHash, worldview });
+      this.pendingWorldviews.set(retry, fingerprint(draft));
+      return retry;
+    }
     if (resume) {
       if (!origin) throw missingWorldview();
       const worldview = await restoreWorldview(draft.saveId, owner, origin.generation, origin.worldviewHash);
@@ -350,7 +361,9 @@ export class SaveRepository {
     const generation = crypto.randomUUID();
     const worldview = await withWorldbookLibrary(lib =>
       lib.captureWorldview(draft.saveId, owner, generation, origin?.generation));
-    return { ...basis, generation, worldview, worldviewHash: await worldviewDigest(worldview) };
+    const issued = Object.freeze({ ...basis, generation, worldview, worldviewHash: await worldviewDigest(worldview) });
+    if (draft.stageStatus.story === 'ready' && draft.story) this.pendingWorldviews.set(issued, fingerprint(draft));
+    return issued;
   }
 
   // Cleanup follows a successful formal CAS while its save lock is still held. If the library

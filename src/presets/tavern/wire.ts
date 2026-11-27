@@ -4,7 +4,7 @@ import { isOpenAiCompatible } from '../../services/ai/configuration';
 import { AiError } from '../../services/ai/errors';
 import { type AiMessage, wireRequest } from '../../services/ai/protocols';
 import type { RequestSnapshot } from '../../services/ai/snapshot';
-import { finalizeNativeDelivery } from '../nativeDelivery';
+import { nativeOutputTool, referenceTool, finalizeNativeDelivery } from '../nativeDelivery';
 import { packageOverride } from '../package';
 
 const name = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
@@ -74,5 +74,6 @@ export function tavernWire(snapshot: RequestSnapshot, raw: unknown, nativeRefere
     }
   }
   wire.init.body = JSON.stringify(body);
-  return { ...wire, stream, declaredTools: choice === 'none' ? new Set<string>() : names };
+  const bundledTools = [...names].every(name => name === nativeOutputTool || name === referenceTool);
+  return { ...wire, stream, bundledTools, declaredTools: choice === 'none' ? new Set<string>() : names };
 }

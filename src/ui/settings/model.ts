@@ -62,11 +62,15 @@ export const SettingsSchema = z.strictObject({
     streamVariables: z.boolean().default(false),
     streamWorld: z.boolean().default(false),
     timeoutSeconds: z.number().int().min(1).max(3600),
+    streamIdleSeconds: z.number().int().min(1).max(3600).optional(),
+    streamTotalSeconds: z.number().int().min(1).max(7200).optional(),
     /** 关闭时只保留 500/502/503/504 的一次基础重试。开启后生成失败都会重试，最多 3 次，不含首次请求。 */
     failureAutoRetry: z.boolean().default(false),
     maxAutoRetries: z.union([z.literal(1), z.literal(3)]).default(3),
-  }).transform(runtime => ({ ...runtime, useEntityStage: runtime.useEntityStage ?? runtime.useVariableStage,
-    streamEntities: runtime.streamEntities ?? runtime.streamVariables })),
+  }).refine(r => (r.streamTotalSeconds ?? Math.max(600, r.streamIdleSeconds ?? r.timeoutSeconds)) >=
+    (r.streamIdleSeconds ?? r.timeoutSeconds), { message: '正文流式总时限不能小于无有效输出时限', path: ['streamTotalSeconds'] })
+    .transform(runtime => ({ ...runtime, useEntityStage: runtime.useEntityStage ?? runtime.useVariableStage,
+      streamEntities: runtime.streamEntities ?? runtime.streamVariables })),
   // 外观：夜间（原黑金）、日间（档案纸）、跟随系统。旧设置缺字段时为夜间，原样保持现有观感。
   theaterPrompt: z.string().trim().min(1).max(8000).optional(),
   display: z.strictObject({ appearance: z.enum(['night', 'day', 'system']) }).default({ appearance: 'night' }),
@@ -75,6 +79,10 @@ export const SettingsSchema = z.strictObject({
 });
 export type Appearance = Settings['display']['appearance'];
 export type Settings = z.infer<typeof SettingsSchema>;
+export function storyStreamLimits(runtime: Settings['runtime']) {
+  const idle = runtime.streamIdleSeconds ?? runtime.timeoutSeconds;
+  return { idle, total: runtime.streamTotalSeconds ?? Math.max(600, idle) };
+}
 export function defaultSettings(): Settings {
   return {
     version: 1,

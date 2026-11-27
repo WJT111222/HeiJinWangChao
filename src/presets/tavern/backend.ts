@@ -13,7 +13,7 @@ import { tavernWire } from './wire';
 
 export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType, messages: AiMessage[], sampling: Sampling | undefined,
   stream: boolean, signal: AbortSignal, trace: UpstreamTrace,
-  send: (wire: ReturnType<typeof tavernWire>, signal: AbortSignal) => Promise<Response>, nativeReference?: readonly AiMessage[], playerWorldbook?: PlayerWorldbook, storyDeliveryTool?: string) {
+  send: (wire: ReturnType<typeof tavernWire>, signal: AbortSignal) => Promise<Response>, nativeReference?: readonly AiMessage[], playerWorldbook?: PlayerWorldbook, storyDeliveryTool?: string, auditedHost = false) {
   const data: GenerationData = { type, messages, ...sampling, stream, n: 1, enable_web_search: false, request_images: false, model: snapshot.model,
     max_tokens: snapshot.channel.parameters.maxOutputTokens, chat_completion_source: 'custom', custom_prompt_post_processing: '' };
   try { await tavernTools.apply(data); }
@@ -32,16 +32,23 @@ export async function sendTavern(snapshot: RequestSnapshot, type: GenerationType
         const wire = tavernWire(snapshot, await request.json(), nativeReference, playerWorldbook);
         actual.throwIfAborted();
         trace.requestedStream = wire.stream;
+        // 只有经过审计的内置宿主、且只打包了交付/参考工具时，原始上游失败才允许自动重放。
+        trace.retryableHost = auditedHost && wire.bundledTools;
         const response = await send(wire, actual);
         const deliveryTool = nativeReference !== undefined ? nativeOutputTool : storyDeliveryTool;
         return await normalizeUpstream(response, snapshot.channel.protocol, wire.stream, actual, trace,
-          deliveryTool && !wire.declaredTools.has(deliveryTool) ? null : deliveryTool);
+          deliveryTool && !wire.declaredTools.has(deliveryTool) ? null : deliveryTool,
+          nativeReference === undefined && deliveryTool !== undefined);
       } catch (error) {
         trace.error = actual.aborted ? new AiError('cancelled') : error instanceof AiError ? error : new AiError('network');
         trace.status ??= trace.error.status;
         return Response.json({ error: { code: trace.error.code } }, { status: trace.error.status ?? trace.status ?? 502 });
       }
     });
+    if (signal.aborted) {
+      void result.body?.cancel().catch(() => {});
+      throw new AiError('cancelled');
+    }
     trace.wrapper = 'returned';
     trace.clock.first('wrapperReturnedMs');
     const mime = safeMime(result.headers);

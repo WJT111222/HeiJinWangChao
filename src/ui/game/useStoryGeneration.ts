@@ -3,6 +3,7 @@ import type { TurnDraft } from '../../domain/drafts';
 import type { LegacyNotificationSelection } from '../../domain/events/legacyNotification';
 import type { CompanionProfile } from '../../services/local/companionProfile';
 import type { SaveRepository } from '../../services/storage/saveRepository';
+import { withWorldbookLibrary, type StoryWorldview } from '../../services/worldbook/mainWorldview';
 import { AiClient } from '../../services/ai/client';
 import { readAiConfig } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
@@ -69,6 +70,7 @@ export function useStoryGeneration(
       const saved = await withHeldStageLock(draft.saveId, async (guard) => {
         const stage = new StoryStage(repository, new AiClient(), guard);
         activeStage.current = stage;
+        const replacementRetry: { pending?: StoryWorldview } = {};
         try {
           return await executeWithAutoRetry({
             settings: frozen.settings,
@@ -91,8 +93,9 @@ export function useStoryGeneration(
                 compatibilityReasoning: currentProgress?.compatibilityReasoning,
               }));
             },
-            run: () => stage.generate({
-              draft: current, expectedInstance,
+            run: attempt => stage.generate({
+              automaticRetry: attempt > 1,
+              draft: current, expectedInstance, replacementRetry,
               freshWorldview: (replace === 'worldview' || !!selection) && current === draft,
               legacyNotificationSelection: selection,
               settings: frozen.settings,
@@ -124,6 +127,8 @@ export function useStoryGeneration(
           });
         } finally {
           stage.dispose();
+          const lease = replacementRetry.pending;
+          if (lease) await withWorldbookLibrary(lib => lib.forgetGeneration(lease.saveId, lease.owner, lease.generation)).catch(() => {});
           if (activeStage.current === stage) activeStage.current = undefined;
         }
       });

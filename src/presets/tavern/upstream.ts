@@ -1,11 +1,11 @@
 import isEqual from 'lodash/isEqual';
-import { checkProviderFinish, providerToolFinish, splitLeadingThink } from '../../services/ai/compat';
+import { checkProviderFinish, normalTextFinish, providerToolFinish, splitLeadingThink } from '../../services/ai/compat';
 import { isOpenAiCompatible, type Protocol } from '../../services/ai/configuration';
 import { AiError, safeAiError } from '../../services/ai/errors';
 import { attachFailureDiagnostic, classifyUpstreamPayload } from '../../services/ai/failureDiagnostic';
 import { array, nativeReasoning, record, usageFrom, type Usage } from '../../services/ai/protocols';
 import { anthropicBlockText, geminiPartText, responseContent, responseDiagnostics } from '../../services/ai/responseContent';
-import { readSse } from '../../services/ai/sse';
+import { FINISH_TAIL_MS, readSse } from '../../services/ai/sse';
 
 import { identifyBody, safeMime } from './responseFormat';
 
@@ -14,6 +14,7 @@ import { StoryClock } from './timing';
 export interface UpstreamTrace {
   clock: StoryClock;
   requestedStream?: boolean;
+  retryableHost?: boolean;
   contentType?: string | null;
   formatEvidence?: 'json_object' | 'sse_field' | 'sse_comment';
   readerEof?: boolean;
@@ -29,7 +30,7 @@ export interface UpstreamTrace {
   bytes: number;
   complete: boolean;
   status?: number;
-  boundary?: 'json' | 'done' | 'message_stop' | 'eof';
+  boundary?: 'json' | 'done' | 'message_stop' | 'eof' | 'finish_reason';
   finish?: string;
   usage?: Usage;
   error?: AiError;
@@ -60,7 +61,8 @@ export class UpstreamFrames {
   // Exact visible text observed before the first tool. null means its position or content disqualifies it.
   private leadingPadding: string | null = '';
   boundary = false;
-  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null, private contentField = 'content', private optionalTextFields: readonly string[] = []) {}
+  // nativeDelivery：内置原生交付对工具不符或参数不合规返回 unsupported，与文学预设的 invalid_output 区分。
+  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null, private contentField = 'content', private optionalTextFields: readonly string[] = [], private nativeDelivery = false) {}
   private observeCompanionText(text: string, sharesToolFields = false) {
     if (!this.expectedContentTool || !text || this.leadingPadding === null) return;
     if (this.tools.size || sharesToolFields || /[^ \t\r\n]/u.test(text)) this.leadingPadding = null;
@@ -164,6 +166,8 @@ export class UpstreamFrames {
       this.trace.clock.progress('firstContentMs');
     }
     if (reasoning.trim()) this.trace.clock.progress('firstReasoningMs');
+    if (streaming && isOpenAiCompatible(p) && this.trace.finish &&
+      (text || reasoning || array(msg.tool_calls).length || msg.function_call != null)) invalid();
     const calls = [];
     if (isOpenAiCompatible(p)) {
       if (msg.function_call != null || (msg.tool_calls != null && !Array.isArray(msg.tool_calls))) invalid();
@@ -275,10 +279,17 @@ export class UpstreamFrames {
         const args = parse(tool.args);
         if (!objectArgs(args)) invalid();
         if (this.expectedContentTool !== undefined) {
+          const unsupported = () => { throw new AiError('unsupported', undefined, { fieldPath: 'tavern.native_delivery.response' }); };
           if (tool.name !== this.expectedContentTool || Object.entries(record(args)).some(([key, value]) =>
-            key !== this.contentField && (!this.optionalTextFields.includes(key) || typeof value !== 'string'))) invalid();
+            key !== this.contentField && (!this.optionalTextFields.includes(key) || typeof value !== 'string'))) {
+            if (this.nativeDelivery) unsupported();
+            invalid();
+          }
           const content = record(args)[this.contentField];
-          if (typeof content !== 'string' || !content.trim()) invalid();
+          if (typeof content !== 'string' || !content.trim()) {
+            if (this.nativeDelivery) unsupported();
+            invalid();
+          }
           const padding = this.leadingPadding;
           this.trace.matchesDelivery = (restored, leadingPadding) => {
             if (leadingPadding !== undefined) return !!padding && leadingPadding === padding && restored === content;
@@ -295,11 +306,11 @@ export class UpstreamFrames {
     this.trace.clock.first('upstreamCompleteMs');
   }
 }
-export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace, expectedContentTool?: string | null) {
+export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace, expectedContentTool?: string | null, literaryDelivery = false) {
   trace.status = response.status;
   trace.contentType = safeMime(response.headers);
   trace.requestedStream = stream;
-  const frames = new UpstreamFrames(protocol, trace, expectedContentTool);
+  const frames = new UpstreamFrames(protocol, trace, expectedContentTool, 'content', [], expectedContentTool != null && !literaryDelivery);
   if (!response.body) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_body' });
   const stopped = new AbortController();
   const reading = AbortSignal.any([signal, stopped.signal]);
@@ -315,7 +326,9 @@ export async function normalizeUpstream(response: Response, protocol: Protocol, 
     frames.finish(false);
     return Response.json(json);
   }
-  const iterator = readSse(counted, reading, { utf8: 'tavern.upstream.utf8', tail: 'tavern.upstream.sse_tail', onComment: () => { trace.clock.marks.comments++; } });
+  let tailDeadline: number | undefined;
+  const iterator = readSse(counted, reading, { tailDeadline: () => tailDeadline,
+    onTail: () => { trace.boundary = 'finish_reason'; }, utf8: 'tavern.upstream.utf8', tail: 'tavern.upstream.sse_tail', onComment: () => { trace.clock.marks.comments++; } });
   const encoder = new TextEncoder();
   const done = encoder.encode('data: [DONE]\n\n');
   let downstreamCancelled = false;
@@ -340,6 +353,11 @@ export async function normalizeUpstream(response: Response, protocol: Protocol, 
             trace.boundary = 'done';
           } else {
             const frame = frames.project(parse(next.value.data), true);
+            if (tailDeadline === undefined && isOpenAiCompatible(protocol) &&
+                (normalTextFinish(trace.finish) || trace.finish === 'tool_calls')) {
+              tailDeadline = performance.now() + FINISH_TAIL_MS;
+              trace.clock.beginTail();
+            }
             controller.enqueue(encoder.encode('data: ' + JSON.stringify(frame) + '\n\n'));
             // Anthropic can leave the HTTP body open after its terminal message_stop.
             if (!frames.boundary) return;

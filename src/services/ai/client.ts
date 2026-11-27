@@ -5,7 +5,7 @@ import { nativeFetch } from '../../presets/tavern/fetch';
 import type { GenerationType } from '../../presets/tavern/events';
 import { insertPlayerWorldbook, type PlayerWorldbook } from '../../prompts/playerWorldbook';
 import { sendTavern } from '../../presets/tavern/backend';
-import { safeMime } from '../../presets/tavern/responseFormat';
+import { readStoryJson, safeMime } from '../../presets/tavern/responseFormat';
 import { newTrace, type UpstreamTrace } from '../../presets/tavern/upstream';
 import type { Sampling } from '../../presets/package';
 import { AiError, manualRetryOnly, safeAiError } from './errors';
@@ -26,14 +26,16 @@ import {
   string,
 } from './protocols';
 import type { AiMessage, Usage } from './protocols';
-import { readSse } from './sse';
+import { preparationSeconds } from './storyPreparation';
+import { StoryClock, type TimeoutKind } from '../../presets/tavern/timing';
+import { FINISH_TAIL_MS, readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
-import { checkFinish, LeadingThink, rememberPresetSamplingRejection, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
+import { checkFinish, normalTextFinish, LeadingThink, rememberPresetSamplingRejection, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
 import { isOpenAiCompatible } from './configuration';
 import type { Protocol } from './configuration';
 import { rawResponseObservation, responseContent, responseDiagnostics, mergeResponseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
-import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, classifyUpstreamPayload, diagnosticSecrets, failurePhase } from './failureDiagnostic';
+import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, classifyUpstreamPayload, diagnosticSecrets, failurePhase, readFailureDiagnostic } from './failureDiagnostic';
 
 export interface RequestOptions {
   /** One-use dispatch gate for an explicitly confirmed, uncredited Story fragment. */
@@ -53,6 +55,9 @@ export interface RequestOptions {
   onResponseDiagnostics?: (diagnostics: ResponseDiagnostics) => void;
   signal?: AbortSignal;
   timeoutSeconds?: number;
+  streamTimeouts?: { idle: number; total: number };
+  /** Only the audited built-in host can replay an original upstream transport failure. */
+  retryableTavernHost?: boolean;
   stream?: boolean;
   onDelta?: (text: string) => void;
   onReasoningDelta?: (text: string) => void;
@@ -88,7 +93,8 @@ export interface AiResponse {
 async function operation<T>(
   options: RequestOptions,
   run: (signal: AbortSignal) => Promise<T>,
-  clock?: RequestOptions['storyClock'],
+  clock?: StoryClock,
+  limits?: RequestOptions['streamTimeouts'],
 ): Promise<T> {
   if (options.signal?.aborted) throw new AiError('cancelled');
   if (
@@ -97,6 +103,8 @@ async function operation<T>(
     (options.timeoutSeconds ?? 120) > 3600
   )
     throw new AiError('configuration');
+  if (limits && (!Number.isFinite(limits.idle) || !Number.isFinite(limits.total) ||
+      limits.idle <= 0 || limits.total < limits.idle || limits.total > 7200)) throw new AiError('configuration');
   const controller = new AbortController();
   let timedOut = false;
   const cancel = () => { clock?.userCancel(); controller.abort(); };
@@ -104,14 +112,27 @@ async function operation<T>(
     clock.marks.timeoutSeconds = options.timeoutSeconds ?? 120;
     clock.first('budgetStartMs');
   }
-  const timeout = setTimeout(
-    () => {
-      clock?.deadline();
-      timedOut = true;
-      controller.abort();
-    },
-    (options.timeoutSeconds ?? 120) * 1000,
-  );
+  const expire = (kind: TimeoutKind) => {
+    if (controller.signal.aborted) return;
+    clock?.deadline();
+    if (clock) clock.marks.timeoutKind = kind;
+    timedOut = true;
+    controller.abort();
+  };
+  const totalMs = (limits?.total ?? options.timeoutSeconds ?? 120) * 1000;
+  const elapsed = limits && clock ? clock.elapsed() - (clock.marks.preparationStartMs ?? clock.marks.budgetStartMs ?? clock.elapsed()) : 0;
+  const timeout = setTimeout(() => expire('total'), Math.max(0, totalMs - elapsed));
+  let idleTimer: ReturnType<typeof setTimeout> | undefined;
+  if (limits && clock) {
+    clock.marks.idleTimeoutSeconds = limits.idle;
+    clock.marks.totalTimeoutSeconds = limits.total;
+    clock.onProgress = () => {
+      clearTimeout(idleTimer);
+      const wait = clock.idleKind() === 'preparation' ? preparationSeconds(options.timeoutSeconds ?? 120) : limits.idle;
+      idleTimer = setTimeout(() => expire(clock.idleKind()), wait * 1000);
+    };
+    clock.onProgress();
+  }
   options.signal?.addEventListener('abort', cancel, { once: true });
   if (options.signal?.aborted) controller.abort();
   let rejectAbort: (() => void) | undefined;
@@ -128,6 +149,8 @@ async function operation<T>(
     throw new AiError('network');
   } finally {
     clearTimeout(timeout);
+    clearTimeout(idleTimer);
+    if (clock) clock.onProgress = undefined;
     options.signal?.removeEventListener('abort', cancel);
     if (rejectAbort) controller.signal.removeEventListener('abort', rejectAbort);
   }
@@ -139,7 +162,7 @@ async function observeMemorySse(response: Response, protocol: RequestSnapshot['c
   try {
     const body = response.clone().body;
     if (!body) return;
-    for await (const event of readSse(body, signal, { detachCleanup: true })) {
+    for await (const event of readSse(body, signal)) {
       if (event.event === 'error') throw rejectedUpstream(ssePayload(event.data), 'sse', response.status, true);
       if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) { complete = true; break; }
       let data: Record<string, unknown>;
@@ -213,7 +236,7 @@ export class AiClient {
   constructor(private transport: typeof fetch = nativeFetch) {}
   private async response(
     url: string, init: RequestInit, signal: AbortSignal, relay: ReturnType<typeof relayAttempt>, snapshot?: RequestSnapshot,
-    observe?: (value: ResponseDiagnostics) => void, presetSampling = false, trace?: UpstreamTrace, confirmed?: ConfirmedTransmission,
+    observe?: (value: ResponseDiagnostics) => void, presetSampling = false, trace?: UpstreamTrace, confirmed?: ConfirmedTransmission, clock = trace?.clock,
   ) {
     const markSent = () => {
       if (trace) { trace.calls++; trace.clock.first('sentMs'); }
@@ -231,7 +254,11 @@ export class AiClient {
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
     }, relay, confirmed && { transmission: confirmed, signal });
-    trace?.clock.first('headersMs');
+    if (signal.aborted) {
+      void response.body?.cancel().catch(() => {});
+      throw new AiError('cancelled');
+    }
+    clock?.first('headersMs');
     if (trace) { trace.status = response.status; trace.contentType = safeMime(response.headers); }
     const relayError = relay.used && response.headers.get('X-Heijin-Relay-Error') === '1';
     const relayUnavailable = relay.used && !relayError && response.headers.get(relayUpstreamHeader) !== '1';
@@ -325,7 +352,24 @@ export class AiClient {
     const relayEnabled = relayMode() === 'auto';
     const started = performance.now();
     const compat = snapshot.stage === 'story' && options.tavernType !== undefined;
-    const trace = compat ? newTrace(options.storyClock) : undefined;
+    // 神域文学处理器和原型会话自行读取上游，不向本次时钟报告进度；沿用单一总时限，避免被无输出时限误判。
+    const limits = snapshot.stage === 'story' && options.stream && !prototype && !oracle ? options.streamTimeouts : undefined;
+    const clock = options.storyClock ?? (compat || limits ? new StoryClock() : undefined);
+    const trace = compat ? newTrace(clock) : undefined;
+    let terminalEvidence: UpstreamTrace['boundary'];
+    let readerEof = false, readError = false;
+    const observeLifecycle = (target: unknown) => {
+      if (!limits || !clock) return;
+      const m = clock.marks;
+      attachFailureDiagnostic(target, {
+        timeoutKind: m.timeoutKind, idleTimeoutSeconds: limits.idle, totalTimeoutSeconds: limits.total,
+        firstByteMs: m.firstByteMs, firstContentMs: m.firstContentMs, firstReasoningMs: m.firstReasoningMs,
+        firstArgumentsMs: m.firstArgumentsMs, lastProgressMs: m.lastProgressMs,
+        readerEof: trace?.readerEof ?? readerEof, readError: trace?.readError ?? readError,
+        terminalEvidence: trace ? (trace.complete ? trace.boundary : undefined) : terminalEvidence,
+        wrapperComplete: trace ? trace.restored === true : undefined,
+      });
+    };
     const cleanup = compat ? new AbortController() : undefined;
     let diagnostics: string[] = [];
     let inspectionId: string | undefined;
@@ -350,8 +394,10 @@ export class AiClient {
           diagnostics = wire.diagnostics;
           try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
           catch { /* Inspection cannot affect transport. */ }
+          // 酒馆路径在真正发出时由 response() 记录；确认续写的请求也要等到实际发送。
+          if (!trace) clock?.first('sentMs');
           return this.response(wire.url, wire.init, requestSignal, relay, snapshot, observe,
-            wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission).catch(error => {
+            wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission, clock).catch(error => {
             if (oracle && !options.confirmedTransmission && !requestSignal.aborted &&
                 (error instanceof TypeError || error instanceof DOMException && error.name === 'NetworkError'))
               throw new AiError('network', undefined, { fieldPath: 'channel.oracle_direct_network' });
@@ -370,9 +416,10 @@ export class AiClient {
         const response = session ? await send(await session.wire(snapshot, messages, options.stream === true, playerWorldbook), signal)
           : trace && cleanup && options.tavernType
           ? await sendTavern(snapshot, options.tavernType, [...messages], options.nativeDeliveryReference !== undefined ? undefined : options.presetSampling ?? {}, options.stream === true,
-            AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryReference, playerWorldbook, options.storyDeliveryTool)
+            AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryReference, playerWorldbook, options.storyDeliveryTool, options.retryableTavernHost)
           : await send(wireRequest(snapshot, insertPlayerWorldbook(messages, playerWorldbook), options.stream === true, options.presetSampling), signal);
         const protocol = trace ? 'openai' : snapshot.channel.protocol;
+        clock?.first('headersMs');
         lastHttp = response.status;
         if (!signal.aborted) observe({ httpStatus: response.status, complete: false });
         let text = '', reasoning = '',
@@ -396,7 +443,7 @@ export class AiClient {
             ? observeMemorySse(response, protocol, signal, options) : undefined;
           let data: unknown;
           try {
-            data = await response.json();
+            data = snapshot.stage === 'story' ? await readStoryJson(response, signal) : await response.json();
             if (trace) trace.wrapperBodyRead = true;
           } catch {
             const diagnostic = await observedSse;
@@ -443,10 +490,20 @@ export class AiClient {
           if (!response.body) throw new AiError('stream_interrupted');
           let terminal = false, nativeSeen = false;
           const think = isOpenAiCompatible(protocol) ? new LeadingThink() : undefined;
-          for await (const event of readSse(response.body, signal, (trace || theater) ? { detachCleanup: true } : undefined)) {
+          let tailDeadline: number | undefined;
+          let providerEnd: unknown;
+          const original = !trace && snapshot.stage === 'story';
+          for await (const event of readSse(response.body, signal, original ? {
+            tailDeadline: () => tailDeadline,
+            onTail: () => { terminalEvidence = 'finish_reason'; },
+            onBytes: () => clock?.bytes(),
+            onEof: () => { readerEof = true; if (terminal) terminalEvidence = 'eof'; },
+            onReadError: () => { readError = true; },
+          } : undefined)) {
             if (event.event === 'error') throw rejectedUpstream(ssePayload(event.data), 'sse', response.status, true);
             if (event.data === '[DONE]' && isOpenAiCompatible(protocol)) {
               terminal = true;
+              if (original) terminalEvidence = 'done';
               break;
             }
             let data: Record<string, unknown>;
@@ -478,7 +535,17 @@ export class AiClient {
             let thinkReasoning = '';
             if (isOpenAiCompatible(protocol)) {
               const choice = record(array(data.choices)[0]);
-              if (finish(choice.finish_reason)) terminal = true;
+              if (original && providerEnd && (rawDelta || native || residualTool(data, true) ||
+                  (choice.finish_reason && choice.finish_reason !== providerEnd))) throw new AiError('invalid_output');
+              if (original && residualTool(data, true)) throw new AiError('unsupported');
+              if (finish(choice.finish_reason)) {
+                terminal = true;
+                providerEnd = choice.finish_reason;
+                if (original && normalTextFinish(providerEnd) && tailDeadline === undefined) {
+                  tailDeadline = performance.now() + FINISH_TAIL_MS;
+                  clock?.beginTail();
+                }
+              }
               const split = think!.push(string(record(choice.delta).content));
               delta = split.content; thinkReasoning = split.reasoning;
             } else if (protocol === 'gemini') {
@@ -501,8 +568,13 @@ export class AiClient {
               finish(record(data.delta).stop_reason);
               if (data.type === 'message_stop') {
                 terminal = true;
+                if (original) terminalEvidence = 'message_stop';
                 if (theater) break;
               }
+            }
+            if (original) {
+              if (rawDelta.trim()) clock?.progress('firstContentMs');
+              if (native.trim()) clock?.progress('firstReasoningMs');
             }
             if (native) nativeSeen = true;
             // 服务已单独给出思考时，不再把正文里的 <think> 重复算进去。
@@ -517,6 +589,7 @@ export class AiClient {
             text += delta;
             if (text.length > 8_000_000) throw new AiError('invalid_output');
             if (delta && !signal.aborted) options.onDelta?.(delta);
+            if (original && protocol === 'anthropic' && data.type === 'message_stop') break;
           }
           if (think) {
             const rest = think.end();
@@ -535,7 +608,7 @@ export class AiClient {
           if (unhandledTool) throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.unhandled_tool' });
           usage = trace.usage;
           outputLimited ||= ['length', 'max_tokens'].includes(trace.finish?.toLowerCase() ?? '');
-          if (options.nativeDeliveryReference !== undefined && !trace.matchesDelivery?.(text))
+          if ((options.nativeDeliveryReference !== undefined || trace.matchesDelivery) && !trace.matchesDelivery?.(text))
             throw new AiError(outputLimited ? 'output_limit' : 'unsupported', undefined,
               outputLimited ? undefined : { fieldPath: 'tavern.native_delivery.response' });
         }
@@ -548,6 +621,7 @@ export class AiClient {
         try { if (inspectionId) requestInspections.finish(inspectionId, usage); }
         catch { /* 诊断观察器失败不改变响应。 */ }
         const result = { text, ...(outputLimited ? { outputLimited: true } : {}), ...(reasoning ? { nativeReasoning: reasoning } : {}), usage, diagnostics, protocol: snapshot.channel.protocol, model: snapshot.model };
+        observeLifecycle(result);
         // 成功返回后，校验失败仍要带上这次请求已经看见的事实，不能事后从原文猜。
         attachObservedRequest(result, {
           model: snapshot.model,
@@ -562,7 +636,7 @@ export class AiClient {
           ...(typeof seen.errorPresent === 'boolean' ? { errorInBody: seen.errorPresent } : {}),
         }, diagnosticSecrets(snapshot));
         return result;
-      }, trace?.clock);
+      }, clock, limits);
     } catch (error) {
       let failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
       if (options.confirmedTransmission?.sent && failure instanceof AiError &&
@@ -572,17 +646,28 @@ export class AiClient {
         carryFailureDiagnostic(failure, uncertain);
         failure = uncertain;
       }
-      // 页面允许中转，不代表这次用了中转。直连已经返回的生成失败仍可自动重试。
-      // 真正发出本站中转后仍失败，以及酒馆包装失败，继续只允许手动处理，避免再付一笔。
+      // Relay policy follows the actual transport. The script host can only replay a failed original request;
+      // 神域文学处理器与原型会话只允许手动重试，避免再付一笔。
       if ((relay.used || prototype || oracle) && failure instanceof AiError) manualRetryOnly.add(failure);
       if (trace && failure instanceof AiError) {
-        manualRetryOnly.add(failure);
+        const upstreamTimeout = failure.code === 'timeout' && !trace.complete && trace.clock.marks.sentMs !== undefined &&
+          (['awaiting_headers', 'awaiting_bytes', 'upstream_read'].includes(trace.clock.marks.deadlinePhase ?? ''));
+        const upstreamClass = readFailureDiagnostic(failure)?.upstreamClass;
+        const serviceFailure = failure.code === 'server' || (failure.code === 'rate_limit' && !failure.details?.quota) ||
+          (failure.code === 'rejected' && ['overload', 'rate_limit', 'internal'].includes(upstreamClass ?? ''));
+        const upstreamFailure = failure === trace.error && !trace.complete &&
+          ((failure.code === 'network' && !trace.status) || serviceFailure ||
+            (failure.code === 'stream_interrupted' && (trace.readError || (trace.readerEof &&
+              ['tavern.upstream.missing_finish', 'tavern.upstream.message_stop'].includes(failure.details?.fieldPath ?? '')))));
+        if (!trace.retryableHost || trace.calls !== 1 || !(upstreamTimeout || upstreamFailure))
+          manualRetryOnly.add(failure);
         trace.cancelled = failure.code === 'cancelled' || failure.code === 'timeout';
       }
+      observeLifecycle(failure);
       const status = failure instanceof AiError && typeof failure.status === 'number' && failure.status >= 100 ? failure.status : lastHttp;
       const field = failure instanceof AiError ? failure.details?.fieldPath : undefined;
       const headersSeen = trace?.clock.marks.headersMs !== undefined || lastHttp !== undefined;
-      const phase = failurePhase(field, trace?.clock.marks.deadlinePhase)
+      const phase = failurePhase(field, clock?.marks.deadlinePhase)
         ?? (failure instanceof AiError && failure.code === 'network' && !headersSeen ? 'upstream_connect' as const : undefined)
         ?? (failure instanceof AiError && failure.code === 'stream_interrupted' ? 'upstream_read' as const : undefined);
       attachObservedRequest(failure, {

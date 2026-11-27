@@ -178,7 +178,9 @@ export function SettingsPanel({
     if (!checked.success) {
       setNoticeLevel('err');
       setNotice(
-        '请输入有效的正整数：正文最多 100000 字、即时记忆最多 10000 回合、超时最多 3600 秒。',
+        checked.error.issues.some(issue => issue.code === 'custom' && issue.path.includes('streamTotalSeconds'))
+          ? '正文流式总时限不能小于无有效输出时限。'
+          : '请输入有效的正整数。正文最多 100000 字，即时记忆最多 10000 回合，请求或空闲时限最多 3600 秒，正文流式总时限最多 7200 秒。',
       );
       return;
     }
@@ -377,23 +379,21 @@ export function SettingsPanel({
               ))}
               <label>
                 请求超时（秒）
-                <input
-                  type="number"
-                  min="1"
-                  max="3600"
-                  value={
-                    Number.isNaN(editing.runtime.timeoutSeconds)
-                      ? ''
-                      : editing.runtime.timeoutSeconds
-                  }
-                  onChange={(e) =>
-                    setEditing({
-                      ...editing,
-                      runtime: { ...editing.runtime, timeoutSeconds: e.target.valueAsNumber },
-                    })
-                  }
-                />
+                <input type="number" min="1" max="3600" value={Number.isNaN(editing.runtime.timeoutSeconds) ? '' : editing.runtime.timeoutSeconds}
+                  onChange={e => setEditing({ ...editing, runtime: { ...editing.runtime, timeoutSeconds: e.target.valueAsNumber } })} />
               </label>
+              {([
+                ['streamIdleSeconds', '正文流式无有效输出超时（秒）', 3600, editing.runtime.timeoutSeconds],
+                ['streamTotalSeconds', '正文流式总时限（秒）', 7200, Math.max(600, editing.runtime.streamIdleSeconds ?? editing.runtime.timeoutSeconds)],
+              ] as const).map(([key, label, max, fallback]) => (
+                <label key={key}>{label}
+                  <input type="number" min={key === 'streamTotalSeconds' ? editing.runtime.streamIdleSeconds ?? editing.runtime.timeoutSeconds : 1}
+                    max={max} value={editing.runtime[key] ?? ''} placeholder={String(fallback)}
+                    onChange={e => setEditing({ ...editing, runtime: { ...editing.runtime,
+                      [key]: e.target.value === '' ? undefined : e.target.valueAsNumber } })} />
+                </label>
+              ))}
+              <small>请求超时适用于请求准备、非流式及其他阶段。正文流式时限留空时，无有效输出时限沿用请求超时，总时限取 600 秒与无有效输出时限中的较大值。</small>
               <label className="toggle">
                 <input
                   type="checkbox"

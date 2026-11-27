@@ -1,3 +1,4 @@
+import { timeoutKinds } from '../../presets/tavern/timing';
 import { z } from 'zod';
 import { openingTimeFailureReasons } from '../../domain/openingTime';
 import { PRODUCT_VERSION } from '../../app/product';
@@ -42,6 +43,10 @@ const programCodes = new Set([
   'resource', 'placeholder', 'storage', 'variable_runtime', 'candidate_conflict', 'permission',
   'concurrency_unavailable',
 ]);
+const timeoutNames: Record<(typeof timeoutKinds)[number], string> = {
+    preparation: '请求准备', headers: '等待响应头', first_output: '等待首个有效输出',
+    output_idle: '等待下一段有效输出', terminal_tail: '读取结束尾帧', wrapper_restore: '脚本恢复', total: '整次请求',
+};
 const phaseNames: Record<(typeof failurePhases)[number], string> = {
   request_build: '请求构建', preset_init: '预设脚本初始化', upstream_connect: '上游连接',
   awaiting_headers: '等待响应头', awaiting_bytes: '等待首个响应数据', upstream_read: '上游响应读取',
@@ -84,6 +89,12 @@ export const failureDiagnosticSchema = z.strictObject({
   httpError: z.boolean().optional(),
   errorInBody: z.boolean().optional(),
   timeoutSeconds: count.optional(),
+  timeoutKind: z.enum(timeoutKinds).optional(),
+  idleTimeoutSeconds: count.optional(), totalTimeoutSeconds: count.optional(),
+  firstByteMs: count.optional(), firstContentMs: count.optional(), firstReasoningMs: count.optional(),
+  firstArgumentsMs: count.optional(), lastProgressMs: count.optional(),
+  readerEof: z.boolean().optional(), readError: z.boolean().optional(), wrapperComplete: z.boolean().optional(),
+  terminalEvidence: z.enum(['json', 'done', 'eof', 'message_stop', 'finish_reason']).optional(),
   elapsedMs: count.optional(),
   bytes: count.optional(),
   finishReason: z.string().regex(finishToken).optional(),
@@ -345,7 +356,7 @@ export function noteRetryDecision(error: unknown, settings: Settings, attempt: n
     else if (plan.reason === 'retry_after') stop = 'retry_after';
     else if (error instanceof AiError && error.code === 'cancelled') stop = 'cancelled';
     else if (error instanceof AiError && error.details?.quota === true) stop = 'quota';
-    else if ((field?.startsWith('tavern.') || seen?.preset === 'native' || seen?.preset === 'script') && (manual || Boolean(field?.startsWith('tavern.')))) stop = 'tavern_manual';
+    else if ((field?.startsWith('tavern.') || seen?.preset === 'native' || seen?.preset === 'script') && (manual || (Boolean(field?.startsWith('tavern.')) && !field?.startsWith('tavern.upstream.')))) stop = 'tavern_manual';
     else if (manual && (Boolean(field?.startsWith('channel.relay')) || relayUsed)) stop = 'relay_manual';
     else if (error instanceof AiError && programCodes.has(error.code)) stop = 'program';
     else if (!extended) stop = 'disabled';
@@ -385,6 +396,7 @@ export function failurePhase(fieldPath?: string, deadline?: string): (typeof fai
 
 export function failureDiagnosticSummary(diagnostic: FailureDiagnostic) {
   const parts = [
+    diagnostic.timeoutKind ? timeoutNames[diagnostic.timeoutKind] + '超时' : undefined,
     diagnostic.phase ? `环节：${phaseNames[diagnostic.phase]}` : '环节：未知',
     diagnostic.upstreamClass ? `上游：${classNames[diagnostic.upstreamClass]}` : undefined,
     diagnostic.httpStatus ? `HTTP ${diagnostic.httpStatus}` : undefined,

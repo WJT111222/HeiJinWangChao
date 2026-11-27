@@ -93,3 +93,21 @@ test('跨标签保存叙事视角不会重新打开另一页关闭的动态世�
   expect(posts).toBe(0);
   await other.close();
 });
+
+test('两个标签分别保存正文空闲与总时限，刷新保留旧请求超时', async ({ page, context }) => {
+  const a = await settings(page, '运行');
+  const other = await context.newPage(), b = await settings(other, '运行');
+  await a.getByLabel('正文流式无有效输出超时（秒）').fill('180');
+  await b.getByLabel('正文流式总时限（秒）').fill('900');
+  const save = (panel: typeof a) => panel.getByRole('button', { name: '保存本地设置', exact: true }).click();
+  await save(a); await save(b);
+  const after = await settings(page, '运行');
+  await expect(after.getByLabel('正文流式无有效输出超时（秒）')).toHaveValue('180');
+  await expect(after.getByLabel('正文流式总时限（秒）')).toHaveValue('900');
+  await expect(after.getByLabel('请求超时（秒）', { exact: true })).toHaveValue('120');
+  await after.getByLabel('正文流式总时限（秒）').fill('100');
+  await save(after);
+  await expect(after).toContainText('正文流式总时限不能小于无有效输出时限');
+  const retained = await settings(page, '运行');
+  await expect(retained.getByLabel('正文流式总时限（秒）')).toHaveValue('900');
+});
