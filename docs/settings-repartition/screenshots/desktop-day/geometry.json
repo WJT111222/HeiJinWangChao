@@ -1,0 +1,121 @@
+[
+  {
+    "page": "channels",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "routing",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "network",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "writing",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "literary",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "prompts",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "worldbooks",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "stages",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "timing",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "memory",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "phone",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "images",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "theater",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "look",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "variables",
+    "width": 1052,
+    "scroll": 1052,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "promptmgr",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  },
+  {
+    "page": "feedback",
+    "width": 852,
+    "scroll": 852,
+    "viewport": 1440,
+    "right": 1338
+  }
+]
