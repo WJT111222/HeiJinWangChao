@@ -219,7 +219,10 @@ async function runAttempt<T>(db: IDBDatabase, operation: SettingsOperation<T>) {
       // A failed compensation can leave the visible token ahead. Its parent proves this
       // renderer saw the durable predecessor; an arbitrary mismatch grants no such authority.
       const abortedChild = visible?.split('/')[1] === parentOf(previous?.id);
-      if ((previous?.id ?? null) !== visible && !freshEmpty && !abortedChild) {
+      // The fence database itself was cleared or evicted while Web Storage survived. Every writer
+      // stores its durable receipt before publishing, so no peer can be mid-save with an empty store.
+      const lostFence = !previous && visible !== null && !legacyId.test(visible);
+      if ((previous?.id ?? null) !== visible && !freshEmpty && !abortedChild && !lostFence) {
         const legacy = visible && legacyId.test(visible)
           && (!previous || (previous.time < performance.timeOrigin && legacyId.test(previous.id)));
         return { waiting: true as const, legacy: legacy ? new LegacyReceiptConflict(previous?.id, visible) : undefined };
