@@ -11,16 +11,17 @@ import { MemoryPanel } from './MemoryPanel';
 import { NpcPanel } from './NpcPanel';
 import type { NpcManagement } from './NpcPanel';
 
+// 右侧世界资料栏、手机世界资料目录与历史回看共用这一顺序：先人与势力，再地图、物品，其余在后。
 export const panelNames = [
   'NPC',
   '势力组织',
   '我的势力',
+  '后宫',
   '地图',
   '物品栏',
   '世界事件',
   '历史时间轴',
   '记忆',
-  '后宫',
 ] as const;
 export type PanelName = (typeof panelNames)[number];
 export function Panels({ name, view, onOpenHistory, npcManagement, initialId, links }: { name: PanelName; view: PlayerView; onOpenHistory?:()=>void; npcManagement?: NpcManagement; initialId?: string; links?: ArchiveLinks }) {

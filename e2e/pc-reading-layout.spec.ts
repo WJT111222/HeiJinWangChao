@@ -71,8 +71,16 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
       await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(10);
       const system = page.getByRole('navigation', { name: '系统操作' });
       await expect(system.locator('button > span:last-child')).toHaveText(['设置', '返回首页']);
-      await system.getByRole('button', { name: '返回首页', exact: true }).scrollIntoViewIfNeeded();
-      await expect(system.getByRole('button', { name: '返回首页', exact: true })).toBeInViewport({ ratio: .99 });
+      const archive = page.getByRole('navigation', { name: '世界资料分类' });
+      await expect(archive.locator('button > span:last-child')).toHaveText(['NPC', '势力组织', '我的势力', '后宫', '地图', '物品栏', '世界事件', '历史时间轴', '记忆', '小剧场']);
+      // 只滚动资料列表；设置和返回首页始终固定在栏底，不需要滚动就能点到。
+      for (const top of [0, 1e6]) {
+        await archive.evaluate((el, value) => { el.scrollTop = value; }, top);
+        for (const name of ['设置', '返回首页']) await expect(system.getByRole('button', { name, exact: true })).toBeInViewport({ ratio: .99 });
+      }
+      expect(await page.getByRole('complementary', { name: '世界资料' }).evaluate(el => el.scrollTop)).toBe(0);
+      if (size.height === 520) expect(await archive.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
+      await archive.evaluate(el => { el.scrollTop = 0; });
       if (size.height === 520) await page.screenshot({ path: `${destination}/after-short-dock.png` });
       await reader.evaluate(el => { el.scrollTop = el.scrollHeight; });
       await expect(page.locator('.action-options')).toBeInViewport({ ratio: 1 });
