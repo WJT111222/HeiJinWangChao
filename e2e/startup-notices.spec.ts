@@ -131,7 +131,7 @@ test('首页与设置手动查看只开指定公告；返回保留设置内容�
   }
   await page.getByRole('button', { name: '设置', exact: true }).click();
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  await settings.getByRole('button', { name: '提示词', exact: true }).click();
+  await settings.getByRole('button', { name: '提示词开关', exact: true }).click();
   const length = settings.getByLabel('正文最低字数');
   await length.fill('2222');
   for (const label of ['游玩须知与免责声明', '王朝公告']) {

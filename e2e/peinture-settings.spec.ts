@@ -253,7 +253,7 @@ async function runtimeSettings(page: Page) {
   const dialog = page.getByRole('dialog', { name: '设置', exact: true });
   const back = dialog.getByRole('button', { name: '返回设置', exact: true });
   if (await back.isVisible()) await back.click();
-  await dialog.getByRole('button', { name: '运行', exact: true }).click();
+  await dialog.getByRole('button', { name: '文学预设', exact: true }).click();
   return dialog;
 }
 async function applyMode(page: Page, dialog: Locator) {

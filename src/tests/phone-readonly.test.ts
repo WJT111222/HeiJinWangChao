@@ -49,7 +49,7 @@ describe('只读手机', () => {
       debt = state.economy.debts.mortgage;
     expect(phoneMoney(8642035)).toBe('¥86,420.35');
     expect(phoneMoney(null)).toBe('未确认');
-    expect(upcomingLoans(state)[0].days).toBe(loanReminderDays);
+    expect(upcomingLoans(state)[0].days).toBe(loanReminderDays());
     state.worldClock = '2026-10-17T15:59:59Z';
     expect(upcomingLoans(state)[0].days).toBe(4);
     state.worldClock = '2026-10-17T16:00:00Z';

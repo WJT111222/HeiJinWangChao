@@ -21,7 +21,9 @@ export function phoneDateTime(at: string) {
 
 const dayMs = 86_400_000;
 const gameDay = (time: string) => Math.floor((Date.parse(time) + 8 * 3_600_000) / dayMs);
-export const loanReminderDays = 3;
+export function loanReminderDays(settings?: import('../settings/model').Settings['phone']) {
+  return settings?.loanReminderDays ?? 3;
+}
 
 export function upcomingLoans(state: GameState) {
   if (state.openingTimePending) return [];

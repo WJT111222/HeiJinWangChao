@@ -58,10 +58,10 @@ describe('per-stage independent selection while following Story', () => {
     expect(restored.routes.variables).toEqual(a.config.routes.variables);
     expect(resolveModelRoute(restored,'variables').model).toBe('variables-default');
   });
-  it.each(tasks)('deleting an active %s channel leaves explicit independent mode and clears dangling IDs', stage => {
+  it.each(tasks)('deleting an active %s channel restores its default follow and clears dangling IDs', stage => {
     const a=fixture(), removed=removeChannel(a.config,stage);
-    expect(removed.routes[stage]).toEqual({mode:'independent',channelId:'',modelId:''});
-    expect(() => resolveModelRoute(removed,stage)).toThrow(expect.objectContaining({code:'configuration'}));
+    expect(removed.routes[stage]).toEqual({mode:'follow-story'});
+    expect(resolveModelRoute(removed,stage).model).toBe('story-override');
     expect(AiConfigSchema.safeParse(removed).success).toBe(true);
   });
   it.each(tasks)('deleting a remembered %s channel preserves intentional follow mode without a stale backup', stage => {

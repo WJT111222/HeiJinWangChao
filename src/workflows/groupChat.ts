@@ -124,7 +124,7 @@ export async function sendGroupChat(
     };
 
     async function ask<T>(rule: string, data: unknown, parse: (value: unknown) => T) {
-      const snapshot = requestSnapshot(input.config, 'phone', input.vault);
+      const snapshot = requestSnapshot(input.config, 'phone', input.vault, { route: 'phoneGroup' });
       for (let n = 1; ; n++) {
         await check();
         try {
@@ -216,12 +216,18 @@ export async function sendGroupChat(
           return result;
         },
       );
-      for (const item of plan)
+      let replies = 0;
+      for (const item of plan) {
+        if (item.status === 'reply' && settings.phone?.groupReplyLimit !== undefined && replies++ >= settings.phone.groupReplyLimit) {
+          row.outcomes.push({ npcId: item.npcId, status: 'unread' });
+          continue;
+        }
         row.outcomes.push(
           item.status === 'reply'
             ? await individual(item.npcId, false)
             : { npcId: item.npcId, status: item.status },
         );
+      }
     }
     await check();
     attempt.saving();

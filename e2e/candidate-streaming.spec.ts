@@ -75,15 +75,15 @@ async function begin(page: Page, stage: 'variables' | 'world', label: string) {
 test('旧运行设置不重置：两个独立开关默认关闭，显式保存、刷新和未保存取消', async ({ page }, info) => {
   await seed(page, 'variables', true);
   const original = await page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
-  await openSettings(page); await page.getByRole('button', { name: '运行', exact: true }).click();
+  await openSettings(page); await page.getByRole('button', { name: '生成阶段', exact: true }).click();
   const variables = page.getByRole('checkbox', { name: '主角与现场 · 流式传输', exact: true }), world = page.getByRole('checkbox', { name: '场外与网络 · 流式传输', exact: true });
   await expect(variables).not.toBeChecked(); await expect(world).not.toBeChecked(); await expect(page.getByLabel('请求超时（秒）')).toHaveValue('73');
   expect(await page.evaluate(() => localStorage.getItem('heijin.settings.v1'))).toBe(original);
   await variables.check(); await expect(world).not.toBeChecked(); await page.getByRole('button', { name: '保存本地设置', exact: true }).click();
-  await page.reload(); await openSettings(page); await page.getByRole('button', { name: '运行', exact: true }).click();
+  await page.reload(); await openSettings(page); await page.getByRole('button', { name: '生成阶段', exact: true }).click();
   await expect(variables).toBeChecked(); await expect(world).not.toBeChecked(); await world.check();
   await page.getByRole('button', { name: '保存本地设置', exact: true }).click(); await page.screenshot({ path: info.outputPath('stream-settings.png') });
-  await page.reload(); await openSettings(page); await page.getByRole('button', { name: '运行', exact: true }).click();
+  await page.reload(); await openSettings(page); await page.getByRole('button', { name: '生成阶段', exact: true }).click();
   await expect(variables).toBeChecked(); await expect(world).toBeChecked(); await variables.uncheck(); await page.reload();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.settings.v1')!));
   expect(saved.runtime).toMatchObject({ streamVariables: true, streamWorld: true, timeoutSeconds: 73 }); expect(saved.prompts.perspective).toBe('first'); expect(saved.version).toBe(1); expect(calls).toEqual([]);

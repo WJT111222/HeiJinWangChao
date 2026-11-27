@@ -1,5 +1,5 @@
-import { AiConfigSchema, ChannelSchema, modelIdSchema } from './configuration';
-import type { AiConfig, ModelUse, Channel } from './configuration';
+import { AiConfigSchema, ChannelSchema, followTargets, modelIdSchema } from './configuration';
+import type { AiConfig, ModelRoute, ModelUse, Channel } from './configuration';
 import type { CredentialVault } from './credentials';
 import { AiError } from './errors';
 import { thinkingCapability } from './thinking';
@@ -9,7 +9,7 @@ const secrets = new WeakMap<object, string>();
 export interface RequestSnapshot {
   readonly channel: Readonly<Channel>;
   readonly model: string;
-  readonly stage: ModelUse | 'theater';
+  readonly stage: ModelUse | 'theater' | 'imagePrompt';
   readonly useCot: boolean;
   readonly thinkingCapability: ThinkingCapability;
   readonly diagnostics: readonly string[];
@@ -40,18 +40,26 @@ export function channelSnapshot(
   if (stage === 'story' && compatibility.cotMode === 'prefix') diagnostics.push('COT_PREFIX_FALLBACK_COMPLETE_HISTORY');
   if (compatibility.cotMode !== 'off' && !useCot) diagnostics.push('COT_SKIPPED_PROTOCOL_OR_MODEL');
   const snapshot = freeze({ channel: parsed.data, model, stage, useCot, diagnostics,
-    thinkingCapability: thinkingCapability(parsed.data, model) });
+    thinkingCapability: stage === 'imagePrompt' ? 'none' as const : thinkingCapability(parsed.data, model) });
   secrets.set(snapshot, secret);
   return snapshot;
 }
-export function resolveModelRoute(config: AiConfig, stage: ModelUse) {
+// The settings editor can resolve a partially filled draft without validating unrelated channels.
+export function selectedModelRoute(config: AiConfig, stage: ModelRoute) {
+  const seen = new Set<ModelRoute>();
+  while (!seen.has(stage)) {
+    seen.add(stage);
+    const selected = config.routes[stage];
+    if (!selected) break;
+    if ('channelId' in selected) return selected;
+    stage = followTargets[selected.mode];
+  }
+  throw new AiError('configuration');
+}
+export function resolveModelRoute(config: AiConfig, stage: ModelRoute) {
   const checked = AiConfigSchema.safeParse(config);
   if (!checked.success) throw new AiError('configuration');
-  const initial = checked.data.routes[stage];
-  const selected = 'mode' in initial && initial.mode === 'follow-variables' ? checked.data.routes.variables : initial;
-  const route =
-    'mode' in selected && selected.mode === 'follow-story' ? checked.data.routes.story : selected;
-  if (!('channelId' in route)) throw new AiError('configuration');
+  const route = selectedModelRoute(checked.data, stage);
   const channel = checked.data.channels.find((c) => c.id === route.channelId);
   if (!channel) throw new AiError('configuration');
   const model = route.modelId || channel.defaultModel;
@@ -64,10 +72,11 @@ export function cotSupported(channel: Channel, _model: string, stage: RequestSna
 }
 export function requestSnapshot(
   config: AiConfig,
-  stage: ModelUse,
+  stage: RequestSnapshot['stage'],
   vault: CredentialVault,
+  options?: { route: ModelRoute },
 ): RequestSnapshot {
-  const { channel, model } = resolveModelRoute(config, stage);
+  const { channel, model } = resolveModelRoute(config, options?.route ?? stage);
   return channelSnapshot(channel, vault, model, stage);
 }
 export function secretFor(snapshot: RequestSnapshot) {

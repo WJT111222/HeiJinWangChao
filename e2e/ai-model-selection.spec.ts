@@ -1,3 +1,4 @@
+import { settingsCategory } from './helpers/aiSettings';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { choose, selected } from './helpers/select';
@@ -48,15 +49,15 @@ test('填好密钥后自动获取一次、四阶段分别选择、只有被点�
   await expect(settings.locator('.ai-refresh.is-spinning')).toHaveCount(0);
   release(); gate = undefined;
   await expect(settings.locator('.ai-connect')).toContainText('当前接口返回 6 个模型');
-  for (const [label, model] of [['正文生成', 'city-story'], ['人物与实体', 'city-entities'], ['主角与现场', 'city-variables'], ['场外与网络', 'city-world'], ['记忆维护', 'city-memory']]) {
+  for (const [label, model] of [['正文生成', 'city-story'], ['人物与实体', 'city-entities'], ['主角与现场', 'city-variables'], ['场外与网络', 'city-world'], ['记忆总结', 'city-memory']]) {
     await stageModel(settings, label, '都市渠道', model, 'list');
   }
   expect(lists).toBe(1);
   await saveAi(settings); expect(lists).toBe(1);
   const config = await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.ai.v1')!));
-  expect(Object.values(config.routes).map((route) => (route as { modelId: string }).modelId)).toEqual(['city-story', 'city-entities', 'city-variables', 'city-world', 'city-memory']);
+  expect(['story','entities','variables','world','memory'].map(key => config.routes[key].modelId)).toEqual(['city-story', 'city-entities', 'city-variables', 'city-world', 'city-memory']);
   // 点哪个阶段的刷新，只有那个按钮转。
-  for (const [index, label] of ['正文生成', '主角与现场', '场外与网络', '记忆维护'].entries()) {
+  for (const [index, label] of ['正文生成', '主角与现场', '场外与网络', '记忆总结'].entries()) {
     hold();
     await settings.getByRole('button', { name: `刷新${label}模型`, exact: true }).click();
     await expect.poll(() => lists).toBe(index + 2);
@@ -66,9 +67,9 @@ test('填好密钥后自动获取一次、四阶段分别选择、只有被点�
     await expect(settings.locator('.ai-refresh.is-spinning')).toHaveCount(0);
   }
   expect(lists).toBe(5); expect(generated).toBe(0);
-  await page.reload(); await openAiSettings(page);
+  await page.reload(); await openAiSettings(page); await settingsCategory(page,'模型分配');
   await selected(page, '正文生成模型', 'city-story'); await selected(page, '人物与实体模型', 'city-entities'); await selected(page, '主角与现场模型', 'city-variables');
-  await selected(page, '场外与网络模型', 'city-world'); await selected(page, '记忆维护模型', 'city-memory');
+  await selected(page, '场外与网络模型', 'city-world'); await selected(page, '记忆总结模型', 'city-memory');
 });
 
 test('旧配置恢复、换渠道清除旧模型、跟随显示真实继承，刷新失败保留配置和已有列表', async ({ page }) => {
@@ -78,16 +79,16 @@ test('旧配置恢复、换渠道清除旧模型、跟随显示真实继承，�
     backup++; await route.fulfill(fail ? { status: 404, json: { error: 'ui-mock-secret-b hidden-server-detail' } } : { json: { data: [{ id: 'backup-default' }, { id: 'backup-custom' }] } });
   });
   const { ids, settings } = await seed(page);
-  await backToList(settings);
+  await settingsCategory(page,'模型分配');
   await selected(page, '正文生成模型', 'legacy-story');
-  await expect(settings.getByText('同正文 · 都市渠道 / legacy-story', { exact: true })).toHaveCount(4);
+  await expect(settings.getByText('跟随正文 · 都市渠道 / legacy-story', { exact: true })).toHaveCount(5);
   await choose(page, '正文生成渠道', ids[1]);
   // 换渠道后旧模型不再沿用，显示新渠道的默认模型。
   await selected(page, '正文生成模型', 'backup-default');
-  await expect(settings.getByText('同正文 · 备用渠道 / backup-default', { exact: true })).toHaveCount(4);
+  await expect(settings.getByText('跟随正文 · 备用渠道 / backup-default', { exact: true })).toHaveCount(5);
   await expect.poll(() => backup).toBe(1);
   await searchChoose(page, '正文生成模型', 'custom', 'backup-custom');
-  await expect(settings.getByText('同正文 · 备用渠道 / backup-custom', { exact: true })).toHaveCount(4);
+  await expect(settings.getByText('跟随正文 · 备用渠道 / backup-custom', { exact: true })).toHaveCount(5);
   await saveAi(settings);
   const before = await storedConfig(page);
   fail = true; await settings.getByRole('button', { name: '刷新正文生成模型', exact: true }).click();
@@ -131,7 +132,7 @@ test('主题浮层的搜索、键盘、Escape、Tab与窄屏内部滚动', async
   const format = settings.getByRole('combobox', { name: '接口格式', exact: true }); await format.focus(); await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('listbox', { name: '接口格式', exact: true })).toBeVisible();
   await page.keyboard.press('Escape'); await expect(format).toBeFocused(); await expect(settings).toBeVisible();
-  await backToList(settings);
+  await backToList(settings); await settingsCategory(page,'模型分配');
   const model = settings.getByRole('combobox', { name: '正文生成模型', exact: true });
   await model.click();
   const search = page.getByRole('combobox', { name: '搜索正文生成模型', exact: true }); await expect(search).toBeFocused(); await search.fill('model-37');

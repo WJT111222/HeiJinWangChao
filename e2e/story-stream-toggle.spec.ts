@@ -117,7 +117,7 @@ for (const stream of [true, false]) {
 
 test('旧设置默认开启，三开关独立保存/放弃/刷新，零模型请求', async ({ page }, info) => {
   await seed(page, true, false, true); const raw = await page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
-  await openSettings(page); await page.getByRole('button', { name: '运行', exact: true }).click();
+  await openSettings(page); await page.getByRole('button', { name: '生成阶段', exact: true }).click();
   const story = page.getByRole('checkbox', { name: '正文生成 · 流式传输', exact: true });
   const variables = page.getByRole('checkbox', { name: '主角与现场 · 流式传输', exact: true });
   const world = page.getByRole('checkbox', { name: '场外与网络 · 流式传输', exact: true });
@@ -125,7 +125,7 @@ test('旧设置默认开启，三开关独立保存/放弃/刷新，零模型请
   expect(await page.evaluate(() => localStorage.getItem('heijin.settings.v1'))).toBe(raw);
   await story.uncheck(); await expect(world).toBeChecked(); await expect(variables).not.toBeChecked();
   await page.getByRole('button', { name: '保存本地设置', exact: true }).click(); await page.reload();
-  await openSettings(page); await page.getByRole('button', { name: '运行', exact: true }).click(); await expect(story).not.toBeChecked(); await expect(world).toBeChecked(); await expect(variables).not.toBeChecked();
+  await openSettings(page); await page.getByRole('button', { name: '生成阶段', exact: true }).click(); await expect(story).not.toBeChecked(); await expect(world).toBeChecked(); await expect(variables).not.toBeChecked();
   await page.screenshot({ path: info.outputPath('runtime-settings.png') });
   await story.check(); await page.reload();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.settings.v1')!)); expect(saved.runtime).toMatchObject({ streamStory: false, streamVariables: false, streamWorld: true }); expect(calls).toHaveLength(0);

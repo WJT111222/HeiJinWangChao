@@ -1,5 +1,6 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
+import { settingsCategory } from './helpers/aiSettings';
 import { selected } from './helpers/select';
 import { addChannel, backToList, openAiSettings, openChannel, saveAi, setUrl, stageModel } from './helpers/aiSettings';
 
@@ -14,7 +15,7 @@ async function seed(page: Page, directOnly = false) {
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'browser-list-secret');
   });
   await page.reload(); const settings = await openAiSettings(page);
-  if (directOnly) await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck();
+  if (directOnly) { await settingsCategory(page, '跨域与网络'); await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck(); }
   await openChannel(settings, '列表兼容测试'); return settings;
 }
 async function fetchModels(settings: Awaited<ReturnType<typeof seed>>) {

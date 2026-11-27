@@ -1,5 +1,6 @@
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { npc } from './fixtures/game';
 import { worldState, worldResult } from './fixtures/world';
 import { completeDraft, elapsedVariables, submission } from './fixtures/turn';
 import { SaveRepository } from '../services/storage/saveRepository';
@@ -54,6 +55,7 @@ async function input() {
 beforeEach(async () => {
   repo = await SaveRepository.open('step-five', new IDBFactory());
   const state = worldState();
+  state.npc.extra = { ...npc('extra'), phoneContact: {status:'known'} };
   for (const id of members) {
     state.npc[id].phoneContact = { status: 'known' };
     state.npc[id].background = 'PRIVATE_' + id;
@@ -145,6 +147,25 @@ it('建群、独立回复、冻结、v7 恢复、三段结算和撤回保留顺�
   });
   expect(undone.state.phone).toEqual(start.state.phone);
   expect(undone.draft.phonePending).toEqual(waiting.phonePending);
+});
+it.each([undefined, 2] as const)('群聊上限 %s 保留调度顺序，多出的成员未读且不请求', async limit => {
+  const order = ['extra','scene','npc-a'];
+  const client = new AiClient();
+  const calls = vi.spyOn(client,'generate').mockImplementation(async (snapshot,messages) => {
+    expect(snapshot).toMatchObject({stage:'phone',model:'group-model'});
+    const data = JSON.parse(messages.at(-1)!.content);
+    return responses(!data.npc ? order.map(npcId=>({npcId,status:'reply'}))
+      : data.group.action.type === 'create' ? {npcId:data.npc.id,status:'joined'}
+      : {npcId:data.npc.id,status:'replied',text:'已收到'});
+  });
+  const groupConfig = {...config,routes:{...config.routes,phoneGroup:{mode:'independent' as const,channelId:channel.id,modelId:'group-model'}}};
+  const options = {groupId,config:groupConfig,settings:{...settings,phone:{loanReminderDays:3,groupReplyLimit:limit}}};
+  await sendGroupChat(repo,new StageGuard(),{...(await input()),...options,action:{...create,invitees:order}},client);
+  calls.mockClear();
+  const waiting = await sendGroupChat(repo,new StageGuard(),{...(await input()),...options,action:{type:'message',text:'集合'}},client);
+  expect(calls).toHaveBeenCalledTimes(1+(limit ?? 3));
+  const group = chatBase((await input()).state,waiting.phonePending!,'preview').phone.groups![groupId];
+  expect(group.history.at(-1)!.outcomes.map(({npcId,status})=>[npcId,status])).toEqual(order.map((id,index)=>[id,index < (limit ?? 3) ? 'replied' : 'unread']));
 });
 it('失败、取消和过期请求均不留下半组回执；拒绝及退出保存在草稿内', async () => {
   const { client, calls } = model(),
@@ -245,7 +266,9 @@ it('阶段三每回合零到五条，整批展开与点赞只写本机，时间�
   const calls = vi
     .spyOn(client, 'generate')
     .mockResolvedValue(responses(sources.map((_, index) => ({ index, post }))));
-  const first = await expandBook(repo, new StageGuard(), live, sources, client);
+  const routed = {...live, config: {...config,routes:{...config.routes,blackbook:{mode:'independent' as const,channelId:channel.id,modelId:'book-model'}}}};
+  const first = await expandBook(repo, new StageGuard(), routed, sources, client);
+  expect(calls.mock.calls[0][0]).toMatchObject({stage:'phone',model:'book-model'});
   expect(Object.keys(first)).toHaveLength(5);
   await repo.books.like(sources[0].key, 'post');
   expect(

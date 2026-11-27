@@ -226,7 +226,7 @@ test('设置、历史检索及创角长页仍可滚动，关闭资料保留阅�
   await seed(page, 'history'); await page.setViewportSize({ width: 392, height: 640 });
   const reader = page.getByTestId('story-reader'); await reader.evaluate((el) => { el.scrollTop = 220; });
   await page.getByRole('button', { name: '设置', exact: true }).click(); const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  await settings.getByRole('button', { name: '提示词', exact: true }).click(); await settings.getByRole('button', { name: '保存本地设置', exact: true }).click();
+  await settings.getByRole('button', { name: '正文与风格', exact: true }).click(); await settings.getByRole('button', { name: '保存本地设置', exact: true }).click();
   expect(await settings.locator('.modal-body').evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   await page.keyboard.press('Escape'); expect(await reader.evaluate((el) => el.scrollTop)).toBe(220);
   await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();

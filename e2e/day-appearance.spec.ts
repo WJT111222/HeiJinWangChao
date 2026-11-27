@@ -28,7 +28,7 @@ test('默认夜间；在设置「外观」中切换后立即生效、刷新后�
   await seed(page);
   await expect(html(page)).toHaveAttribute('data-appearance', 'night');
   await openSettings(page);
-  await page.getByRole('button', { name: '外观', exact: true }).click();
+  await page.getByRole('button', { name: '外观与提示音', exact: true }).click();
   await expect(page.getByRole('radio', { name: /夜间/ })).toBeChecked();
   await page.getByRole('radio', { name: /日间/ }).check();
   await expect(html(page)).toHaveAttribute('data-appearance', 'day');
@@ -39,7 +39,7 @@ test('默认夜间；在设置「外观」中切换后立即生效、刷新后�
   expect(await shellBackground(page)).toBe('#f1eee7');
   expect(await textLuminance(page, '.story-narration')).toBeLessThan(0.35);
   await openSettings(page);
-  await page.getByRole('button', { name: '外观', exact: true }).click();
+  await page.getByRole('button', { name: '外观与提示音', exact: true }).click();
   await page.getByRole('radio', { name: /夜间/ }).check();
   await expect(html(page)).toHaveAttribute('data-appearance', 'night');
   expect(await stored(page)).toBe('night');

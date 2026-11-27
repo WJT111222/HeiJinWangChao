@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { openWorkflow } from './helpers/gameLayout';
-import { addChannel, backToList, openAiSettings, openChannel } from './helpers/aiSettings';
+import { addChannel, backToList, openAiSettings, settingsCategory } from './helpers/aiSettings';
 
 const cloud = readFileSync(new URL('../announcements/current.json', import.meta.url), 'utf8');
 const approved = readFileSync(new URL('../src/tests/fixtures/disclaimer-v1.md', import.meta.url), 'utf8');
@@ -79,7 +79,8 @@ test('五站创角与模型设置：中性费用提示、技术字段及密钥�
   await expect(key).toHaveAttribute('type','password'); await expect(key).toHaveValue('');
   // 安全说明默认收起，点开后完整显示。
   await backToList(settings);
-  await settings.getByRole('button', { name: '安全说明', exact: true }).click();
+  await settingsCategory(page,'跨域与网络');
+  await page.getByRole('button',{name:'放弃本次修改'}).click();
   const disclosure = settings.locator('.ai-sec');
   await disclosure.scrollIntoViewIfNeeded();
   await expect(disclosure).toBeVisible();
@@ -89,7 +90,7 @@ test('五站创角与模型设置：中性费用提示、技术字段及密钥�
   await page.screenshot({ path: info.outputPath('ai-settings-security.png'), animations: 'disabled' });
   await expect(settings).toContainText('浏览器存储不是安全的密钥库');
   await expect(settings).toContainText('密钥不会进入游戏存档、提示词或诊断详情');
-  await openChannel(settings, 'OpenAI 兼容');
+  await addChannel(settings, { preset:'OpenAI 兼容' });
   const test = settings.getByRole('button', { name: '测试回复（可能产生少量费用）', exact: true });
   await expect(test).toHaveAttribute('title', '会真实调用一次模型，可能产生少量费用');
   await test.scrollIntoViewIfNeeded();

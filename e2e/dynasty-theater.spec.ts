@@ -450,3 +450,56 @@ test('离开守护覆盖关闭、Escape、视口切换及页面切换，原文�
     expect(api.wires).toHaveLength(3);
   } finally { await api.close(); }
 });
+
+test('旧设置的新建默认值与自定义剧场、手机共用草稿及真实出站', async ({ page, context }) => {
+  const api = await mock();
+  try {
+    await localOnly(context, api.endpoint);
+    await seed(page, api.endpoint, 'day');
+    const panel = await openTheater(page);
+    await panel.getByRole('button',{name:'新建小剧场'}).click();
+    await expect(panel.locator('[name="theater-length"][value="medium"]')).toBeChecked();
+    await expect(panel.locator('[name="theater-perspective"][value="follow"]')).toBeChecked();
+    await page.keyboard.press('Escape');
+    await openSettings(page);
+    const settings = page.getByRole('dialog',{ name:'设置',exact:true });
+    const {settingsCategory} = await import('./helpers/aiSettings');
+    await settingsCategory(page,'手机');
+    const limit = settings.getByRole('group',{name:'每条群消息最多回复人数'});
+    await expect(limit.getByRole('button',{name:'不限'})).toHaveAttribute('aria-pressed','true');
+    await expect(settings.getByLabel('贷款到期提醒天数')).toHaveValue('3');
+    await limit.getByRole('button',{name:'2 人'}).click();
+    await settings.getByLabel('贷款到期提醒天数').fill('0');
+    await settingsCategory(page,'小剧场');
+    await expect(page.getByRole('dialog',{name:'本地偏好尚未保存'})).toHaveCount(0);
+    await settings.getByRole('button',{name:'自定义',exact:true}).click();
+    await settings.getByLabel('目标字数').fill('1780');
+    await settings.getByRole('button',{name:'第一人称',exact:true}).click();
+    await settings.getByRole('button',{name:'保存本地设置'}).click();
+    await settings.getByRole('button',{name:'关闭资料界面'}).click();
+    await page.evaluate(async () => {
+      const path = '/src/services/ai/configuration.ts';
+      const {readAiConfig,saveAiConfig} = await import(path);
+      const config = readAiConfig(localStorage);
+      config.routes.theater = {mode:'independent',channelId:config.channels[0].id,modelId:'theater-default'};
+      saveAiConfig(localStorage,config);
+    });
+    await page.reload();
+    await openTheater(page);
+    await panel.getByRole('button',{name:'新建小剧场'}).click();
+    await expect(panel.locator('[name="theater-length"][value="custom"]')).toBeChecked();
+    await expect(panel.getByLabel('目标字数')).toHaveValue('1780');
+    await expect(panel.locator('[name="theater-perspective"][value="first"]')).toBeChecked();
+    await expect(panel.getByText(/theater-default/).first()).toBeVisible();
+    await panel.getByLabel('目标字数').fill('1500');
+    await panel.getByLabel('主题',{exact:true}).fill('窗边的花');
+    await panel.getByLabel('流式显示正文').uncheck();
+    expect(api.wires).toHaveLength(0);
+    await panel.getByRole('button',{name:'新建并生成'}).click();
+    await expect(panel.getByText('正文已保存。')).toBeVisible();
+    expect(api.wires.map(w => w.body.model)).toEqual(['theater-default']);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.settings.v1')!))).toMatchObject({
+      theater:{length:'custom', customChars:1780,perspective:'first'},phone:{loanReminderDays:0,groupReplyLimit:2},
+    });
+  } finally { await api.close(); }
+});

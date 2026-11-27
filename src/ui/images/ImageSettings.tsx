@@ -1,3 +1,4 @@
+import { ModelRouteLabel } from '../settings/ModelRouteLabel';
 import { useEffect, useState } from 'react';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import {
@@ -145,7 +146,13 @@ const modelChoices: Record<Backend, string[]> = {
   comfy: [],
   sd: [],
 };
-export function ImageSettings({ repository }: { repository?: SaveRepository }) {
+const legacyTextNotice = 'heijin.images.text-route-notice.v1';
+export function ImageSettings({ repository, openRouting, onDirtyChange }: {
+  repository?: SaveRepository; openRouting: () => void; onDirtyChange: (dirty: boolean) => void;
+}) {
+  const [acknowledged, setAcknowledged] = useState(() => {
+    try { return localStorage.getItem(legacyTextNotice) === '1'; } catch { return false; }
+  });
   const [editor, setEditor] = useState(() => {
       const initial = config();
       return reconcileConfig(initial, initial, initial);
@@ -155,6 +162,9 @@ export function ImageSettings({ repository }: { repository?: SaveRepository }) {
   const [presetName, setPresetName] = useState('');
   const [pendingEnabled, setPendingEnabled] = useState<boolean>();
   const c = editor.draft;
+  const dirty = JSON.stringify(c) !== JSON.stringify(editor.saved);
+  useEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
   useEffect(() => {
     const sync = () => {
       const latest = config();
@@ -191,7 +201,6 @@ export function ImageSettings({ repository }: { repository?: SaveRepository }) {
   function save() {
     try {
       if (p.base) endpoint(p.base, p.path || paths[b]);
-      if (c.textBase) endpoint(c.textBase, 'chat/completions');
       void persist(editor.base, c);
     } catch (e) {
       setNotice(e instanceof Error ? e.message : '地址无效');
@@ -406,21 +415,13 @@ export function ImageSettings({ repository }: { repository?: SaveRepository }) {
                 checked={c.convert}
                 onChange={(e) => set({ ...c, convert: e.target.checked })}
               />
-              生成前调用独立文本模型
+              生成前调用文本模型
             </label>
-            <label>
-              文本 API 基础地址
-              <input
-                value={c.textBase}
-                placeholder="https://…/v1"
-                onChange={(e) => set({ ...c, textBase: e.target.value })}
-              />
-            </label>
-            <label>
-              文本模型
-              <input value={c.textModel} onChange={(e) => set({ ...c, textModel: e.target.value })} />
-            </label>
-            <KeyField kind="text" base={c.textBase} />
+            <div className="settings-form-row"><span>生图提示词</span><div><ModelRouteLabel route="imagePrompt"/> <button type="button" className="ai-link" onClick={openRouting}>在模型分配里改</button></div></div>
+            {c.textModel && !acknowledged && <div className="image-migration-note"><p>之前单独填写的文本模型（{c.textModel}）已不再使用，现在用模型分配里的生图提示词。需要原来那个服务的话，请在「渠道与密钥」里添加一个渠道。</p>
+              <button type="button" onClick={() => {
+                try { localStorage.setItem(legacyTextNotice, '1'); setAcknowledged(true); } catch { setNotice('无法保存确认，请检查本地存储权限。'); }
+              }}>知道了</button></div>}
             <details>
               <summary>转换提示词</summary>
               {(Object.keys(templates) as (keyof typeof templates)[]).map((k) => (

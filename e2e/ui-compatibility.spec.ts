@@ -102,7 +102,7 @@ for (const theme of ['day', 'night']) {
     await page.getByRole('option', { name: 'other-model', exact: true }).click();
     await saveAi(settings);
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.ai.v1')!).routes.story.modelId)).toBe('other-model');
-    await settingsCategory(page, '提示词');
+    await settingsCategory(page, '正文与风格');
     for (const width of isMobile ? [900, 360] : [1199, 1200, 1440]) {
       await page.setViewportSize({ width, height: isMobile ? 640 : 900 });
       const radios = settings.getByRole('radiogroup', { name: '剧情风格' });
@@ -128,7 +128,7 @@ for (const theme of ['day', 'night']) {
     await page.evaluate(() => localStorage.setItem('heijin.story-presets.v1', JSON.stringify({ enabled: true, selected: 'peinture-1118', packages: {} })));
     await page.reload();
     await button(page, '设置').first().click();
-    await settingsCategory(page, '运行');
+    await settingsCategory(page, '文学预设');
     await button(page.getByRole('dialog', { name: '设置', exact: true }), '王朝预设设置').click();
     const panel = page.getByRole('dialog', { name: '王朝预设设置' });
     await panel.getByRole('navigation').getByRole('button').filter({ has: page.getByText('自定义', { exact: true }) }).click();
@@ -265,7 +265,7 @@ test('首页独立设置窗口在断点两侧都完整使用表单宽度', async
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-appearance', 'day');
   await button(page, '设置').first().click();
-  await settingsCategory(page, '提示词');
+  await settingsCategory(page, '正文与风格');
   const field = page.getByRole('radiogroup', { name: '剧情风格' });
   for (const width of isMobile ? [900, 360] : [1199, 1200, 1440]) {
     await page.setViewportSize({ width, height: width >= 1200 ? 900 : 720 });

@@ -25,7 +25,7 @@ async function control(page: Page) {
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   const back = settings.getByRole('button', { name: '返回设置', exact: true });
   if (await back.isVisible()) await back.click();
-  await settings.getByRole('button', { name: '运行', exact: true }).click();
+  await settings.getByRole('button', { name: '文学预设', exact: true }).click();
   await settings.getByRole('button', { name: '神域控制台', exact: true }).click();
   return page.getByRole('dialog', { name: '神域控制台', exact: true });
 }

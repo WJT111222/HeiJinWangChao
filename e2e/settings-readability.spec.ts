@@ -37,7 +37,7 @@ async function prepare(page: Page, inGame: boolean) {
 async function tab(root: Locator, name: string) {
   const back = root.getByRole('button', { name: '返回设置', exact: true });
   if (await back.isVisible()) await back.click();
-  await root.getByRole('button', { name, exact: true }).click();
+  await root.getByRole('navigation',{name:'设置分类'}).getByRole('button', { name, exact: true }).click();
   await expect(root.getByRole('heading', { name, exact: true })).toBeVisible();
 }
 async function readable(root: Locator, testInfo: TestInfo, name: string) {
@@ -63,7 +63,7 @@ for (const inGame of [false, true]) {
   test(`${inGame ? '游戏内' : '首页'}设置：字段、反馈与真实禁用状态可读`, async ({ page }, testInfo) => {
     await page.setViewportSize(testInfo.project.name === 'mobile' ? { width: 412, height: 839 } : { width: 1440, height: 900 });
     const { root, before, posts } = await prepare(page, inGame);
-    await tab(root, '提示词'); await readable(root, testInfo, 'prompts'); await capture(page, testInfo, 'prompts');
+    await tab(root, '正文与风格'); await readable(root, testInfo, 'prompts'); await capture(page, testInfo, 'prompts');
     await root.getByLabel('正文最低字数', { exact: true }).focus();
     await readable(root, testInfo, 'focus');
     await root.getByLabel('正文最低字数', { exact: true }).fill('1600');
@@ -75,7 +75,7 @@ for (const inGame of [false, true]) {
     await expect(root.getByRole('status')).toContainText('请输入有效的正整数');
     await readable(root, testInfo, 'error'); await capture(page, testInfo, 'error');
     await root.getByLabel('正文最低字数', { exact: true }).fill('1600');
-    await tab(root, '运行'); await readable(root, testInfo, 'runtime');
+    await tab(root, '生成阶段'); await readable(root, testInfo, 'runtime');
     await tab(root, '记忆');
     const summarize = root.getByRole('button', { name: '立即总结 · 短期 → 中期', exact: true });
     // The synthetic game has enough raw sources for manual public summarizing;
@@ -92,7 +92,7 @@ for (const inGame of [false, true]) {
   test(`${inGame ? '游戏内' : '首页'}设置：AI 辅助文字、资源列表和嵌套确认主题隔离`, async ({ page }, testInfo) => {
     await page.setViewportSize(testInfo.project.name === 'mobile' ? { width: 412, height: 839 } : { width: 1440, height: 900 });
     const { root, before, posts } = await prepare(page, inGame);
-    await tab(root, 'AI 连接');
+    await tab(root, '渠道与密钥');
     if (testInfo.project.name === 'mobile') await root.getByRole('button', { name: '编辑渠道：可读性测试渠道', exact: true }).click();
     await readable(root, testInfo, 'ai');
     // Only the model-list GET endpoint is mocked here; never test a paid reply.
@@ -145,8 +145,8 @@ for (const width of [900, 901]) {
   test(`${width}px 边界：正常标签、悬停、键盘焦点和关闭开关保持可读`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     const { root, posts } = await prepare(page, false);
-    await tab(root, '提示词');
-    const toggle = root.getByRole('checkbox', { name: 'NoControl（防抢话）', exact: true });
+    await tab(root, '提示词开关');
+    const toggle = root.getByRole('checkbox', { name: '防抢话 NoControl', exact: true });
     await toggle.uncheck(); await toggle.focus(); await page.keyboard.press('Tab');
     await readable(root, testInfo, 'boundary'); await capture(page, testInfo, `boundary-${width}`);
     const next = root.getByRole('checkbox', { name: '自然文风修复', exact: true });
@@ -160,11 +160,11 @@ for (const width of [900, 901]) {
 
 test('运行偏好未保存时 Escape 允许继续编辑或明确放弃', async ({ page }) => {
   const { root: settings, posts } = await prepare(page, false);
-  await settings.getByRole('button', { name: '运行', exact: true }).click();
+  await settings.getByRole('button', { name: '生成阶段', exact: true }).click();
   const world = settings.getByRole('checkbox', { name: '场外与网络', exact: true });
   const original = await world.isChecked();
   await world.setChecked(!original);
-  await expect(settings.locator('[data-settings-category="运行"] .dirty')).toBeAttached();
+  await expect(settings.locator('[data-settings-category="生成阶段"] .dirty')).toBeAttached();
   await page.keyboard.press('Escape');
   const confirmation = page.getByRole('dialog', { name: '本地偏好尚未保存' });
   try { await expect(confirmation).toBeVisible(); }
@@ -180,7 +180,7 @@ test('运行偏好未保存时 Escape 允许继续编辑或明确放弃', async 
 
 test('未保存运行设置时离开存档需要确认，继续编辑及放弃不写入设置', async ({ page }) => {
   const { root, before, posts } = await prepare(page, true);
-  await tab(root, '运行');
+  await tab(root, '生成阶段');
   const world = root.getByRole('checkbox', { name: '场外与网络', exact: true });
   const original = await world.isChecked();
   const persisted = () => page.evaluate(() => localStorage.getItem('heijin.settings.v1'));

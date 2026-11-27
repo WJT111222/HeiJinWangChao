@@ -212,3 +212,30 @@ test('升级前的 V8 结构异常在首页显示可操作提示，并可重新�
   });
   expect(records).toEqual([8, '已有存档', '已有图片元数据']);
 });
+
+test('旧转化器提示只确认一次，地址、模型和独立密钥原样保留', async ({page}) => {
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const path = '/src/services/images/config.ts';
+    const {defaults,configKey,imageVault,credentialId} = await import(path);
+    const old = {...defaults,enabled:true,textModel:'legacy-converter',textBase:'https://legacy.mock.invalid'};
+    localStorage.setItem(configKey,JSON.stringify(old));
+    imageVault().set(credentialId('text',old.textBase),'migration-test-value',true);
+  });
+  const posts: string[] = [];
+  await page.route('https://**/*', route => { if (route.request().method() === 'POST') posts.push(route.request().url()); return route.abort(); });
+  const panel = await imageSettings(page);
+  await expect(panel.getByText(/之前单独填写的文本模型（legacy-converter）/)).toBeVisible();
+  await expect(panel.getByLabel('文本密钥')).toHaveCount(0);
+  await panel.getByRole('button',{name:'知道了'}).click();
+  const next = await imageSettings(page);
+  await expect(next.getByRole('button',{name:'在模型分配里改'})).toBeVisible();
+  await expect(next.getByRole('button',{name:'知道了'})).toHaveCount(0);
+  expect(await page.evaluate(async () => {
+    const path = '/src/services/images/config.ts';
+    const {config,imageVault,credentialId} = await import(path);
+    const old = config();
+    return [old.textModel,old.textBase,imageVault().get(credentialId('text',old.textBase))];
+  })).toEqual(['legacy-converter','https://legacy.mock.invalid','migration-test-value']);
+  expect(posts).toEqual([]);
+});

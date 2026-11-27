@@ -1,10 +1,10 @@
 @media (min-width: 901px) {
-  .app-shell .settings-paper[data-tone='paper'] .settings-layout[data-tab='变量管理'],
-  .settings-layout.st-wrap[data-tab='变量管理'] {
+  .app-shell .settings-paper[data-tone='paper'] .settings-layout[data-tab='variables'],
+  .settings-layout.st-wrap[data-tab='variables'] {
     grid-template-columns: minmax(0, 1fr);
   }
 }
-.settings-layout[data-tab='变量管理'] .local-save-bar {
+.settings-layout[data-tab='variables'] .local-save-bar {
   display: none;
 }
 .vm-back {
@@ -58,11 +58,11 @@
   text-align: left;
 }
 /* Paper archives tint generic hovered buttons; keep the selected ink pair together. */
-.settings-layout[data-tab='变量管理']
+.settings-layout[data-tab='variables']
   .variable-manager
   :is(.vm-domains, .vm-modes)
   button[aria-pressed='true'],
-.settings-layout[data-tab='变量管理']
+.settings-layout[data-tab='variables']
   .variable-manager
   :is(.vm-domains, .vm-modes)
   button[aria-pressed='true']:hover:not(:disabled) {
@@ -207,4 +207,7 @@
   .variable-tree ul {
     padding-left: 0.45rem;
   }
+}
+@media (max-width:900px) {
+  .st-wrap .variable-manager .variable-tree button {margin-inline:0}
 }

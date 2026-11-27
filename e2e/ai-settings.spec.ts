@@ -1,3 +1,4 @@
+import { settingsCategory } from './helpers/aiSettings';
 import { expect, test } from './helpers/test';
 import { addChannel, backToList, choosePreset, chooseText, follow, openAiSettings, openChannel, saveAi, stageModel, testReply } from './helpers/aiSettings';
 import { writeFile } from 'node:fs/promises';
@@ -121,7 +122,7 @@ test('新玩家测试回复后返回渠道列表，继续选正文模型并保�
     await expect(settings.getByRole('button', { name: '返回设置', exact: true })).toHaveCount(0);
   } else {
     await expect(back).toHaveCount(0);
-    await expect(route).toBeVisible();
+    await expect(settings.getByRole('button',{name:'模型分配',exact:true}).first()).toBeVisible();
     await expect(settings.getByRole('region', { name: 'API 渠道列表' })).toBeVisible();
   }
   await choosePreset(settings, 'OpenAI 兼容');
@@ -148,6 +149,7 @@ test('新玩家测试回复后返回渠道列表，继续选正文模型并保�
 
     const categoryBack = settings.getByRole('button', { name: '返回设置', exact: true });
     await categoryBack.click();
+    await settingsCategory(page,'记忆');
     await expect(warning).toBeVisible();
     await warning.getByRole('button', { name: '继续编辑', exact: true }).click();
     await openChannel(settings, '测试渠道');
@@ -161,6 +163,7 @@ test('新玩家测试回复后返回渠道列表，继续选正文模型并保�
     await expect(editor.getByRole('status')).toContainText('测试回复成功');
     await back.click();
   }
+  await settingsCategory(page,'模型分配');
   await expect(route).toHaveAttribute('value', '');
   await stageModel(settings, '正文生成', '测试渠道', 'mock-narrator', 'list');
   await saveAi(settings);
@@ -237,7 +240,7 @@ test('AI 多渠道：选服务商后自动获取模型、测试回复、阶段�
   const again = await openAiSettings(page);
   await openChannel(again, 'Mock openai');
   await expect(again.getByLabel('API 密钥', { exact: true })).toHaveValue('browser-mock-credential');
-  await backToList(again);
+  await settingsCategory(page,'模型分配');
   await expect(again.getByRole('combobox', { name: '主角与现场渠道', exact: true })).toContainText('Mock gemini');
   await expect(again.getByRole('combobox', { name: '主角与现场模型', exact: true })).toHaveAttribute('value', 'variable-override');
   await expect(again.getByRole('combobox', { name: '正文生成模型', exact: true })).toHaveAttribute('value', 'mock-model');
@@ -280,6 +283,7 @@ test('连接授权错误不展示服务详情，网络错误不误报密钥，�
   await page.goto('/');
   const settings = await openAiSettings(page);
   // This case exercises the direct transport's CORS diagnostic.
+  await settingsCategory(page,'跨域与网络');
   await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck();
   await addChannel(settings, { name: 'Mock', url: 'https://api.mock.invalid/v1', key: 'browser-mock-credential' });
   await expect(settings.getByRole('status').filter({ hasText: '连接失败' }).first()).toContainText('授权错误');
@@ -381,12 +385,13 @@ test('原生 DeepSeek 官方地址、四阶段独立选模与刷新恢复，纯�
   await settings.getByLabel('渠道名称', { exact: true }).fill('DeepSeek 审查用 Mock');
   await settings.getByLabel('API 密钥', { exact: true }).fill('fictional-review-key');
   await expect(settings.getByRole('status').filter({ hasText: '连接正常' }).first()).toContainText('当前接口返回 5 个模型');
-  const labels = ['正文生成', '人物与实体', '主角与现场', '场外与网络', '记忆维护'];
+  const labels = ['正文生成', '人物与实体', '主角与现场', '场外与网络', '记忆总结'];
   for (let i = 0; i < labels.length; i++) await stageModel(settings, labels[i], 'DeepSeek 审查用 Mock', models[i], 'list');
   await saveAi(settings);
   await page.keyboard.press('Escape');
   await page.reload();
   const again = await openAiSettings(page);
+  await settingsCategory(page,'模型分配');
   for (let i = 0; i < labels.length; i++) {
     await expect(again.getByRole('combobox', { name: `${labels[i]}渠道`, exact: true })).toContainText('DeepSeek 审查用 Mock');
     await expect(again.getByRole('combobox', { name: `${labels[i]}模型`, exact: true })).toHaveAttribute('value', models[i]);
@@ -404,8 +409,8 @@ test('原生 DeepSeek 官方地址、四阶段独立选模与刷新恢复，纯�
   expect(data.session).not.toContain('fictional-review-key');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await testInfo.attach('deepseek-settings-key-masked', { body: await page.screenshot(), contentType: 'image/png' });
-  await backToList(again);
-  await again.getByRole('combobox', { name: '记忆维护模型', exact: true }).scrollIntoViewIfNeeded();
+  await settingsCategory(page,'模型分配');
+  await again.getByRole('combobox', { name: '记忆总结模型', exact: true }).scrollIntoViewIfNeeded();
   await testInfo.attach('deepseek-settings-routes', { body: await page.screenshot(), contentType: 'image/png' });
 });
 
@@ -553,7 +558,7 @@ test('换服务商只清掉指向这个渠道的隐藏旧模型，其他阶段�
   await expect(settings.getByRole('combobox', { name: '场外与网络模型', exact: true })).toHaveAttribute('value', '');
   // 正文（甲）和记忆（丙）不受影响。
   await expect(settings.getByRole('combobox', { name: '正文生成模型', exact: true })).toHaveAttribute('value', 'a-model');
-  await expect(settings.getByRole('combobox', { name: '记忆维护模型', exact: true })).toHaveAttribute('value', 'c-memory');
+  await expect(settings.getByRole('combobox', { name: '记忆总结模型', exact: true })).toHaveAttribute('value', 'c-memory');
   await expect(settings.locator('.ai-save-bar').getByRole('status')).toContainText('选了「单独指定」但还没选模型');
 });
 

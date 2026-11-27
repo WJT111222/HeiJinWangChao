@@ -889,7 +889,7 @@ export function PromptInspector({
                     {availableRecords.map((record) => (
                       <option key={record.id} value={record.id}>
                         {record.scope
-                          ? record.scope.kind === 'memory' ? `记忆维护 ${record.scope.memoryTask}` : `${record.scope.mode} ${record.stage === 'theater' ? '小剧场' : record.stage === 'phone' ? '手机私聊' : stages[record.stage]}`
+                          ? record.scope.kind === 'memory' ? `记忆维护 ${record.scope.memoryTask}` : `${record.scope.mode} ${record.stage === 'imagePrompt' ? '生图提示词' : record.stage === 'theater' ? '小剧场' : record.stage === 'phone' ? '手机私聊' : stages[record.stage]}`
                           : '连接测试（非游戏阶段）'}{' '}
                         · {record.createdAt} · {record.status}
                       </option>
@@ -913,7 +913,7 @@ export function PromptInspector({
                     </p>
                     <p>
                       {actual.scope
-                        ? actual.scope.kind === 'memory' ? `记忆维护 / ${actual.scope.memoryTask} / 存档版本 ${actual.scope.revision}` : `${actual.scope.mode} / ${actual.stage === 'theater' ? '小剧场' : actual.stage === 'phone' ? '手机私聊' : stages[actual.stage]} / 存档版本 ${actual.scope.revision}`
+                        ? actual.scope.kind === 'memory' ? `记忆维护 / ${actual.scope.memoryTask} / 存档版本 ${actual.scope.revision}` : `${actual.scope.mode} / ${actual.stage === 'imagePrompt' ? '生图提示词' : actual.stage === 'theater' ? '小剧场' : actual.stage === 'phone' ? '手机私聊' : stages[actual.stage]} / 存档版本 ${actual.scope.revision}`
                         : '连接测试；没有游戏阶段或模块组装'}
                     </p>
                     <p>

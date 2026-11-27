@@ -373,12 +373,15 @@ test('无正文草稿的阶段预览诚实失败，七项写作偏好不因管�
   await expect(page.getByRole('region', { name: '上下文与统计' })).toContainText(
     '缺少已选定的正文草稿',
   );
-  await settingsCategory(page, '提示词');
+  await settingsCategory(page, '正文与风格');
   // 叙事人称下拉 + 四个开关；剧情风格与正文篇幅各是单独的选项组。
-  await expect(page.locator('.settings-fields > label')).toHaveCount(5);
+  await settingsCategory(page, '提示词开关');
+  await expect(page.locator('.settings-fields input[type=checkbox]')).toHaveCount(4);
+  await settingsCategory(page, '正文与风格');
+  await expect(page.getByRole('group', {name:'叙事人称'})).toBeVisible();
   await expect(page.getByRole('group', { name: '剧情风格' })).toBeVisible();
   await expect(page.getByRole('group', { name: '正文篇幅' })).toBeVisible();
-  await expect(page.getByLabel('叙事人称')).toHaveValue('third');
+  await expect(page.getByRole('group', { name: '叙事人称' }).getByRole('button', { name: '第三人称' })).toHaveAttribute('aria-pressed', 'true');
 });
 
 for (const count of [300, 1000]) test(`${count} NPC 真实快照按需 Worker 分析、动画帧继续、结果与原算法一致且复用缓存`, async ({ page }, testInfo) => {
@@ -495,8 +498,8 @@ test('四开关显式保存：双页联动、未保存刷新丢弃、保存刷�
   await expect(page.locator('.local-save-bar').getByRole('status')).toBeInViewport();
   await expect(page.getByRole('button', { name: '保存本地设置', exact: true })).toBeInViewport();
   await screenshot(page, 'unsaved');
-  await page.getByRole('button', { name: '提示词', exact: true }).click();
-  for (const label of ['NoControl（防抢话）', '自然文风修复', '行动选项', '真实世界模式']) {
+  await page.getByRole('button', { name: '提示词开关', exact: true }).click();
+  for (const label of ['防抢话 NoControl', '自然文风修复', '行动选项', '真实世界模式']) {
     await expect(page.getByLabel(label, { exact: true })).not.toBeChecked();
   }
   await page.getByRole('button', { name: '提示词管理', exact: true }).click();

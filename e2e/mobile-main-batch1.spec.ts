@@ -130,7 +130,7 @@ test('沉浸长正文与台词：全文可读，滚动位置保留，状态入�
 test('菜单与设置交接：保留既有配置入口、Esc 与回焦，浏览不保存',async({page})=>{
  await enter(page);const before=await nightSealStored(page),config=await page.evaluate(()=>({...localStorage}));
  const menuToggle=page.getByRole('button',{name:'打开游戏菜单',exact:true});await menuToggle.click();await page.getByRole('dialog',{name:'游戏菜单'}).getByRole('button',{name:'设置',exact:true}).click();
- const settings=page.getByRole('dialog',{name:'设置',exact:true});await expect(settings).toBeVisible();for(const name of ['AI 连接','提示词','记忆','运行','提示词管理'])await expect(settings.getByRole('button',{name,exact:true})).toBeVisible();
+ const settings=page.getByRole('dialog',{name:'设置',exact:true});await expect(settings).toBeVisible();for(const name of ['渠道与密钥','正文与风格','记忆','生成阶段','提示词管理'])await expect(settings.getByRole('button',{name,exact:true})).toBeVisible();
  await page.keyboard.press('Escape');await expect(settings).toHaveCount(0);await expect(menuToggle).toBeFocused();expect(await nightSealStored(page)).toEqual(before);expect(await page.evaluate(()=>({...localStorage}))).toEqual(config);
 });
 

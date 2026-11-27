@@ -8,7 +8,7 @@ async function openRuntime(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).first().click();
   const dialog = page.getByRole('dialog', { name: '设置', exact: true });
-  await dialog.getByRole('button', { name: '运行', exact: true }).click();
+  await dialog.getByRole('button', { name: '超时与重试', exact: true }).click();
   return dialog;
 }
 
@@ -72,18 +72,19 @@ async function server(page: Page) {
 test('桌面和手机：运行设置默认关闭，开启后直连失败会显示自动重试并只多请求失败阶段', async ({ page }, info) => {
   const dialog = await openRuntime(page);
   const toggle = dialog.getByRole('checkbox', { name: '失败自动重试', exact: true });
-  const limit = dialog.getByLabel('最大自动重试次数');
+  const limit = dialog.getByRole('group',{name:'最大自动重试次数'});
+  const three = limit.getByRole('button',{name:'3 次'});
   await expect(toggle).not.toBeChecked();
-  await expect(limit).toBeDisabled();
-  await expect(limit.locator('option')).toHaveText(['1 次', '3 次']);
+  await expect(three).toBeDisabled(); await expect(limit.getByRole('button',{name:'1 次'})).toBeDisabled();
+  await expect(limit.getByRole('button')).toHaveText(['1 次', '3 次']);
   await expect(dialog).toContainText('真正走了本站中转仍失败的不会自动再试');
   await expect(dialog).toContainText('权限与保存失败不会自动重试');
   await page.screenshot({ path: info.outputPath(`settings-off-${info.project.name}.png`), fullPage: true });
   await toggle.check();
-  await expect(limit).toBeEnabled();
-  await expect(limit).toHaveValue('3');
-  await limit.selectOption('1');
-  await limit.selectOption('3');
+  await expect(three).toBeEnabled();
+  await expect(three).toHaveAttribute('aria-pressed','true');
+  await limit.getByRole('button',{name:'1 次'}).click();
+  await three.click();
   await dialog.getByRole('button', { name: '保存本地设置', exact: true }).click();
   await expect(dialog.getByRole('status').filter({ hasText: '本地偏好已保存' })).toBeVisible();
   await page.screenshot({ path: info.outputPath(`settings-on-${info.project.name}.png`), fullPage: true });

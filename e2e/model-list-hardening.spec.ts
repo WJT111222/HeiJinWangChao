@@ -1,5 +1,6 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
+import { settingsCategory } from './helpers/aiSettings';
 import { selected } from './helpers/select';
 import { backToList, openAiSettings, openChannel, saveAi, stageModel } from './helpers/aiSettings';
 
@@ -13,7 +14,7 @@ async function seed(page: Page, protocol: string = 'openai', path = '/v1', direc
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'browser-hardening-secret');
   }, { protocol, path });
   await page.reload(); const settings = await openAiSettings(page);
-  if (directOnly) await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck();
+  if (directOnly) { await settingsCategory(page, '跨域与网络'); await settings.getByLabel('启用跨域自动中转（推荐开启）').uncheck(); }
   await openChannel(settings, '新渠道');
   // 打开设置不联网，这里点「获取模型」读取一次；group 是渠道的连接状态（失败时“详细信息”里是完整诊断）。
   await settings.locator('.ai-connect').getByRole('button', { name: '获取模型', exact: true }).click();
