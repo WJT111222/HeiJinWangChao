@@ -1,6 +1,6 @@
 import { settingsCategory } from './helpers/aiSettings';
 import { expect, test } from './helpers/test';
-import { addChannel, backToList, choosePreset, chooseText, follow, openAiSettings, openChannel, saveAi, stageModel, testReply } from './helpers/aiSettings';
+import { addChannel, backToList, choosePreset, chooseText, follow, confirmAiReload, openAiSettings, openChannel, saveAi, stageModel, testReply } from './helpers/aiSettings';
 import { writeFile } from 'node:fs/promises';
 
 test.beforeEach(async ({ page }) => {
@@ -508,7 +508,15 @@ test('保存失败（配置写入失败、密钥写到一半、删除失败）�
   expect(stuck.session['heijin.credential.v1:b']).toBe('secret-b');
   expect(stuck.local['heijin.credential.v1:b']).toBeUndefined();
   expect(stuck.local['heijin.ai.v1']).toBe(before.local['heijin.ai.v1']);
+  await expect(saveButton).toBeDisabled();
   await page.evaluate(() => { (window as unknown as { failMode: string }).failMode = ''; });
+  await confirmAiReload(settings);
+  await expect(status).toContainText('已载入最新配置');
+  expect(await vaultDump(page)).toEqual(stuck);
+  await openChannel(settings, '甲渠道'); await settings.getByLabel('API 密钥', { exact: true }).fill('secret-a-new');
+  await openChannel(settings, '乙渠道'); await settings.getByRole('switch', { name: '记住密钥' }).check();
+  await openChannel(settings, '丙渠道'); await settings.getByRole('button', { name: '删除渠道', exact: true }).click();
+  await page.getByRole('button', { name: '确认删除渠道', exact: true }).click();
   await saveAi(settings);
   const after = await vaultDump(page);
   expect(after.local['heijin.credential.v1:a']).toBe('secret-a-new');
@@ -648,8 +656,22 @@ for (const mode of ['set', 'partial', 'remove', 'read'] as const) {
       expect(after.local['heijin.credential.v1:a']).toBe('secret-a');
       expect(after.session['heijin.credential.v1:a']).toBe('secret-a-new');
     }
-    await expect(save).toBeEnabled(); await expect(settings).not.toContainText('secret-');
+    const needsRead = mode === 'partial' || mode === 'remove';
+    if (needsRead) await expect(save).toBeDisabled(); else await expect(save).toBeEnabled();
+    await expect(settings).not.toContainText('secret-');
     await page.screenshot({ path: `docs/pr148-security/screenshots/${info.project.name}-${mode}-failure.png` });
+    if (needsRead) {
+      await confirmAiReload(settings);
+      await expect(status).toContainText('已载入最新配置');
+      expect(await vaultDump(page)).toEqual(after);
+      if (mode === 'remove') {
+        await openChannel(settings, '甲渠道'); await settings.getByRole('switch', { name: '记住密钥' }).uncheck();
+      } else {
+        await openChannel(settings, '乙渠道'); await settings.getByRole('switch', { name: '记住密钥' }).check();
+        await openChannel(settings, '丙渠道'); await settings.getByRole('button', { name: '删除渠道', exact: true }).click();
+        await page.getByRole('button', { name: '确认删除渠道', exact: true }).click();
+      }
+    }
     await saveAi(settings);
     const success = await vaultDump(page);
     expect(success.local['heijin.ai.v1']).not.toContain('secret-');

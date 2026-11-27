@@ -1,5 +1,5 @@
 import { expect, test } from './helpers/test';
-import { addChannel, openAiSettings, openChannel } from './helpers/aiSettings';
+import { addChannel, aiPage, confirmAiReload, openAiSettings, openChannel } from './helpers/aiSettings';
 import type { Page } from '@playwright/test';
 
 async function seed(page: Page) {
@@ -46,8 +46,13 @@ async function state(page: Page) {
 type Fault = 'abort' | 'constraint' | 'receipt-rollback' | 'key-rollback' | 'config-rollback';
 async function inject(page: Page, fault: Fault) {
   await page.evaluate(mode => {
+    const originalConfig = localStorage.getItem('heijin.ai.v1');
     const put = IDBObjectStore.prototype.put;
     const set = Storage.prototype.setItem;
+    if (mode === 'receipt-rollback') Reflect.set(window, 'releaseReceiptFault', () => {
+      IDBObjectStore.prototype.put = put;
+      Storage.prototype.setItem = set;
+    });
     let pending: IDBTransaction | undefined;
     let fired = false;
     IDBObjectStore.prototype.put = function(value, key) {
@@ -66,7 +71,7 @@ async function inject(page: Page, fault: Fault) {
     Storage.prototype.setItem = function(key, value) {
       if (fired && mode === 'receipt-rollback' && key === 'heijin.ai.settings-receipt.v1')
         throw new DOMException('recovery marker denied', 'QuotaExceededError');
-      if (fired && mode === 'config-rollback' && key === 'heijin.ai.v1' && JSON.parse(value).channels.length === 2)
+      if (fired && mode === 'config-rollback' && key === 'heijin.ai.v1' && value === originalConfig)
         throw new DOMException('configuration rollback denied', 'QuotaExceededError');
       if (fired && mode === 'key-rollback' && key === 'heijin.credential.v1:a' && value === 'fixture-old')
         throw new DOMException('rollback denied', 'QuotaExceededError');
@@ -98,9 +103,9 @@ for (const fault of ['abort', 'constraint', 'receipt-rollback'] as const) {
     expect(await state(page)).toEqual({ ...before, synchronized: fault !== 'receipt-rollback' });
     await expect(ui.name).toHaveValue('编辑中');
     await expect(ui.key).toHaveValue('fixture-edit');
-    await expect(ui.save).toBeEnabled();
     if (fault === 'receipt-rollback') {
       await expect(ui.status).toContainText('同步标记');
+      await expect(ui.save).toBeDisabled();
       await expect(ui.status).not.toContainText('保持原样');
       await page.reload(); // removes the fault, with a real durable/visible mismatch still present
       const fresh = await editor(page, '基准');
@@ -109,6 +114,7 @@ for (const fault of ['abort', 'constraint', 'receipt-rollback'] as const) {
       await expect(fresh.status).toContainText('已保存');
       expect(await state(page)).toEqual({ ...before, names: ['刷新后重试', 'b'] });
     } else {
+      await expect(ui.save).toBeEnabled();
       await ui.save.click();
       await expect(ui.status).toContainText('已保存');
       expect(await state(page)).toEqual({ ...before, names: ['编辑中', 'b'], key: 'fixture-edit' });
@@ -136,11 +142,20 @@ test('失败保存与其他标签并发，保留另一渠道并保护后续密�
   await rotated.key.fill('fixture-peer');
   await rotated.save.click();
   await expect(rotated.status).toContainText('已保存');
-  await mine.save.click();
-  await expect(mine.status).toContainText('其他标签页');
+  await expect(mine.status).toContainText('重新读取最新配置');
   await expect(mine.name).toHaveValue('我的渠道');
-  await expect(mine.save).toBeEnabled();
-  expect(await state(page)).toEqual({ names: ['a','其他渠道'], key: 'fixture-peer', session: null, synchronized: true });
+  await expect(mine.key).toHaveValue('fixture-edit');
+  await expect(mine.save).toBeDisabled();
+  const peerState = { names: ['a','其他渠道'], key: 'fixture-peer', session: null, synchronized: true };
+  expect(await state(page)).toEqual(peerState);
+  await confirmAiReload(page);
+  await expect(mine.status).toContainText('已载入最新配置');
+  await expect(mine.name).toHaveValue('a');
+  await expect(mine.key).toHaveValue('fixture-peer');
+  expect(await state(page)).toEqual(peerState);
+  await mine.name.fill('重新编辑'); await mine.save.click();
+  await expect(mine.status).toContainText('已保存');
+  expect(await state(page)).toEqual({ ...peerState, names: ['重新编辑','其他渠道'] });
 });
 
 
@@ -170,7 +185,7 @@ test('没有 Web Locks 时，首次保存中止恢复密钥位置，重试合并
 });
 
 
-test('原配置回滚受阻后重试，新增渠道只保存一次并保留另一标签的修改', async ({ page, context }) => {
+test('原配置回滚受阻后确认重读，重新编辑新增渠道并保留另一标签的修改', async ({ page, context }) => {
   await context.route('https://**/*', route => route.fulfill({ json: { data: [] } }));
   await seed(page);
   const other = await context.newPage();
@@ -183,7 +198,7 @@ test('原配置回滚受阻后重试，新增渠道只保存一次并保留另�
   const status = root.locator('.ai-save-bar [role=status]');
   await save.click();
   await expect(status).toContainText('无法恢复原配置');
-  await expect(save).toBeEnabled();
+  await expect(save).toBeDisabled();
   expect((await state(page)).names).toEqual(['a', 'b', '新增渠道']);
   const keyOfNewChannel = () => page.evaluate(() => {
     const id = JSON.parse(localStorage.getItem('heijin.ai.v1')!).channels[2].id;
@@ -193,10 +208,91 @@ test('原配置回滚受阻后重试，新增渠道只保存一次并保留另�
   await peer.name.fill('其他页');
   await peer.save.click();
   await expect(peer.status).toContainText('已保存');
+  await confirmAiReload(root);
+  await expect(status).toContainText('已载入最新配置');
+  await expect(root.getByLabel('API 密钥', {exact: true})).toHaveValue('');
+  expect(await keyOfNewChannel()).toBeNull();
+  await root.getByLabel('API 密钥', {exact: true}).fill('fixture-new');
   await save.click();
   await expect(status).toContainText('已保存');
   expect((await state(page)).names).toEqual(['a', '其他页', '新增渠道']);
   expect(await keyOfNewChannel()).toBe('fixture-new');
+});
+
+for (const change of ['删除渠道', '恢复原名'] as const) {
+  test(`部分回滚后另一标签${change}，确认重读前保持草稿并禁止保存`, async ({ page, context }) => {
+    await context.route('https://**/*', route => route.fulfill({ json: { data: [] } }));
+    await seed(page);
+    const root = await openAiSettings(page);
+    if (change === '删除渠道') {
+      await addChannel(root, { preset: 'Gemini', name: '暂存渠道', key: 'fixture-new' });
+    } else {
+      await openChannel(root, 'a');
+      await root.getByLabel('渠道名称', { exact: true }).fill('暂存渠道');
+    }
+    await inject(page, 'config-rollback');
+    const save = root.getByRole('button', { name: '保存 AI 配置', exact: true });
+    const status = root.locator('.ai-save-bar [role=status]');
+    await save.click();
+    await expect(status).toContainText('无法恢复原配置');
+    await expect(save).toBeDisabled();
+    const id = await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.ai.v1')!).channels
+      .find((c: {name: string}) => c.name === '暂存渠道').id as string);
+    const peer = await context.newPage(); await peer.goto('/');
+    const theirs = await editor(peer, '暂存渠道');
+    if (change === '删除渠道') {
+      await peer.getByRole('button', { name: '删除渠道', exact: true }).click();
+      await peer.getByRole('button', { name: '确认删除渠道', exact: true }).click();
+    } else {
+      await theirs.name.fill('a');
+    }
+    await theirs.save.click(); await expect(theirs.status).toContainText('已保存');
+    const marker = await peer.evaluate(() => localStorage.getItem('heijin.ai.settings-receipt.v1'));
+    const actual = await state(peer);
+    expect(actual).toEqual({ names: ['a','b'], key: 'fixture-old', session: null, synchronized: true });
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('heijin.ai.settings-receipt.v1'))).toBe(marker);
+
+    // Both AI pages share the draft and the recovery requirement.
+    await aiPage(root, 'routing'); await expect(save).toBeDisabled();
+    await aiPage(root, 'channels');
+    await root.getByRole('button', { name: '重新读取最新配置', exact: true }).click();
+    await page.getByRole('dialog', { name: '重新读取最新配置？' }).getByRole('button', { name: '取消' }).click();
+    await expect(save).toBeDisabled();
+    expect(await state(page)).toEqual(actual);
+    // Mobile may return to the list when changing pages; the draft is still visible there.
+    const retained = root.getByRole('button', { name: '编辑渠道：暂存渠道', exact: true });
+    if (await retained.isVisible()) await expect(retained).toBeVisible();
+    else await expect(root.getByLabel('渠道名称', {exact: true})).toHaveValue('暂存渠道');
+    await confirmAiReload(root);
+    await expect(status).toContainText('已载入最新配置');
+    await expect(save).toBeDisabled();
+    expect(await state(page)).toEqual(actual);
+    expect(await page.evaluate(() => localStorage.getItem('heijin.ai.settings-receipt.v1'))).toBe(marker);
+    if (change === '删除渠道') {
+      expect(await page.evaluate(key => [localStorage.getItem(key), sessionStorage.getItem(key)], 'heijin.credential.v1:' + id)).toEqual([null,null]);
+    }
+    await openChannel(root, 'a'); await root.getByLabel('渠道名称', {exact: true}).fill('重新编辑');
+    await save.click(); await expect(status).toContainText('已保存');
+    expect(await state(page)).toEqual({ ...actual, names: ['重新编辑','b'] });
+  });
+}
+
+test('同步标记回滚失败且首次确认重读失败，解除故障后才能接纳新基准', async ({ page }) => {
+  await seed(page);
+  const ui = await editor(page);
+  await inject(page, 'receipt-rollback');
+  await ui.name.fill('本页草稿'); await ui.save.click();
+  await expect(ui.status).toContainText('同步标记');
+  await expect(ui.save).toBeDisabled();
+  await confirmAiReload(page);
+  await expect(ui.status).toContainText('读取失败');
+  await expect(ui.name).toHaveValue('本页草稿'); await expect(ui.save).toBeDisabled();
+  expect((await state(page)).synchronized).toBe(false);
+  await page.evaluate(() => Reflect.get(window, 'releaseReceiptFault')());
+  await confirmAiReload(page);
+  await expect(ui.status).toContainText('已载入最新配置'); await expect(ui.name).toHaveValue('a');
+  expect((await state(page)).synchronized).toBe(true);
+  await ui.name.fill('重新编辑'); await ui.save.click(); await expect(ui.status).toContainText('已保存');
 });
 
 for (const legacyState of ['首次保存', '重复保存']) {

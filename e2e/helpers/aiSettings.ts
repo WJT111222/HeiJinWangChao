@@ -95,6 +95,11 @@ export async function stageModel(scope: Scope, stage: string, channel: string, m
     await input.fill(model);
   }
 }
+export async function confirmAiReload(scope: Scope) {
+  await scope.getByRole('button', { name: '重新读取最新配置', exact: true }).click();
+  const dialog = pageOf(scope).getByRole('dialog', { name: '重新读取最新配置？', exact: true });
+  await dialog.getByRole('button', { name: '确认放弃草稿并重新读取', exact: true }).click();
+}
 export async function saveAi(scope: Scope) {
   await scope.getByRole('button', { name: '保存 AI 配置', exact: true }).click();
   await expect(scope.locator('.ai-save-bar').getByRole('status')).toContainText('已保存');

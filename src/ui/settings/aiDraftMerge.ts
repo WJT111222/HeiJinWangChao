@@ -46,28 +46,6 @@ export function effectiveRouteModel(config: AiConfig, route: { channelId: string
   return route.modelId || config.channels.find(channel => channel.id === route.channelId)?.defaultModel || '';
 }
 
-export type ConfigResidue = { before: AiConfig; attempted: AiConfig };
-
-// If the browser refused the config rollback, retry against the last real input of
-// each still-identical channel/route. Always keep independent changes from a later writer.
-export function configForRetry(actual: AiConfig, residue?: ConfigResidue): AiConfig {
-  if (!residue) return actual;
-  const { before, attempted } = residue;
-  const ids = new Set([...actual.channels, ...before.channels].map(channel => channel.id));
-  const channels = [];
-  for (const id of ids) {
-    const find = (config: AiConfig) => config.channels.find(channel => channel.id === id);
-    const live = find(actual);
-    const channel = same(live, find(attempted)) ? find(before) : live;
-    if (channel) channels.push(channel);
-  }
-  const routes = { ...actual.routes };
-  for (const stage of Object.keys(routes) as ModelRoute[]) {
-    if (same(routes[stage], attempted.routes[stage])) Object.assign(routes, { [stage]: before.routes[stage] });
-  }
-  return { ...actual, channels, routes };
-}
-
 export function mergeAiDraft(base: AiDraft, mine: AiDraft, latest: AiDraft, before: VaultSnapshot, now: VaultSnapshot) {
   const channels = [];
   const remove: string[] = [], write: string[] = [];
@@ -138,6 +116,11 @@ function newReceipt(previous?: Receipt): Receipt {
 }
 
 export class AiSaveFailure extends Error {}
+export class AiReloadRequired extends AiSaveFailure {
+  constructor(reason: string) {
+    super(reason + ' 当前草稿已保留，请重新读取最新配置后再保存。');
+  }
+}
 type Undo = () => string | undefined;
 
 async function openReceiptDb() {
@@ -204,7 +187,7 @@ async function recoverSave(db: IDBDatabase, previous: Receipt | undefined, origi
       const durable: Receipt | undefined = await request(store.get('published'));
       const visible = localStorage.getItem(receiptKey);
       if (durable?.id !== previous?.id || (visible !== attempted.id && visible !== originalMarker))
-        throw new AiSaveFailure('保存失败：其他标签页已更新配置，本页无法安全回滚。编辑已保留，请点「放弃修改」读取实际配置及密钥状态后重新编辑。');
+        throw new AiReloadRequired('保存失败：其他标签页已更新配置，本页无法安全回滚。');
       detail = undo();
       checked = true;
       // Publish the compensation, including verified residuals, under a fresh fence.
@@ -216,13 +199,15 @@ async function recoverSave(db: IDBDatabase, previous: Receipt | undefined, origi
   } catch (error) {
     if (error instanceof AiSaveFailure) throw error;
     const state = checked ? (detail ?? '已核对配置、密钥值及存放位置均已恢复。') : '配置和密钥的恢复状态也未能核验。';
-    throw new AiSaveFailure('保存失败：同步标记未能确认恢复。' + state
-      + '当前编辑已保留。请恢复浏览器存储权限或空间后重试，也可点「放弃修改」重新读取实际状态。');
+    throw new AiReloadRequired('保存失败：同步标记未能确认恢复。' + state);
   }
-  throw new AiSaveFailure(detail ?? '保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样，编辑仍未保存。');
+  if (detail) throw new AiReloadRequired(detail);
+  throw new AiSaveFailure('保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样，编辑仍未保存。');
 }
 
-async function saveAttempt<T>(db: IDBDatabase, work: SaveWork<T>) {
+type SettingsOperation<T> = { save: SaveWork<T> } | { read: () => T };
+
+async function runAttempt<T>(db: IDBDatabase, operation: SettingsOperation<T>) {
   let recover: (() => Promise<never>) | undefined;
   try {
     return await transaction(db, ['lock'], 'readwrite', async tx => {
@@ -240,10 +225,20 @@ async function saveAttempt<T>(db: IDBDatabase, work: SaveWork<T>) {
         return { waiting: true as const, legacy: legacy ? new LegacyReceiptConflict(previous?.id, visible) : undefined };
       }
 
+      if ('read' in operation) {
+        const value = operation.read();
+        // An aligned snapshot needs no writes. Repair only a recognized receipt mismatch.
+        if ((previous?.id ?? null) !== visible) {
+          const fence = newReceipt(previous);
+          await request(store.put(fence, 'published'));
+          localStorage.setItem(receiptKey, fence.id);
+        }
+        return { value };
+      }
       const receipt = newReceipt(previous);
       await request(store.put(receipt, 'published'));
       let published = false;
-      const value = work(() => {
+      const value = operation.save(() => {
         localStorage.setItem(receiptKey, receipt.id);
         published = true;
       }, undo => { recover = () => recoverSave(db, previous, visible, receipt, undo); });
@@ -259,15 +254,23 @@ async function saveAttempt<T>(db: IDBDatabase, work: SaveWork<T>) {
   }
 }
 
-export async function withAiSaveLock<T>(work: SaveWork<T>): Promise<T> {
+async function withSyncedSettings<T>(operation: SettingsOperation<T>): Promise<T> {
   const db = await openReceiptDb();
   const deadline = performance.now() + 5000;
   try {
     while (true) {
-      const attempt = await exclusiveSave(() => saveAttempt(db, work));
+      const attempt = await exclusiveSave(() => runAttempt(db, operation));
       if (!('waiting' in attempt)) return attempt.value;
       if (performance.now() >= deadline) throw attempt.legacy ?? new AiConfigConflict('尚未同步的配置');
       await new Promise(resolve => setTimeout(resolve, 15));
     }
   } finally { db.close(); }
+}
+
+export function withAiSaveLock<T>(work: SaveWork<T>) {
+  return withSyncedSettings({ save: work });
+}
+
+export function readLatestAiSettings<T>(read: () => T) {
+  return withSyncedSettings({ read });
 }

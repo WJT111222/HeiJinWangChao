@@ -11,7 +11,7 @@ import {
 import type { SettingsPage } from './settingsPages';
 import type { ModelRoute, Channel, Protocol } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
-import { AiConfigConflict, AiSaveFailure, LegacyReceiptConflict, configForRetry, type ConfigResidue, effectiveRouteModel, mergeAiDraft, storedDraft, withAiSaveLock, type AiDraft as Draft } from './aiDraftMerge';
+import { AiConfigConflict, AiSaveFailure, AiReloadRequired, LegacyReceiptConflict, readLatestAiSettings, effectiveRouteModel, mergeAiDraft, storedDraft, withAiSaveLock, type AiDraft as Draft } from './aiDraftMerge';
 import type { VaultSnapshot } from '../../services/ai/credentials';
 import { channelSnapshot, selectedModelRoute } from '../../services/ai/snapshot';
 import { AiClient } from '../../services/ai/client';
@@ -47,12 +47,15 @@ function memoryStore() {
   const data = new Map<string, string>();
   return { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); }, removeItem: (key: string) => { data.delete(key); } };
 }
+function readStoredSettings() {
+  const config = readAiConfig(localStorage);
+  const vault = new CredentialVault(sessionStorage, localStorage);
+  const credentials = vault.snapshot(config.channels.map(channel => channel.id));
+  return { draft: storedDraft(config, credentials), vault, credentials, notice: '' };
+}
 function initial(): { draft: Draft; credentials: VaultSnapshot; vault?: CredentialVault; notice: string } {
   try {
-    const config = readAiConfig(localStorage);
-    const vault = new CredentialVault(sessionStorage, localStorage);
-    const credentials = vault.snapshot(config.channels.map(channel => channel.id));
-    return { draft: storedDraft(config, credentials), vault, credentials, notice: '' };
+    return readStoredSettings();
   } catch {
     return { credentials: [], draft: { config: defaultAiConfig(), keys: {}, remember: {}, presets: {} }, notice: 'AI 配置或浏览器存储无法读取；原始数据未被覆盖。' };
   }
@@ -64,11 +67,9 @@ export function useAiSettingsDraft() {
   const [saved, setSaved] = useState<Draft>(() => clone(start.draft));
   const [draft, setDraft] = useState<Draft>(() => clone(start.draft));
   const credentials = useRef(start.credentials);
-  // A failed rollback can leave an observed credential in a different physical location.
-  // Keep this retry evidence separate from the last successfully saved baseline.
-  const residualCredentials = useRef<VaultSnapshot>([]);
-  const configResidue = useRef<ConfigResidue | undefined>(undefined);
-  return { credentials, residualCredentials, configResidue, start, saved, setSaved, draft, setDraft };
+  const [saving, setSaving] = useState(false);
+  const [reloadReason, setReloadReason] = useState('');
+  return { credentials, start, saved, setSaved, draft, setDraft, saving, setSaving, reloadReason, setReloadReason };
 }
 export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditingChange, onChannelName, page, navigate, workspace }: {
   workspace: ReturnType<typeof useAiSettingsDraft>;
@@ -81,7 +82,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   onEditingChange: (editing: boolean) => void;
 }) {
   const desktop = useDesktopFeedback();
-  const { start, draft, setDraft, saved, setSaved } = workspace;
+  const { start, draft, setDraft, saved, setSaved, saving, setSaving, reloadReason, setReloadReason } = workspace;
   const [selectedId, setSelectedId] = useState(draft.config.channels[0]?.id ?? '');
   const [showKey, setShowKey] = useState(false);
   const [urlEditing, setUrlEditing] = useState<Record<string, boolean>>({});
@@ -190,10 +191,10 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     catalog.remove(channel.id);
     if (active.current?.id === channel.id) { active.current.controller.abort(); active.current = undefined; }
     setTests((current) => { const next = { ...current }; delete next[channel.id]; return next; });
-    if (!canLoad(channel.id)) return;
+    if (reloadReason || !canLoad(channel.id)) return;
     const timer = setTimeout(() => loadModels(channel.id), 600);
     return () => clearTimeout(timer);
-  }, [selectedKey]);
+  }, [selectedKey, reloadReason]);
 
   // 打开设置本身不联网：只有改了地址或密钥、点开模型下拉、或点「获取模型」「刷新」时才读取模型列表。
 
@@ -260,7 +261,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   }
 
   // —— 保存 / 放弃 ——
-  const [saving, setSaving] = useState(false);
+  const [confirmReload, setConfirmReload] = useState(false);
   const legacyConflict = useRef<LegacyReceiptConflict | undefined>(undefined);
   const mounted = useRef(true);
   useEffect(() => {
@@ -268,7 +269,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     return () => { mounted.current = false; };
   }, []);
   async function save() {
-    if (saving) return;
+    if (saving || reloadReason) return;
     if (problems.length) { setNotice(problems[0], 'warn'); return; }
     const checked = AiConfigSchema.safeParse(config);
     if (!checked.success) { setNotice('配置无效：请核对名称、HTTPS 地址、模型 ID 和生成参数；地址不能含密钥或查询参数。'); return; }
@@ -279,11 +280,10 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     try {
       const committed = await withAiSaveLock((publish, registerUndo) => {
         if (!mounted.current) return;
-        const latest = configForRetry(readAiConfig(localStorage), workspace.configResidue.current);
+        const latest = readAiConfig(localStorage);
         const ids = new Set([...latest.channels, ...config.channels, ...saved.config.channels].map(item => item.id));
         const credentials = vault.snapshot(ids);
-        const expected = [...workspace.residualCredentials.current, ...workspace.credentials.current];
-        const merged = mergeAiDraft(saved, draft, storedDraft(latest, credentials), expected, credentials);
+        const merged = mergeAiDraft(saved, draft, storedDraft(latest, credentials), workspace.credentials.current, credentials);
         // Snapshot both physical locations before touching either. Other channels need no write or rollback.
         const touched = new Set([...merged.remove, ...merged.write]);
         const before = credentials.filter(item => touched.has(item.id));
@@ -298,21 +298,12 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
             }
             configRestored = localStorage.getItem(aiConfigKey) === originalConfig;
           } catch { /* Report an unreadable or partially restored configuration below. */ }
-          if (!configRestored) workspace.configResidue.current = { before: latest, attempted: merged.draft.config };
           if (!result.restored) {
-            // An incomplete rollback is our own write. Capture only its verified residual state
-            // while still holding the lock so a retry can distinguish a later change by another tab.
-            for (const id of result.failedIds) {
-              try {
-                const residual = vault.snapshot([id]);
-                workspace.residualCredentials.current = workspace.residualCredentials.current.filter(entry => entry.id !== id).concat(residual);
-              } catch { /* Keep the previous baseline when the storage cannot be read. */ }
-            }
             const affected = result.failedIds.map(id => latest.channels.find(item => item.id === id)?.name
               || config.channels.find(item => item.id === id)?.name || '未命名渠道');
-            return `保存失败：浏览器存储没能完全恢复或核验，请检查密钥存储状态（${affected.join('、')}）${configRestored ? '' : '及渠道配置'}。编辑已保留，可重试或放弃修改以重新读取。`;
+            return `保存失败：浏览器存储没能完全恢复或核验，请检查密钥存储状态（${affected.join('、')}）${configRestored ? '' : '及渠道配置'}。`;
           }
-          if (!configRestored) return '保存失败：浏览器无法恢复原配置。编辑已保留，可重试或放弃修改以重新读取实际渠道和模型。';
+          if (!configRestored) return '保存失败：浏览器无法恢复原配置。';
         });
         for (const id of merged.remove) vault.delete(id);
         for (const id of merged.write) vault.set(id, merged.draft.keys[id], merged.draft.remember[id]);
@@ -327,8 +318,6 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
       if (!committed) return;
       const { merged, savedCredentials } = committed;
       for (const id of merged.remove) catalog.remove(id);
-      workspace.configResidue.current = undefined;
-      workspace.residualCredentials.current = [];
       workspace.credentials.current = savedCredentials;
       legacyConflict.current = undefined;
       setSaved(merged.draft); setDraft(clone(merged.draft));
@@ -338,6 +327,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
       const missing = merged.draft.config.channels.find(item => !merged.draft.keys[item.id]);
       setNotice(missing ? `已保存。「${missing.name}」还没填密钥，这个渠道暂时不能使用。` : '已保存，下一次生成开始生效。', missing ? 'warn' : 'ok');
     } catch (error) {
+      if (error instanceof AiReloadRequired) setReloadReason(error.message);
       legacyConflict.current = error instanceof LegacyReceiptConflict ? error : undefined;
       setNotice(error instanceof AiConfigConflict || error instanceof AiSaveFailure ? error.message : '保存失败：无法读取密钥存储或最新配置，尚未写入密钥或配置。请检查浏览器存储权限后重试。');
     } finally { setSaving(false); }
@@ -355,8 +345,28 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     }
     const current = initial();
     if (!current.vault) { setNotice(current.notice); return; }
-    workspace.configResidue.current = undefined;
-    workspace.residualCredentials.current = [];
+    loadDraft(current);
+  }
+
+  async function confirmReadLatest() {
+    setConfirmReload(false);
+    setSaving(true);
+    try {
+      const current = await readLatestAiSettings(readStoredSettings);
+      // A confirmed read starts a fresh editor snapshot, just like reopening settings.
+      for (const id of Object.keys(lists)) catalog.remove(id);
+      savedKey.current = {};
+      active.current?.controller.abort();
+      active.current = undefined;
+      setTests({});
+      loadDraft(current);
+      setReloadReason('');
+    } catch {
+      setReloadReason('最新配置、密钥或同步标记读取失败。当前草稿已保留，请检查浏览器存储权限后重新读取。');
+    } finally { setSaving(false); }
+  }
+
+  function loadDraft(current: { draft: Draft; credentials: VaultSnapshot }) {
     workspace.credentials.current = current.credentials;
     setSaved(current.draft); setDraft(clone(current.draft));
     if (!current.draft.config.channels.some((item) => item.id === selectedId)) { setSelectedId(current.draft.config.channels[0]?.id ?? ''); onEditingChange(false); }
@@ -570,6 +580,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   const confirmChannel = confirm ? config.channels.find((item) => item.id === confirm.id) : undefined;
   return (
     <div inert={saving || undefined} className={`ai-conn ${desktop ? 'is-desktop' : 'is-mobile'} ${!desktop && editing ? 'is-editing' : ''}`}>
+      <fieldset className="ai-draft-fields" disabled={Boolean(reloadReason)}>
       {page === 'routing' ? <>
         <p className="ai-lede">每项 AI 任务可以跟随另一项，也可以单独指定渠道和模型。按调用频率安排：正文用好模型，次数多的任务放便宜模型。</p>
         <section className="route-summary"><div><h4>正在使用 {usage.size} 个模型</h4>
@@ -601,13 +612,22 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
         {(desktop || editing) && editor()}
       </div>
       <p className="field-hint">每项任务用哪个渠道和模型，在 <button type="button" className="ai-link" onClick={() => navigate('routing')}>模型分配</button> 里设置。AI 配置单独保存。</p></>}
+      </fieldset>
       <div className="ai-save-bar">
-        <Feedback role="status" level={notice ? noticeLevel : dirty ? 'warn' : 'info'} className="ai-save-msg" mobileAs="p">
-          {notice || (dirty ? `有 ${changeCount} 处修改尚未保存${blocked ? `；${blocked}` : ''}` : desktop ? '设置本身不会发起生成请求。' : '')}
+        <Feedback role="status" level={reloadReason ? 'err' : notice ? noticeLevel : dirty ? 'warn' : 'info'} className="ai-save-msg" mobileAs="p">
+          {reloadReason || notice || (dirty ? `有 ${changeCount} 处修改尚未保存${blocked ? `；${blocked}` : ''}` : desktop ? '设置本身不会发起生成请求。' : '')}
         </Feedback>
-        <button type="button" className="ai-btn ghost" disabled={!dirty} onClick={discard}>放弃修改</button>
-        <button type="button" className="primary" disabled={!dirty || Boolean(blocked) || !start.vault} title={blocked} onClick={save}>保存 AI 配置</button>
+        <button type="button" className="ai-btn ghost" disabled={!dirty && !reloadReason}
+          onClick={reloadReason ? () => setConfirmReload(true) : discard}>{reloadReason ? '重新读取最新配置' : '放弃修改'}</button>
+        <button type="button" className="primary" disabled={Boolean(reloadReason) || !dirty || Boolean(blocked) || !start.vault} title={blocked} onClick={save}>保存 AI 配置</button>
       </div>
+      {confirmReload && <Dialog small title="重新读取最新配置？" feedback="warn" mobileVariant="confirm" onClose={() => setConfirmReload(false)}>
+        <p>确认后，当前未保存的 AI 配置和密钥草稿将由浏览器中最新保存的值替换。你可以取消并保留草稿。</p>
+        <div className="dialog-actions feedback-dialog-actions">
+          <button type="button" onClick={() => setConfirmReload(false)}>取消</button>
+          <button type="button" onClick={confirmReadLatest}>确认放弃草稿并重新读取</button>
+        </div>
+      </Dialog>}
       {confirm && confirmChannel && <Dialog small title={confirm.kind === 'delete' ? `删除「${confirmChannel.name || '未命名渠道'}」？` : '替换服务地址？'}
         feedback="warn" seal={confirm.kind === 'delete' ? '删' : '换'} mobileVariant="confirm" onClose={() => setConfirm(undefined)}>
         <p>{confirm.kind === 'delete'
