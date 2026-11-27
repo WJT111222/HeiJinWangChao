@@ -46,6 +46,28 @@ export function effectiveRouteModel(config: AiConfig, route: { channelId: string
   return route.modelId || config.channels.find(channel => channel.id === route.channelId)?.defaultModel || '';
 }
 
+export type ConfigResidue = { before: AiConfig; attempted: AiConfig };
+
+// If the browser refused the config rollback, retry against the last real input of
+// each still-identical channel/route. Always keep independent changes from a later writer.
+export function configForRetry(actual: AiConfig, residue?: ConfigResidue): AiConfig {
+  if (!residue) return actual;
+  const { before, attempted } = residue;
+  const ids = new Set([...actual.channels, ...before.channels].map(channel => channel.id));
+  const channels = [];
+  for (const id of ids) {
+    const find = (config: AiConfig) => config.channels.find(channel => channel.id === id);
+    const live = find(actual);
+    const channel = same(live, find(attempted)) ? find(before) : live;
+    if (channel) channels.push(channel);
+  }
+  const routes = { ...actual.routes };
+  for (const stage of Object.keys(routes) as ModelRoute[]) {
+    if (same(routes[stage], attempted.routes[stage])) Object.assign(routes, { [stage]: before.routes[stage] });
+  }
+  return { ...actual, channels, routes };
+}
+
 export function mergeAiDraft(base: AiDraft, mine: AiDraft, latest: AiDraft, before: VaultSnapshot, now: VaultSnapshot) {
   const channels = [];
   const remove: string[] = [], write: string[] = [];
@@ -64,7 +86,7 @@ export function mergeAiDraft(base: AiDraft, mine: AiDraft, latest: AiDraft, befo
       if (!m) remove.push(id);
       continue;
     }
-    if (!b && m && r) throw new AiConfigConflict(label);
+    if (!b && m && (r || sharedChanged)) throw new AiConfigConflict(label);
     if (b && m && r) {
       const localEndpoint = credentialScope(b.baseUrl) !== credentialScope(m.baseUrl);
       const remoteEndpoint = credentialScope(b.baseUrl) !== credentialScope(r.baseUrl);
@@ -108,36 +130,143 @@ export function mergeAiDraft(base: AiDraft, mine: AiDraft, latest: AiDraft, befo
 // must observe its predecessor's receipt before it is allowed to read and merge those values.
 const receiptKey = 'heijin.ai.settings-receipt.v1';
 type Receipt = { id: string; time: number };
-export async function withAiSaveLock(work: (publish: () => void) => void) {
+const parentOf = (id?: string) => id?.split('/')[0] ?? '-';
+function newReceipt(previous?: Receipt): Receipt {
+  // A published child of the durable ID can only be ahead of it after an abort.
+  // Store one generation of opaque IDs, never settings or credential material.
+  return { id: crypto.randomUUID() + '/' + parentOf(previous?.id), time: performance.timeOrigin + performance.now() };
+}
+
+export class AiSaveFailure extends Error {}
+type Undo = () => string | undefined;
+
+async function openReceiptDb() {
   const open = indexedDB.open('heijin.ai-settings-lock', 1);
   open.onupgradeneeded = () => open.result.createObjectStore('lock');
   const db = await request(open);
   db.onversionchange = () => db.close();
-  const deadline = performance.now() + 5000;
-  try {
-    while (true) {
-      const completed = await transaction(db, ['lock'], 'readwrite', async tx => {
+  return db;
+}
+
+// Old builds used unrelated UUIDs, so an orphan cannot authorize an automatic merge.
+// Only the player's explicit discard may reconcile this exact observed legacy pair.
+export class LegacyReceiptConflict extends AiSaveFailure {
+  constructor(private durable: string | undefined, private visible: string) {
+    super('保存失败：旧版同步标记不一致。编辑已保留。请关闭其他设置标签页，再点「放弃修改」重新读取实际配置和密钥。');
+  }
+  async reconcile() {
+    const db = await openReceiptDb();
+    try {
+      await exclusiveSave(() => transaction(db, ['lock'], 'readwrite', async tx => {
         const store = tx.objectStore('lock');
         const previous: Receipt | undefined = await request(store.get('published'));
         const visible = localStorage.getItem(receiptKey);
-        // A new document may start after a player has cleared localStorage independently of IDB.
-        const freshEmpty = previous && previous.time < performance.timeOrigin && visible === null
-          && localStorage.getItem(aiConfigKey) === null;
-        if (previous && previous.id !== visible && !freshEmpty) return false;
-        const receipt: Receipt = { id: crypto.randomUUID(), time: performance.timeOrigin + performance.now() };
-        // Fully check the metadata write before starting any synchronous business mutations.
-        await request(store.put(receipt, 'published'));
-        let published = false;
-        work(() => { localStorage.setItem(receiptKey, receipt.id); published = true; });
-        if (!published) {
-          // A validation or storage failure already reported by the form made no commit.
-          if (previous) await request(store.put(previous, 'published'));
-          else await request(store.delete('published'));
-        }
-        return true;
-      });
-      if (completed) return;
-      if (performance.now() >= deadline) throw new AiConfigConflict('尚未同步的配置');
+        if (previous?.id === visible) return;
+        if (previous?.id !== this.durable || visible !== this.visible) throw new AiConfigConflict('同步状态');
+        const fence = newReceipt(previous);
+        await request(store.put(fence, 'published'));
+        localStorage.setItem(receiptKey, fence.id);
+      }));
+    } finally { db.close(); }
+  }
+}
+const legacyId = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Keep a failed writer exclusive until its Web Storage compensation finishes as well.
+// On browsers without Web Locks, an independent IDB transaction provides the same exclusion.
+async function exclusiveSave<T>(run: () => Promise<T>): Promise<T> {
+  if (navigator.locks) return navigator.locks.request('heijin.ai.settings-commit.v1', run);
+  const open = indexedDB.open('heijin.ai-settings-writers', 1);
+  open.onupgradeneeded = () => open.result.createObjectStore('writers');
+  const db = await request(open);
+  try {
+    const tx = db.transaction('writers', 'readwrite');
+    const store = tx.objectStore('writers');
+    await request(store.get(0)); // acquire the writer before entering the receipt database
+    let finished = false;
+    const hold = () => { if (!finished) store.get(0).onsuccess = hold; };
+    hold();
+    // This gate contains no data. Only the inner receipt transaction commits a save.
+    try { return await run(); } finally { finished = true; }
+  } finally { db.close(); }
+}
+
+type SaveWork<T> = (publish: () => void, registerUndo: (undo: Undo) => void) => T;
+
+async function recoverSave(db: IDBDatabase, previous: Receipt | undefined, originalMarker: string | null,
+  attempted: Receipt, undo: Undo): Promise<never> {
+  let detail: string | undefined;
+  let checked = false;
+  try {
+    // Recheck ownership under the original IDB lock too: an older tab may use only that lock.
+    await transaction(db, ['lock'], 'readwrite', async tx => {
+      const store = tx.objectStore('lock');
+      const durable: Receipt | undefined = await request(store.get('published'));
+      const visible = localStorage.getItem(receiptKey);
+      if (durable?.id !== previous?.id || (visible !== attempted.id && visible !== originalMarker))
+        throw new AiSaveFailure('保存失败：其他标签页已更新配置，本页无法安全回滚。编辑已保留，请点「放弃修改」读取实际配置及密钥状态后重新编辑。');
+      detail = undo();
+      checked = true;
+      // Publish the compensation, including verified residuals, under a fresh fence.
+      // Reusing the old ID could authorize another renderer's stale Web Storage cache.
+      const fence = newReceipt(previous);
+      await request(store.put(fence, 'published'));
+      localStorage.setItem(receiptKey, fence.id);
+    });
+  } catch (error) {
+    if (error instanceof AiSaveFailure) throw error;
+    const state = checked ? (detail ?? '已核对配置、密钥值及存放位置均已恢复。') : '配置和密钥的恢复状态也未能核验。';
+    throw new AiSaveFailure('保存失败：同步标记未能确认恢复。' + state
+      + '当前编辑已保留。请恢复浏览器存储权限或空间后重试，也可点「放弃修改」重新读取实际状态。');
+  }
+  throw new AiSaveFailure(detail ?? '保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样，编辑仍未保存。');
+}
+
+async function saveAttempt<T>(db: IDBDatabase, work: SaveWork<T>) {
+  let recover: (() => Promise<never>) | undefined;
+  try {
+    return await transaction(db, ['lock'], 'readwrite', async tx => {
+      const store = tx.objectStore('lock');
+      const previous: Receipt | undefined = await request(store.get('published'));
+      const visible = localStorage.getItem(receiptKey);
+      const freshEmpty = previous && previous.time < performance.timeOrigin && visible === null
+        && localStorage.getItem(aiConfigKey) === null;
+      // A failed compensation can leave the visible token ahead. Its parent proves this
+      // renderer saw the durable predecessor; an arbitrary mismatch grants no such authority.
+      const abortedChild = visible?.split('/')[1] === parentOf(previous?.id);
+      if ((previous?.id ?? null) !== visible && !freshEmpty && !abortedChild) {
+        const legacy = visible && legacyId.test(visible)
+          && (!previous || (previous.time < performance.timeOrigin && legacyId.test(previous.id)));
+        return { waiting: true as const, legacy: legacy ? new LegacyReceiptConflict(previous?.id, visible) : undefined };
+      }
+
+      const receipt = newReceipt(previous);
+      await request(store.put(receipt, 'published'));
+      let published = false;
+      const value = work(() => {
+        localStorage.setItem(receiptKey, receipt.id);
+        published = true;
+      }, undo => { recover = () => recoverSave(db, previous, visible, receipt, undo); });
+      if (!published) {
+        if (previous) await request(store.put(previous, 'published'));
+        else await request(store.delete('published'));
+      }
+      return { value };
+    });
+  } catch (error) {
+    if (recover) return recover();
+    throw error;
+  }
+}
+
+export async function withAiSaveLock<T>(work: SaveWork<T>): Promise<T> {
+  const db = await openReceiptDb();
+  const deadline = performance.now() + 5000;
+  try {
+    while (true) {
+      const attempt = await exclusiveSave(() => saveAttempt(db, work));
+      if (!('waiting' in attempt)) return attempt.value;
+      if (performance.now() >= deadline) throw attempt.legacy ?? new AiConfigConflict('尚未同步的配置');
       await new Promise(resolve => setTimeout(resolve, 15));
     }
   } finally { db.close(); }

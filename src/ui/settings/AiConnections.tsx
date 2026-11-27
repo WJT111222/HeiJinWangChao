@@ -11,7 +11,7 @@ import {
 import type { SettingsPage } from './settingsPages';
 import type { ModelRoute, Channel, Protocol } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
-import { AiConfigConflict, effectiveRouteModel, mergeAiDraft, storedDraft, withAiSaveLock, type AiDraft as Draft } from './aiDraftMerge';
+import { AiConfigConflict, AiSaveFailure, LegacyReceiptConflict, configForRetry, type ConfigResidue, effectiveRouteModel, mergeAiDraft, storedDraft, withAiSaveLock, type AiDraft as Draft } from './aiDraftMerge';
 import type { VaultSnapshot } from '../../services/ai/credentials';
 import { channelSnapshot, selectedModelRoute } from '../../services/ai/snapshot';
 import { AiClient } from '../../services/ai/client';
@@ -64,7 +64,11 @@ export function useAiSettingsDraft() {
   const [saved, setSaved] = useState<Draft>(() => clone(start.draft));
   const [draft, setDraft] = useState<Draft>(() => clone(start.draft));
   const credentials = useRef(start.credentials);
-  return { credentials, start, saved, setSaved, draft, setDraft };
+  // A failed rollback can leave an observed credential in a different physical location.
+  // Keep this retry evidence separate from the last successfully saved baseline.
+  const residualCredentials = useRef<VaultSnapshot>([]);
+  const configResidue = useRef<ConfigResidue | undefined>(undefined);
+  return { credentials, residualCredentials, configResidue, start, saved, setSaved, draft, setDraft };
 }
 export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditingChange, onChannelName, page, navigate, workspace }: {
   workspace: ReturnType<typeof useAiSettingsDraft>;
@@ -257,6 +261,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
 
   // —— 保存 / 放弃 ——
   const [saving, setSaving] = useState(false);
+  const legacyConflict = useRef<LegacyReceiptConflict | undefined>(undefined);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -269,73 +274,89 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     if (!checked.success) { setNotice('配置无效：请核对名称、HTTPS 地址、模型 ID 和生成参数；地址不能含密钥或查询参数。'); return; }
     const vault = start.vault;
     if (!vault) { setNotice('保存失败，请检查浏览器存储权限或空间后重试。'); return; }
+    setNotice('', 'info');
     setSaving(true);
     try {
-      await withAiSaveLock(publish => {
+      const committed = await withAiSaveLock((publish, registerUndo) => {
         if (!mounted.current) return;
-        const latest = readAiConfig(localStorage);
+        const latest = configForRetry(readAiConfig(localStorage), workspace.configResidue.current);
         const ids = new Set([...latest.channels, ...config.channels, ...saved.config.channels].map(item => item.id));
         const credentials = vault.snapshot(ids);
-        const merged = mergeAiDraft(saved, draft, storedDraft(latest, credentials), workspace.credentials.current, credentials);
+        const expected = [...workspace.residualCredentials.current, ...workspace.credentials.current];
+        const merged = mergeAiDraft(saved, draft, storedDraft(latest, credentials), expected, credentials);
         // Snapshot both physical locations before touching either. Other channels need no write or rollback.
         const touched = new Set([...merged.remove, ...merged.write]);
         const before = credentials.filter(item => touched.has(item.id));
         const originalConfig = localStorage.getItem(aiConfigKey);
-        let configWritten = false;
-        try {
-          for (const id of merged.remove) vault.delete(id);
-          for (const id of merged.write) vault.set(id, merged.draft.keys[id], merged.draft.remember[id]);
-          saveAiConfig(localStorage, merged.draft.config);
-          configWritten = true;
-          publish();
-        } catch {
+        registerUndo(() => {
           const result = vault.restore(before);
-          if (configWritten) {
-            try {
+          let configRestored = false;
+          try {
+            if (localStorage.getItem(aiConfigKey) !== originalConfig) {
               if (originalConfig === null) localStorage.removeItem(aiConfigKey);
               else localStorage.setItem(aiConfigKey, originalConfig);
-            } catch {
-              setNotice('保存失败：浏览器无法恢复原配置，请重新读取渠道、模型和密钥状态。当前编辑已保留。');
-              return;
             }
-          }
-          if (result.restored) setNotice('保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样。已核对密钥值和原存放位置，修改仍未保存。');
-          else {
+            configRestored = localStorage.getItem(aiConfigKey) === originalConfig;
+          } catch { /* Report an unreadable or partially restored configuration below. */ }
+          if (!configRestored) workspace.configResidue.current = { before: latest, attempted: merged.draft.config };
+          if (!result.restored) {
             // An incomplete rollback is our own write. Capture only its verified residual state
             // while still holding the lock so a retry can distinguish a later change by another tab.
             for (const id of result.failedIds) {
               try {
                 const residual = vault.snapshot([id]);
-                workspace.credentials.current = workspace.credentials.current.filter(entry => entry.id !== id).concat(residual);
+                workspace.residualCredentials.current = workspace.residualCredentials.current.filter(entry => entry.id !== id).concat(residual);
               } catch { /* Keep the previous baseline when the storage cannot be read. */ }
             }
-            // A partial rollback also changed physical storage. Publish that change to later writers.
-            try { publish(); } catch { /* The storage failure is reported below. */ }
             const affected = result.failedIds.map(id => latest.channels.find(item => item.id === id)?.name
               || config.channels.find(item => item.id === id)?.name || '未命名渠道');
-            setNotice(`保存失败：浏览器存储没能完全恢复或核验，请检查密钥存储状态（${affected.join('、')}）。保存未完成，编辑仍未保存。`);
+            return `保存失败：浏览器存储没能完全恢复或核验，请检查密钥存储状态（${affected.join('、')}）${configRestored ? '' : '及渠道配置'}。编辑已保留，可重试或放弃修改以重新读取。`;
           }
-          return;
-        }
-        for (const id of merged.remove) catalog.remove(id);
-        workspace.credentials.current = credentials.filter(item => !touched.has(item.id)).concat(merged.write.map(id => {
+          if (!configRestored) return '保存失败：浏览器无法恢复原配置。编辑已保留，可重试或放弃修改以重新读取实际渠道和模型。';
+        });
+        for (const id of merged.remove) vault.delete(id);
+        for (const id of merged.write) vault.set(id, merged.draft.keys[id], merged.draft.remember[id]);
+        saveAiConfig(localStorage, merged.draft.config);
+        publish();
+        const savedCredentials = credentials.filter(item => !touched.has(item.id)).concat(merged.write.map(id => {
           const key = merged.draft.keys[id] || null;
           return { id, persistent: merged.draft.remember[id] ? key : null, session: merged.draft.remember[id] ? null : key };
         }));
-        setSaved(merged.draft); setDraft(clone(merged.draft));
-        if (!merged.draft.config.channels.some(item => item.id === selectedId)) {
-          setSelectedId(merged.draft.config.channels[0]?.id ?? ''); onEditingChange(false);
-        }
-        const missing = merged.draft.config.channels.find(item => !merged.draft.keys[item.id]);
-        setNotice(missing ? `已保存。「${missing.name}」还没填密钥，这个渠道暂时不能使用。` : '已保存，下一次生成开始生效。', missing ? 'warn' : 'ok');
+        return { merged, savedCredentials };
       });
+      if (!committed) return;
+      const { merged, savedCredentials } = committed;
+      for (const id of merged.remove) catalog.remove(id);
+      workspace.configResidue.current = undefined;
+      workspace.residualCredentials.current = [];
+      workspace.credentials.current = savedCredentials;
+      legacyConflict.current = undefined;
+      setSaved(merged.draft); setDraft(clone(merged.draft));
+      if (!merged.draft.config.channels.some(item => item.id === selectedId)) {
+        setSelectedId(merged.draft.config.channels[0]?.id ?? ''); onEditingChange(false);
+      }
+      const missing = merged.draft.config.channels.find(item => !merged.draft.keys[item.id]);
+      setNotice(missing ? `已保存。「${missing.name}」还没填密钥，这个渠道暂时不能使用。` : '已保存，下一次生成开始生效。', missing ? 'warn' : 'ok');
     } catch (error) {
-      setNotice(error instanceof AiConfigConflict ? error.message : '保存失败：无法读取密钥存储或最新配置，尚未写入密钥或配置。请检查浏览器存储权限后重试。');
+      legacyConflict.current = error instanceof LegacyReceiptConflict ? error : undefined;
+      setNotice(error instanceof AiConfigConflict || error instanceof AiSaveFailure ? error.message : '保存失败：无法读取密钥存储或最新配置，尚未写入密钥或配置。请检查浏览器存储权限后重试。');
     } finally { setSaving(false); }
   }
-  function discard() {
+  async function discard() {
+    if (legacyConflict.current) {
+      setSaving(true);
+      try {
+        await legacyConflict.current.reconcile();
+        legacyConflict.current = undefined;
+      } catch {
+        setNotice('同步标记未能核验。编辑已保留，请检查浏览器存储权限后重新读取。');
+        return;
+      } finally { setSaving(false); }
+    }
     const current = initial();
     if (!current.vault) { setNotice(current.notice); return; }
+    workspace.configResidue.current = undefined;
+    workspace.residualCredentials.current = [];
     workspace.credentials.current = current.credentials;
     setSaved(current.draft); setDraft(clone(current.draft));
     if (!current.draft.config.channels.some((item) => item.id === selectedId)) { setSelectedId(current.draft.config.channels[0]?.id ?? ''); onEditingChange(false); }
