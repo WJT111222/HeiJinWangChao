@@ -295,6 +295,27 @@ test('同步标记回滚失败且首次确认重读失败，解除故障后才�
   await ui.name.fill('重新编辑'); await ui.save.click(); await expect(ui.status).toContainText('已保存');
 });
 
+test('同步标记数据库丢失而本地存储仍在时，保存与重读不会被永久卡住', async ({ page }) => {
+  await seed(page);
+  const ui = await editor(page);
+  for (const name of ['第一次', '第二次']) {
+    await ui.name.fill(name); await ui.save.click(); await expect(ui.status).toContainText('已保存');
+  }
+  expect((await state(page)).synchronized).toBe(true);
+  await page.evaluate(() => new Promise<void>((resolve, reject) => {
+    const deleting = indexedDB.deleteDatabase('heijin.ai-settings-lock');
+    deleting.onsuccess = () => resolve();
+    deleting.onerror = () => reject(deleting.error);
+  }));
+  expect(await page.evaluate(() => localStorage.getItem('heijin.ai.settings-receipt.v1'))).not.toBeNull();
+  await page.reload();
+  const reopened = await editor(page, '第二次');
+  await reopened.name.fill('数据库丢失后保存');
+  await reopened.save.click();
+  await expect(reopened.status).toContainText('已保存', { timeout: 3000 });
+  expect(await state(page)).toEqual({ names: ['数据库丢失后保存', 'b'], key: 'fixture-old', session: null, synchronized: true });
+});
+
 for (const legacyState of ['首次保存', '重复保存']) {
   test(`旧版遗留的同步标记（${legacyState}）仅在明确放弃后对齐，恢复过程不写业务数据`, async ({ page }) => {
     await seed(page);
