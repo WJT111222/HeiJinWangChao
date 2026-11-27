@@ -131,7 +131,7 @@ test('iframe 初始化后捕获异常与 Promise rejection，正文可继续生�
   const dialog = page.getByRole('dialog', { name: '设置', exact: true });
   const back = dialog.getByRole('button', { name: '返回设置', exact: true });
   if (await back.isVisible()) await back.click();
-  await dialog.getByRole('button', { name: '运行', exact: true }).click();
+  await dialog.getByRole('button', { name: '文学预设', exact: true }).click();
   await dialog.getByText('运行脚本 · 已初始化', { exact: true }).click();
   await expect(dialog.getByRole('alert').filter({ hasText: 'chat_completion_settings_ready' })).toBeVisible();
 });

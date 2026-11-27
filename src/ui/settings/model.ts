@@ -72,6 +72,15 @@ export const SettingsSchema = z.strictObject({
     .transform(runtime => ({ ...runtime, useEntityStage: runtime.useEntityStage ?? runtime.useVariableStage,
       streamEntities: runtime.streamEntities ?? runtime.streamVariables })),
   // 外观：夜间（原黑金）、日间（档案纸）、跟随系统。旧设置缺字段时为夜间，原样保持现有观感。
+  phone: z.strictObject({
+    groupReplyLimit: z.union([z.literal(2), z.literal(3), z.literal(5)]).optional(),
+    loanReminderDays: z.number().int().min(0).max(30).default(3),
+  }).optional(),
+  theater: z.strictObject({
+    length: z.enum(['short', 'medium', 'long', 'extra', 'custom']).default('medium'),
+    customChars: z.number().int().min(100).max(100000).optional(),
+    perspective: z.enum(['follow', 'first', 'second', 'third']).default('follow'),
+  }).optional(),
   theaterPrompt: z.string().trim().min(1).max(8000).optional(),
   display: z.strictObject({ appearance: z.enum(['night', 'day', 'system']) }).default({ appearance: 'night' }),
   // 生成完成提示音：关闭／切到别处时（默认）／总是。旧设置缺字段时按默认，点选即保存。
@@ -114,6 +123,10 @@ export function mergeSettingsChanges(base: Settings, edited: Settings, latest: S
   }
   return {
     ...latest,
+    phone: edited.phone && JSON.stringify(base.phone) !== JSON.stringify(edited.phone)
+      ? section(base.phone ?? { loanReminderDays: 3 }, edited.phone, latest.phone ?? { loanReminderDays: 3 }) : latest.phone,
+    theater: edited.theater && JSON.stringify(base.theater) !== JSON.stringify(edited.theater)
+      ? section<NonNullable<Settings['theater']>>(base.theater ?? { length: 'medium', perspective: 'follow' }, edited.theater, latest.theater ?? { length: 'medium', perspective: 'follow' }) : latest.theater,
     theaterPrompt: base.theaterPrompt === edited.theaterPrompt ? latest.theaterPrompt : edited.theaterPrompt,
     prompts: section(base.prompts, edited.prompts, latest.prompts),
     memory: section(base.memory, edited.memory, latest.memory),

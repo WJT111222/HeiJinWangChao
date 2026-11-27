@@ -78,7 +78,7 @@ test('自动首批仅一次；保存风格、原样设置、篇幅、人称和�
   const calls = await traffic(page); await seed(page);
   await expect.poll(() => count(page)).toBe(1); await observe(page); expect(calls).toHaveLength(1);
   const before = await state(page), original = await stored(page);
-  const root = await settings(page, '提示词');
+  const root = await settings(page, '正文与风格');
   await root.getByRole('radiogroup', { name: '剧情风格' }).getByRole('radio', { name: '冷硬黑色', exact: true }).check();
   await root.getByRole('button', { name: '保存本地设置', exact: true }).click();
   await expect(root.getByRole('status')).toContainText('本地偏好已保存'); await observe(page);
@@ -92,8 +92,9 @@ test('自动首批仅一次；保存风格、原样设置、篇幅、人称和�
   await root.getByLabel('正文最低字数', { exact: true }).fill('1500');
   await root.getByRole('button', { name: '保存本地设置', exact: true }).click(); await observe(page);
   expect((await stored(page)).prompts.minNarrativeChars).toBe(1500); expect(calls).toHaveLength(1);
-  await root.getByLabel('叙事人称').selectOption('first');
-  await root.getByLabel('NoControl（防抢话）', { exact: true }).uncheck();
+  await root.getByRole('group', { name: '叙事人称' }).getByRole('button', { name: '第一人称' }).click();
+  await settingsCategory(page, '提示词开关');
+  await root.getByLabel('防抢话 NoControl', { exact: true }).uncheck();
   await root.getByRole('button', { name: '保存本地设置', exact: true }).click(); await observe(page);
   expect((await stored(page)).prompts.perspective).toBe('first'); expect(calls).toHaveLength(1); expect(await state(page)).toEqual(before);
 });
@@ -126,7 +127,7 @@ for (const mode of ['failed', 'unconfirmed'] as const) test(`${mode}：配置及
   await failure.getByRole('button', { name: '关闭资料界面', exact: true }).click();
   await observe(page); const expected = mode === 'failed' ? 1 : 0;
   expect(calls).toHaveLength(expected); const before = await state(page);
-  const root = await settings(page, '提示词');
+  const root = await settings(page, '正文与风格');
   await root.getByRole('radiogroup', { name: '剧情风格' }).getByRole('radio', { name: '冷硬黑色', exact: true }).check();
   await root.getByRole('button', { name: '保存本地设置', exact: true }).click(); await observe(page);
   await settingsCategory(page, '记忆');

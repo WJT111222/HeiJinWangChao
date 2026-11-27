@@ -221,8 +221,8 @@
  .mobile-archive :is(.ai-save-bar,.memory-save-bar,.local-save-bar) {position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.7rem 14px calc(env(safe-area-inset-bottom,0px) + .7rem);border-top:1px solid var(--line-2);background:#EFE8D9;box-shadow:0 -6px 15px #2a262210;max-height:38%;overflow:auto}
  .mobile-archive :is(.ai-save-bar,.memory-save-bar,.local-save-bar)>button {flex:none;font-size:.8rem;background:#1F1B17;color:#F4EDE0}
  .mobile-archive :is(.ai-save-bar,.memory-save-bar,.local-save-bar)>:is(p,div) {font-size:.7rem;margin:0}
- .mobile-archive .settings-layout[data-tab="AI 连接"] .local-save-bar,.mobile-archive .settings-layout[data-tab="记忆"] .local-save-bar {display:none}
- .mobile-archive .settings-layout[data-tab="提示词管理"] .local-save-bar {position:static;margin-top:1rem;box-shadow:none}
+ .mobile-archive .settings-layout[data-tab="channels"] .local-save-bar,.mobile-archive .settings-layout[data-tab="memory"] .local-save-bar {display:none}
+ .mobile-archive .settings-layout[data-tab="promptmgr"] .local-save-bar {position:static;margin-top:1rem;box-shadow:none}
  .mobile-archive .feedback.l-err {color:var(--settings-negative,#A3412E);border-color:#A3412E44;background:#A3412E0d}
  .mobile-archive .feedback.l-ok {color:var(--settings-positive,#2F7A58);background:#2F7A580d;border-color:#2F7A5844}
  .mobile-archive .feedback.l-info {color:var(--settings-info,#2D5E7D);background:#2D5E7D0d;border-color:#2D5E7D44}

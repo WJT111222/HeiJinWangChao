@@ -2,7 +2,7 @@ import {useDesktopFeedback} from '../Feedback';
 import { useSyncExternalStore } from 'react';
 import { requestInspections } from '../../services/ai/inspection';
 
-const names = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', memory: '记忆维护', theater: '小剧场', phone: '手机私聊' };
+const names = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', memory: '记忆维护', theater: '小剧场', imagePrompt: '生图提示词', phone: '手机私聊' };
 // 只读数字和已脱敏模型名；不展示输入正文、NPC身份或私有内容，也不合并多次请求。
 // stage：PC 三阶段面板在各阶段概览里只显示该阶段的请求；完整列表仍在运行诊断。
 /** 供应商返回缓存统计时才显示；命中与写入都已包含在实际输入里，不是另外收费的数量。 */

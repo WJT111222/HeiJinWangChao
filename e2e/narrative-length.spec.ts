@@ -1,3 +1,4 @@
+import { settingsCategory } from './helpers/aiSettings';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 
@@ -24,7 +25,7 @@ async function promptTab(page: Page) {
   const root = page.getByRole('dialog', { name: '设置', exact: true });
   const back = root.getByRole('button', { name: '返回设置', exact: true });
   if (await back.isVisible()) await back.click();
-  await root.getByRole('button', { name: '提示词', exact: true }).click();
+  await root.getByRole('button', { name: '正文与风格', exact: true }).click();
   return root;
 }
 async function stored(page: Page) {
@@ -53,7 +54,7 @@ test('新玩家默认低档；选中档 / 高档后保存，刷新仍在；高�
   await tier(root, '高').check();
   await expect(root.getByLabel('正文最低字数', { exact: true })).toHaveValue('8000');
   await expect(root.getByLabel('正文建议上限', { exact: true })).toHaveValue('10000');
-  await expect(root.getByRole('group', { name: '正文篇幅' })).toContainText('建议在「AI 连接」把最大输出调到 16k 以上');
+  await expect(root.getByRole('group', { name: '正文篇幅' })).toContainText('建议在「渠道与密钥」把最大输出调到 16k 以上');
   await root.getByRole('group', { name: '正文篇幅' }).screenshot({ path: `/tmp/length-${info.project.name}-high.png` });
   await root.getByRole('button', { name: '保存本地设置', exact: true }).click();
   await expect(root.getByRole('status')).toContainText('本地偏好已保存');
@@ -141,7 +142,7 @@ test('旧设置主动选择低档后保存刷新，按显式预设恢复', async
 
 test('文学预设接管篇幅和人称，可打开控制台，停用后恢复原值', async ({ page }, info) => {
   const initial = await openPromptSettings(page, { minNarrativeChars: 4000, maxNarrativeChars: 5000, perspective: 'first' });
-  await expect(initial.getByLabel('叙事人称')).toBeEnabled();
+  await expect(initial.getByRole('button',{name:'第一人称'})).toBeEnabled();
   const preferences = await stored(page);
   async function mode(value: string) {
     await page.goto('/');
@@ -149,18 +150,22 @@ test('文学预设接管篇幅和人称，可打开控制台，停用后恢复�
     const dialog = page.getByRole('dialog', { name: '设置', exact: true });
     const back = dialog.getByRole('button', { name: '返回设置', exact: true });
     if (await back.isVisible()) await back.click();
-    await dialog.getByRole('button', { name: '运行', exact: true }).click();
+    await dialog.getByRole('button', { name: '文学预设', exact: true }).click();
     await dialog.getByLabel('正文预设').selectOption(value);
     await Promise.all([page.waitForNavigation(), dialog.getByRole('button', { name: '保存预设并刷新' }).click()]);
   }
   await mode('peinture-1118');
   const managed = await promptTab(page);
   await expect(managed.getByText('由当前文学预设接管', { exact: false })).toBeVisible();
-  for (const label of ['正文最低字数', '正文建议上限', '叙事人称', '自然文风修复'])
+  for (const label of ['正文最低字数', '正文建议上限'])
     await expect(managed.getByLabel(label)).toBeDisabled();
+  await expect(managed.getByRole('button',{name:'第一人称'})).toBeDisabled();
   await expect(managed.getByRole('radiogroup', { name:'剧情风格' }).getByRole('radio').first()).toBeDisabled();
   await expect(managed.getByRole('radiogroup', { name:'剧情难度' }).getByRole('radio').first()).toBeEnabled();
+  await settingsCategory(page,'提示词开关');
+  await expect(managed.getByLabel('自然文风修复')).toBeDisabled();
   await expect(managed.getByLabel('行动选项', { exact: true })).toBeEnabled();
+  await settingsCategory(page,'正文与风格');
   await page.screenshot({ path: info.outputPath('literary-settings.png'), animations: 'disabled' });
   await managed.getByRole('button', { name: '打开文学预设控制台' }).click();
   await expect(page.getByRole('dialog', { name: '王朝预设设置', exact: true })).toBeVisible();
@@ -169,7 +174,7 @@ test('文学预设接管篇幅和人称，可打开控制台，停用后恢复�
   const restored = await promptTab(page);
   await expect(restored.getByLabel('正文最低字数')).toBeEnabled();
   await expect(restored.getByLabel('正文最低字数')).toHaveValue('4000');
-  await expect(restored.getByLabel('叙事人称')).toHaveValue('first');
+  await expect(restored.getByRole('group', { name: '叙事人称' }).getByRole('button', { name: '第一人称' })).toHaveAttribute('aria-pressed', 'true');
   expect(await stored(page)).toEqual(preferences);
 });
 
@@ -179,19 +184,19 @@ test('独立防截断启用后可修改并保存原生人称、文风和篇幅',
   const dialog = page.getByRole('dialog', { name:'设置', exact:true });
   const back = dialog.getByRole('button', { name:'返回设置', exact:true });
   if (await back.isVisible()) await back.click();
-  await dialog.getByRole('button', { name:'运行', exact:true }).click();
+  await dialog.getByRole('button', { name:'文学预设', exact:true }).click();
   await dialog.getByLabel('防截断破甲模式').check();
   await Promise.all([page.waitForNavigation(), dialog.getByRole('button', { name:'保存预设并刷新' }).click()]);
   const native = await promptTab(page);
   await expect(native.getByRole('button', { name:'打开文学预设控制台' })).toHaveCount(0);
-  await native.getByLabel('叙事人称').selectOption('first');
+  await native.getByRole('group', { name: '叙事人称' }).getByRole('button', { name: '第一人称' }).click();
   await native.getByRole('radiogroup', { name:'剧情风格' }).getByRole('radio', { name:'冷硬黑色' }).check();
   await tier(native, '高').check();
   await native.getByRole('button', { name:'保存本地设置', exact:true }).click();
   await expect(native.getByRole('status')).toContainText('本地偏好已保存');
   await page.reload();
   const restored = await promptTab(page);
-  await expect(restored.getByLabel('叙事人称')).toHaveValue('first');
+  await expect(restored.getByRole('group', { name: '叙事人称' }).getByRole('button', { name: '第一人称' })).toHaveAttribute('aria-pressed', 'true');
   await expect(restored.getByRole('radiogroup', { name:'剧情风格' }).getByRole('radio', { name:'冷硬黑色' })).toBeChecked();
   await expect(tier(restored, '高')).toBeChecked();
 });

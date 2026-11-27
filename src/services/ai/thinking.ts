@@ -5,7 +5,7 @@ import type { ModelUse, Channel } from './configuration';
  * Variables has its own planning envelope and only executes final content.
  * https://api-docs.deepseek.com/zh-cn/guides/thinking_mode/
  */
-export function deepseekVariablesThinking(url: string, model: string, stage: ModelUse | 'theater') {
+export function deepseekVariablesThinking(url: string, model: string, stage: ModelUse | 'theater' | 'imagePrompt') {
   if (stage !== 'variables' || model !== 'deepseek-v4-pro') return;
   const { origin, pathname } = new URL(url);
   if (origin === defaultUrls.deepseek && (pathname === '/chat/completions' || pathname === '/v1/chat/completions'))

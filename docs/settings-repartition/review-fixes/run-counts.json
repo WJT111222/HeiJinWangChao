@@ -1,0 +1,52 @@
+{
+  "batch1": {
+    "passed": 14,
+    "timedOut": 5,
+    "failed": 2
+  },
+  "unknown1": {
+    "timedOut": 9,
+    "failed": 3,
+    "passed": 1
+  },
+  "confirmed2": {
+    "passed": 5,
+    "failed": 2
+  },
+  "fixed-selectors": {
+    "failed": 1,
+    "passed": 5
+  },
+  "confirmed-final": {
+    "passed": 20,
+    "timedOut": 1
+  },
+  "last-control": {
+    "passed": 1
+  },
+  "safety": {
+    "failed": 1,
+    "passed": 15
+  },
+  "safety-final": {
+    "passed": 16
+  },
+  "tabs-final": {
+    "passed": 4
+  },
+  "scope": {
+    "passed": 12
+  },
+  "mobile-archives": {
+    "passed": 5
+  },
+  "last-tabs": {
+    "passed": 4
+  },
+  "literary-wire": {
+    "passed": 2
+  },
+  "locked-tabs": {
+    "passed": 6
+  }
+}

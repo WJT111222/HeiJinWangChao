@@ -295,3 +295,61 @@
 .app-shell .settings-layout .chime-preview{display:flex;flex-wrap:wrap;gap:.6rem;margin:.2rem 0 .8rem}
 .app-shell .settings-layout .chime-preview>button{min-height:44px;padding:.5rem 1rem;border:1px solid #2a262233;border-radius:8px;background:#EFE8D9;color:#2B2723;font:inherit;cursor:pointer}
 .app-shell .settings-layout .chime-preview>button:hover{border-color:#8E6C25}
+
+/* Seven paper sections share the same navigation on both devices. */
+.st-wrap [hidden] {display:none !important}
+.st-wrap .settings-group-name {color:var(--muted);font-size:.73rem;font-weight:600;letter-spacing:.12em;margin:.85rem .65rem .2rem}
+.st-wrap .settings-group-name:first-child {margin-top:0}
+.st-wrap .settings-content>h3 small {font:normal .78rem/1.5 var(--font-body,inherit);color:var(--muted);letter-spacing:0;margin-inline-start:.9rem}
+.st-wrap .settings-content h4 {color:var(--head);margin:1rem 0 .45rem;font-family:var(--font-title)}
+.st-wrap .settings-form-row {display:grid;grid-template-columns:minmax(8rem,32%) minmax(0,1fr);align-items:center;gap:.65rem 1rem;padding:.8rem 0;border-bottom:1px dashed var(--line)}
+.st-wrap .settings-form-row small,.st-wrap .toggle small {display:block;color:var(--muted);font-size:.76rem;margin-top:.25rem}
+.st-wrap .settings-segments,.st-wrap .route-summary {display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.st-wrap .settings-segments button,.st-wrap .route-chip {font-size:.85rem;border-radius:6px;padding:.4rem .65rem}
+.st-wrap .settings-segments button[aria-pressed=true] {background:var(--head);color:var(--sheet);border-color:var(--head)}
+.st-wrap .route-summary {justify-content:space-between;border:1px solid var(--line);background:var(--card);border-radius:9px;padding:.7rem 1rem}
+.st-wrap .route-summary h4 {margin:0 0 .3rem}
+.st-wrap .route-chip {display:inline-flex;align-items:center;gap:.35rem;overflow-wrap:anywhere;background:var(--sheet);border:1px solid var(--line);margin:.2rem .3rem .2rem 0}
+.st-wrap .route-chip i {width:.5rem;height:.5rem;border-radius:100%;background:var(--gold);flex:none}
+.st-wrap .route-chip:nth-of-type(3n+2) i {background:var(--info)}
+.st-wrap .route-chip:nth-of-type(3n) i {background:var(--ok)}
+.st-wrap .ai-frequency,.st-wrap .route-model-label {font-size:.82rem;overflow-wrap:anywhere;color:var(--muted)}
+.st-wrap .ai-use-controls {min-width:0;display:grid;gap:.5rem}
+.st-wrap .ai-use-controls .ai-pill {justify-self:start}
+.st-wrap .ai-use-controls .ai-route-pick {min-width:0}
+.st-wrap .settings-content :is(.field-hint,.ai-lede,.image-migration-note) {overflow-wrap:anywhere}
+.st-wrap .image-migration-note {padding:.6rem .8rem;background:var(--card);border:1px solid var(--line);border-radius:8px}
+@media (min-width:901px) {
+ .app-shell .settings-paper .settings-nav {overflow-y:auto;overscroll-behavior:contain}
+ .app-shell .settings-paper .settings-nav>button {flex-shrink:0}
+ .app-shell .settings-paper .st-wrap .settings-nav>button[aria-pressed=true] {border-inline-start:3px solid var(--gold);background:var(--gold-lo)}
+ .app-shell .settings-paper .settings-content .ai-use {grid-template-columns:minmax(7rem,1fr) minmax(5rem,.85fr) minmax(10rem,1.8fr)}
+ .app-shell .settings-paper .st-wrap .settings-content .ai-uses {margin:1rem 0}
+}
+@media (max-width:900px) {
+ .app-shell .settings-mobile-paper .settings-nav {gap:.15rem}
+ .app-shell .settings-mobile-paper .settings-nav>button {min-height:3.55rem;border:0;border-bottom:1px dashed var(--line);border-radius:0;background:none;padding:.5rem .4rem}
+ .app-shell .settings-mobile-paper .settings-nav .settings-group-name {margin:.7rem 0 .15rem}
+ .app-shell .settings-mobile-paper .settings-content {min-width:0;overflow-wrap:anywhere}
+ .app-shell .settings-mobile-paper .settings-content>.paper-back {width:auto;float:left;position:relative;min-height:2.6rem;top:auto;background:transparent}
+ .app-shell .settings-mobile-paper .settings-content>h3:first-of-type {text-align:center;min-height:2.6rem;margin:0;padding:.55rem 3.5rem;line-height:1.4}
+ .app-shell .settings-mobile-paper .settings-form-row,.app-shell .settings-mobile-paper .ai-use {grid-template-columns:minmax(0,1fr);gap:.35rem}
+ .app-shell .settings-mobile-paper .ai-use-controls .ai-route-pick {display:flex;align-items:stretch;flex-direction:column}
+ .app-shell .settings-mobile-paper .settings-content :is(.ai-use-controls,.ai-adv-grid,.settings-fields) {min-width:0;max-width:100%}
+ .app-shell .settings-mobile-paper .settings-content :is(input:not([type=radio],[type=checkbox]),select,textarea) {min-width:0;max-width:100%;width:100%;box-sizing:border-box}
+ .app-shell .settings-mobile-paper .route-summary {align-items:flex-start}
+}
+.st-wrap .image-tools {grid-template-columns:minmax(0,1fr);overflow-wrap:anywhere}
+.st-wrap .image-tools label.image-check {width:auto;box-sizing:border-box}
+@media (max-width:900px) {
+ .st-wrap .vm-domains {display:flex;flex-wrap:wrap;min-width:0}
+ .st-wrap .variable-manager .vm-header {flex-wrap:wrap}
+ .st-wrap .variable-manager fieldset {box-sizing:border-box;max-width:100%}
+ .app-shell .settings-mobile-paper .settings-content>.paper-back {position:sticky;top:0;z-index:2;background:var(--sheet)}
+}
+
+.st-wrap .settings-literary-notice {color:#254e67;background:#d8e4e7;border-inline-start:3px solid #52738c;padding:.65rem .85rem}
+.st-wrap .settings-form-row .toggle {display:inline-flex;align-items:center;gap:.35rem}
+.app-shell .settings-layout.st-wrap .settings-content .image-tools input[type='checkbox'] {
+  width:1.05rem; min-width:1.05rem; flex:0 0 auto;
+}

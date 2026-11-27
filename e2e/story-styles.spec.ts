@@ -12,7 +12,7 @@ async function openPromptSettings(page: Page) {
   const root = page.getByRole('dialog', { name: '设置', exact: true });
   const back = root.getByRole('button', { name: '返回设置', exact: true });
   if (await back.isVisible()) await back.click();
-  await root.getByRole('button', { name: '提示词', exact: true }).click();
+  await root.getByRole('button', { name: '正文与风格', exact: true }).click();
   return root;
 }
 async function storedStyle(page: Page) {

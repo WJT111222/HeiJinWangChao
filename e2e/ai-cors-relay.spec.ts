@@ -1,5 +1,5 @@
 import { expect, test } from './helpers/test';
-import { openAiSettings, addChannel, testReply } from './helpers/aiSettings';
+import { settingsCategory, openAiSettings, addChannel, testReply } from './helpers/aiSettings';
 
 const glm = 'https://open.bigmodel.cn/api/paas/v4';
 test('GLM 开关保存；真实设置连接用同域 GET 发现模型，POST 测试回复只回退一次', async ({ page }) => {
@@ -26,10 +26,12 @@ test('GLM 开关保存；真实设置连接用同域 GET 发现模型，POST 测
   await page.goto('/');
   let settings = await openAiSettings(page);
   const label = '启用跨域自动中转（推荐开启）';
+  await settingsCategory(page,'跨域与网络');
   await expect(settings.getByLabel(label)).toBeChecked();
   await settings.getByLabel(label).uncheck();
   await page.reload();
   settings = await openAiSettings(page);
+  await settingsCategory(page,'跨域与网络');
   await expect(settings.getByLabel(label)).not.toBeChecked();
   await settings.getByLabel(label).check();
   expect(calls).toEqual([]);

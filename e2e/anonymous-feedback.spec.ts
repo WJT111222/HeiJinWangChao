@@ -161,12 +161,12 @@ test('设置反馈不发送日志，网络失败保留输入，同一尝试使�
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).click();
   if (isMobile) {
-    await page.getByRole('button', { name: '外观', exact: true }).click();
+    await page.getByRole('button', { name: '外观与提示音', exact: true }).click();
     await page.getByRole('radio', { name: /日间/ }).check();
     await expect(page.locator('html')).toHaveAttribute('data-appearance', 'day');
     await page.getByRole('button', { name: '返回设置', exact: true }).click();
   }
-  await page.getByRole('button', { name: '运行', exact: true }).click();
+  await page.getByRole('button', { name: '生成阶段', exact: true }).click();
   const saveSettings = page.getByRole('button', { name: '保存本地设置', exact: true });
   await expect(saveSettings).toBeVisible();
   if (isMobile) await page.getByRole('button', { name: '返回设置', exact: true }).click();

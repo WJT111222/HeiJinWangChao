@@ -1,12 +1,12 @@
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { choose, selected } from './helpers/select';
-import { backToList, follow, openAiSettings, openChannel, saveAi } from './helpers/aiSettings';
+import { aiPage, settingsCategory, backToList, follow, openAiSettings, openChannel, saveAi } from './helpers/aiSettings';
 
-const tasks = [['entities', '人物与实体'], ['variables', '主角与现场'], ['world', '场外与网络'], ['memory', '记忆维护']] as const;
+const tasks = [['entities', '人物与实体'], ['variables', '主角与现场'], ['world', '场外与网络'], ['memory', '记忆总结']] as const;
 const settingsOf = (page: Page) => page.getByRole('dialog', { name: '设置', exact: true });
 // 打开 AI 连接（手机端先进分类菜单）；手机端停在渠道列表（各阶段模型在列表页）。
-const open = async (page: Page) => { await openAiSettings(page); await backToList(settingsOf(page)); };
+const open = async (page: Page) => { await openAiSettings(page); await aiPage(page, 'routing'); };
 const close = (page: Page) => page.getByRole('dialog', {name:'设置',exact:true}).getByRole('button', { name: '关闭资料界面', exact: true }).click();
 const followButton = (page: Page, label: string) => settingsOf(page).getByRole('group', { name: `${label}模型来源`, exact: true }).getByRole('button', { name: '跟随正文', exact: true });
 const following = (page: Page, label: string, value = true) => expect(followButton(page, label)).toHaveAttribute('aria-pressed', String(value));
@@ -17,7 +17,7 @@ const save = (page: Page) => saveAi(settingsOf(page));
 async function leave(page: Page, name: string) {
   const back = settingsOf(page).getByRole('button', { name: '返回设置', exact: true });
   if (await back.isVisible().catch(() => false)) await back.click();
-  else await settingsOf(page).getByRole('button', { name, exact: true }).click();
+  await settingsCategory(page,name);
 }
 async function category(page: Page, name: string) {
   const back = settingsOf(page).getByRole('button', { name: '返回设置', exact: true });
@@ -100,9 +100,9 @@ test('Escape、明确放弃和分类切换不会静默保存；密钥编辑同�
   await open(page);await openChannel(settingsOf(page),'story渠道');await expect(page.getByLabel('API 密钥',{exact:true})).toHaveValue('mock-route-secret');
   await setFollow(page,'场外与网络',true);
   await leave(page,'记忆');await warning.getByRole('button',{name:'放弃本次修改',exact:true}).click();
-  await expect(warning).toHaveCount(0);if(page.viewportSize()!.width<700)await settingsOf(page).getByRole('button',{name:'记忆',exact:true}).click(); // 手机端放弃后回到分类菜单
+  await expect(warning).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'记忆',exact:true})).toBeVisible();
-  await category(page,'AI 连接');await backToList(settingsOf(page));await following(page,'场外与网络',false);
+  await category(page,'模型分配');await backToList(settingsOf(page));await following(page,'场外与网络',false);
   await close(page);await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(await raw(page)).toBe(before);expect(before).not.toContain('mock-route-secret');expect(posts).toHaveLength(0);
 });
@@ -152,39 +152,74 @@ test('恢复后四路真实Mock请求使用各自渠道模型，默认模型及�
 });
 
 test('保存栏在长路由页面可触达且无横向溢出，窄屏也能保存并恢复选择',async({page},info)=>{
-  const posts=await seed(page);await setFollow(page,'记忆维护',true);
+  const posts=await seed(page);await setFollow(page,'记忆总结',true);
   const saveButton=page.getByRole('button',{name:'保存 AI 配置',exact:true});
   await expect(saveButton).toBeInViewport();await expect(saveBar(page).getByText(/有 1 处修改尚未保存/)).toBeInViewport();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.screenshot({path:info.outputPath('ai-route-save-bar.png')});await save(page);await close(page);await open(page);
-  await setFollow(page,'记忆维护',false);await selected(page,'记忆维护渠道','memory');expect(posts).toHaveLength(0);
+  await setFollow(page,'记忆总结',false);await selected(page,'记忆总结渠道','memory');expect(posts).toHaveLength(0);
 });
 
 test('删除单独指定用的渠道后该阶段改回跟随正文，其他渠道和选择不受影响',async({page})=>{
   const posts=await seed(page),settings=settingsOf(page);await openChannel(settings,'variables渠道');
   await settings.getByRole('button',{name:'删除渠道',exact:true}).click();
-  await expect(page.getByRole('dialog',{name:'删除「variables渠道」？',exact:true})).toContainText('它正被「主角与现场、手机」使用');
+  await expect(page.getByRole('dialog',{name:'删除「variables渠道」？',exact:true})).toContainText('它正被「主角与现场」使用');
   await page.getByRole('button',{name:'确认删除渠道',exact:true}).click();
-  await backToList(settings);await following(page,'主角与现场');
-  await selected(page,'场外与网络模型','world-model');await selected(page,'记忆维护模型','memory-model');
+  await aiPage(settings,'routing');await following(page,'主角与现场');
+  await selected(page,'场外与网络模型','world-model');await selected(page,'记忆总结模型','memory-model');
   await save(page);await close(page);await page.reload();await open(page);await following(page,'主角与现场');
   await setFollow(page,'主角与现场',false);await selected(page,'主角与现场渠道','');
-  await selected(page,'场外与网络模型','world-model');await selected(page,'记忆维护模型','memory-model');
-  await expect(settings.getByRole('button',{name:/^编辑渠道：/})).toHaveCount(4);
+  await selected(page,'场外与网络模型','world-model');await selected(page,'记忆总结模型','memory-model');
+  await aiPage(settings,'channels');await expect(settings.getByRole('button',{name:/^编辑渠道：/})).toHaveCount(4);
   expect(posts).toHaveLength(0);
 });
 
-test('手机私聊继承现场模型，独立选择保存后可恢复',async({page})=>{
+test('私聊回复继承现场模型，独立选择保存后可恢复',async({page})=>{
   const posts=await seed(page);
-  const group=settingsOf(page).getByRole('group',{name:'手机私聊模型来源'});
+  const group=settingsOf(page).getByRole('group',{name:'私聊回复模型来源'});
   const inherited=group.getByRole('button',{name:'跟随主角与现场'});
   await expect(inherited).toHaveAttribute('aria-pressed','true');
   await expect(group.locator('..').locator('.ai-inherit')).toContainText('variables-model');
   await group.getByRole('button',{name:'单独指定'}).click();
-  await choose(page,'手机私聊渠道','world');
+  await choose(page,'私聊回复渠道','world');
   await inherited.click();
   await save(page);await close(page);await page.reload();await open(page);
   await group.getByRole('button',{name:'单独指定'}).click();
-  await selected(page,'手机私聊渠道','world');
+  await selected(page,'私聊回复渠道','world');
+  expect(posts).toHaveLength(0);
+});
+
+test('四条新增路由共享渠道草稿，恢复默认跟随后仍能找回独立选模', async ({page}) => {
+  test.setTimeout(120000);
+  const posts = await seed(page,false);
+  const root = settingsOf(page);
+  await openChannel(root,'story渠道');
+  await root.getByLabel('渠道名称',{exact:true}).fill('本页未保存渠道');
+  await aiPage(root,'routing');
+  const stages = [
+    ['phoneGroup','群聊回复','私聊'], ['blackbook','小黑书刷新','私聊'],
+    ['theater','小剧场','正文'], ['imagePrompt','生图提示词','主角与现场'],
+  ] as const;
+  for (const [,label,target] of stages) {
+    const controls = root.getByRole('group',{name:label+'模型来源'});
+    await expect(controls.getByRole('button',{name:'跟随'+target})).toHaveAttribute('aria-pressed','true');
+    await controls.getByRole('button',{name:'单独指定'}).click();
+    await choose(page,label+'渠道','world');
+  }
+  await expect(root.getByText('本页未保存渠道',{exact:true}).first()).toBeVisible();
+  await root.getByRole('button',{name:'恢复默认跟随'}).click();
+  for (const [,label,target] of stages) {
+    const controls = root.getByRole('group',{name:label+'模型来源'});
+    await expect(controls.getByRole('button',{name:'跟随'+target})).toHaveAttribute('aria-pressed','true');
+    await controls.getByRole('button',{name:'单独指定'}).click();
+    await selected(page,label+'渠道','world');
+  }
+  await aiPage(root,'channels');
+  await openChannel(root,'本页未保存渠道');
+  await expect(root.getByLabel('渠道名称',{exact:true})).toHaveValue('本页未保存渠道');
+  await saveAi(root);
+  const stored = await page.evaluate(()=>JSON.parse(localStorage.getItem('heijin.ai.v1')!));
+  for (const [key] of stages) expect(stored.routes[key]).toMatchObject({mode:'independent',channelId:'world'});
+  expect(stored.channels[0].name).toBe('本页未保存渠道');
   expect(posts).toHaveLength(0);
 });

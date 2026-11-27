@@ -46,7 +46,7 @@ async function addressHash(baseUrl: string) {
 
 export async function theaterRoute(config: AiConfig, vault: CredentialVault, choice?: { channelId: string; model: string }): Promise<TheaterRoute> {
   const selection = choice ? { channel: config.channels.find(channel => channel.id === choice.channelId), model: choice.model.trim() }
-    : resolveModelRoute(config, 'story');
+    : resolveModelRoute(config, 'theater');
   const { channel, model } = selection;
   requireData(channel && modelIdSchema.safeParse(model).success, 'THEATER_ROUTE', routeMessage);
   channelSnapshot(channel, vault, model, 'theater');

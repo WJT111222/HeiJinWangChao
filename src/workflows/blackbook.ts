@@ -44,7 +44,7 @@ export async function expandBook(
     if (!missing.length) return current;
     const wire = missing.map((s, i) => ({ index: i, title: s.title, summary: s.summary, at: s.at }));
     const response = await client.generate(
-      requestSnapshot(input.config, 'phone', input.vault),
+      requestSnapshot(input.config, 'phone', input.vault, { route: 'blackbook' }),
       [
         {
           role: 'system',

@@ -1,3 +1,5 @@
+import { defaultAiConfig, newChannel, saveAiConfig } from '../services/ai/configuration';
+import { CredentialVault } from '../services/ai/credentials';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { deflateRawSync } from 'node:zlib';
@@ -20,6 +22,12 @@ function storage() {
     setItem: (k: string, v: string) => m.set(k, v),
     removeItem: (k: string) => m.delete(k),
   };
+}
+function textChannel(baseUrl: string, model: string, protocol: Parameters<typeof newChannel>[0] = 'openai') {
+  const ai = defaultAiConfig(), channel = { ...newChannel(protocol), baseUrl, defaultModel: model };
+  ai.channels.push(channel); ai.routes.imagePrompt = { mode: 'independent', channelId: channel.id, modelId: model };
+  saveAiConfig(localStorage, ai);
+  new CredentialVault(sessionStorage, localStorage).set(channel.id, 'fixture-text-key');
 }
 beforeEach(() => {
   vi.stubGlobal('indexedDB', new IDBFactory());
@@ -73,6 +81,33 @@ describe('后端协议（Mock）', () => {
     if (backend === 'openai')
       expect(calls[1][1]).toMatchObject({ headers: {}, credentials: 'omit', redirect: 'error' });
   });
+  it.each(['openai', 'deepseek', 'gemini', 'anthropic'] as const)('词组转换通过 %s 独立模型直连，保留输出清理和丢弃凭证', async protocol => {
+    const c = structuredClone(defaults);
+    c.textBase = 'https://retired.example'; c.textModel = 'unused';
+    c.connections[c.backend].base = 'https://image.example';
+    imageVault().set(credentialId(c.backend, c.connections[c.backend].base), 'fixture-image-secret');
+    textChannel('https://channel.example/v1', 'routed-model', protocol);
+    let text = '<think>private</think>portrait, brown eyes';
+    const send = vi.fn<typeof fetch>(async () => Response.json(protocol === 'gemini'
+      ? {candidates:[{content:{role:'model',parts:[{text}]},finishReason:'STOP'}]}
+      : protocol === 'anthropic' ? {type:'message',role:'assistant',content:[{type:'text',text}], stop_reason:'end_turn'}
+      : {choices:[{message:{content:text},finish_reason:'stop'}]}));
+    vi.stubGlobal('fetch',send);
+    const convert = () => convertText(c,'转换模板','人物资料',new AbortController().signal);
+    expect(await convert()).toBe('portrait, brown eyes');
+    expect(send).toHaveBeenCalledTimes(1);
+    const [url,init] = send.mock.calls[0];
+    expect(String(url)).toContain('https://channel.example/v1/');
+    const body = String(init?.body);
+    expect(body + String(url)).toContain('routed-model');
+    expect(body).toContain('转换模板'); expect(body).toContain('人物资料');
+    expect(body).not.toMatch(/response_format|responseMimeType|thinkingConfig|"thinking":\{"type":"enabled"|fixture-image-secret|fixture-text-key/);
+    text = '词'.repeat(8001); expect(await convert()).toHaveLength(8000);
+    text = '<think>only</think>'; await expect(convert()).rejects.toThrow();
+    for (const key of ['fixture-image-secret','fixture-text-key']) {
+      text = 'portrait ' + key; await expect(convert()).rejects.toThrow();
+    }
+  });
   it('拒绝非位图和超限 ZIP，文本错误不回显密钥，探测只读', async () => {
     expect(() => rasterMime(new TextEncoder().encode('<svg/>'))).toThrow();
     const bad = zip();
@@ -81,6 +116,7 @@ describe('后端协议（Mock）', () => {
     const c = structuredClone(defaults);
     c.textBase = c.connections.openai.base = 'https://example.test';
     c.textModel = 'text';
+    textChannel(c.textBase, c.textModel);
     const f = vi
       .fn()
       .mockResolvedValueOnce(Response.json({ data: [] }))
@@ -408,13 +444,14 @@ describe('任务费用与队列状态（Mock）', () => {
     c.enabled = c.convert = true;
     c.textBase = 'https://text.example';
     c.textModel = 'tokenizer';
+    textChannel(c.textBase, c.textModel);
     c.connections.openai.base = 'https://image.example/v1';
     await saveConfig(config(), c);
     const send = vi.fn(async (url: string, options: RequestInit) => {
       if (url.startsWith(c.textBase)) {
         expect(JSON.parse(String(options.body)).model).toBe('tokenizer');
         localStorage.removeItem('heijin.images.next-request');
-        return Response.json({ choices: [{ message: { content: 'portrait with round glasses' } }] });
+        return Response.json({ choices: [{ message: { content: 'portrait with round glasses' }, finish_reason: 'stop' }] });
       }
       expect(JSON.parse(String(options.body)).prompt).toContain('portrait with round glasses');
       return Response.json({ data: [{ b64_json: png }] });
@@ -479,6 +516,7 @@ describe('任务费用与队列状态（Mock）', () => {
     c.enabled = c.convert = true;
     c.textBase = 'https://text.example';
     c.textModel = 'tokenizer';
+    textChannel(c.textBase, c.textModel);
     await saveConfig(config(), c);
     const s = game(),
       repo = await SaveRepository.open('fee', new IDBFactory()),

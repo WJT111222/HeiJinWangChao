@@ -80,6 +80,7 @@ for (const theme of ['day', 'night']) {
     await page.setViewportSize(isMobile ? { width: 360, height: 640 } : { width: 901, height: 600 });
     const noPosts = await setup(page, theme);
     const settings = await openAiSettings(page);
+    await settingsCategory(page,'模型分配');
     const model = settings.getByRole('combobox', { name: '正文生成模型', exact: true });
     for (const width of isMobile ? [360, 900] : [1440, 1024, 901]) {
       await page.setViewportSize({ width, height: width < 1100 ? 600 : 900 });
@@ -102,7 +103,7 @@ for (const theme of ['day', 'night']) {
     await page.getByRole('option', { name: 'other-model', exact: true }).click();
     await saveAi(settings);
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.ai.v1')!).routes.story.modelId)).toBe('other-model');
-    await settingsCategory(page, '提示词');
+    await settingsCategory(page, '正文与风格');
     for (const width of isMobile ? [900, 360] : [1199, 1200, 1440]) {
       await page.setViewportSize({ width, height: isMobile ? 640 : 900 });
       const radios = settings.getByRole('radiogroup', { name: '剧情风格' });
@@ -115,7 +116,7 @@ for (const theme of ['day', 'night']) {
     }
     const radio = settings.getByRole('radiogroup', { name: '剧情风格' }).getByRole('radio').nth(2);
     await radio.check();
-    await expect(settings.locator(isMobile ? '.style-item-desc' : '.style-explain')).toBeVisible();
+    await expect(settings.locator('.style-field').filter({ has: page.getByRole('radiogroup', { name: '剧情风格', exact: true }) }).locator(isMobile ? '.style-item-desc' : '.style-explain')).toBeVisible();
     await screenshot(page, 'style');
     await button(settings, '保存本地设置').click();
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.settings.v1')!).prompts.style)).toBe(await radio.inputValue());
@@ -128,7 +129,7 @@ for (const theme of ['day', 'night']) {
     await page.evaluate(() => localStorage.setItem('heijin.story-presets.v1', JSON.stringify({ enabled: true, selected: 'peinture-1118', packages: {} })));
     await page.reload();
     await button(page, '设置').first().click();
-    await settingsCategory(page, '运行');
+    await settingsCategory(page, '文学预设');
     await button(page.getByRole('dialog', { name: '设置', exact: true }), '王朝预设设置').click();
     const panel = page.getByRole('dialog', { name: '王朝预设设置' });
     await panel.getByRole('navigation').getByRole('button').filter({ has: page.getByText('自定义', { exact: true }) }).click();
@@ -265,7 +266,7 @@ test('首页独立设置窗口在断点两侧都完整使用表单宽度', async
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-appearance', 'day');
   await button(page, '设置').first().click();
-  await settingsCategory(page, '提示词');
+  await settingsCategory(page, '正文与风格');
   const field = page.getByRole('radiogroup', { name: '剧情风格' });
   for (const width of isMobile ? [900, 360] : [1199, 1200, 1440]) {
     await page.setViewportSize({ width, height: width >= 1200 ? 900 : 720 });

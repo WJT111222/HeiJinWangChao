@@ -1,7 +1,7 @@
 import { memoryMockCors } from './helpers/memorySummary';
 import { openStoredSave } from './helpers/home';
 import { openWorldArchive, openSettings, goHome } from './helpers/gameLayout';
-import { aiTab, follow, saveAi, stageModel } from './helpers/aiSettings';
+import { aiPage, aiTab, follow, saveAi, stageModel } from './helpers/aiSettings';
 import { variableReply } from '../src/tests/fixtures/variableReply';
 import { openGameTools } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
@@ -89,13 +89,14 @@ test('选择并恢复独立模型；手动整理、原文来源及真实memory�
   const before = await load(page);
   await openSettings(page);
   const settings = await aiTab(page);
-  const source = settings.getByRole('group', { name: '记忆维护模型来源', exact: true });
+  await aiPage(settings, 'routing');
+  const source = settings.getByRole('group', { name: '记忆总结模型来源', exact: true });
   await expect(source.getByRole('button', { name: '单独指定', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await follow(settings, '记忆维护', true);
-  await expect(settings.getByRole('combobox', { name: '记忆维护模型', exact: true })).toHaveCount(0);
-  await follow(settings, '记忆维护', false);
-  await expect(settings.getByRole('combobox', { name: '记忆维护模型', exact: true })).toHaveAttribute('value', 'memory');
-  await stageModel(settings, '记忆维护', '新渠道', 'memory-summary');
+  await follow(settings, '记忆总结', true);
+  await expect(settings.getByRole('combobox', { name: '记忆总结模型', exact: true })).toHaveCount(0);
+  await follow(settings, '记忆总结', false);
+  await expect(settings.getByRole('combobox', { name: '记忆总结模型', exact: true })).toHaveAttribute('value', 'memory');
+  await stageModel(settings, '记忆总结', '新渠道', 'memory-summary');
   await saveAi(settings);
   // 手机端先回到分类菜单再进「记忆」。
   const back = settings.getByRole('button', { name: '返回设置', exact: true });

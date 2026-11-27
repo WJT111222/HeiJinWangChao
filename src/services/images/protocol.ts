@@ -1,3 +1,8 @@
+import { AiClient } from '../ai/client';
+import { readAiConfig } from '../ai/configuration';
+import { CredentialVault } from '../ai/credentials';
+import { AiError } from '../ai/errors';
+import { requestSnapshot, secretFor } from '../ai/snapshot';
 import { endpoint, credentialId, imageVault } from './config';
 import type { Backend, ImageConfig } from './config';
 import { 规范化ComfyUI工作流JSON } from './comfyWorkflow';
@@ -264,28 +269,22 @@ export async function generateImage(c: ImageConfig, positive: string, negative: 
   }
 }
 export async function convertText(c: ImageConfig, system: string, source: string, signal: AbortSignal) {
-  if (!c.textModel.trim()) throw new Error('请先配置独立文本模型');
-  const key = imageVault().get(credentialId('text', c.textBase));
-  const result = json(
-    await bounded(
-      await send(endpoint(c.textBase, 'chat/completions'), signal, key, {
-        model: c.textModel,
-        stream: false,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: source },
-        ],
-      }),
-      131072,
-    ),
-  );
-  const message = Array.isArray(result.choices) ? obj(obj(result.choices[0]).message).content : undefined;
-  const credentials = [key];
+  const vault = new CredentialVault(sessionStorage, localStorage);
+  const snapshot = requestSnapshot(readAiConfig(localStorage), 'imagePrompt', vault);
   const imageBase = c.connections[c.backend].base;
-  if (imageBase) credentials.push(imageVault().get(credentialId(c.backend, imageBase)));
-  if (typeof message === 'string' && credentials.some((secret) => secret && message.includes(secret)))
-    throw new Error('响应包含凭证，已丢弃');
-  if (typeof message !== 'string') throw new Error('转化器未返回文本');
+  const imageKey = imageBase ? imageVault().get(credentialId(c.backend, imageBase)) : '';
+  let message: string;
+  try {
+    const result = await new AiClient().generate(snapshot, [
+      { role: 'system', content: system }, { role: 'user', content: source },
+    ], { stream: false, signal, recordInspection: false });
+    message = result.text;
+    if ([message, result.nativeReasoning].some(value => value && [secretFor(snapshot), imageKey].some(key => key && value.includes(key))))
+      throw new Error('响应包含凭证，已丢弃');
+  } catch (error) {
+    if (error instanceof AiError && error.status) throw new Error('接口返回 HTTP ' + error.status, { cause: error });
+    throw error;
+  }
   const cleaned = 清理生图词组输出(message.replace(/<think>[\s\S]*?<\/think>/gi, '')).slice(0, 8000);
   if (!cleaned) throw new Error('转化器返回空词组');
   return cleaned;

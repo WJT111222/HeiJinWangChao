@@ -342,7 +342,7 @@ export class AiClient {
     messages: readonly AiMessage[],
     options: RequestOptions = {},
   ): Promise<AiResponse> {
-    const theater = snapshot.stage === 'theater';
+    const theater = snapshot.stage === 'theater' || snapshot.stage === 'imagePrompt';
     const prototype = import.meta.env.DEV && options.spresetPrototype && snapshot.stage === 'story';
     const oracle = options.oracleStory && snapshot.stage === 'story';
     let session: LiterarySession | undefined;

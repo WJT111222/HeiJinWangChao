@@ -114,7 +114,7 @@ test('生成中经跨标签同步关闭提示音，结算后不响', async ({ pa
 test('设置页可切换提示音并试听', async ({ page }) => {
   await fakeAudio(page); await seed(page);
   await openSettings(page);
-  await page.getByRole('button', { name: '外观', exact: true }).click();
+  await page.getByRole('button', { name: '外观与提示音', exact: true }).click();
   const group = page.getByRole('radiogroup', { name: '生成完成提示音' });
   await expect(group).toBeVisible();
   await group.getByRole('radio', { name: /^总是/ }).check();

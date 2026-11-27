@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { ModelRouteLabel } from '../settings/ModelRouteLabel';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import {
   autoLabels,
@@ -25,7 +26,7 @@ function conflictPreview(value: unknown) {
   return text.length > 160 ? text.slice(0, 160) + '…' : text || '（空）';
 }
 
-function KeyField({ kind, base }: { kind: Backend | 'text'; base: string }) {
+function KeyField({ kind, base, onDirtyChange }: { kind: Backend; base: string; onDirtyChange: (value: boolean) => void }) {
   let id = '';
   try {
     id = credentialId(kind, base);
@@ -35,10 +36,15 @@ function KeyField({ kind, base }: { kind: Backend | 'text'; base: string }) {
   const [key, setKey] = useState(''),
     [remember, setRemember] = useState(false),
     [notice, setNotice] = useState('');
+  const [saved, setSaved] = useState({ key: '', remember: false });
+  useLayoutEffect(() => { onDirtyChange(key !== saved.key || remember !== saved.remember); }, [key, remember, saved, onDirtyChange]);
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
   useEffect(() => {
     try {
-      setKey(id ? imageVault().get(id) : '');
-      setRemember(!!id && imageVault().remembered(id));
+      const next = { key: id ? imageVault().get(id) : '', remember: !!id && imageVault().remembered(id) };
+      setSaved(next);
+      setKey(next.key);
+      setRemember(next.remember);
       setNotice('');
     } catch {
       setNotice('密钥库不可用');
@@ -46,9 +52,9 @@ function KeyField({ kind, base }: { kind: Backend | 'text'; base: string }) {
   }, [id]);
   return (
     <fieldset>
-      <legend>{kind === 'text' ? '文本模型密钥' : '图片接口密钥'}</legend>
+      <legend>图片接口密钥</legend>
       <input
-        aria-label={kind === 'text' ? '文本密钥' : '图片密钥'}
+        aria-label="图片密钥"
         type="password"
         autoComplete="off"
         value={key}
@@ -63,6 +69,7 @@ function KeyField({ kind, base }: { kind: Backend | 'text'; base: string }) {
         onClick={() => {
           try {
             imageVault().set(id, key, remember);
+            setSaved({ key, remember });
             setNotice(key ? '密钥已保存' : '密钥已清除');
           } catch {
             setNotice('密钥保存失败');
@@ -145,7 +152,23 @@ const modelChoices: Record<Backend, string[]> = {
   comfy: [],
   sd: [],
 };
-export function ImageSettings({ repository }: { repository?: SaveRepository }) {
+const legacyTextNotice = 'heijin.images.text-route-notice.v1';
+export function ImageSettings({ repository, openRouting, onDirtyChange }: {
+  repository?: SaveRepository; openRouting: () => void; onDirtyChange: (dirty: boolean) => void;
+}) {
+  const [acknowledged, setAcknowledged] = useState(() => {
+    try { return localStorage.getItem(legacyTextNotice) === '1'; } catch { return false; }
+  });
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.storageArea === localStorage && (event.key === legacyTextNotice || event.key === null))
+        setAcknowledged(localStorage.getItem(legacyTextNotice) === '1');
+    };
+    window.addEventListener('storage', sync);
+    try { setAcknowledged(localStorage.getItem(legacyTextNotice) === '1'); } catch { /* No persisted acknowledgement. */ }
+    return () => window.removeEventListener('storage', sync);
+  }, []);
+  const [keyDirty, setKeyDirty] = useState(false);
   const [editor, setEditor] = useState(() => {
       const initial = config();
       return reconcileConfig(initial, initial, initial);
@@ -155,6 +178,9 @@ export function ImageSettings({ repository }: { repository?: SaveRepository }) {
   const [presetName, setPresetName] = useState('');
   const [pendingEnabled, setPendingEnabled] = useState<boolean>();
   const c = editor.draft;
+  const dirty = keyDirty || JSON.stringify(c) !== JSON.stringify(editor.saved);
+  useLayoutEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
   useEffect(() => {
     const sync = () => {
       const latest = config();
@@ -191,12 +217,18 @@ export function ImageSettings({ repository }: { repository?: SaveRepository }) {
   function save() {
     try {
       if (p.base) endpoint(p.base, p.path || paths[b]);
-      if (c.textBase) endpoint(c.textBase, 'chat/completions');
       void persist(editor.base, c);
     } catch (e) {
       setNotice(e instanceof Error ? e.message : '地址无效');
     }
   }
+  const converterRoute = <>
+            <div className="settings-form-row"><span>生图提示词</span><div><ModelRouteLabel route="imagePrompt"/> <button type="button" className="ai-link" onClick={openRouting}>在模型分配里改</button></div></div>
+            {c.textModel && !acknowledged && <div className="image-migration-note"><p>之前单独填写的文本模型（{c.textModel}）已不再使用，现在用模型分配里的生图提示词。需要原来那个服务的话，请在「渠道与密钥」里添加一个渠道。</p>
+              <button type="button" onClick={() => {
+                try { localStorage.setItem(legacyTextNotice, '1'); setAcknowledged(true); } catch { setNotice('无法保存确认，请检查本地存储权限。'); }
+              }}>知道了</button></div>}
+  </>;
   return (
     <div className="image-tools">
       <label className="image-check">
@@ -214,6 +246,7 @@ export function ImageSettings({ repository }: { repository?: SaveRepository }) {
         />
         启用文生图
       </label>
+      {!c.enabled && c.textModel && !acknowledged && converterRoute}
       {c.enabled && (
         <>
           <button onClick={() => setGallery(true)}>图片管理器</button>
@@ -249,7 +282,7 @@ export function ImageSettings({ repository }: { repository?: SaveRepository }) {
               生成路径
               <input value={p.path} placeholder={paths[b]} onChange={(e) => setP({ path: e.target.value })} />
             </label>
-            <KeyField kind={b} base={p.base} />
+            <KeyField onDirtyChange={setKeyDirty} kind={b} base={p.base} />
             {b === 'comfy' ? (
               <label>
                 ComfyUI API 工作流 JSON
@@ -406,21 +439,9 @@ export function ImageSettings({ repository }: { repository?: SaveRepository }) {
                 checked={c.convert}
                 onChange={(e) => set({ ...c, convert: e.target.checked })}
               />
-              生成前调用独立文本模型
+              生成前调用文本模型
             </label>
-            <label>
-              文本 API 基础地址
-              <input
-                value={c.textBase}
-                placeholder="https://…/v1"
-                onChange={(e) => set({ ...c, textBase: e.target.value })}
-              />
-            </label>
-            <label>
-              文本模型
-              <input value={c.textModel} onChange={(e) => set({ ...c, textModel: e.target.value })} />
-            </label>
-            <KeyField kind="text" base={c.textBase} />
+            {converterRoute}
             <details>
               <summary>转换提示词</summary>
               {(Object.keys(templates) as (keyof typeof templates)[]).map((k) => (

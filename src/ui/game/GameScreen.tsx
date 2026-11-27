@@ -174,7 +174,7 @@ export function GameScreen({
     if (desktopSettings && onCloseSettings) onCloseSettings(action);
     else outsideTheater(action);
   }
-  const phone = usePhoneReminders(state,instance??null);
+  const phone = usePhoneReminders(state, instance ?? null, settings.phone);
   const phoneOpen = panel === '手机' && !desktopSettings;
   const phoneButton = (mobile: boolean) => <PhoneEntry mobile={mobile} count={phone.unreadCount} open={phoneOpen}
     onClick={() => outsideSettings(() => setPanel(phoneOpen ? undefined : '手机'))}/>;

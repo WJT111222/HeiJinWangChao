@@ -1,6 +1,6 @@
 import { nativeLiteraryModule, storyModuleText } from '../../prompts/literaryStory';
 import { narrativeRange } from './model';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { promptManifest } from '../../prompts/manifest';
 import type { OfficialId, OfficialSelection } from '../../domain/worldbook/mainWorldbook';
 import { WorldbookLibrary } from '../../services/storage/worldbookLibrary';
@@ -139,10 +139,12 @@ export function PromptInspector({
   repository,
   activeSaveId,
   onPromptChange,
+  onOrderDirtyChange,
   onTheaterPromptChange,
 }: {
   settings: Settings;
   presetOwnsWriting?: boolean;
+  onOrderDirtyChange?: (value: boolean) => void;
   repository?: SaveRepository;
   activeSaveId?: string;
   onTheaterPromptChange?: (value?: string) => void;
@@ -161,6 +163,7 @@ export function PromptInspector({
   }, [editTheater]);
   const [orders, setOrders] = useState(initial.orders);
   const [dirty, setDirty] = useState(false);
+  useLayoutEffect(() => { onOrderDirtyChange?.(dirty); }, [dirty, onOrderDirtyChange]);
   const [notice, setNotice] = useState(initial.error);
   const [stage, setStage] = useState<AiStage>('story');
   const [mode, setMode] = useState<'opening' | 'regular'>('opening');
@@ -889,7 +892,7 @@ export function PromptInspector({
                     {availableRecords.map((record) => (
                       <option key={record.id} value={record.id}>
                         {record.scope
-                          ? record.scope.kind === 'memory' ? `记忆维护 ${record.scope.memoryTask}` : `${record.scope.mode} ${record.stage === 'theater' ? '小剧场' : record.stage === 'phone' ? '手机私聊' : stages[record.stage]}`
+                          ? record.scope.kind === 'memory' ? `记忆维护 ${record.scope.memoryTask}` : `${record.scope.mode} ${record.stage === 'imagePrompt' ? '生图提示词' : record.stage === 'theater' ? '小剧场' : record.stage === 'phone' ? '手机私聊' : stages[record.stage]}`
                           : '连接测试（非游戏阶段）'}{' '}
                         · {record.createdAt} · {record.status}
                       </option>
@@ -913,7 +916,7 @@ export function PromptInspector({
                     </p>
                     <p>
                       {actual.scope
-                        ? actual.scope.kind === 'memory' ? `记忆维护 / ${actual.scope.memoryTask} / 存档版本 ${actual.scope.revision}` : `${actual.scope.mode} / ${actual.stage === 'theater' ? '小剧场' : actual.stage === 'phone' ? '手机私聊' : stages[actual.stage]} / 存档版本 ${actual.scope.revision}`
+                        ? actual.scope.kind === 'memory' ? `记忆维护 / ${actual.scope.memoryTask} / 存档版本 ${actual.scope.revision}` : `${actual.scope.mode} / ${actual.stage === 'imagePrompt' ? '生图提示词' : actual.stage === 'theater' ? '小剧场' : actual.stage === 'phone' ? '手机私聊' : stages[actual.stage]} / 存档版本 ${actual.scope.revision}`
                         : '连接测试；没有游戏阶段或模块组装'}
                     </p>
                     <p>

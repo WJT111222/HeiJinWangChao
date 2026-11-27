@@ -16,7 +16,7 @@ function seen(key: string) {
   }
 }
 
-export function usePhoneReminders(state: GameState, instance: string | null = null) {
+export function usePhoneReminders(state: GameState, instance: string | null = null, preferences?: import('../settings/model').Settings['phone']) {
   const loans = useMemo(() => upcomingLoans(state), [state]);
   const messages = useMemo(
     () =>
@@ -58,7 +58,7 @@ export function usePhoneReminders(state: GameState, instance: string | null = nu
       window.removeEventListener(changed, refresh);
     };
   }, []);
-  const reminders = loans.filter((row) => row.days <= loanReminderDays);
+  const reminders = loans.filter((row) => row.days <= loanReminderDays(preferences));
   const unread = reminders.filter((row) => !seen(prefix + row.key));
   // Storage events invalidate the local read index even when the formal save is unchanged.
   const unreadMessages = useMemo(

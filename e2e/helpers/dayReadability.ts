@@ -38,7 +38,7 @@ export async function seedDayReading(page: Page, city: string, appearance: Appea
 export async function setAppearance(page: Page, appearance: Appearance) {
   await page.getByRole('button', { name: '设置', exact: true }).click();
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  await settings.getByRole('button', { name: '外观', exact: true }).click();
+  await settings.getByRole('button', { name: '外观与提示音', exact: true }).click();
   await settings.getByRole('radio', { name: new RegExp({ day: '日间', night: '夜间', system: '跟随系统' }[appearance]) }).check();
   await page.keyboard.press('Escape');
 }

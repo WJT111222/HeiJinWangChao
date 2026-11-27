@@ -4,6 +4,7 @@ import { Dialog } from '../Dialog';
 import { DataError } from '../../domain/common';
 import { maxTheaterBody, theaterLengths, theaterStates } from '../../domain/theater/record';
 import type { TheaterPerspective } from '../../domain/theater/record';
+import { selectedModelRoute } from '../../services/ai/snapshot';
 import { readAiConfig } from '../../services/ai/configuration';
 import type { Channel } from '../../services/ai/configuration';
 import type { OpenTheater, TheaterCursor, TheaterListItem, TheaterOwner, TheaterRepository } from '../../services/storage/theaters';
@@ -309,8 +310,9 @@ export function TheaterPanel({ repository, owner, settings, leaveGuard, latest }
     clearMessages(); setMenu(false); setOpened(undefined); setPreview(undefined); setRename(undefined); setConfirm(undefined); setRouteEditor(false);
     const config = from?.config, preset = config && theaterLengths.find(value => value.target === config.target);
     setTitle(from?.title ?? ''); setTheme(from?.theme ?? '');
-    setTier(config ? preset?.id ?? 'custom' : 'medium'); setCustom(config && !preset ? String(config.target) : '');
-    setPerspective(config && !config.followsPerspective ? config.perspective : 'follow');
+    setTier(config ? preset?.id ?? 'custom' : settings.theater?.length ?? 'medium');
+    setCustom(config ? (preset ? '' : String(config.target)) : String(settings.theater?.customChars ?? ''));
+    setPerspective(config ? (config.followsPerspective ? 'follow' : config.perspective) : settings.theater?.perspective ?? 'follow');
     setIndependent(config?.routeMode === 'independent');
     setChannelId(config?.routeMode === 'independent' ? config.route.channelId : '');
     setModel(config?.routeMode === 'independent' ? config.route.model : '');
@@ -330,9 +332,9 @@ export function TheaterPanel({ repository, owner, settings, leaveGuard, latest }
   const status = running ? 'live' : preview ? preview.result.status : record?.status;
   const statusText = running ? saving ? '正在保存' : '正在生成' : preview ? theaterStates[preview.result.status] : record ? theaterStates[record.status] : '';
   const target = tier === 'custom' ? Number(custom) || 0 : theaterLengths.find(value => value.id === tier)?.target ?? 0;
-  const storyRoute = aiConfig?.routes.story;
-  const ticketChannel = channels.find(channel => channel.id === (independent ? channelId : storyRoute?.channelId));
-  const ticketModel = independent ? model : storyRoute?.modelId;
+  const defaultRoute = aiConfig && selectedModelRoute(aiConfig, 'theater');
+  const ticketChannel = channels.find(channel => channel.id === (independent ? channelId : defaultRoute?.channelId));
+  const ticketModel = independent ? model : defaultRoute?.modelId || ticketChannel?.defaultModel;
   const menuItem = (label: string, icon: keyof typeof icons, run: () => void, danger?: boolean) =>
     <button type="button" className={danger ? 'th-danger' : undefined} disabled={busy} onClick={() => { setMenu(false); run(); }}><Icon d={icons[icon]} />{label}</button>;
 
@@ -412,10 +414,11 @@ export function TheaterPanel({ repository, owner, settings, leaveGuard, latest }
               </label>)}</div>
           </fieldset>
           <fieldset className="th-field"><legend className="th-lbl">生成模型</legend>
-            <div className="th-seg small">{([['story', '跟随正文模型'], ['independent', '单独指定']] as const).map(([value, label]) =>
+            <div className="th-seg small">{([['story', '用默认模型'], ['independent', '单独指定']] as const).map(([value, label]) =>
               <label key={value} data-checked={(value === 'independent') === independent || undefined}>
                 <input className="th-radio" type="radio" name="theater-route" value={value} checked={(value === 'independent') === independent} onChange={() => setIndependent(value === 'independent')} /><b>{label}</b>
               </label>)}</div>
+            {!independent && <small>{ticketChannel?.name ?? '未选渠道'} · {ticketModel || '未选模型'}</small>}
             {independent && <div className="th-row2"><ModelChoice channels={channels} channelId={channelId} model={model} onChannel={chooseChannel} onModel={setModel} /></div>}
           </fieldset>
           <label className="th-switch"><input className="th-switch-input" type="checkbox" checked={stream} onChange={event => setStream(event.target.checked)} />
