@@ -1,5 +1,5 @@
 /* global crypto, AbortController, localStorage, sessionStorage, Response */
-// Usage: node scripts/verify-chat-note-upgrade.mjs CHECKOUT_AT_8FCEF954 [COMBINED_CHECKOUT]
+// Usage: node scripts/verify-chat-note-upgrade.mjs ACCEPTED_CHAT_OR_C3_CHECKOUT [COMBINED_CHECKOUT]
 // Install the lockfile dependencies in both checkouts before running.
 import process from 'node:process';
 import console from 'node:console';
@@ -9,10 +9,11 @@ import { URL, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 const [oldPath, combinedPath = process.cwd()] = process.argv.slice(2);
 if (!oldPath)
-  throw Error('Supply the #259 checkout at 8fcef954');
+  throw Error('Supply the #259 or #258 accepted checkout');
 const oldRoot = resolve(oldPath);
 const head = root => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
-assert.equal(head(oldRoot), '8fcef954204b66218604e2f5e0f3bfd558fa2fb2');
+const sourceVersion = {'8fcef954204b66218604e2f5e0f3bfd558fa2fb2':11, '6a7f8b8ba03eb95ba829e7b798e6692fa6f7e6df':12}[head(oldRoot)];
+assert.ok(sourceVersion, 'Use a reviewed #259 or #258 checkout');
 for (const required of [head(oldRoot), '49d67abf0be8047cf723fdfaf55418762d857cdc']) {
   execFileSync('git', ['merge-base', '--is-ancestor', required, 'HEAD'], { cwd: combinedPath });
 }
@@ -54,9 +55,10 @@ try {
         const chat = { id: crypto.randomUUID(), at: live.state.worldClock, baseTurnId: live.state.journal.at(-1).turnId,
           text: '  约在渡口交接。\n请带原件。  ', reply: { npcId: 'npc-a', status: 'replied', text: '我会准时到。' } };
         const waiting = await repo.appendPhoneExchange(live.state, live.draft, live.instance ?? null, chat, new AbortController().signal);
+        const originalNote=saveDatabaseVersion===12 ? await repo.writeOracleNote(state.saveId,await repo.readOracleNote(state.saveId),'  V12 原纸条。　',true) : null;
         const unboundBackup = await codec.serializeBackup(await repo.exportBackup([state.saveId]), 'waiting-v11');
         const bound = await repo.bindTurnAction(waiting, '在窗边稍候一分钟', true, true, true, live.instance ?? null);
-        return { store: saveDatabaseVersion, stateVersion: live.state.schemaVersion, state: live.state, chat, waiting: waiting.phonePending,
+        return { originalNote, store: saveDatabaseVersion, stateVersion: live.state.schemaVersion, state: live.state, chat, waiting: waiting.phonePending,
           frozenBackup: await codec.serializeBackup(await repo.exportBackup([state.saveId]), 'frozen-v11'),
           frozen: bound.phoneFreeze, action: bound.userInput, unboundBackup, backupVersion: codec.backupVersion };
       }
@@ -64,7 +66,7 @@ try {
         repo.close();
       }
     });
-    assert.deepEqual([sample.store, sample.stateVersion, sample.backupVersion], [11, 11, 6]);
+    assert.deepEqual([sample.store, sample.stateVersion, sample.backupVersion], [sourceVersion, 11, 6]);
     assert.deepEqual(sample.waiting, [sample.chat]);
     assert.deepEqual(sample.frozen.ids, [sample.chat.id, sample.chat.id + ':reply']);
     assert.equal(JSON.parse(sample.unboundBackup).version, 6);
@@ -84,6 +86,7 @@ try {
       try {
         const live = await repo.loadGame(id);
         const { game } = await import('/src/tests/fixtures/game.ts');
+        const upgradedNote = await repo.readOracleNote(id);
         const foreignState = game('other-save');
         await repo.create(foreignState);
         const foreign = await repo.writeOracleNote(foreignState.saveId, await repo.readOracleNote(foreignState.saveId), '另一档纸条', false);
@@ -151,7 +154,7 @@ try {
         const input = submission(ready, '');
         const done = await repo.commitTurn(input), replay = await repo.commitTurn(input);
         const undo = await repo.undoTurn({ saveId: id, expectedRevision: done.state.revision, expectedDraft: done.draft, operationId: 'combined-undo' });
-        return { versions: [saveDatabaseVersion, live.state.schemaVersion, JSON.parse(file).version],
+        return { upgradedNote, versions: [saveDatabaseVersion, live.state.schemaVersion, JSON.parse(file).version],
           live, restored, restoredWaiting, restoredV11, staleError, afterFailure, selected, ready, calls, foreign, foreignAfter, current: note.note.text, noteBefore: note, history: note.history, afterCandidate,
           fileHasNote: file.includes('纸条历史不随撤回丢失') || file.includes('照原稿写'), copyNote: await copy.readOracleNote(id),
           settled: done.state.phone.threads['npc-a'].messages, wasReplay: replay.replayed,
@@ -165,7 +168,8 @@ try {
         oldFrozenCopy.close();
       }
     }, sample);
-    assert.deepEqual(result.versions, [12, 11, 6]);
+    assert.deepEqual(result.versions, [13, 11, 6]);
+    if (sample.originalNote) assert.deepEqual(result.upgradedNote,sample.originalNote);
     assert.deepEqual(result.live.state, sample.state);
     for (const read of [result.live, result.restored, result.restoredV11]) {
       assert.deepEqual(read.draft.phonePending, [sample.chat]);

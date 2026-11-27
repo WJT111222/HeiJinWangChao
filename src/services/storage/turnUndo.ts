@@ -1,4 +1,4 @@
-import { ChatPending, type ChatExchange } from '../../domain/phoneChat';
+import { ChatPending, type PhoneOperation } from '../../domain/phoneChat';
 import { HistorySummarySchema, historySummary } from './history/model';
 import { fingerprint } from '../../domain/commands';
 import { TurnDraftSchema } from '../../domain/drafts';
@@ -114,7 +114,7 @@ export async function recordUndo(tx: IDBTransaction, state: GameState, draft: Tu
   }
   await writeControl(tx, control);
 }
-export async function restoreSnapshot(tx: IDBTransaction, state: GameState, control: SaveControl): Promise<{ state: GameState; input: string; phonePending?: ChatExchange[] }> {
+export async function restoreSnapshot(tx: IDBTransaction, state: GameState, control: SaveControl): Promise<{ state: GameState; input: string; phonePending?: PhoneOperation[] }> {
   const status = await inspectUndo(tx, state), head = control.records.at(-1);
   requireData(status.available > 0 && head, 'UNDO_UNAVAILABLE', '没有可靠的已提交回合恢复点');
   const record = SnapshotSchema.parse(await request(tx.objectStore('turnUndo').get([state.saveId, head!.turnId])));

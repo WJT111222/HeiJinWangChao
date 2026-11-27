@@ -215,3 +215,5 @@ UpdateNpc新增phoneContact/usualLocations、特殊人物detailedBackground/habi
 **手机消息**：人物阶段的 `RecordPhoneMessage` 从 `push npc[id].phoneMessages` 编译，保留正文消息或通话原话；场外阶段的 `SchedulePhoneMessage` 按稳定消息 ID 排期，正式回合结算时投递到期来信。
 
 **后宫家庭事务**：Variables 的正式文本路径是 `set harem.changes = [...]`，编译为 `ApplyHaremChanges`。子女建档与家庭关系共用结算，现役正宫在整组变更后验证。World 不能写 `ApplyHaremChanges`；它只读家庭事实，并可用 `ApplyHaremBackground`（changes 仅含 plan、pair、overview）推进离场成员的计划、离场成员之间的关系和家庭总体局势，不碰在场成员和本回合 Variables 已写的同一项。地位、加入退出、妊娠、子女与亲子知情只属于 Variables。
+
+普通回合的场外与网络阶段可通过 `worldCommands` 提交零到五条 `SeedTopic`。每条提供公开标题、概要、是否与主角有关、过期时间和可选来源事件 ID。热榜只展示关联现存主事件的有效公开种子。场外阶段根据剧情判断信息是否已经公开；主角私下获知的详情不能据此登榜。同一主事件只展示最新公开种子的标题与概要。开局和回顾往事不加载此命令。帖子、评论与楼中楼仅在玩家打开时由手机模型展开，存入本机缓存。

@@ -106,7 +106,7 @@ try {
       });
       assert.deepEqual(reloaded.game, before.game);
       assert.deepEqual(reloaded.paper, state.saved);
-      assert.equal(reloaded.version, 12);
+      assert.equal(reloaded.version, 13);
       console.log(JSON.stringify({ device, old: root === previous ? 'C3' : 'release', from: 10, to: reloaded.version,
         saveFormat: state.game.state.schemaVersion, revision: state.game.state.revision, undo: state.undo, paper: reloaded.paper, controlHasOracleNote: false }));
     } finally { await context.close(); }

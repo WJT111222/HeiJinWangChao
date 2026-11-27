@@ -198,7 +198,7 @@ describe('备份文件格式', () => {
     expect(await code(parseBackup(JSON.stringify({ hello: 'world' })))).toBe('BACKUP_INVALID');
     expect(await code(parseBackup(JSON.stringify({ format: 'heijin-backup', version: 1, saves: [] })))).toBe('BACKUP_INVALID');
     expect(await code(parseBackup(JSON.stringify({ format: 'heijin-raw-save', version: 1, records: {} })))).toBe('BACKUP_RAW');
-    expect(await code(parseBackup(JSON.stringify({ format: 'heijin-backup', version: 7, saves: [] })))).toBe('BACKUP_FUTURE');
+    expect(await code(parseBackup(JSON.stringify({ format: 'heijin-backup', version: 8, saves: [] })))).toBe('BACKUP_FUTURE');
   });
 
   it('单份损坏、未来或过旧版本不影响同文件其他存档', async () => {

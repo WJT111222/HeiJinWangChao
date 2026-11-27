@@ -3,7 +3,11 @@ import type { GameState } from '../../domain/state';
 import { chinaCalendar } from '../../domain/openingTime';
 import { locationText } from '../game/atmosphere';
 import type { PlayerView } from '../panels/playerView';
-import type { ChatExchange } from '../../domain/phoneChat';
+import { bookSources } from '../../domain/blackbook';
+import { chatBase } from '../../domain/phone';
+import { GroupConversation, GroupInvitation } from './GroupChat';
+import { Blackbook } from './Blackbook';
+import { isPrivate, type PhoneOperation } from '../../domain/phoneChat';
 import { PrivateChatComposer, type PrivateChatControls } from './PrivateChatComposer';
 import { PhoneChats, PhoneThread } from './PhoneChats';
 import { PhoneAssets } from './PhoneAssets';
@@ -11,7 +15,7 @@ import { contactGroups, phoneDate, phoneDateTime, phoneMoney } from './phoneView
 import type { usePhoneReminders } from './usePhoneReminders';
 import './phone.css';
 
-type Page = '锁屏' | '主屏' | '资产' | '信息' | '通知' | '会话';
+type Page = '锁屏' | '主屏' | '资产' | '信息' | '通知' | '会话' | '群聊' | '小黑书';
 function Badge({ count }: { count: number }) {
   return count > 0 ? (
     <span className="ph-badge" aria-label={count + ' 条未读'}>
@@ -75,7 +79,11 @@ function Contacts({
                   <b>{p.name}</b>
                   <small>{p.phoneContact?.status === 'invalid' ? '号码已失效' : '有号码'}</small>
                 </button>
-                <button type="button" aria-label={'查看' + p.name + '的档案'} onClick={() => showNpc(p.id)}>
+                <button
+                  type="button"
+                  aria-label={'查看' + p.name + '的档案'}
+                  onClick={() => showNpc(p.id)}
+                >
                   查看档案 ›
                 </button>
               </div>
@@ -99,9 +107,11 @@ export function GamePhone({
   showNpc,
   controls,
   pending,
+  instance,
 }: {
   controls: PrivateChatControls;
-  pending: ChatExchange[];
+  pending: PhoneOperation[];
+  instance: string | null;
   state: GameState;
   view: PlayerView;
   mobile: boolean;
@@ -112,8 +122,24 @@ export function GamePhone({
   const [page, go] = useState<Page>(() => (data.unreadCount ? '锁屏' : '主屏'));
   const [contacts, setContacts] = useState(false);
   const [peer, setPeer] = useState('');
+  const groups = useMemo(
+    () => chatBase(state, pending, 'phone-preview').phone.groups ?? {},
+    [state, pending],
+  );
+  const group = groups[peer];
+  const sources = useMemo(() => bookSources(state, instance), [state, instance]);
+  const [post, selectPost] = useState<string>();
+  const [sheet, setSheet] = useState<'create' | 'invite'>();
+  const [bookRefresh, refreshBook] = useState(0);
+  const openGroup = (id: string) => {
+    setPeer(id);
+    go('群聊');
+  };
   const scroller = useRef<HTMLDivElement>(null);
-  useLayoutEffect(()=>{ if (page === '会话' && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight; },[page,peer,pending.length]);
+  useLayoutEffect(() => {
+    if ((page === '会话' || page === '群聊') && scroller.current)
+      scroller.current.scrollTop = scroller.current.scrollHeight;
+  }, [page, peer, pending.length]);
   const [previous, setPrevious] = useState<Page>('信息');
   const openThread = (id: string) => {
     setPrevious(page);
@@ -122,7 +148,8 @@ export function GamePhone({
   };
   const npc = Object.hasOwn(state.npc, peer) ? state.npc[peer] : undefined;
   const relation = useMemo(
-    () => Object.entries(contactGroups(view)).find(([, people]) => people.some((p) => p.id === peer))?.[0],
+    () =>
+      Object.entries(contactGroups(view)).find(([, people]) => people.some((p) => p.id === peer))?.[0],
     [view, peer],
   );
   useEffect(() => {
@@ -169,7 +196,9 @@ export function GamePhone({
     return () => clearTimeout(timeout);
   }, [selected]);
   const cal = !state.openingTimePending && chinaCalendar(state.worldClock);
-  const clock = cal ? String(cal.hour).padStart(2, '0') + ':' + String(cal.minute).padStart(2, '0') : '--:--';
+  const clock = cal
+    ? String(cal.hour).padStart(2, '0') + ':' + String(cal.minute).padStart(2, '0')
+    : '--:--';
   const location = locationText(state.locations, state.protagonist.locationId);
   const label = state.protagonist.name + '的手机 · 游戏内';
   const note = (loan: (typeof data.loans)[number]) => (
@@ -214,7 +243,31 @@ export function GamePhone({
   const turnMessages = data.messages.filter(
     (row) => row.message.deliveredTurnId === state.journal.at(-1)?.turnId,
   );
+  const currentTopicIds = new Set(
+    state.phone.topics
+      .filter((topic) => topic.turnId === state.journal.at(-1)?.turnId)
+      .map((topic) => topic.id),
+  );
+  const turnTopics = data.topics.filter((topic) => currentTopicIds.has(topic.id));
   const nearest = data.loans[0];
+  const topicNote = (topic: (typeof data.topics)[number]) => (
+    <button
+      key={topic.key}
+      className="ph-note"
+      onClick={() => {
+        data.markRead(topic.key);
+        selectPost(topic.key);
+        go('小黑书');
+      }}
+    >
+      <span className="ph-icon ph-book">书</span>
+      <span>
+        <b>小黑书 · 与你有关</b>
+        <time dateTime={topic.at}>{phoneDateTime(topic.at)}</time>
+        <small>{topic.title}</small>
+      </span>
+    </button>
+  );
   return (
     <dialog
       ref={dialog}
@@ -244,13 +297,28 @@ export function GamePhone({
         {page !== '锁屏' && page !== '主屏' && (
           <header className="ph-appbar">
             <button
-              aria-label={page === '会话' ? '返回上一页' : '返回手机主屏'}
-              onClick={() => go(page === '会话' ? previous : '主屏')}
+              aria-label={
+                ['会话', '群聊'].includes(page) || (page === '小黑书' && post)
+                  ? '返回上一页'
+                  : '返回手机主屏'
+              }
+              onClick={() =>
+                page === '小黑书' && post
+                  ? selectPost(undefined)
+                  : go(page === '群聊' ? '信息' : page === '会话' ? previous : '主屏')
+              }
             >
               ‹
             </button>
             <h3 ref={heading} tabIndex={-1}>
-              {page === '会话' && npc ? (
+              {page === '群聊' && group ? (
+                <>
+                  {group.name}{' '}
+                  <small>
+                    {group.category}群 · {group.members.length + Number(!group.playerLeft)} 人
+                  </small>
+                </>
+              ) : page === '会话' && npc ? (
                 <>
                   {npc.name} <small>{relation && relation !== '其他' ? relation : '私聊'}</small>
                 </>
@@ -258,6 +326,26 @@ export function GamePhone({
                 page
               )}
             </h3>
+            {page === '信息' && (
+              <button
+                aria-label="新建群聊"
+                disabled={
+                  !controls.enabled || controls.inactive || controls.frozen || controls.chat.busy
+                }
+                onClick={() => setSheet('create')}
+              >
+                ＋
+              </button>
+            )}
+            {page === '小黑书' && (
+              <button
+                aria-label="刷新小黑书"
+                disabled={controls.chat.busy || controls.inactive || controls.frozen}
+                onClick={() => refreshBook((n) => n + 1)}
+              >
+                ↻
+              </button>
+            )}
           </header>
         )}
         <div className="ph-scroll" key={page} ref={scroller}>
@@ -271,6 +359,7 @@ export function GamePhone({
                 {location.city || location.name} · 游戏时间
               </p>
               {data.unreadMessages.map(notification)}
+              {data.unreadTopics.map(topicNote)}
               {data.unread.map(note)}
               <button className="ph-unlock" onClick={() => go('主屏')}>
                 点按进入
@@ -286,13 +375,20 @@ export function GamePhone({
                 {(['资产', '信息', '小黑书', '通知', '日程'] as const).map((app, i) => (
                   <button
                     key={app}
-                    disabled={app === '小黑书' || app === '日程'}
+                    disabled={app === '日程'}
                     onClick={() => {
                       if (app === '信息') setContacts(false);
+                      if (app === '小黑书') {
+                        selectPost(undefined);
+                        go(app);
+                      }
                       if (app === '资产' || app === '信息' || app === '通知') go(app);
                     }}
                   >
-                    <span className={'ph-icon' + (app === '小黑书' ? ' ph-book' : '')} aria-hidden="true">
+                    <span
+                      className={'ph-icon' + (app === '小黑书' ? ' ph-book' : '')}
+                      aria-hidden="true"
+                    >
                       {['资', '信', '书', '通', '程'][i]}
                     </span>
                     {app}
@@ -315,6 +411,28 @@ export function GamePhone({
                 </small>
               </section>
             </>
+          )}
+          {page === '小黑书' && (
+            <Blackbook
+              {...sources}
+              detail={post}
+              select={(key) => {
+                selectPost(key);
+                if (key && data.unreadTopics.some((t) => t.key === key)) data.markRead(key);
+              }}
+              refresh={bookRefresh}
+              controls={controls}
+            />
+          )}
+
+          {page === '群聊' && group && (
+            <GroupConversation
+              state={state}
+              group={group}
+              controls={controls}
+              pending={new Set(pending.map((row) => row.id))}
+              invite={() => setSheet('invite')}
+            />
           )}
           {page === '资产' && (
             <PhoneAssets
@@ -341,19 +459,42 @@ export function GamePhone({
                 <Contacts view={view} showNpc={showNpc} open={openThread} />
               ) : (
                 <>
-                  {pending.length > 0 && <section className="ph-pending-banner"><p>{pending.length} 条聊天待结算，会随下一回合提交。</p>
-                    <button disabled={!controls.canEnd} onClick={controls.end}>结束聊天，发起回合</button><button onClick={()=>close(true)}>回到行动框</button></section>}
-                  <PhoneChats state={state} view={view} pending={pending} unread={data.unreadMessages} open={openThread} />
+                  {pending.length > 0 && (
+                    <section className="ph-pending-banner">
+                      <p>{pending.length} 条聊天待结算，会随下一回合提交。</p>
+                      <button disabled={!controls.canEnd} onClick={controls.end}>
+                        结束聊天，发起回合
+                      </button>
+                      <button onClick={() => close(true)}>回到行动框</button>
+                    </section>
+                  )}
+                  <PhoneChats
+                    state={state}
+                    view={view}
+                    groupThreads={groups}
+                    openGroup={openGroup}
+                    pending={pending}
+                    unread={data.unreadMessages}
+                    open={openThread}
+                  />
                 </>
               )}
             </>
           )}
-          {page === '会话' && npc && <PhoneThread state={state} npcId={npc.id} pending={pending.filter(row=>row.reply.npcId === npc.id)} />}
+          {page === '会话' && npc && (
+            <PhoneThread
+              state={state}
+              npcId={npc.id}
+              pending={pending.filter(isPrivate).filter((row) => row.reply.npcId === npc.id)}
+            />
+          )}
           {page === '通知' && (
             <>
               <section className="ph-group">
                 <h4>本回合</h4>
-                {turnMessages.length ? turnMessages.map(notification) : <small>暂无</small>}
+                {turnMessages.map(notification)}
+                {turnTopics.map(topicNote)}
+                {!turnMessages.length && !turnTopics.length && <small>暂无</small>}
               </section>
               <section className="ph-group">
                 <h4>提醒</h4>
@@ -363,11 +504,31 @@ export function GamePhone({
             </>
           )}
         </div>
-        {page === '会话' && npc && <PrivateChatComposer npcId={npc.id} contactStatus={npc.phoneContact?.status} controls={controls}/>}
-        {!(page === '信息' && !contacts && pending.length > 0) && <button className="ph-exit" onClick={() => close(true)}>
-          回到行动框
-        </button>}
+        {page === '会话' && npc && (
+          <PrivateChatComposer
+            npcId={npc.id}
+            contactStatus={npc.phoneContact?.status}
+            controls={controls}
+          />
+        )}
+        {!(page === '信息' && !contacts && pending.length > 0) && (
+          <button className="ph-exit" onClick={() => close(true)}>
+            回到行动框
+          </button>
+        )}
       </div>
+      {sheet && (
+        <GroupInvitation
+          state={state}
+          thread={sheet === 'invite' ? group : undefined}
+          controls={controls}
+          done={(id) => {
+            setSheet(undefined);
+            openGroup(id);
+          }}
+          cancel={() => setSheet(undefined)}
+        />
+      )}
     </dialog>
   );
 }

@@ -161,7 +161,7 @@ try {
       } else {
         const { version: newVersion, backup: newPackage, ...after } = data,
           { version: oldVersion, backup: oldPackage, ...before } = previous;
-        assert.deepEqual([oldVersion, newVersion], [oldDb, 12]);
+        assert.deepEqual([oldVersion, newVersion], [oldDb, 13]);
         for (const state of [before.game.state, before.manualState]) {
           assert.equal(state.schemaVersion, oldDb === 8 ? 10 : 11);
           state.schemaVersion = 11;

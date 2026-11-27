@@ -57,6 +57,13 @@ export async function comparisonFixture(load, scenario = 'ordinary') {
     }));
     draft.phoneFreeze=freezeChat(draft.phonePending);
   }
+  if(scenario==='group-chat') {
+    const {freezeChat}=await load('domain/phoneChat');
+    const id='c7120000-0000-4000-8000-000000000001', audience=['npc-a','scene'];
+    draft.phonePending=[{kind:'group',id,groupId:id,at:state.worldClock,baseTurnId:state.journal.at(-1).turnId,
+      action:{type:'create',name:'临江工作群',category:'工作',invitees:audience},audience,outcomes:audience.map(npcId=>({npcId,status:'joined'}))}];
+    draft.phoneFreeze=freezeChat(draft.phonePending);
+  }
   return { state: GameStateSchema.parse(state), draft, scene };
 }
 export function fixedEntityCandidate(draft) {

@@ -1,3 +1,4 @@
+import { participants } from './phoneChat';
 import { chatBase } from './phone';
 import { worldTaskNpcAllowed } from './npc/worldAccess';
 import { eventInteractionCommands } from './events/interactions';
@@ -23,7 +24,7 @@ export function markStoryPeople(state:GameState, declared:readonly string[], com
 }
 
 export function checkEntityCommands(state: GameState, draft: TurnDraft, declared: readonly string[], commands: readonly DomainCommand[]) {
-  const ids = contactIds(state, [...declared, ...(draft.phoneFreeze ? draft.phonePending ?? [] : []).map(row => row.reply.npcId)]);
+  const ids = contactIds(state, [...declared, ...(draft.phoneFreeze ? draft.phonePending ?? [] : []).flatMap(participants)]);
   const allowed = new Set(commandsForPhase('entities', draft.turnKind));
   const people = new Set(Object.keys(state.npc));
   for (const command of commands)

@@ -3,9 +3,9 @@ import type { Page } from '@playwright/test';
 import { test, expect } from './helpers/test';
 import { openSettings } from './helpers/gameLayout';
 
-async function seedChat(page: Page, mode: 'day' | 'night') {
+async function seedChat(page: Page, mode: 'day' | 'night', withTopics=false) {
   await page.goto('/');
-  await page.evaluate(async (mode) => {
+  await page.evaluate(async ({mode,withTopics}) => {
     const [
       { SaveRepository },
       { phoneGame },
@@ -25,6 +25,13 @@ async function seedChat(page: Page, mode: 'day' | 'night') {
     );
     const state = phoneGame(),
       settings = defaultSettings();
+    if (withTopics) {
+      const { event } = await import('/src/tests/fixtures/game.ts' as string);
+      const main = { ...event('waterfront'), eventKind:'main', title:'内部会议标题', backgroundText:'会议闭门资料', sourceTurnIds:['evening'] };
+      state.events[main.id] = main;
+      state.events['known-only'] = { ...main, id:'known-only', title:'主角获知的秘密', visibility:'known' };
+      state.phone.topics = [{id:'market',turnId:'evening',at:state.worldClock,expiresAt:'2027-01-01T00:00:00Z',title:'江畔市集',summary:'沿岸集市开张',related:true,eventId:main.id,eventVersion:'evening'}];
+    }
     settings.display.appearance = mode;
     settings.runtime.streamStory = false;
     for (const summary of Object.values(settings.memory.summaries) as { automatic: boolean }[])
@@ -51,7 +58,7 @@ async function seedChat(page: Page, mode: 'day' | 'night') {
     } finally {
       repo.close();
     }
-  }, mode);
+  }, {mode,withTopics});
 }
 
 function readChat(page: Page) {
@@ -255,3 +262,199 @@ for (const mode of ['day', 'night'] as const) {
     else await expect(field).toBeEnabled();
   });
 }
+
+for (const mode of ['day', 'night'] as const) {
+  test('群聊与小黑书按需浏览 · ' + mode, async ({ page, context }, info) => {
+    await seedChat(page, mode, true);
+    const calls: string[] = [];
+    const capture = async (label: string) => {
+      if (process.env.PHONE_SCREENSHOTS)
+        await page.screenshot({
+          path: join(
+            process.env.PHONE_SCREENSHOTS,
+            info.project.name + '-' + mode + '-' + label + '.jpg',
+          ),
+          quality: 84,
+          animations: 'disabled',
+        });
+    };
+    await context.route('https://phone-fixture.invalid/**', async (route) => {
+      const wire = route.request().postDataJSON(),
+        payload = JSON.parse(wire.messages.at(-1).content);
+      expect(wire.model).toBe('phone-fixture');
+      let result;
+      if (payload.topics) {
+        calls.push('book');
+        expect(JSON.stringify(wire.messages)).not.toMatch(/内部会议标题|会议闭门资料|主角获知的秘密/);
+        if (mode === 'night' && calls.filter((k) => k === 'book').length === 1)
+          return route.fulfill({
+            json: { choices: [{ finish_reason: 'stop', message: { content: 'broken fixture' } }] },
+          });
+        const comment = {
+          author: '沿岸人',
+          text: '真正的评论',
+          at: payload.worldClock,
+          region: '重庆',
+          likes: 1,
+          byAuthor: false,
+        };
+        result = payload.topics.map((t: { index: number }) => ({
+          index: t.index,
+          post: {
+            title: '江畔集市开张',
+            subtitle: '新摊位',
+            author: '小舟',
+            at: payload.worldClock,
+            location: '江畔',
+            body: '市民在沿岸散步。',
+            tags: ['城市'],
+            likes: 3,
+            saves: 2,
+            comments: [
+              { ...comment, replies: [comment, { ...comment, text: '第二条楼中楼', byAuthor: true }] },
+            ],
+          },
+        }));
+      } else if (payload.npc) {
+        calls.push(payload.npc.id);
+        result =
+          payload.group.action.type === 'message'
+            ? { npcId: payload.npc.id, status: 'replied', text: '明天江边见。' }
+            : { npcId: payload.npc.id, status: 'joined' };
+      } else {
+        calls.push('schedule');
+        result = [
+          { npcId: 'partner', status: 'reply' },
+          { npcId: 'colleague', status: mode === 'day' ? 'unread' : 'later' },
+        ];
+      }
+      await route.fulfill({
+        json: { choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(result) } }] },
+      });
+    });
+    await page.goto('/#game/phone-fixture');
+    await page.reload();
+    const phone = page.getByRole('dialog', { name: '林舟的手机 · 游戏内' });
+    await page.locator('[data-phone-entry]:visible').click();
+    await phone.getByRole('button', { name: '点按进入' }).click();
+    await phone.getByRole('button', { name: /^信息/ }).click();
+    await phone.getByRole('button', { name: '新建群聊' }).click();
+    await phone.getByLabel('群名称').fill('江边工作群');
+    await phone.getByRole('checkbox', { name: '方宁' }).check();
+    await phone.getByRole('checkbox', { name: '许舟' }).check();
+    await expect(phone.getByRole('checkbox', { name: /顾远/ })).toBeDisabled();
+    await capture('邀请成员');
+    await phone.getByRole('button', { name: '建群（待结算）' }).click();
+    const edit = phone.getByRole('textbox', { name: '群聊消息' });
+    await edit.fill('明天几点？');
+    await edit.press('Enter');
+    await expect(phone.getByText('明天江边见。', { exact: true })).toBeVisible();
+    await capture('群会话');
+    expect(calls).toEqual(['partner', 'colleague', 'schedule', 'partner']);
+    await phone.locator('.ph-appbar button').first().click();
+    const groupPreview = phone.getByRole('button', { name: /江边工作群/ });
+    await expect(groupPreview).toContainText('待结算');
+    await expect(groupPreview.locator('.ph-preview')).toContainText('方宁：明天江边见。');
+    await phone.locator('.ph-appbar button').first().click();
+    await phone.getByRole('button', { name: '小黑书', exact: true }).click();
+    if (mode === 'night') {
+      await expect(phone.getByRole('status')).toContainText('展开失败');
+      expect(calls.filter((k) => k === 'book')).toHaveLength(1);
+      await phone.getByRole('button', { name: '重试', exact: true }).click();
+    }
+    const card = phone.getByRole('button', { name: /江畔集市开张/ });
+    await card.click();
+    await expect(phone.getByText('真正的评论', { exact: true }).first()).toBeVisible();
+    await phone.getByRole('button', { name: /展开 1 条回复/ }).click();
+    await expect(phone.getByText('第二条楼中楼', { exact: true })).toBeVisible();
+    await phone.getByRole('button', { name: '赞 3', exact: true }).click();
+    await expect(phone.getByRole('button', { name: '赞 4', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await phone.getByRole('button', { name: '刷新小黑书' }).click();
+    await phone.locator('.ph-appbar button').first().click();
+    await phone.getByRole('button', { name: '热榜', exact: true }).click();
+    await expect(phone.locator('ol li')).toHaveCount(1);
+    await expect(phone.locator('ol')).toContainText('江畔市集');
+    await expect(phone.locator('ol')).toContainText('沿岸集市开张');
+    await expect(phone.locator('ol')).not.toContainText('主角获知的秘密');
+    await capture('公开热榜');
+    await phone.locator('ol button').click();
+    await expect(phone.getByRole('button', { name: '赞 4', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await capture('缓存帖子');
+    expect(calls.filter((k) => k === 'book')).toHaveLength(mode === 'night' ? 2 : 1);
+    const live = await readChat(page);
+    expect(live.state.phone.groups).toBeUndefined();
+    expect(live.draft.phonePending).toHaveLength(2);
+    expect(live.state.worldClock).toBe('2026-10-18T21:40:00+08:00');
+  });
+}
+
+test('小黑书切换推荐、热榜及返回时接续同一在途请求', async ({ page, context }) => {
+  await seedChat(page, 'day', true);
+  let calls = 0;
+  let finish!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  await context.route('https://phone-fixture.invalid/**', async (route) => {
+    const payload = JSON.parse(route.request().postDataJSON().messages.at(-1).content);
+    calls++;
+    await gate;
+    const post = {
+      author: '沿江人',
+      title: '已生成的集市帖子',
+      subtitle: '市集',
+      body: '沿江见闻',
+      at: payload.worldClock,
+      location: '江边',
+      tags: [],
+      likes: 0,
+      saves: 0,
+      comments: [],
+    };
+    await route.fulfill({
+      json: {
+        choices: [
+          {
+            finish_reason: 'stop',
+            message: {
+              content: JSON.stringify([{ index: 0, post }]),
+            },
+          },
+        ],
+      },
+    });
+  });
+  await page.goto('/#game/phone-fixture');
+  await page.reload();
+  const phone = page.getByRole('dialog', { name: '林舟的手机 · 游戏内' });
+  const button = (name: string) => phone.getByRole('button', { name, exact: true });
+  const back = phone.locator('.ph-appbar button').first();
+  await page.locator('[data-phone-entry]:visible').click();
+  await button('点按进入').click();
+  await button('小黑书').click();
+  try {
+    await expect.poll(() => calls).toBe(1);
+    await button('热榜').click();
+    await phone.locator('ol button').click();
+    await expect(phone.getByRole('status')).toContainText('正在把');
+    await back.click();
+    await button('推荐').click();
+    await back.click();
+    await button('小黑书').click();
+    await expect(phone.getByRole('status')).toContainText('正在把');
+  } finally {
+    finish();
+  }
+  await expect(phone.getByText('已生成的集市帖子', { exact: true })).toBeVisible();
+  await expect(button('重试')).toHaveCount(0);
+  await button('热榜').click();
+  await phone.locator('ol button').click();
+  await expect(phone.getByText('沿江见闻', { exact: true })).toBeVisible();
+  expect(calls).toBe(1);
+});

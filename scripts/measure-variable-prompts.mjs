@@ -13,7 +13,7 @@ try {
     load('prompts/statistics'), load('prompts/manifest'), load('prompts/variableDomains'), load('prompts/worldDomains'), load('domain/turnProjection')]);
   const { contextMessage } = await load('prompts/contextMessage');
   const settings = defaultSettings(), rows = [];
-  for (const scenario of ['ordinary', 'scene-closure', 'historical', 'opening', 'organizations', 'opening-organizations', 'phone-inbox', 'private-chat']) {
+  for (const scenario of ['ordinary', 'scene-closure', 'historical', 'opening', 'organizations', 'opening-organizations', 'phone-inbox', 'private-chat', 'group-chat']) {
     const { state, draft, scene } = await comparisonFixture(load, scenario);
     const stages = 'useEntityStage' in draft ? ['entities', 'variables', 'world'] : ['variables', 'world'];
     for (const stage of stages) {
@@ -27,7 +27,7 @@ try {
       });
       const catalog = contextMessage(context.TEXT_COMMAND_CATALOG ?? context.COMMAND_CATALOG);
       const wireCatalog = catalog.slice(catalog.indexOf('\n') + 1, catalog.lastIndexOf('\n'));
-      const chatRules = [context.PHONE_CHAT?.rule, context.PHONE_CHAT_TIME?.rule, context.PHONE_CHAT_FOLLOWUP?.rule].filter(Boolean);
+      const chatRules = [context.PHONE_CHAT?.rule, context.PHONE_CHAT?.groupRule, context.PHONE_CHAT_TIME?.rule, context.PHONE_CHAT_FOLLOWUP?.rule].filter(Boolean);
       const dedicated = [...special, wireCatalog, ...chatRules, ...(context.PHONE_INBOX?.rule ? [context.PHONE_INBOX.rule] : []), ...(context.PHONE_STORY?.rule ? [context.PHONE_STORY.rule] : []), messages.at(-1).content].join('\n');
       const all = messages.map(message => message.content).join('\n');
       rows.push({ scenario, stage, dedicatedChars: Array.from(dedicated).length, dedicatedTokenEstimate: estimateTokens(dedicated).estimatedTokens,

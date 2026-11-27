@@ -80,7 +80,7 @@ for (const appearance of ['night', 'day'] as const) {
     await expect(phone.getByRole('button', { name: /3 天后到期/ })).toBeVisible();
     await capture('lock');
     await phone.getByRole('button', { name: '点按进入' }).click();
-    await expect(phone.getByRole('button', { name: '小黑书' })).toBeDisabled();
+    await expect(phone.getByRole('button', { name: '小黑书' })).toBeEnabled();
     await expect(phone.getByRole('button', { name: '日程' })).toBeDisabled();
     await capture('home');
     await phone.getByRole('button', { name: /^通知/ }).click();

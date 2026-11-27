@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useReducer } from 'react';
 import type { GameState } from '../../domain/state';
+import { bookSources } from '../../domain/blackbook';
 import { loanReminderDays, upcomingLoans } from './phoneView';
 
 const prefix = 'heijin.phone.loan-read.v1:';
@@ -15,7 +16,7 @@ function seen(key: string) {
   }
 }
 
-export function usePhoneReminders(state: GameState) {
+export function usePhoneReminders(state: GameState, instance: string | null = null) {
   const loans = useMemo(() => upcomingLoans(state), [state]);
   const messages = useMemo(
     () =>
@@ -41,6 +42,10 @@ export function usePhoneReminders(state: GameState) {
         .sort((a, b) => Date.parse(b.message.at) - Date.parse(a.message.at)),
     [state],
   );
+  const topics = useMemo(
+    () => bookSources(state, instance).topics.filter((s) => s.related),
+    [state, instance],
+  );
   const [readVersion, refresh] = useReducer((n) => n + 1, 0);
   useEffect(() => {
     const storage = (e: StorageEvent) => {
@@ -56,12 +61,18 @@ export function usePhoneReminders(state: GameState) {
   const reminders = loans.filter((row) => row.days <= loanReminderDays);
   const unread = reminders.filter((row) => !seen(prefix + row.key));
   // Storage events invalidate the local read index even when the formal save is unchanged.
-  const unreadMessages = useMemo(() => messages.filter(row => !seen(row.key)), [messages, readVersion]);
+  const unreadMessages = useMemo(
+    () => messages.filter((row) => !seen(row.key)),
+    [messages, readVersion],
+  );
+  const unreadTopics = topics.filter((s) => !seen(prefix + s.key));
   return {
     messages,
     unreadMessages,
     unread,
-    unreadCount: unreadMessages.length + unread.length,
+    topics,
+    unreadTopics,
+    unreadCount: unreadMessages.length + unread.length + unreadTopics.length,
     loans,
     reminders,
     markRead(...keys: string[]) {

@@ -6,6 +6,10 @@ import { readAiConfig } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
 import { AiError } from '../../services/ai/errors';
 import type { SaveRepository } from '../../services/storage/saveRepository';
+import { sendGroupChat } from '../../workflows/groupChat';
+import { expandBook } from '../../workflows/blackbook';
+import type { BookSource } from '../../domain/blackbook';
+import type { GroupAction } from '../../domain/phoneGroup';
 import { sendPrivateChat } from '../../workflows/phoneChat';
 import { StageGuard, withHeldStageLock } from '../../workflows/stageGuard';
 import type { Settings } from '../settings/model';
@@ -24,6 +28,10 @@ export function usePrivateChat(
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const cancelled = useRef<StageGuard | null>(null);
   const active = useRef<StageGuard | null>(null);
+  const bookFlight = useRef<{
+    keys: Set<string>;
+    result: Promise<Awaited<ReturnType<typeof expandBook>> | undefined>;
+  } | null>(null);
   const channel = useRef<BroadcastChannel | null>(null);
   const live = useRef({ state, draft, instance, onSaved });
   useLayoutEffect(() => {
@@ -70,6 +78,7 @@ export function usePrivateChat(
       alive = false;
       active.current?.dispose();
       active.current = null;
+      bookFlight.current = null;
       window.removeEventListener('focus', update);
       events?.close();
       channel.current = null;
@@ -85,8 +94,8 @@ export function usePrivateChat(
     }, 1000);
     return () => clearInterval(timer);
   }, [remoteBusy, marker]);
-  async function send(npcId: string, text: string) {
-    if (active.current) return false;
+  async function run<T>(npcId: string, work: (guard: StageGuard) => Promise<T>): Promise<T | undefined> {
+    if (active.current) return undefined;
     const guard = new StageGuard();
     active.current = guard;
     setPeer(npcId);
@@ -97,20 +106,10 @@ export function usePrivateChat(
         if (!lock) throw new DataError('STORY_BUSY', '其他标签正在发送手机消息。');
         if (active.current !== guard || cancelled.current === guard) throw new AiError('cancelled');
         channel.current?.postMessage('busy');
-        return sendPrivateChat(repository, guard, {
-          state,
-          draft,
-          instance,
-          npcId,
-          text,
-          settings,
-          config: readAiConfig(localStorage),
-          vault: new CredentialVault(sessionStorage, localStorage),
-        });
+        return work(guard);
       });
-      if (active.current !== guard) return false;
-      onSaved(saved);
-      return true;
+      if (active.current !== guard) return undefined;
+      return saved;
     } catch (failure) {
       if (active.current === guard)
         setError({
@@ -120,7 +119,7 @@ export function usePrivateChat(
               ? failure.message
               : '手机消息未保存，请重试。',
         });
-      return false;
+      return undefined;
     } finally {
       if (active.current === guard) {
         active.current = null;
@@ -128,6 +127,51 @@ export function usePrivateChat(
         setRemoteBusy(false);
         channel.current?.postMessage('idle');
       }
+    }
+  }
+  function input() {
+    return {
+      state,
+      draft,
+      instance,
+      settings,
+      config: readAiConfig(localStorage),
+      vault: new CredentialVault(sessionStorage, localStorage),
+    };
+  }
+  async function send(npcId: string, text: string) {
+    const saved = await run(npcId, (guard) =>
+      sendPrivateChat(repository, guard, { ...input(), npcId, text }),
+    );
+    if (saved) onSaved(saved);
+    return Boolean(saved);
+  }
+  async function group(groupId: string, action: GroupAction) {
+    const saved = await run(groupId, (guard) =>
+      sendGroupChat(repository, guard, { ...input(), groupId, action }),
+    );
+    if (saved) onSaved(saved);
+    return Boolean(saved);
+  }
+  async function book(sources: BookSource[], isViewing: () => boolean) {
+    const keys = sources.map((source) => source.key);
+    while (bookFlight.current) {
+      const flight = bookFlight.current;
+      if (keys.every((key) => flight.keys.has(key))) return flight.result;
+      const result = await flight.result;
+      if (!isViewing() || (!result && keys.some((key) => flight.keys.has(key)))) return undefined;
+    }
+    if (!isViewing()) return undefined;
+    // expandBook rechecks the current timeline and reads the cache before requesting missing posts.
+    const flight = {
+      keys: new Set(keys),
+      result: run('blackbook', (guard) => expandBook(repository, guard, input(), sources)),
+    };
+    bookFlight.current = flight;
+    try {
+      return await flight.result;
+    } finally {
+      if (bookFlight.current === flight) bookFlight.current = null;
     }
   }
   async function abandon(npcId: string) {
@@ -145,6 +189,9 @@ export function usePrivateChat(
   }
   return {
     send,
+    group,
+    book,
+    books: repository.books,
     abandon,
     peer,
     error,
