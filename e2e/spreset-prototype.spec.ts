@@ -105,15 +105,8 @@ for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
   });
 }
 
-for (const oracle of [false,true]) test((oracle ? '神域 · ' : '') + '失败与取消只结束本次 Worker，旧候选及正式档保持可读', async ({ page }) => {
-  await page.goto(oracle ? '/' : '/?spreset=prototype');
-  if (oracle) {
-    await page.evaluate(async () => {
-      const { savePresetSettings } = await import('/src/presets/settings.ts' as string);
-      savePresetSettings({enabled:true, selected:'meowssiah', packages:{}});
-    });
-    await page.reload();
-  }
+test('失败与取消只结束本次 Worker，旧候选及正式档保持可读', async ({ page }) => {
+  await page.goto('/?spreset=prototype');
   const cases = ['success', 'limited', 'refused', 'wrong', 'incomplete', 'invalid-story', 'broken', 'cancel'] as const;
   const posts: string[] = [], relays: string[] = [];
   await page.route('**/api/ai-relay**', route => { relays.push(route.request().method()); return route.abort(); });
@@ -127,12 +120,12 @@ for (const oracle of [false,true]) test((oracle ? '神域 · ' : '') + '失败�
     if (kind === 'broken') return route.abort('connectionreset');
     if (kind === 'success') return route.fulfill({ json: { choices: [{ message: { content: envelope }, finish_reason: 'stop' }] } });
     if (kind === 'refused') return route.fulfill({ json: { choices: [{ message: { refusal: 'fixture' }, finish_reason: 'content_filter' }] } });
-    const field = oracle ? 'game_content' : 'content';
+    const field = 'content';
     const args = kind === 'incomplete' ? '{' + JSON.stringify(field) + ':' : JSON.stringify({ [field]: kind === 'invalid-story' ? '没有标签' : envelope });
-    const message = { tool_calls: [{ id: 'issued', type: 'function', function: { name: kind === 'wrong' ? 'other_tool' : oracle ? 'soliumbra_reply' : 'submit_scene', arguments: args } }] };
+    const message = { tool_calls: [{ id: 'issued', type: 'function', function: { name: kind === 'wrong' ? 'other_tool' : 'submit_scene', arguments: args } }] };
     return route.fulfill({ json: { choices: [{ message, finish_reason: kind === 'limited' ? 'length' : 'tool_calls' }] } });
   });
-  const result = await page.evaluate(async ({count,oracle}) => {
+  const result = await page.evaluate(async (count) => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/talentPrompt.ts', '/src/domain/drafts.ts',
       '/src/workflows/storyStage.ts', '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts'];
     const [{ SaveRepository }, { talentPromptInput }, { createTurnDraft }, { StoryStage }, { newChannel, defaultAiConfig }, { CredentialVault }] =
@@ -153,7 +146,7 @@ for (const oracle of [false,true]) test((oracle ? '神域 · ' : '') + '失败�
       const generate = (draft: unknown) => stage.generate({ draft, settings: input.settings, config, vault, onFailureSaved: () => {} });
       await generate(await repo.loadDraft(draft.saveId));
       const candidate = await repo.loadDraft(draft.saveId);
-      const pending = oracle ? await repo.writeOracleNote(draft.saveId,await repo.readOracleNote(draft.saveId),'留给下次成功的候选',true) : null;
+      const pending = await repo.writeOracleNote(draft.saveId,await repo.readOracleNote(draft.saveId),'其他预设应保留的旧版纸条',true);
       const baseline = JSON.stringify(await repo.load(draft.saveId)), errors = [];
       for (let i = 1; i < count; ++i) {
         let code: string | undefined;
@@ -167,9 +160,9 @@ for (const oracle of [false,true]) test((oracle ? '神域 · ' : '') + '失败�
         await repo.commitTurn({ draft: saved, nextAction: '', useVariableStage: false, useWorldStage: false });
         canCommit = (await repo.load(draft.saveId)).journal.at(-1).story.narrative === candidate.story.narrative;
       }
-      return { errors, notePreserved: !pending || JSON.stringify(pending) === JSON.stringify(await repo.readOracleNote(draft.saveId)), narrative: candidate.story.narrative, canCommit, retainedStatus: saved.stageStatus.story };
+      return { errors, notePreserved: JSON.stringify(pending) === JSON.stringify(await repo.readOracleNote(draft.saveId)), narrative: candidate.story.narrative, canCommit, retainedStatus: saved.stageStatus.story };
     } finally { window.removeEventListener('c2-cancel-request', stop); stage.dispose(); repo.close(); }
-  }, {count:cases.length,oracle});
+  }, cases.length);
   expect(result.notePreserved).toBe(true);
   expect(result.retainedStatus).toBe('ready');
   expect(posts).toEqual(cases); expect(relays).toEqual([]);
@@ -203,7 +196,7 @@ test('刷新与预设切换清除实验会话，非正文阶段继续使用原�
     const vault = new CredentialVault(sessionStorage, localStorage); vault.set(channel.id, 'fixture-only');
     for (const stage of ['entities', 'variables', 'world', 'memory', 'theater']) {
       const snapshot = channelSnapshot(channel, vault, channel.defaultModel, stage);
-      await new AiClient().generate(snapshot, [{ role: 'user', content: stage }], { stream: false, spresetPrototype: true, oracleStory:true });
+      await new AiClient().generate(snapshot, [{ role: 'user', content: stage }], { stream: false, spresetPrototype: true });
     }
   });
   expect(wires).toHaveLength(5);

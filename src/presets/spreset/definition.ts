@@ -1,5 +1,4 @@
 // An opt-in localhost development preset. The ordinary preset selector never registers it.
-import { oracleId } from '../meowssiah/definition';
 import type { AssistantSelection } from '../library';
 import type { PresetDefinition } from '../package';
 
@@ -10,9 +9,7 @@ export function selectedPrototype(selection: AssistantSelection | undefined): bo
   return import.meta.env.DEV && typeof selection === 'object' && selection?.definition.id === prototypeId;
 }
 
-export function usesSpreset(selection: AssistantSelection | undefined) {
-  return (typeof selection === 'object' && selection?.definition.id === oracleId) || selectedPrototype(selection);
-}
+export const usesSpreset = selectedPrototype;
 
 export function prototypeRequested() {
   const location = globalThis.location;

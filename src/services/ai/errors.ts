@@ -1,3 +1,4 @@
+import { withdrawnPresetNotice } from '../../presets/withdrawnPreset';
 import { safeStoryDiagnostic, storyDiagnosticMessage } from '../../domain/storyDiagnostics';
 import type { StoryDiagnostic } from '../../domain/storyDiagnostics';
 import { DataError } from '../../domain/common';
@@ -103,7 +104,7 @@ const fieldMessages = new Map<string, string>([
   ['tavern.native_delivery.response', '渠道未返回可核对的正文工具结果，本次未保存。可关闭破甲模式后手动生成。'],
   ['tavern.initialization', '预设脚本初始化失败，可到运行设置查看实例状态。'],
   ['tavern.wrapper', '预设脚本处理响应时出错。'],
-  ['channel.oracle_direct_network', '小猫之神直连失败。请检查网络与地址，并确认渠道允许本站浏览器跨域直连。此次不会自动中转或重发；服务商可能已受理或计费，请核对用量后再手动尝试。'],
+  ['tavern.preset_withdrawn', withdrawnPresetNotice],
   ['channel.confirmed_relay_unavailable', '当前渠道或设置不支持本次中转。断点已保留，请重新选择续写路径。'],
   ['channel.continuation_delivery_unknown', '本次续写确认已失效。模型服务可能已受理请求并计费。已保留原断点；如需再次发送，请重新确认。'],
   ['channel.relay', '本站中转未能完成请求。请检查地址、端点与请求大小，再手动重试。'],

@@ -1,4 +1,3 @@
-import { oracleId, upgradeOraclePreferences } from './meowssiah/definition';
 import { z } from 'zod';
 import { packageOverride } from './package';
 import controls from './resources/peinture-controls.json';
@@ -19,12 +18,7 @@ export function readPresetSettings(
 ): PresetSettings {
   const raw = storage?.getItem(presetSettingsKey);
   if (raw == null) return defaults();
-  const settings = schema.parse(JSON.parse(raw));
-  const oracle = settings.packages[oracleId];
-  // The previous C3 edition has the same editable IDs. Upgrade preferences only;
-  // a frozen draft retains its original version and still requires the normal ownership check.
-  if (oracle) settings.packages[oracleId] = upgradeOraclePreferences(oracle);
-  return settings;
+  return schema.parse(JSON.parse(raw));
 }
 export function savePresetSettings(
   settings: PresetSettings,

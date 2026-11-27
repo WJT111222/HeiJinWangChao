@@ -140,7 +140,7 @@ tar -xzf docs/tavernhelper-compat/1124/anthropic-block-evidence.tar.gz -C "$prob
 
 ## 原包及许可
 
-- Meowssiah-2.1.7 原包有 56 条提示词、8 条主正则、SPreset 内 8 条绑定正则，以及 SPreset 加载器、菜单两份 TavernHelper 脚本。菜单版本为 3.0-Preview-01，ID 301。适配许可由项目负责人确认，保留小猫之神署名。
+- Meowssiah-2.1.7 原包有 56 条提示词、8 条主正则、SPreset 内 8 条绑定正则，以及 SPreset 加载器、菜单两份 TavernHelper 脚本。菜单版本为 3.0-Preview-01，ID 301。作者尚未回复授权申请。V1.0 已移除该预设的资源和控制台，待作者明确授权后另行提交恢复更新。
 - 固定网页源码提交 `53bd585da14248ba10baaede7fc7ed0cebe1eeeb`。逐字节比较，附件加载器与该提交的 `regex_bind/index.js` 只差末尾 LF。加载器指向可变地址，原作者当时线上部署过的 inject.js 字节仍无法从附件证明。
 - SPreset 的 `regex_bind/LICENSE` 为 GNU GPL 第三版。实验按 GPL-3.0-only 保留作者署名、修改说明、完整许可、可编辑源码和固定来源。许可证不授予更改其他作品许可的权利。王朝仓库没有整体再许可声明。分支仅以源码提供独立消息式组件，常规生产构建不交付该 Worker。若 C3 计划一起向玩家分发，须核实整套组合作品的权利及对应源码交付方式；独立进程或消息接口本身不能证明许可兼容。 [固定源码树](https://github.com/starowo/starowo.github.io/tree/53bd585da14248ba10baaede7fc7ed0cebe1eeeb/regex_bind) · [上游与本地文件 SHA-256](../../experiments/spreset/SOURCES.json) · [完整许可](../../experiments/spreset/COPYING)
 - 本地 `core.mjs` 保留了 `normalizeSPresetOutputProcessorResult`（916–943 行），适配了 `processSPresetFinalRequest`（1695–1720 行）的请求复制、静态处理、序列化及传输字段保护。`worker.mjs` 是新增的请求级宿主。两者独立于 React、ST、TavernHelper 及第三方包。配置版本中包含核心、Worker 和 frame.mjs 三个文件的组合 SHA-256。提示词与条目顺序参与正式版 v4 指纹，旧摘要沿用各自的兼容核对。

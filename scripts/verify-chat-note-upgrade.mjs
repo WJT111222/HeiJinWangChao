@@ -75,9 +75,9 @@ try {
     const current = await context.newPage();
     await current.goto(origin + '/probe');
     const result = await current.evaluate(async (sample) => {
-      const [{ SaveRepository, saveDatabaseVersion }, { elapsedVariables, submission }, codec, domain, client, oracle, settings] = await Promise.all([
+      const [{ SaveRepository, saveDatabaseVersion }, { elapsedVariables, submission }, codec, domain, settings] = await Promise.all([
         '/src/services/storage/saveRepository.ts', '/src/tests/fixtures/turn.ts', '/src/services/storage/backup.ts',
-        '/src/domain/drafts.ts', '/src/presets/library.ts', '/src/presets/meowssiah/definition.ts', '/src/ui/settings/model.ts'
+        '/src/domain/drafts.ts', '/src/ui/settings/model.ts'
       ].map(path => import(path)));
       const id = sample.state.saveId, repo = await SaveRepository.open();
       const copy = await SaveRepository.open('restored-v6');
@@ -107,7 +107,7 @@ try {
         const restored = await importInto(copy, file), restoredWaiting = await importInto(waitingCopy, sample.unboundBackup);
         const restoredV11 = await importInto(oldFrozenCopy, sample.frozenBackup);
         const lease = await repo.prepareWorldview(live.draft, false);
-        const writing = await client.captureStoryWriting({ definition: oracle.oracleDefinition }, settings.defaultSettings().prompts);
+        const writing = { source: 'preset', id: 'meowssiah', version: 'previous', configuration: '0'.repeat(64) };
         const candidate = domain.rerollStory(live.draft, { turnKind: 'regular', narrative: '主角收好纸条。', summary: '收好纸条。', variableGuide: [] }, writing);
         let staleError;
         try {

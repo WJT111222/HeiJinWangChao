@@ -31,7 +31,6 @@ import { timePreflight, turnTimePolicy, historicalPerspective } from '../domain/
 
 export interface ComposeInput {
   worldview?: MainWorldview;
-  oracleNote?: string;
   stage: AiStage | 'memory';
   mode: 'opening' | 'regular';
   state: GameState;

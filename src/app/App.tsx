@@ -1,3 +1,5 @@
+import { readPresetSettings } from '../presets/settings';
+import { withdrawnPresetId, withdrawnPresetNotice } from '../presets/withdrawnPreset';
 import { authorizeHistoryStart } from '../ui/history/authorize';
 import {GlobalFeedback} from '../ui/GlobalFeedback';
 import { canAcceptNpcView } from '../ui/game/npcManagement';
@@ -81,6 +83,10 @@ function bootstrap() {
   } catch {
     /* 可重新选择存档。 */
   }
+  try {
+    const presets = readPresetSettings();
+    if (presets.enabled && presets.selected === withdrawnPresetId) warnings.push(withdrawnPresetNotice);
+  } catch { /* The preset editor handles unreadable settings in recovery mode. */ }
   return { settings, form, hasDraft, selected, warning: warnings.join(' ') };
 }
 export function App() {

@@ -1,4 +1,3 @@
-import { oracleId } from '../../presets/meowssiah/definition';
 import { usesSpreset } from '../../presets/spreset/definition';
 import { parsePartialEntities } from '../validation/partialOutputs';
 import { canonicalJson } from '../../domain/worldbook/canonical';
@@ -211,9 +210,7 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   prepared?.();
   const responseResult = await client.generate(snapshot, outbound, {
     ...options,
-    oracleComment: prompt.preset?.oracleComment,
-    spresetPrototype: isolatedLiterature && prompt.preset?.id !== oracleId,
-    oracleStory: isolatedLiterature && prompt.preset?.id === oracleId,
+    spresetPrototype: isolatedLiterature,
     confirmedTransmission: requestedContinuation?.consent,
     tavernType: scripted ? type : undefined,
     retryableTavernHost: presetSelection === nativeDeliveryId || presetSelection?.definition.id === 'peinture-1118',
