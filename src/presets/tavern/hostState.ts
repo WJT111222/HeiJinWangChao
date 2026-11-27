@@ -1,3 +1,4 @@
+import { withdrawnPresetId } from '../withdrawnPreset';
 import { usesSpreset } from '../spreset/definition';
 import type { ComposeInput } from '../../prompts/context';
 import isEqual from 'lodash/isEqual';
@@ -128,7 +129,12 @@ export function startAssistant() {
   if (startup) return startup;
   startup = (async () => {
     if (new URLSearchParams(location.search).get('safe') === '1') return;
-    const selected = captureAssistantSelection();
+    let selected: AssistantSelection;
+    try { selected = captureAssistantSelection(); } catch (error) {
+      if (!(error instanceof AiError) || error.details?.fieldPath !== 'tavern.preset_withdrawn') throw error;
+      pageMode = withdrawnPresetId;
+      return;
+    }
     pageMode = modeOf(selected);
     if (!selected || usesSpreset(selected)) return;
     const { loadAssistant } = await import('./scriptHost');

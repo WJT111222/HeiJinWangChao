@@ -25,6 +25,7 @@ export class LiterarySession {
       path: string;
       tool: string;
       field: string;
+      previewProgress?: boolean;
       optionalTextFields?: readonly string[];
       result?: string;
     },
@@ -112,9 +113,9 @@ export class LiterarySession {
       this.signal,
       this.profile.tool,
       this.profile.field,
-      { ...observer, onUnverifiedTool: observer.oracleStory ? observer.onUnverifiedTool : undefined },
+      { ...observer, onUnverifiedTool: this.profile.previewProgress ? observer.onUnverifiedTool : undefined },
       this.profile.optionalTextFields,
-      observer.oracleStory ? observer.onLiteraryPreview : undefined,
+      this.profile.previewProgress ? observer.onLiteraryPreview : undefined,
     );
     const content = upstream.call && (record(upstream.call.args)[this.profile.field] as string | undefined);
     // Only the original frames can attest to padding before this completed call.

@@ -43,8 +43,6 @@ export interface RequestOptions {
   storyClock?: import('../../presets/tavern/timing').StoryClock;
   presetSampling?: Sampling;
   spresetPrototype?: boolean;
-  oracleStory?: boolean;
-  oracleComment?: boolean;
   tavernType?: GenerationType;
   /** Frozen reference records for checking the bundled script’s final tool declaration. */
   nativeDeliveryReference?: readonly AiMessage[];
@@ -344,16 +342,15 @@ export class AiClient {
   ): Promise<AiResponse> {
     const theater = snapshot.stage === 'theater' || snapshot.stage === 'imagePrompt';
     const prototype = import.meta.env.DEV && options.spresetPrototype && snapshot.stage === 'story';
-    const oracle = options.oracleStory && snapshot.stage === 'story';
     let session: LiterarySession | undefined;
     // Theater keeps a single paid transport. A failed direct POST is not replayed through a relay.
-    const relay = theater || snapshot.stage === 'phone' || ((prototype || oracle) && !options.confirmedTransmission) ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
+    const relay = theater || snapshot.stage === 'phone' || (prototype && !options.confirmedTransmission) ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
     const allowOutputLimit = options.validateStoryOutputLimit === true || theater;
     const relayEnabled = relayMode() === 'auto';
     const started = performance.now();
     const compat = snapshot.stage === 'story' && options.tavernType !== undefined;
-    // 神域文学处理器和原型会话自行读取上游，不向本次时钟报告进度；沿用单一总时限，避免被无输出时限误判。
-    const limits = snapshot.stage === 'story' && options.stream && !prototype && !oracle ? options.streamTimeouts : undefined;
+    // 原型会话自行读取上游，不向本次时钟报告进度；沿用单一总时限，避免被无输出时限误判。
+    const limits = snapshot.stage === 'story' && options.stream && !prototype ? options.streamTimeouts : undefined;
     const clock = options.storyClock ?? (compat || limits ? new StoryClock() : undefined);
     const trace = compat ? newTrace(clock) : undefined;
     let terminalEvidence: UpstreamTrace['boundary'];
@@ -397,19 +394,10 @@ export class AiClient {
           // 酒馆路径在真正发出时由 response() 记录；确认续写的请求也要等到实际发送。
           if (!trace) clock?.first('sentMs');
           return this.response(wire.url, wire.init, requestSignal, relay, snapshot, observe,
-            wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission, clock).catch(error => {
-            if (oracle && !options.confirmedTransmission && !requestSignal.aborted &&
-                (error instanceof TypeError || error instanceof DOMException && error.name === 'NetworkError'))
-              throw new AiError('network', undefined, { fieldPath: 'channel.oracle_direct_network' });
-            throw error;
-          });
+            wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission, clock);
         };
         const playerWorldbook = snapshot.stage === 'story' ? options.playerWorldbook : undefined;
-        if (oracle) {
-          const { LiterarySession } = await import('../../presets/spreset/literarySession');
-          session = new LiterarySession(signal, { title: '神域文学处理器', path: '/literature/meowssiah/sandbox.html',
-            tool: 'soliumbra_reply', field: 'game_content', optionalTextFields: options.oracleComment ? ['think_nya', 'comment'] : ['think_nya'], result: JSON.stringify({ ok:true }) }, options.presetSampling);
-        } else if (import.meta.env.DEV && prototype) {
+        if (import.meta.env.DEV && prototype) {
           const { PrototypeSession } = await import('../../presets/spreset/session');
           session = new PrototypeSession(signal);
         }
@@ -647,8 +635,8 @@ export class AiClient {
         failure = uncertain;
       }
       // Relay policy follows the actual transport. The script host can only replay a failed original request;
-      // 神域文学处理器与原型会话只允许手动重试，避免再付一笔。
-      if ((relay.used || prototype || oracle) && failure instanceof AiError) manualRetryOnly.add(failure);
+      // 原型会话只允许手动重试，避免再付一笔。
+      if ((relay.used || prototype) && failure instanceof AiError) manualRetryOnly.add(failure);
       if (trace && failure instanceof AiError) {
         const upstreamTimeout = failure.code === 'timeout' && !trace.complete && trace.clock.marks.sentMs !== undefined &&
           (['awaiting_headers', 'awaiting_bytes', 'upstream_read'].includes(trace.clock.marks.deadlinePhase ?? ''));

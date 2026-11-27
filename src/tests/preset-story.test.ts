@@ -734,3 +734,22 @@ describe('预设正文采样兼容', () => {
     expect(body(5)).not.toHaveProperty('top_p');
   });
 });
+
+describe('已下架的文学预设', () => {
+  it.each(['', '?safe=1', '?spreset=prototype'])('旧选择必须重新确认，普通或恢复入口 %s 均不派发替代请求', async search => {
+    vi.stubGlobal('location', new URL('http://localhost/' + search));
+    const preferences = { enabled: true, selected: 'meowssiah', packages: {
+      meowssiah: { version: 'previous', scripts: {}, entries: { custom: { content: '玩家的原稿' } } },
+    } };
+    savePresetSettings(preferences);
+    expect(builtInPresets.map(p => p.id)).not.toContain('meowssiah');
+    expect(() => captureAssistantSelection()).toThrow(/重新选择正文预设/);
+    const input = talentPromptInput('story', 'regular');
+    const client = new AiClient();
+    const generate = vi.spyOn(client, 'generate');
+    await expect(runStageRequest({ ...input, stage: 'story' }, defaultAiConfig(), new CredentialVault(store, store), {}, client))
+      .rejects.toMatchObject({details:{fieldPath:'tavern.preset_withdrawn'}});
+    expect(generate).not.toHaveBeenCalled();
+    expect(readPresetSettings()).toEqual(preferences);
+  });
+});

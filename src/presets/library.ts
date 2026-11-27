@@ -1,5 +1,3 @@
-import { oracleDefinition, oracleId } from './meowssiah/definition';
-import { checkOracle, oracleEdits } from './meowssiah/config';
 import { definition as prototype, prototypeRequested, readPrototype } from './spreset/definition';
 import { peintureWritingVariables } from './peintureSettings';
 import { parsePresetTemplate } from './macros';
@@ -12,6 +10,8 @@ import peinture1124 from './resources/peinture-1124-manifest.json';
 import controls from './resources/peinture-controls.json';
 import peinture from './resources/peinture-manifest.json';
 import { loadPreset, type PresetDefinition, type PackageOverride, type LoadedPreset } from './package';
+import { withdrawnPresetId } from './withdrawnPreset';
+import { AiError } from '../services/ai/errors';
 import { nativeDeliveryId, readPresetSettings, storyMode } from './settings';
 
 interface PresetRegistration<T extends PresetDefinition = PresetDefinition & { title: string; author: string }> {
@@ -31,8 +31,6 @@ const registry = new Map<string, PresetRegistration>([
   ],
   [peinture1124.id, { definition: peinture1124, scriptInputs: peintureWritingVariables, readsPresetVariables: false,
     read: async () => (await import('./resources/peinture-1124.json?raw')).default }],
-  [oracleId, { definition: oracleDefinition, readsPresetVariables: false,
-    read: async () => (await import('./meowssiah/literature.json?raw')).default }],
 ]);
 export const builtInPresets = [...registry.values()].map((item) => item.definition);
 function registrationFor(id: string): PresetRegistration<PresetDefinition> | undefined {
@@ -96,7 +94,6 @@ function configurationText(loaded: LoadedPreset, preset: NonNullable<PresetSelec
     return variables === null ? [] : [{ id: script.id, module: script.module, content: script.content, variables }];
   });
   return canonicalJson({ entries, scripts,
-    ...(preset.definition.id === oracleId && { sampling: loaded.sampling }),
     variables: registration.readsPresetVariables === false ? undefined : preset.overrides?.variables ?? {} });
 }
 
@@ -129,8 +126,15 @@ export async function writingWitness(selection: AssistantSelection | undefined, 
 }
 
 export function captureAssistantSelection(): AssistantSelection {
-  if (new URLSearchParams(globalThis.location?.search).get('safe') === '1') return null;
-  const settings = readPresetSettings();
+  const safe = new URLSearchParams(globalThis.location?.search).get('safe') === '1';
+  let settings;
+  try { settings = readPresetSettings(); } catch (error) {
+    if (safe) return null;
+    throw error;
+  }
+  if (settings.enabled && settings.selected === withdrawnPresetId)
+    throw new AiError('configuration', undefined, { fieldPath: 'tavern.preset_withdrawn' });
+  if (safe) return null;
   const mode = storyMode(settings);
   if (!mode) return import.meta.env.DEV && prototypeRequested() ? { definition: prototype } : null;
   if (mode === nativeDeliveryId) return nativeDeliveryId;
@@ -141,12 +145,9 @@ export function captureAssistantSelection(): AssistantSelection {
 export async function resolveStoryPreset(selected: NonNullable<PresetSelection>) {
   const item = registrationFor(selected.definition.id);
   if (!item) throw new Error('所选内置预设不存在');
-  if ((item.definition.id === oracleId || import.meta.env.DEV && item.definition.id === prototype.id) && item.definition.version !== selected.definition.version)
+  if (import.meta.env.DEV && item.definition.id === prototype.id && item.definition.version !== selected.definition.version)
     throw new Error('文学预设版本不匹配');
-  const pack = loadPreset(await item.read(), item.definition, selected.definition.id === oracleId && selected.overrides
-    ? oracleEdits(selected.overrides) : selected.overrides);
-  if (selected.definition.id === oracleId) checkOracle(pack);
-  return pack;
+  return loadPreset(await item.read(), item.definition, selected.overrides);
 }
 
 // Only the audited module text is shared. The standalone host has no literary entries,

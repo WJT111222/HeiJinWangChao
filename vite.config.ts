@@ -1,6 +1,5 @@
 import { execFileSync } from 'node:child_process';
 import { prototypeSandbox } from './experiments/spreset/devServer';
-import { oracleSandbox } from './experiments/meowssiah/plugin';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
@@ -26,7 +25,7 @@ export default defineConfig(({ command }) => ({
   define: {
     'import.meta.env.VITE_FEEDBACK_BUILD': JSON.stringify(command === 'build' ? buildVersion() : 'development'),
   },
-  plugins: [react(), prototypeSandbox(), oracleSandbox()],
+  plugins: [react(), prototypeSandbox()],
   test: {
     environment: 'node',
     setupFiles: ['fake-indexeddb/auto'],

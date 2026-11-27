@@ -119,13 +119,6 @@ terms above.
 
 SPreset 发行源码来自 SoliUmbra / starowo 的 `starowo/starowo.github.io` 仓库。
 C2 在 `experiments/spreset/` 提供修改后的可编辑组件、完整 GPL 第三版许可及对应源码清单。
-小猫之神的 Meowssiah 预设按作者提供的适配许可研究，其署名和原包指纹见清单。
+小猫之神文学预设仍在等待作者授权，V1.0 不分发其文学包、菜单及处理器。
 本地开发实验的入口、分发边界及验证记录见
 [SPreset 运行时原型](docs/tavernhelper-compat/SPRESET_C2.md)。
-
-## 小猫之神 · 神域控制台
-
-预设及菜单作者 SoliUmbra（小猫之神），SPreset 作者 SoliUmbra / starowo。
-项目负责人已联系创作者，并就本次公开分发适配文学资源及 SPreset 组合产物的问题确认已获明确授权。授权说明来自负责人；本仓库保留原包中的免费传播声明。外链头像、字体及第三方插件不随包分发。[原件声明](docs/tavernhelper-compat/meowssiah/AUTHOR.txt) · [原件对照清单](docs/tavernhelper-compat/meowssiah/inventory.md)
-
-固定 SPreset 提交为 `53bd585da14248ba10baaede7fc7ed0cebe1eeeb`。本地修改包括冻结的输出工具声明、兼容正文预处理及一次性执行收据。GPL-3.0-only 组件随附原许可和可编辑源码。玩家可从神域控制台的来源入口下载相同版本的 Worker、处理管线、消息桥、构建脚本与 COPYING。下载这四个 .mjs 文件到同一目录后，运行 `node build.mjs --standalone` 即可离线逐字节重建 sandbox.html。游戏工程的版本由构建 SHA 标识，仓库保留锁文件、Vite 插件和构建配置。[固定源码及指纹](experiments/meowssiah/SOURCES.json) · [GPLv3 全文](experiments/spreset/COPYING) · [构建路径](experiments/meowssiah/build.mjs)

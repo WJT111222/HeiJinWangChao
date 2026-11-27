@@ -107,3 +107,11 @@ it('已确认的文学来源不能跨预设版本或预设标识发送', async (
     expect(witness.matches({definition:{...selected.definition,...difference}},settings.prompts)).toBe(false);
   }
 });
+
+it('下架预设的旧断点不能借用其他文学归属继续执行', async () => {
+  const previous = { source: 'preset' as const, id: 'meowssiah', version: 'previous', configuration: '0'.repeat(64) };
+  for (const selection of [null, ...builtInPresets.map(definition => ({ definition }))]) {
+    const current = await captureStoryWriting(selection, settings.prompts);
+    expect(await canResumeWriting(previous, current, selection)).toBe(false);
+  }
+});
