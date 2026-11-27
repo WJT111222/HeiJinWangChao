@@ -116,7 +116,7 @@
 /* The in-game archive shares its width with two sidebars. Size routes to the editor. */
 @container ai-settings (max-width: 43rem) {
   .ai-conn:not(.is-mobile) .ai-use { grid-template-columns: minmax(0, 1fr) auto; }
-  .ai-conn:not(.is-mobile) .ai-use > :is(.ai-route-pick, .ai-inherit) { grid-column: 1 / -1; }
+  .ai-conn:not(.is-mobile) .ai-use > .ai-use-controls { grid-column: 1 / -1; }
   .ai-conn:not(.is-mobile) .ai-route-pick { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 2.3rem; }
 }
 @container ai-settings (max-width: 32rem) {

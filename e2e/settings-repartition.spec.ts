@@ -37,6 +37,9 @@ for (const appearance of ['day', 'night'] as const) {
       const loading = root.getByText(/^(正在打开|读取配置…|读取存档…)/);
       await expect(loading).toHaveCount(0);
       await page.evaluate(() => document.fonts.ready);
+      await root.locator('.settings-content').evaluate(async pane => {
+        await Promise.all(pane.getAnimations().map(animation => animation.finished));
+      });
       const dims = await root.evaluate(el => {
         const pane = el.querySelector<HTMLElement>('.settings-content')!;
         return { width: pane.clientWidth, scroll: pane.scrollWidth, viewport: innerWidth,

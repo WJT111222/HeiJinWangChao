@@ -69,6 +69,7 @@ export function SettingsPanel({
   const desktop=useDesktopFeedback();
   const aiWorkspace = useAiSettingsDraft();
   const [channelName, setChannelName] = useState('');
+  const [orderDirty, setOrderDirty] = useState(false);
   const [imageDirty, setImageDirty] = useState(false);
   const [literaryDirty, setLiteraryDirty] = useState(false);
   const [mobileHome,setMobileHome]=useState(!desktop);
@@ -128,7 +129,7 @@ export function SettingsPanel({
     channels: aiDirty, routing: aiDirty, variables: variablesDirty, worldbooks: worldbookDirty, images: imageDirty, literary: literaryDirty, memory: summaryDirty,
     writing: promptKeys(['perspective','style','difficulty','minNarrativeChars','maxNarrativeChars']),
     prompts: promptKeys(['actionOptions','naturalProse','realWorld','noControl']),
-    promptmgr: editing.theaterPrompt !== editingBase.theaterPrompt,
+    promptmgr: orderDirty || editing.theaterPrompt !== editingBase.theaterPrompt,
     stages: runtimeKeys(['useEntityStage','useVariableStage','useWorldStage','streamEntities','streamVariables','streamWorld','streamStory']),
     timing: runtimeKeys(['timeoutSeconds','streamTotalSeconds','streamIdleSeconds','failureAutoRetry','maxAutoRetries']),
     phone: changed(editing.phone, editingBase.phone) || runtimeKeys(['phoneChat']),
@@ -251,7 +252,7 @@ export function SettingsPanel({
       {(!desktop || tab !== 'variables') && <nav aria-label="设置分类" className="settings-nav" hidden={!desktop&&!mobileHome}>
         {settingsGroups.map(([groupName, items]) => <Fragment key={groupName}>
           <div className="settings-group-name">{groupName}</div>
-          {items.map(([id, seal, name, description]) => <button key={id} data-page={id} data-settings-category={name} aria-label={name}
+          {(items as readonly PageInfo[]).filter(([id]) => id !== 'variables' || Boolean(variableSaveId)).map(([id, seal, name, description]) => <button key={id} data-page={id} data-settings-category={name} aria-label={name}
             aria-pressed={desktop && tab === id} onClick={() => navigate(id)}>
             <i aria-hidden="true">{seal}</i>{desktop ? <span>{name}</span> : <span className="settings-row-text"><strong>{name}</strong><small>{description}</small></span>}
             {dirtyPages[id] && <span className="dirty" aria-hidden="true" title="有未保存的修改"/>}{!desktop && <span aria-hidden="true">›</span>}
@@ -259,7 +260,7 @@ export function SettingsPanel({
         </Fragment>)}
         {onOpenNotice && <NoticeLinks onOpen={onOpenNotice} />}
       </nav>}
-      {(desktop || !mobileHome || group === 'ai') && <div className="settings-content" hidden={!desktop && mobileHome}>
+      {(desktop || !mobileHome || group === 'ai' || orderDirty) && <div className="settings-content" hidden={!desktop && mobileHome}>
         {desktop && tab === 'variables' && <button className="vm-back" onClick={() => variablesDirty ? setPendingTab('channels') : showCategory('channels')}>‹ 返回设置分类</button>}
         {!desktop && <button ref={mobileBack} type="button" className={`paper-back${channelDetail ? ' ai-channel-back' : ''}`}
           aria-label={channelDetail ? '返回渠道列表' : '返回设置'} onClick={back}>{channelDetail ? '‹ 渠道列表' : '‹ 设置'}</button>}
@@ -267,9 +268,11 @@ export function SettingsPanel({
         {tab === 'variables' && !variableSaveId && <p>打开存档后可在这里查看并修正变量。</p>}
         {tab === 'variables' && variableSaveId && repository && onVariablesSaved && <VariableManager key={variableSaveId} saveId={variableSaveId} instance={variableInstance} companion={companion} repository={repository} onSaved={onVariablesSaved} onDirtyChange={variablesDirtyChanged}/>}
         {tab === 'feedback' && <SuggestionFeedback />}
-        {tab === 'promptmgr' && (
+        {(tab === 'promptmgr' || orderDirty) && (
+          <div hidden={tab !== 'promptmgr'}>
           <Suspense fallback={<p>正在打开提示词管理中心…</p>}>
             <PromptInspector
+              onOrderDirtyChange={setOrderDirty}
               settings={editing}
               presetOwnsWriting={presetOwnsWriting}
               repository={repository}
@@ -277,7 +280,7 @@ export function SettingsPanel({
               onPromptChange={prompt}
               onTheaterPromptChange={value => setEditing({ ...editing, theaterPrompt: value })}
             />
-          </Suspense>
+          </Suspense></div>
         )}
         {tab === 'worldbooks' && (
           <Suspense fallback={<p>正在打开世界书…</p>}>
@@ -435,7 +438,7 @@ export function SettingsPanel({
         )}</div>
       </div>}
       {pendingTab && <UnsavedAiChanges onKeep={group === 'local' && pendingTab !== 'home' ? () => { showCategory(pendingTab); setPendingTab(undefined); } : undefined} subject={subject} onContinue={() => { if (mobileHome) showCategory(tab); setPendingTab(undefined); }} onDiscard={() => {
-        if (group === 'local') { setEditing(settings); setEditingBase(settings); setCustomLength(false); }
+        if (group === 'local') { setOrderDirty(false); setEditing(settings); setEditingBase(settings); setCustomLength(false); }
         if (group === 'ai') { aiWorkspace.setDraft(structuredClone(aiWorkspace.saved)); aiDirtyChanged(false); }
         if (pendingTab === 'home') showMobileHome(); else showCategory(pendingTab);
         setPendingTab(undefined);

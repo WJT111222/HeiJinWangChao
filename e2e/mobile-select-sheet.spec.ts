@@ -1,5 +1,5 @@
 import { test, expect } from './helpers/test';
-import { addChannel, aiTab, backToList, openAiSettings, saveAi } from './helpers/aiSettings';
+import { addChannel, aiPage, aiTab, backToList, openAiSettings, saveAi } from './helpers/aiSettings';
 
 // iOS 26 Safari 的悬浮工具栏约 80px 会盖住贴底抽屉的底部；键盘收起后视口偏移还可能把抽屉往下推。
 // 选项很少时，选择抽屉也必须保持足够高度，让选项落在屏幕上半部分，而不是紧贴底边。
@@ -10,10 +10,11 @@ test('手机选择抽屉：选项远离屏幕底边；没有渠道时提示先�
   await page.goto('/');
   await page.locator('[data-settings-open]').first().click();
   const settings = await aiTab(page);
+  await aiPage(settings, 'routing');
   const viewport = page.viewportSize()!;
 
   const trigger = settings.getByRole('combobox', { name: '正文生成渠道', exact: true });
-  await expect(settings.getByText('还没有渠道：先在下方「我的渠道」点「＋ 添加渠道」', { exact: false })).toBeVisible();
+  await expect(settings.getByText('还没有渠道，请先到「渠道与密钥」添加渠道。', { exact: false })).toBeVisible();
   await trigger.click();
   const picker = page.getByRole('dialog', { name: '正文生成渠道', exact: true });
   await expect(picker).toBeVisible();
@@ -24,7 +25,7 @@ test('手机选择抽屉：选项远离屏幕底边；没有渠道时提示先�
   const option = (await picker.getByRole('option').first().boundingBox())!;
   expect(option.y + option.height).toBeLessThanOrEqual(viewport.height - SAFARI_TOOLBAR_ALLOWANCE);
   const hint = picker.locator('.select-hint');
-  await expect(hint).toContainText('还没有渠道');
+  await expect(hint).toContainText('请先到「渠道与密钥」添加渠道。');
   expect((await hint.boundingBox())!.y + (await hint.boundingBox())!.height).toBeLessThanOrEqual(viewport.height - SAFARI_TOOLBAR_ALLOWANCE);
   await expect(hint).not.toHaveAttribute('role', 'option');
   await page.keyboard.press('Escape');
@@ -34,7 +35,8 @@ test('手机选择抽屉：选项远离屏幕底边；没有渠道时提示先�
   // 有渠道之后不再提示，渠道出现在选项里。
   await addChannel(settings, { name: '测试渠道', url: 'https://relay.example.com/v1', key: 'sk-test' });
   await backToList(settings);
-  await expect(settings.getByText('还没有渠道：先在下方', { exact: false })).toHaveCount(0);
+  await aiPage(settings, 'routing');
+  await expect(settings.getByText('还没有渠道，请先到', { exact: false })).toHaveCount(0);
   await trigger.click();
   await expect(picker.getByRole('option', { name: '测试渠道' })).toBeVisible();
   await expect(picker.locator('.select-hint')).toHaveCount(0);
@@ -54,6 +56,7 @@ test('手机选择抽屉：选项多时可以用手指滑到底并选中最后�
   const settings = await aiTab(page);
   await addChannel(settings, { name: '测试渠道', url: 'https://relay.example.com/v1', key: 'sk-test' });
   await backToList(settings);
+  await aiPage(settings, 'routing');
   await settings.getByRole('combobox', { name: '正文生成渠道', exact: true }).click();
   await page.getByRole('dialog', { name: '正文生成渠道', exact: true }).getByRole('option', { name: '测试渠道' }).click();
   const model = settings.getByRole('combobox', { name: '正文生成模型', exact: true });
@@ -108,6 +111,7 @@ test('手机选择抽屉：选项多时可以用手指滑到底并选中最后�
   await page.keyboard.press('Escape');
   await expect(settings).toHaveCount(0);
   const reopened = await openAiSettings(page);
+  await aiPage(reopened, 'routing');
   await expect(reopened.getByRole('combobox', { name: '正文生成渠道', exact: true })).toContainText('测试渠道');
   await expect(reopened.getByRole('combobox', { name: '正文生成模型', exact: true })).toContainText(ids[47]);
   await expect(reopened.getByRole('combobox', { name: '正文生成模型', exact: true })).toHaveAttribute('value', ids[47]);
@@ -116,6 +120,7 @@ test('手机选择抽屉：选项多时可以用手指滑到底并选中最后�
   await expect(reopened).toHaveCount(0);
   await page.reload();
   const reloaded = await openAiSettings(page);
+  await aiPage(reloaded, 'routing');
   await expect(reloaded.getByRole('combobox', { name: '正文生成模型', exact: true })).toContainText(ids[47]);
   await expect(reloaded.getByRole('combobox', { name: '正文生成模型', exact: true })).toHaveAttribute('value', ids[47]);
   expect(generationPosts).toBe(0);

@@ -1,5 +1,5 @@
 import { ModelRouteLabel } from '../settings/ModelRouteLabel';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import {
   autoLabels,
@@ -26,7 +26,7 @@ function conflictPreview(value: unknown) {
   return text.length > 160 ? text.slice(0, 160) + '…' : text || '（空）';
 }
 
-function KeyField({ kind, base }: { kind: Backend; base: string }) {
+function KeyField({ kind, base, onDirtyChange }: { kind: Backend; base: string; onDirtyChange: (value: boolean) => void }) {
   let id = '';
   try {
     id = credentialId(kind, base);
@@ -36,10 +36,15 @@ function KeyField({ kind, base }: { kind: Backend; base: string }) {
   const [key, setKey] = useState(''),
     [remember, setRemember] = useState(false),
     [notice, setNotice] = useState('');
+  const [saved, setSaved] = useState({ key: '', remember: false });
+  useLayoutEffect(() => { onDirtyChange(key !== saved.key || remember !== saved.remember); }, [key, remember, saved, onDirtyChange]);
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
   useEffect(() => {
     try {
-      setKey(id ? imageVault().get(id) : '');
-      setRemember(!!id && imageVault().remembered(id));
+      const next = { key: id ? imageVault().get(id) : '', remember: !!id && imageVault().remembered(id) };
+      setSaved(next);
+      setKey(next.key);
+      setRemember(next.remember);
       setNotice('');
     } catch {
       setNotice('密钥库不可用');
@@ -64,6 +69,7 @@ function KeyField({ kind, base }: { kind: Backend; base: string }) {
         onClick={() => {
           try {
             imageVault().set(id, key, remember);
+            setSaved({ key, remember });
             setNotice(key ? '密钥已保存' : '密钥已清除');
           } catch {
             setNotice('密钥保存失败');
@@ -153,6 +159,15 @@ export function ImageSettings({ repository, openRouting, onDirtyChange }: {
   const [acknowledged, setAcknowledged] = useState(() => {
     try { return localStorage.getItem(legacyTextNotice) === '1'; } catch { return false; }
   });
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.storageArea === localStorage && (event.key === legacyTextNotice || event.key === null))
+        setAcknowledged(localStorage.getItem(legacyTextNotice) === '1');
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
+  const [keyDirty, setKeyDirty] = useState(false);
   const [editor, setEditor] = useState(() => {
       const initial = config();
       return reconcileConfig(initial, initial, initial);
@@ -162,8 +177,8 @@ export function ImageSettings({ repository, openRouting, onDirtyChange }: {
   const [presetName, setPresetName] = useState('');
   const [pendingEnabled, setPendingEnabled] = useState<boolean>();
   const c = editor.draft;
-  const dirty = JSON.stringify(c) !== JSON.stringify(editor.saved);
-  useEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
+  const dirty = keyDirty || JSON.stringify(c) !== JSON.stringify(editor.saved);
+  useLayoutEffect(() => { onDirtyChange(dirty); }, [dirty, onDirtyChange]);
   useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
   useEffect(() => {
     const sync = () => {
@@ -266,7 +281,7 @@ export function ImageSettings({ repository, openRouting, onDirtyChange }: {
               生成路径
               <input value={p.path} placeholder={paths[b]} onChange={(e) => setP({ path: e.target.value })} />
             </label>
-            <KeyField kind={b} base={p.base} />
+            <KeyField onDirtyChange={setKeyDirty} kind={b} base={p.base} />
             {b === 'comfy' ? (
               <label>
                 ComfyUI API 工作流 JSON

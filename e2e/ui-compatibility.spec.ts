@@ -116,7 +116,7 @@ for (const theme of ['day', 'night']) {
     }
     const radio = settings.getByRole('radiogroup', { name: '剧情风格' }).getByRole('radio').nth(2);
     await radio.check();
-    await expect(settings.locator(isMobile ? '.style-item-desc' : '.style-explain')).toBeVisible();
+    await expect(settings.locator('.style-field').filter({ has: page.getByRole('radiogroup', { name: '剧情风格', exact: true }) }).locator(isMobile ? '.style-item-desc' : '.style-explain')).toBeVisible();
     await screenshot(page, 'style');
     await button(settings, '保存本地设置').click();
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.settings.v1')!).prompts.style)).toBe(await radio.inputValue());

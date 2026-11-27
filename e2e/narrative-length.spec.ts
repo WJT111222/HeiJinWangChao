@@ -54,7 +54,7 @@ test('新玩家默认低档；选中档 / 高档后保存，刷新仍在；高�
   await tier(root, '高').check();
   await expect(root.getByLabel('正文最低字数', { exact: true })).toHaveValue('8000');
   await expect(root.getByLabel('正文建议上限', { exact: true })).toHaveValue('10000');
-  await expect(root.getByRole('group', { name: '正文篇幅' })).toContainText('建议在「AI 连接」把最大输出调到 16k 以上');
+  await expect(root.getByRole('group', { name: '正文篇幅' })).toContainText('建议在「渠道与密钥」把最大输出调到 16k 以上');
   await root.getByRole('group', { name: '正文篇幅' }).screenshot({ path: `/tmp/length-${info.project.name}-high.png` });
   await root.getByRole('button', { name: '保存本地设置', exact: true }).click();
   await expect(root.getByRole('status')).toContainText('本地偏好已保存');

@@ -1,7 +1,7 @@
 import { credentialScope } from '../../services/ai/compatibleEndpoints';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
-  AiConfigSchema,
+  aiConfigKey, AiConfigSchema,
   defaultAiConfig,
   newChannel,
   readAiConfig,
@@ -9,8 +9,9 @@ import {
   setModelRouteFollow, removeChannel, routeDefaults, followTargets,
 } from '../../services/ai/configuration';
 import type { SettingsPage } from './settingsPages';
-import type { AiConfig, ModelRoute, Channel, Protocol } from '../../services/ai/configuration';
+import type { ModelRoute, Channel, Protocol } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
+import { AiConfigConflict, mergeAiDraft, storedDraft, withAiSaveLock, type AiDraft as Draft } from './aiDraftMerge';
 import type { VaultSnapshot } from '../../services/ai/credentials';
 import { channelSnapshot, selectedModelRoute } from '../../services/ai/snapshot';
 import { AiClient } from '../../services/ai/client';
@@ -21,7 +22,7 @@ import { Feedback, useDesktopFeedback } from '../Feedback';
 import type { FeedbackLevel } from '../Feedback';
 import { Dialog } from '../Dialog';
 import { OutputTokenLimit } from './OutputTokenLimit';
-import { detectPreset, presetById, presets, protocolNames, validEndpoint } from './aiPresets';
+import { presetById, presets, protocolNames, validEndpoint } from './aiPresets';
 import type { PresetId } from './aiPresets';
 import './ai-connections.css';
 
@@ -40,27 +41,20 @@ const stages: [ModelRoute, string, string, string][] = [
 const routingGroups = [['主线回合', stages.slice(0, 4)], ['手机', stages.slice(4, 7)], ['记忆', stages.slice(7, 8)], ['扩展功能', stages.slice(8)]] as const;
 const short: Record<ModelRoute, string> = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', memory: '记忆总结', phone:'私聊', phoneGroup: '群聊', blackbook:'小黑书', theater:'小剧场', imagePrompt:'生图提示词' };
 type Optional = Exclude<ModelRoute, 'story'>;
-interface Draft { config: AiConfig; keys: Record<string, string>; remember: Record<string, boolean>; presets: Record<string, PresetId | ''> }
 type TestState = { model: string; status: 'loading' | 'ok' | 'err'; text: string };
 
 function memoryStore() {
   const data = new Map<string, string>();
   return { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); }, removeItem: (key: string) => { data.delete(key); } };
 }
-function initial(): { draft: Draft; vault?: CredentialVault; notice: string } {
+function initial(): { draft: Draft; credentials: VaultSnapshot; vault?: CredentialVault; notice: string } {
   try {
     const config = readAiConfig(localStorage);
     const vault = new CredentialVault(sessionStorage, localStorage);
-    const keys: Record<string, string> = {}, remember: Record<string, boolean> = {}, chosen: Record<string, PresetId> = {};
-    for (const channel of config.channels) {
-      keys[channel.id] = vault.get(channel.id);
-      // 已有密钥沿用原来的保存方式；还没有密钥的渠道默认记住。
-      remember[channel.id] = keys[channel.id] ? vault.remembered(channel.id) : true;
-      chosen[channel.id] = detectPreset(channel);
-    }
-    return { draft: { config, keys, remember, presets: chosen }, vault, notice: '' };
+    const credentials = vault.snapshot(config.channels.map(channel => channel.id));
+    return { draft: storedDraft(config, credentials), vault, credentials, notice: '' };
   } catch {
-    return { draft: { config: defaultAiConfig(), keys: {}, remember: {}, presets: {} }, notice: 'AI 配置或浏览器存储无法读取；原始数据未被覆盖。' };
+    return { credentials: [], draft: { config: defaultAiConfig(), keys: {}, remember: {}, presets: {} }, notice: 'AI 配置或浏览器存储无法读取；原始数据未被覆盖。' };
   }
 }
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -69,7 +63,8 @@ export function useAiSettingsDraft() {
   const [start] = useState(initial);
   const [saved, setSaved] = useState<Draft>(() => clone(start.draft));
   const [draft, setDraft] = useState<Draft>(() => clone(start.draft));
-  return { start, saved, setSaved, draft, setDraft };
+  const credentials = useRef(start.credentials);
+  return { credentials, start, saved, setSaved, draft, setDraft };
 }
 export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditingChange, onChannelName, page, navigate, workspace }: {
   workspace: ReturnType<typeof useAiSettingsDraft>;
@@ -262,43 +257,83 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   }
 
   // —— 保存 / 放弃 ——
-  function save() {
+  const [saving, setSaving] = useState(false);
+  async function save() {
+    if (saving) return;
     if (problems.length) { setNotice(problems[0], 'warn'); return; }
     const checked = AiConfigSchema.safeParse(config);
     if (!checked.success) { setNotice('配置无效：请核对名称、HTTPS 地址、模型 ID 和生成参数；地址不能含密钥或查询参数。'); return; }
     const vault = start.vault;
     if (!vault) { setNotice('保存失败，请检查浏览器存储权限或空间后重试。'); return; }
-    const removed = saved.config.channels.filter((item) => !config.channels.some((next) => next.id === item.id)).map((item) => item.id);
-    // 快照只在本次调用的内存中持有；读取失败时，不开始任何密钥或配置写入。
-    let before: VaultSnapshot | undefined;
+    setSaving(true);
     try {
-      before = vault.snapshot([...removed, ...checked.data.channels.map((item) => item.id)]);
-      for (const id of removed) vault.delete(id);
-      for (const item of checked.data.channels) vault.set(item.id, draft.keys[item.id] ?? '', draft.remember[item.id] ?? true);
-      saveAiConfig(localStorage, checked.data);
-    } catch {
-      if (!before) {
-        setNotice('保存失败：无法读取密钥存储，尚未写入密钥或配置。请检查浏览器存储权限后重试。');
-        return;
-      }
-      const result = vault.restore(before);
-      if (result.restored) setNotice('保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样。已核对密钥值和原存放位置，修改仍未保存。');
-      else {
-        const affected = result.failedIds.map(id => saved.config.channels.find(item => item.id === id)?.name
-          || checked.data.channels.find(item => item.id === id)?.name || '未命名渠道');
-        setNotice(`保存失败：浏览器存储没能完全恢复或核验，请检查密钥存储状态（${affected.join('、')}）。保存未完成，编辑仍未保存。`);
-      }
-      return;
-    }
-    for (const id of removed) catalog.remove(id);
-    const next = { ...clone(draft), config: checked.data };
-    setSaved(next); setDraft(clone(next));
-    setNotice(warnings.length ? `已保存。${warnings[0]}，这个渠道暂时不能使用。` : '已保存，下一次生成开始生效。', warnings.length ? 'warn' : 'ok');
+      await withAiSaveLock(publish => {
+        const latest = readAiConfig(localStorage);
+        const ids = new Set([...latest.channels, ...config.channels, ...saved.config.channels].map(item => item.id));
+        const credentials = vault.snapshot(ids);
+        const merged = mergeAiDraft(saved, draft, storedDraft(latest, credentials), workspace.credentials.current, credentials);
+        // Snapshot both physical locations before touching either. Other channels need no write or rollback.
+        const touched = new Set([...merged.remove, ...merged.write]);
+        const before = credentials.filter(item => touched.has(item.id));
+        const originalConfig = localStorage.getItem(aiConfigKey);
+        let configWritten = false;
+        try {
+          for (const id of merged.remove) vault.delete(id);
+          for (const id of merged.write) vault.set(id, merged.draft.keys[id], merged.draft.remember[id]);
+          saveAiConfig(localStorage, merged.draft.config);
+          configWritten = true;
+          publish();
+        } catch {
+          const result = vault.restore(before);
+          if (configWritten) {
+            try {
+              if (originalConfig === null) localStorage.removeItem(aiConfigKey);
+              else localStorage.setItem(aiConfigKey, originalConfig);
+            } catch {
+              setNotice('保存失败：浏览器无法恢复原配置，请重新读取渠道、模型和密钥状态。当前编辑已保留。');
+              return;
+            }
+          }
+          if (result.restored) setNotice('保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样。已核对密钥值和原存放位置，修改仍未保存。');
+          else {
+            // An incomplete rollback is our own write. Capture only its verified residual state
+            // while still holding the lock so a retry can distinguish a later change by another tab.
+            for (const id of result.failedIds) {
+              try {
+                const residual = vault.snapshot([id]);
+                workspace.credentials.current = workspace.credentials.current.filter(entry => entry.id !== id).concat(residual);
+              } catch { /* Keep the previous baseline when the storage cannot be read. */ }
+            }
+            // A partial rollback also changed physical storage. Publish that change to later writers.
+            try { publish(); } catch { /* The storage failure is reported below. */ }
+            const affected = result.failedIds.map(id => latest.channels.find(item => item.id === id)?.name
+              || config.channels.find(item => item.id === id)?.name || '未命名渠道');
+            setNotice(`保存失败：浏览器存储没能完全恢复或核验，请检查密钥存储状态（${affected.join('、')}）。保存未完成，编辑仍未保存。`);
+          }
+          return;
+        }
+        for (const id of merged.remove) catalog.remove(id);
+        workspace.credentials.current = credentials.filter(item => !touched.has(item.id)).concat(merged.write.map(id => {
+          const key = merged.draft.keys[id] || null;
+          return { id, persistent: merged.draft.remember[id] ? key : null, session: merged.draft.remember[id] ? null : key };
+        }));
+        setSaved(merged.draft); setDraft(clone(merged.draft));
+        if (!merged.draft.config.channels.some(item => item.id === selectedId)) {
+          setSelectedId(merged.draft.config.channels[0]?.id ?? ''); onEditingChange(false);
+        }
+        setNotice(warnings.length ? `已保存。${warnings[0]}，这个渠道暂时不能使用。` : '已保存，下一次生成开始生效。', warnings.length ? 'warn' : 'ok');
+      });
+    } catch (error) {
+      setNotice(error instanceof AiConfigConflict ? error.message : '保存失败：无法读取密钥存储或最新配置，尚未写入密钥或配置。请检查浏览器存储权限后重试。');
+    } finally { setSaving(false); }
   }
   function discard() {
-    setDraft(clone(saved));
-    if (!saved.config.channels.some((item) => item.id === selectedId)) { setSelectedId(saved.config.channels[0]?.id ?? ''); onEditingChange(false); }
-    setNotice('已放弃未保存的修改。', 'info');
+    const current = initial();
+    if (!current.vault) { setNotice(current.notice); return; }
+    workspace.credentials.current = current.credentials;
+    setSaved(current.draft); setDraft(clone(current.draft));
+    if (!current.draft.config.channels.some((item) => item.id === selectedId)) { setSelectedId(current.draft.config.channels[0]?.id ?? ''); onEditingChange(false); }
+    setNotice('已放弃未保存的修改，已载入最新配置。', 'info');
   }
 
   // —— 测试回复（真实调用一次模型） ——
@@ -507,7 +542,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   const blocked = problems[0];
   const confirmChannel = confirm ? config.channels.find((item) => item.id === confirm.id) : undefined;
   return (
-    <div className={`ai-conn ${desktop ? 'is-desktop' : 'is-mobile'} ${!desktop && editing ? 'is-editing' : ''}`}>
+    <div inert={saving || undefined} className={`ai-conn ${desktop ? 'is-desktop' : 'is-mobile'} ${!desktop && editing ? 'is-editing' : ''}`}>
       {page === 'routing' ? <>
         <p className="ai-lede">每项 AI 任务可以跟随另一项，也可以单独指定渠道和模型。按调用频率安排：正文用好模型，次数多的任务放便宜模型。</p>
         <section className="route-summary"><div><h4>正在使用 {usage.size} 个模型</h4>

@@ -31,10 +31,12 @@ export function PhoneSettings({ editing, change, navigate }: Editor) {
 export function TheaterSettings({ editing, change, navigate }: Editor) {
   const theater = editing.theater ?? { length: 'medium', perspective: 'follow' };
   const set = (patch: Partial<typeof theater>) => change({ ...editing, theater: { ...theater, ...patch } });
+  const chars = theater.customChars;
+  const validChars = chars !== undefined && Number.isInteger(chars) && chars >= 100 && chars <= 100000;
   return <>
     <p className="field-hint">新建小剧场时带入这里的默认值，每篇创建时都还能改。番外用的提示词在 <button className="ai-link" onClick={() => navigate('promptmgr')}>提示词管理</button> 的「小剧场提示词」里。</p>
     <div className="settings-form-row"><span>默认模型</span><div><ModelRouteLabel route="theater"/> <button className="ai-link" onClick={() => navigate('routing')}>在模型分配里改</button></div></div>
-    <div className="settings-form-row"><span>默认篇幅</span><Segments label="默认篇幅" value={theater.length} change={length => set({ length, ...(length === 'custom' && theater.customChars === undefined ? { customChars: 3000 } : {}) })}
+    <div className="settings-form-row"><span>默认篇幅</span><Segments label="默认篇幅" value={theater.length} change={length => set({ length, customChars: validChars ? chars : length === 'custom' ? 3000 : undefined })}
       choices={[...theaterLengths.map(t => [t.id, t.name + ' · 约 ' + t.target.toLocaleString('en-US') + ' 字'] as const), ['custom', '自定义']]}/></div>
     {theater.length === 'custom' && <label className="settings-form-row">目标字数<input type="number" min="100" max="100000"
       value={Number.isNaN(theater.customChars) ? '' : theater.customChars ?? ''} onChange={event => set({ customChars: event.target.valueAsNumber })}/></label>}

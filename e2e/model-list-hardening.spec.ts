@@ -2,7 +2,7 @@ import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { settingsCategory } from './helpers/aiSettings';
 import { selected } from './helpers/select';
-import { backToList, openAiSettings, openChannel, saveAi, stageModel } from './helpers/aiSettings';
+import { aiPage, openAiSettings, openChannel, saveAi, stageModel } from './helpers/aiSettings';
 
 async function seed(page: Page, protocol: string = 'openai', path = '/v1', directOnly = false) {
   await page.goto('/');
@@ -22,7 +22,7 @@ async function seed(page: Page, protocol: string = 'openai', path = '/v1', direc
 }
 /** 正文生成仍是原来的模型，且下拉里还能看到之前成功获取的列表。 */
 async function storyKept(page: Page, settings: ReturnType<Page['locator']>, model: string, option?: string) {
-  await backToList(settings); await selected(page, '正文生成模型', model);
+  await aiPage(settings, 'routing'); await selected(page, '正文生成模型', model);
   if (option) {
     await page.getByRole('combobox', { name: '正文生成模型', exact: true }).click();
     await expect(page.getByRole('option', { name: option, exact: true })).toBeVisible(); await page.keyboard.press('Escape');
@@ -101,7 +101,7 @@ test('官方结构的model字段真实选用，name-only不冒充模型', async 
     ? { models: [{ name: '展示名并非标识', model: 'qwen3:latest', modified_at: '2026-10-24T00:00:00Z', size: 1, digest: 'sha256:known' }] }
     : { models: [{ name: '分组昵称', label: '平台档位' }] } }));
   const { settings, group, refresh } = await seed(page); await expect(group).toContainText('当前接口返回 1 个模型');
-  await backToList(settings); await page.getByRole('combobox', { name: '正文生成模型', exact: true }).click();
+  await aiPage(settings, 'routing'); await page.getByRole('combobox', { name: '正文生成模型', exact: true }).click();
   await expect(page.getByRole('option', { name: '展示名并非标识', exact: true })).toHaveCount(0); await page.keyboard.press('Escape');
   await stageModel(settings, '正文生成', '新渠道', 'qwen3:latest', 'list'); await saveAi(settings);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.ai.v1')!).routes.story.modelId)).toBe('qwen3:latest');

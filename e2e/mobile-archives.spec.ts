@@ -21,7 +21,7 @@ for(const [width,height] of [[375,667],[390,844],[430,932],[392,420],[900,800]])
   if(width===390||width===392)await shot(page,`${name}-${width}x${height}`);
   await page.keyboard.press('Escape');await expect(paper).toHaveCount(0);
  }
- const settings=await openPaperSettings(page);await expect(settings.getByRole('navigation',{name:'设置分类'}).getByRole('button',{name:/^(AI 连接|提示词|记忆|运行|提示词管理)$/})).toHaveCount(5);await expect(settings.getByLabel('渠道名称',{exact:true})).toHaveCount(0);await archiveFits(page);await shot(page,`设置首页-${width}x${height}`);await page.keyboard.press('Escape');expect(await storedArchives(page)).toEqual(before);verify();
+ const settings=await openPaperSettings(page);await expect(settings.getByRole('navigation',{name:'设置分类'}).locator('button[data-page]')).toHaveText(['连渠道与密钥','配模型分配','网跨域与网络','文正文与风格','预文学预设','词提示词开关','书世界书','段生成阶段','时超时与重试','忆记忆','机手机','图文生图','剧小剧场','色外观与提示音','量变量管理','管提示词管理','言反馈建议'].map(label=>new RegExp(label)));await expect(settings.getByLabel('渠道名称',{exact:true})).toHaveCount(0);await archiveFits(page);await shot(page,`设置首页-${width}x${height}`);await page.keyboard.press('Escape');expect(await storedArchives(page)).toEqual(before);verify();
 });
 test('物品内层子抽屉：网格不卸载、筛选滚动与焦点恢复、未知估值、全部属性',async({page})=>{
  await page.setViewportSize({width:390,height:844});await seedMobileArchives(page,80);const before=await storedArchives(page),verify=await readonly(page),paper=await openArchive(page,'物品栏');

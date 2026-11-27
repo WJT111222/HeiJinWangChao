@@ -1,6 +1,6 @@
 import { nativeLiteraryModule, storyModuleText } from '../../prompts/literaryStory';
 import { narrativeRange } from './model';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { promptManifest } from '../../prompts/manifest';
 import type { OfficialId, OfficialSelection } from '../../domain/worldbook/mainWorldbook';
 import { WorldbookLibrary } from '../../services/storage/worldbookLibrary';
@@ -139,10 +139,12 @@ export function PromptInspector({
   repository,
   activeSaveId,
   onPromptChange,
+  onOrderDirtyChange,
   onTheaterPromptChange,
 }: {
   settings: Settings;
   presetOwnsWriting?: boolean;
+  onOrderDirtyChange?: (value: boolean) => void;
   repository?: SaveRepository;
   activeSaveId?: string;
   onTheaterPromptChange?: (value?: string) => void;
@@ -161,6 +163,7 @@ export function PromptInspector({
   }, [editTheater]);
   const [orders, setOrders] = useState(initial.orders);
   const [dirty, setDirty] = useState(false);
+  useLayoutEffect(() => { onOrderDirtyChange?.(dirty); }, [dirty, onOrderDirtyChange]);
   const [notice, setNotice] = useState(initial.error);
   const [stage, setStage] = useState<AiStage>('story');
   const [mode, setMode] = useState<'opening' | 'regular'>('opening');

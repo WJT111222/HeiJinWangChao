@@ -277,7 +277,7 @@ export async function convertText(c: ImageConfig, system: string, source: string
   try {
     const result = await new AiClient().generate(snapshot, [
       { role: 'system', content: system }, { role: 'user', content: source },
-    ], { stream: false, signal });
+    ], { stream: false, signal, recordInspection: false });
     message = result.text;
     if ([message, result.nativeReasoning].some(value => value && [secretFor(snapshot), imageKey].some(key => key && value.includes(key))))
       throw new Error('响应包含凭证，已丢弃');

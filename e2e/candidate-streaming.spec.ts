@@ -1,3 +1,4 @@
+import { settingsCategory } from './helpers/aiSettings';
 import { createServer } from 'node:http';
 import { writeFile } from 'node:fs/promises';
 import type { Server, ServerResponse } from 'node:http';
@@ -77,7 +78,10 @@ test('旧运行设置不重置：两个独立开关默认关闭，显式保存�
   const original = await page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
   await openSettings(page); await page.getByRole('button', { name: '生成阶段', exact: true }).click();
   const variables = page.getByRole('checkbox', { name: '主角与现场 · 流式传输', exact: true }), world = page.getByRole('checkbox', { name: '场外与网络 · 流式传输', exact: true });
-  await expect(variables).not.toBeChecked(); await expect(world).not.toBeChecked(); await expect(page.getByLabel('请求超时（秒）')).toHaveValue('73');
+  await expect(variables).not.toBeChecked(); await expect(world).not.toBeChecked();
+  await settingsCategory(page, '超时与重试');
+  await expect(page.getByLabel('请求超时（秒）')).toHaveValue('73');
+  await settingsCategory(page, '生成阶段');
   expect(await page.evaluate(() => localStorage.getItem('heijin.settings.v1'))).toBe(original);
   await variables.check(); await expect(world).not.toBeChecked(); await page.getByRole('button', { name: '保存本地设置', exact: true }).click();
   await page.reload(); await openSettings(page); await page.getByRole('button', { name: '生成阶段', exact: true }).click();

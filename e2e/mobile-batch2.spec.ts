@@ -3,7 +3,7 @@ import type {Page} from '@playwright/test';
 import {seedNightSeal,nightSealStored} from './helpers/nightSeal';
 import {seedSummary} from './helpers/memorySummary';
 import {openStageCandidates,openStageRaw,openWorkflowDiagnostics,openWorkflowStage} from './helpers/gameLayout';
-import {aiTab,openChannel} from './helpers/aiSettings';
+import {aiTab,aiPage,openChannel} from './helpers/aiSettings';
 // 手机专项：只在 mobile 项目（Pixel 7，isMobile）运行；电脑端由各自的 PC 用例覆盖。PC 像素对照用例另由 E2E_PIXEL_COMPARE 控制。
 test.skip(({ isMobile }) => !isMobile, '手机专项，只在 mobile 项目运行');
 const dir='docs/mobile-batch2/screenshots';
@@ -20,7 +20,7 @@ async function seedReady(page:Page){
  });await page.goto('/#game/save-a');await page.reload();await expect(page.locator('.game-layout')).toBeVisible();
 }
 async function workflow(page:Page){await page.getByRole('button',{name:'四阶段工作流详情',exact:true}).click();return page.getByRole('dialog',{name:'四阶段工作流',exact:true});}
-async function settings(page:Page){await page.getByRole('navigation',{name:'底部导航'}).getByRole('button',{name:'设置',exact:true}).click();return aiTab(page);}
+async function settings(page:Page){await page.getByRole('navigation',{name:'底部导航'}).getByRole('button',{name:'设置',exact:true}).click();const panel=await aiTab(page);await aiPage(panel,'routing');return panel;}
 
 for(const [width,height]of [[375,667],[390,844],[430,932],[750,800],[900,800]])test(`手机 ${width}×${height}：候选、选择器和操作表`,async({page})=>{
  await page.setViewportSize({width,height});let calls=0;await page.route('https://mobile2.mock.invalid/**',route=>{calls++;return route.abort();});await seedReady(page);const before=await nightSealStored(page);const wf=await workflow(page);
@@ -96,6 +96,7 @@ test('长响应、私有候选与规划：主动展开、凭证脱敏、全文�
 });
 
 test('reduced-motion 与显式刷新禁用：不增加列表或生成请求',async({page})=>{
+ await page.emulateMedia({reducedMotion:'reduce'});
  let release!:()=>void;const gate=new Promise<void>(r=>{release=r;});let gets=0;await page.route('https://mobile2.mock.invalid/**',async route=>{gets++;await gate;await route.fulfill({json:{data:[{id:'mock-chat'}]}}).catch(()=>undefined);});await seedReady(page);const st=await settings(page);await st.getByRole('combobox',{name:'正文生成模型',exact:true}).click();await expect.poll(()=>gets).toBe(1);const picker=page.getByRole('dialog',{name:'正文生成模型'});await expect(picker).toHaveCSS('animation-name','none');await page.keyboard.press('Escape');await expect(st.getByRole('button',{name:'刷新正文生成模型',exact:true})).toBeDisabled();expect(gets).toBe(1);release();await expect(st.getByRole('button',{name:'刷新正文生成模型',exact:true})).toBeEnabled();await page.screenshot({path:`${dir}/react-model-status-390.png`});
 });
 
