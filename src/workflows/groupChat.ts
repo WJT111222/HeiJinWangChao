@@ -12,6 +12,7 @@ import {
 import type { GameState } from '../domain/state';
 import { awaitingPlayerAction } from '../domain/turnCommit';
 import { readPromptResource } from '../prompts/loader';
+import { groupTranscript, personalTurnHistory, publicGroupLine } from '../prompts/phoneKnowledge';
 import { recentPhoneHistory } from '../prompts/phoneContext';
 import { AiClient } from '../services/ai/client';
 import { AiError } from '../services/ai/errors';
@@ -41,20 +42,20 @@ function publicMember(state: GameState, id: string) {
   return { id, name: state.npc[id].name, roles };
 }
 
-function visibleHistory(group: GroupThread | undefined, viewers: string[]) {
+function visibleHistory(group: GroupThread | undefined, viewers: string[], personal = false) {
   const history = (group?.history ?? [])
-    .filter((row) => viewers.every((id) => row.audience.includes(id)))
-    .flatMap((row) => [
-      {
-        at: row.at,
-        sender: 'protagonist',
-        action: row.action,
-        text: row.action.type === 'message' ? row.action.text : row.action.type,
-      },
-      ...row.outcomes
-        .filter((o) => ['replied', 'left', 'joined', 'refused'].includes(o.status))
-        .map((o) => ({ at: row.at, sender: o.npcId, text: o.status === 'replied' ? o.text : o.status })),
-    ]);
+    .flatMap(groupTranscript)
+    .filter(publicGroupLine)
+    .filter((line) => viewers.every((id) => (personal ? line.readers : line.audience).includes(id)))
+    .map(({ id, at, sender, text, kind, audience, action }) => ({
+      id,
+      at,
+      sender,
+      text,
+      kind,
+      audience,
+      action,
+    }));
   return recentPhoneHistory(history);
 }
 
@@ -173,9 +174,18 @@ export async function sendGroupChat(
       return ask(
         rule,
         {
-          group: groupPublic,
+          group: {
+            ...groupPublic,
+            members: members.filter(
+              (member) =>
+                !row.outcomes.some(
+                  (o) => o.npcId === member.id && (o.status === 'left' || o.status === 'refused'),
+                ),
+            ),
+          },
           npc: phonePersona(state, id),
-          history: visibleHistory(group, [id]),
+          history: visibleHistory(state.phone.groups?.[groupId], [id], true),
+          thisTurn: personalTurnHistory(draft?.phonePending ?? [], id),
           preceding: row.outcomes.filter((o) => o.status === 'replied' || o.status === 'left'),
         },
         (value) => {

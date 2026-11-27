@@ -475,3 +475,201 @@ it('主角知情不等于公开；每个现存主事件仅取最新有效公开�
   expect(bookSources(state, instance).hot).toEqual([]);
   expect(bookSources(state, instance).topics.map((t) => t.title)).toContain(seed(1).title);
 });
+
+it('交错私聊和群聊按发生顺序进入本人请求，未读及他人私聊不进入，调度只见本群公开记录', async () => {
+  const { sendPrivateChat } = await import('../workflows/phoneChat');
+  const { client, calls } = model();
+  async function direct(npcId: string, text: string, status: 'replied' | 'unread') {
+    calls.mockResolvedValueOnce(
+      responses({ npcId, status, ...(status === 'replied' ? { text: '收到' + text } : {}) }),
+    );
+    return sendPrivateChat(repo, new StageGuard(), { ...(await input()), npcId, text }, client);
+  }
+  async function group(action: GroupAction) {
+    return sendGroupChat(repo, new StageGuard(), { ...(await input()), groupId, action }, client);
+  }
+  await direct('scene', '仅乙见的原文', 'replied');
+  await direct('npc-a', '  甲的私下约定\n', 'replied');
+  await direct('npc-a', '不可见的未读私信', 'unread');
+  await group(create);
+  const publicIndex = calls.mock.calls.length;
+  await group({ type: 'message', text: '甲乙共同收到的集合通知' });
+  const scheduleIndex = calls.mock.calls.length;
+  calls.mockResolvedValueOnce(
+    responses([
+      { npcId: 'npc-a', status: 'reply' },
+      { npcId: 'scene', status: 'unread' },
+    ]),
+  );
+  await group({ type: 'message', text: '  群内安排\n' });
+  const wire = (i: number) => JSON.parse(calls.mock.calls.at(i)![1].at(-1)!.content);
+  expect(wire(publicIndex + 1).npc.id).toBe('scene');
+  expect(JSON.stringify(wire(publicIndex + 1))).not.toMatch(/私下约定|未读私信/);
+  expect(JSON.stringify(wire(publicIndex + 2))).toContain('甲的私下约定');
+  expect(JSON.stringify(wire(scheduleIndex))).not.toMatch(/仅乙见|私下约定|未读私信/);
+  expect(wire(scheduleIndex + 1).thisTurn).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        text: '  甲的私下约定\n',
+        status: 'replied',
+        participants: ['protagonist', 'npc-a'],
+        conversation: { kind: 'private', id: 'npc-a' },
+      }),
+    ]),
+  );
+  expect(JSON.stringify(wire(scheduleIndex + 1))).not.toMatch(/仅乙见|未读私信/);
+  await direct('npc-a', '本轮再问', 'replied');
+  expect(JSON.stringify(wire(-1))).toContain('甲乙共同收到的集合通知');
+  const transcript = wire(-1).thisTurn as { sender: string; text?: string }[];
+  expect(
+    transcript
+      .filter(
+        (m) =>
+          m.text?.includes('甲的私下约定') ||
+          m.text?.includes('群内安排') ||
+          m.text?.includes('原文 npc-a'),
+      )
+      .map((m) => m.text),
+  ).toEqual([
+    '  甲的私下约定\n',
+    '收到  甲的私下约定\n',
+    '  原文 npc-a\n',
+    '  群内安排\n',
+    '  原文 npc-a\n',
+  ]);
+  expect(transcript).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        text: '  群内安排\n',
+        conversation: { kind: 'group', id: groupId },
+        participants: ['protagonist', ...members],
+        status: 'replied',
+      }),
+    ]),
+  );
+  expect(JSON.stringify(wire(-1))).not.toMatch(/仅乙见|未读私信/);
+  await direct('scene', '问乙', 'replied');
+  expect(JSON.stringify(wire(-1))).toContain('仅乙见');
+  expect(JSON.stringify(wire(-1))).toContain('甲乙共同收到的集合通知');
+  expect(JSON.stringify(wire(-1))).not.toMatch(/群内安排|私下约定|未读私信/);
+  expect(wire(-1).thisTurn.filter((m: { text: string }) => m.text === '  原文 npc-a\n')).toHaveLength(1);
+  expect(calls).toHaveBeenCalledTimes(12);
+});
+
+it('逐条回执划定退群边界，再邀请和重新入群都保留退出前的原文并排除缺席发言', async () => {
+  const { client, calls } = model();
+  async function group(action: GroupAction) {
+    return sendGroupChat(repo, new StageGuard(), { ...(await input()), groupId, action }, client);
+  }
+  await group(create);
+  await group({ type: 'message', text: '离开前全员知道' });
+  calls
+    .mockResolvedValueOnce(responses(members.map((npcId) => ({ npcId, status: 'reply' }))))
+    .mockResolvedValueOnce(responses({ npcId: 'npc-a', status: 'left' }))
+    .mockResolvedValueOnce(responses({ npcId: 'scene', status: 'replied', text: '同批退群后的发言' }));
+  await group({ type: 'message', text: '离开前的最后一句' });
+  expect(JSON.parse(calls.mock.calls.at(-1)![1].at(-1)!.content).preceding).toContainEqual({
+    npcId: 'npc-a',
+    status: 'left',
+  });
+  calls
+    .mockResolvedValueOnce(responses([{ npcId: 'scene', status: 'reply' }]))
+    .mockResolvedValueOnce(responses({ npcId: 'scene', status: 'replied', text: '完全缺席时的答复' }));
+  await group({ type: 'message', text: '完全缺席时的提问' });
+  await group({ type: 'invite', invitees: ['npc-a'] });
+  const reinvite = calls.mock.calls.at(-1)![1].at(-1)!.content;
+  expect(reinvite).toContain('离开前的最后一句');
+  expect(reinvite).not.toMatch(/同批退群后的发言|完全缺席/);
+  await group({ type: 'message', text: '重新入群后的提问' });
+  const individual = calls.mock.calls.at(-1)![1].at(-1)!.content;
+  expect(JSON.parse(individual).npc.id).toBe('npc-a');
+  expect(individual).toContain('离开前全员知道');
+  expect(individual).not.toMatch(/同批退群后的发言|完全缺席/);
+
+  const { draft } = await input();
+  await repo.bindTurnAction(draft!, '等一分钟', true, true, true);
+  const ready = await completeDraft(repo, { variables: await elapsedVariables(repo, '等一分钟', 60) });
+  await repo.commitTurn(submission(ready, ''));
+  await group({ type: 'message', text: '结算后再问' });
+  const history = JSON.stringify(JSON.parse(calls.mock.calls.at(-1)![1].at(-1)!.content).history);
+  expect(history).toContain('离开前的最后一句');
+  expect(history).not.toMatch(/同批退群后的发言|完全缺席/);
+});
+
+it('合法事件更新将最新来源放在首位时，热榜重新展开且不继承旧点赞，来源重排不改变版本', async () => {
+  const { event } = await import('./fixtures/game');
+  const { draft } = await input();
+  const first = await repo.bindTurnAction(draft!, '等一分钟', true, true, true);
+  const main = {
+    ...event('market'),
+    eventKind: 'main' as const,
+    visibility: 'hidden' as const,
+    estimatedEndAt: '2099-03-01T00:00:00Z',
+    sourceTurnIds: [first.turnId],
+  };
+  const initial = worldResult([{ ...seed(1), eventId: main.id }]);
+  initial.eventCommands.push({ type: 'SaveEvent', commandId: 'market', event: main, evidence: '新增' });
+  await repo.commitTurn(
+    submission(
+      await completeDraft(repo, {
+        variables: await elapsedVariables(repo, '等一分钟', 60),
+        world: initial,
+      }),
+      '',
+    ),
+  );
+  const current = await input();
+  const original = bookSources(current.state, current.instance).hot[0];
+  const client = new AiClient();
+  const post = {
+    author: '市民',
+    title: '市集',
+    subtitle: '开市',
+    body: '公开讨论',
+    at: current.state.worldClock,
+    location: '码头',
+    likes: 0,
+    saves: 0,
+    comments: [],
+    tags: [],
+  };
+  const calls = vi.spyOn(client, 'generate').mockResolvedValue(responses([{ index: 0, post }]));
+  await expandBook(repo, new StageGuard(), current, [original], client);
+  await repo.books.like(original.key, 'post');
+  const next = await repo.bindTurnAction(current.draft!, '再等一分钟', true, true, true);
+  const update = worldResult([]);
+  update.eventCommands.push({
+    type: 'SaveEvent',
+    commandId: 'update',
+    evidence: '场外推进',
+    event: {
+      ...current.state.events.market,
+      backgroundText: '内部变化',
+      sourceTurnIds: [next.turnId, first.turnId],
+    },
+  });
+  const ready = await completeDraft(repo, {
+    variables: await elapsedVariables(repo, '再等一分钟', 60),
+    world: update,
+  });
+  expect(parseWorld(JSON.stringify(update), current.state, ready).eventCommands).toHaveLength(1);
+  await repo.commitTurn(submission(ready, ''));
+  const after = await input();
+  const changed = bookSources(after.state, after.instance).hot[0];
+  expect(changed.key).not.toBe(original.key);
+  const fresh = await expandBook(repo, new StageGuard(), after, [changed], client);
+  expect(fresh[changed.key].liked).toEqual([]);
+  expect(calls).toHaveBeenCalledTimes(2);
+  after.state.events.market.sourceTurnIds.reverse();
+  expect(bookSources(after.state, after.instance).hot[0].key).toBe(changed.key);
+
+  const legacy = structuredClone(current.state);
+  legacy.phone.topics[0].eventVersion = first.turnId;
+  const old = bookSources(legacy, current.instance);
+  expect(old.hot[0].key).toBe(old.topics[0].key);
+  legacy.events.market.backgroundText = '同来源的变量管理更新';
+  legacy.npcManagementRevision = (legacy.npcManagementRevision ?? 0) + 1;
+  const edited = bookSources(legacy, current.instance);
+  expect(edited.hot[0].key).not.toBe(old.hot[0].key);
+  expect(edited.topics[0].key).toBe(old.topics[0].key);
+});

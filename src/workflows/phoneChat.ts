@@ -1,10 +1,11 @@
 import { fingerprint } from '../domain/commands';
 import { requireData } from '../domain/common';
-import { ChatReply, isPrivate } from '../domain/phoneChat';
+import { ChatReply } from '../domain/phoneChat';
 import type { GameState } from '../domain/state';
 import { awaitingPlayerAction } from '../domain/turnCommit';
 import type { TurnDraft } from '../domain/drafts';
 import { readPromptResource } from '../prompts/loader';
+import { personalTurnHistory } from '../prompts/phoneKnowledge';
 import { recentCount, recentPhoneHistory } from '../prompts/phoneContext';
 import { AiClient } from '../services/ai/client';
 import type { AiConfig } from '../services/ai/configuration';
@@ -53,21 +54,11 @@ export async function privateChatMessages(
   settings: Settings,
 ): Promise<AiMessage[]> {
   const difficulty = storyDifficulty(settings.prompts);
-  const history = [
-    ...(state.phone.threads[npcId]?.messages ?? []).map((m) => ({
-      sender: m.sender,
-      text: m.text,
-      at: m.at,
-      status: m.chatOutcome ?? m.status,
-    })),
-    ...(draft?.phonePending ?? [])
-      .filter(isPrivate)
-      .filter((row) => row.reply.npcId === npcId)
-      .flatMap((row) => [
-        { sender: 'protagonist', text: row.text, at: row.at, status: row.reply.status },
-        ...(row.reply.status === 'replied' ? [{ sender: 'npc', text: row.reply.text, at: row.at }] : []),
-      ]),
-  ];
+  const history = (state.phone.threads[npcId]?.messages ?? [])
+    .filter(
+      (m) => m.sender !== 'protagonist' || (m.chatOutcome !== 'unread' && m.status !== 'delivered'),
+    )
+    .map((m) => ({ sender: m.sender, text: m.text, at: m.at, status: m.chatOutcome ?? m.status }));
   const rules = await Promise.all(
     [
       'writing.intimacy_boundaries',
@@ -90,6 +81,7 @@ export async function privateChatMessages(
         playerName: state.protagonist.name,
         worldClock: state.worldClock,
         ...recentPhoneHistory(history),
+        thisTurn: personalTurnHistory(draft?.phonePending ?? [], npcId),
         message: text,
       }),
     },

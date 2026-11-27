@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { GameTimeSchema, IdSchema, requireData } from './common';
+import { canonicalJson } from './worldbook/canonical';
+import { hash53 } from './worldbook/triggerSupport';
 import type { GameState } from './state';
 
 export const topicLimit = 5;
@@ -16,6 +18,11 @@ export const Topic = TopicInput.extend({
   turnId: IdSchema,
   eventVersion: z.string().optional(),
 });
+export function eventCacheVersion(event: GameState['events'][string]) {
+  const sourceTurnIds = [...new Set(event.sourceTurnIds)].sort();
+  return 'event-v2:' + hash53(canonicalJson({ ...event, sourceTurnIds })).toString(36);
+}
+
 export function seedTopic(
   state: GameState,
   value: z.infer<typeof TopicInput> & { commandId: string },
@@ -48,7 +55,7 @@ export function seedTopic(
     ...(eventId
       ? {
           eventId,
-          eventVersion: state.events[eventId].sourceTurnIds.at(-1) ?? state.events[eventId].startAt,
+          eventVersion: eventCacheVersion(state.events[eventId]),
         }
       : {}),
   });

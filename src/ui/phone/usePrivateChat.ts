@@ -28,6 +28,10 @@ export function usePrivateChat(
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const cancelled = useRef<StageGuard | null>(null);
   const active = useRef<StageGuard | null>(null);
+  const bookFlight = useRef<{
+    keys: Set<string>;
+    result: Promise<Awaited<ReturnType<typeof expandBook>> | undefined>;
+  } | null>(null);
   const channel = useRef<BroadcastChannel | null>(null);
   const live = useRef({ state, draft, instance, onSaved });
   useLayoutEffect(() => {
@@ -74,6 +78,7 @@ export function usePrivateChat(
       alive = false;
       active.current?.dispose();
       active.current = null;
+      bookFlight.current = null;
       window.removeEventListener('focus', update);
       events?.close();
       channel.current = null;
@@ -148,8 +153,26 @@ export function usePrivateChat(
     if (saved) onSaved(saved);
     return Boolean(saved);
   }
-  async function book(sources: BookSource[]) {
-    return run('blackbook', (guard) => expandBook(repository, guard, input(), sources));
+  async function book(sources: BookSource[], isViewing: () => boolean) {
+    const keys = sources.map((source) => source.key);
+    while (bookFlight.current) {
+      const flight = bookFlight.current;
+      if (keys.every((key) => flight.keys.has(key))) return flight.result;
+      const result = await flight.result;
+      if (!isViewing() || (!result && keys.some((key) => flight.keys.has(key)))) return undefined;
+    }
+    if (!isViewing()) return undefined;
+    // expandBook rechecks the current timeline and reads the cache before requesting missing posts.
+    const flight = {
+      keys: new Set(keys),
+      result: run('blackbook', (guard) => expandBook(repository, guard, input(), sources)),
+    };
+    bookFlight.current = flight;
+    try {
+      return await flight.result;
+    } finally {
+      if (bookFlight.current === flight) bookFlight.current = null;
+    }
   }
   async function abandon(npcId: string) {
     if (!draft || !window.confirm('放弃本回合的正文和候选？待结算聊天将原样保留。')) return;

@@ -64,7 +64,7 @@ export function Blackbook({
       const missing = wanted.filter((s) => !cached[s.key]);
       if (!missing.length || controls.frozen || controls.inactive) return;
       setStatus('正在把 ' + missing.length + ' 个话题展开成帖子…');
-      const result = await controls.chat.book(wanted);
+      const result = await controls.chat.book(wanted, () => active);
       if (!active) return;
       if (!result) throw Error('展开失败');
       store((old) => ({ ...old, ...result }));

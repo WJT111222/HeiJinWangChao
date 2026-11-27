@@ -122,7 +122,7 @@ it('按收信人选择资料、知情、难度和最近记录，手机路由可�
   const messages = await privateChatMessages(start.state, start.draft, npcId, '下一句', start.settings);
   const body = JSON.parse(messages[1].content);
   expect(body.npc).toMatchObject({ id: npcId, experience: '值班医师', knowledge: [{ text: '看过楼层图' }] });
-  expect(body.recent.map((m: { text: string }) => m.text)).toEqual([text, reply.text]);
+  expect(body.thisTurn.map((m: { text: string }) => m.text)).toEqual([text, reply.text]);
   expect(body.message).toBe('下一句');
   expect(JSON.stringify(messages)).not.toContain('另一个人的私密资料');
   expect(messages[0].content).toContain('亲密');

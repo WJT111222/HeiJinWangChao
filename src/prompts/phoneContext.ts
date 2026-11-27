@@ -1,5 +1,6 @@
 import { isPrivate, isGroup, participants, type PhoneOperation } from '../domain/phoneChat';
-import { groupLabel, type GroupThread } from '../domain/phoneGroup';
+import { groupTranscript } from './phoneKnowledge';
+import type { GroupThread } from '../domain/phoneGroup';
 import { chatMessages } from '../domain/phone';
 import type { TurnDraft } from '../domain/drafts';
 import type { GameState } from '../domain/state';
@@ -28,17 +29,7 @@ function groupHistory(group: GroupThread) {
     name: group.name,
     category: group.category,
     members: group.members,
-    ...recentPhoneHistory(
-      group.history.flatMap((row) => [
-        { at: row.at, sender: 'protagonist', text: groupLabel(row.action), audience: row.audience },
-        ...row.outcomes.map((o) => ({
-          at: row.at,
-          sender: o.npcId,
-          text: o.status === 'replied' ? o.text : o.status,
-          audience: row.audience,
-        })),
-      ]),
-    ),
+    ...recentPhoneHistory(group.history.flatMap(groupTranscript)),
   };
 }
 export function frozenChatContext(
@@ -93,7 +84,7 @@ export function frozenChatContext(
               state.phone.groups?.[id] ? [groupHistory(state.phone.groups[id])] : [],
             ),
             groupRule:
-              '群中可见的发言、邀请与成员变化已发生。正文承接群成员相见的反应，人物阶段按实际接触记录各自知情与记忆，不把群外秘密传播给他人。',
+              '群中可见的发言、邀请与成员变化已发生。正文承接群成员相见的反应，人物阶段按实际接触记录各自知情与记忆，未读内容不作已知。按回执顺序处理退群，不补发缺席期间的发言，不把群外秘密传播给他人。',
           }
         : {}),
       frozenMessages: rows

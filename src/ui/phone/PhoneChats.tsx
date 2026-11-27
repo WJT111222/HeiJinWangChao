@@ -51,7 +51,7 @@ export function PhoneChats({
     })),
     ...Object.values(groupThreads).map((group) => {
       const last = group.history.at(-1)!;
-      const outcome = last.outcomes.at(-1);
+      const outcome = [...last.outcomes].reverse().find((o) => o.status === 'replied');
       const preview =
         outcome?.status === 'replied'
           ? state.npc[outcome.npcId].name + '：' + outcome.text

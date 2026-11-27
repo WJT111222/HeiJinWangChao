@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CountSchema, GameTimeSchema } from './common';
+import { eventCacheVersion } from './phoneTopic';
 import type { GameState } from './state';
 
 const text = z.string().min(1);
@@ -79,9 +80,15 @@ export function bookSources(state: GameState, instance: string | null) {
     if (event && event.eventKind === 'main' && !ranked.has(event.id)) {
       ranked.add(event.id);
       // Private event fields never enter a post, its cache key or the ranking.
-      const version = event.sourceTurnIds.at(-1) ?? event.startAt;
+      const version = eventCacheVersion(event);
+      // Older seeds stored just one turn ID. A sole matching source still identifies
+      // that original settlement only if variable management has never edited the save.
+      const legacyMatch =
+        !state.npcManagementRevision &&
+        event.sourceTurnIds.length === 1 &&
+        event.sourceTurnIds[0] === topic.eventVersion;
       const headline = source(topic, 'event', event.id, [topic.id, version]);
-      if (topic.eventVersion === version) headline.key = entry.key;
+      if (topic.eventVersion === version || legacyMatch) headline.key = entry.key;
       hot.push(headline);
     }
     return entry;
