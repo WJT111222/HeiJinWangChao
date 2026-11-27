@@ -11,7 +11,7 @@ import {
 import type { SettingsPage } from './settingsPages';
 import type { ModelRoute, Channel, Protocol } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
-import { AiConfigConflict, mergeAiDraft, storedDraft, withAiSaveLock, type AiDraft as Draft } from './aiDraftMerge';
+import { AiConfigConflict, effectiveRouteModel, mergeAiDraft, storedDraft, withAiSaveLock, type AiDraft as Draft } from './aiDraftMerge';
 import type { VaultSnapshot } from '../../services/ai/credentials';
 import { channelSnapshot, selectedModelRoute } from '../../services/ai/snapshot';
 import { AiClient } from '../../services/ai/client';
@@ -125,7 +125,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   const routeOf = (stage: ModelRoute) => selectedModelRoute(config, stage);
   const follows = (stage: ModelRoute) => stage !== 'story' && config.routes[stage as Optional].mode !== 'independent';
   const effectiveModel = (route: { channelId: string; modelId: string }) =>
-    route.modelId || config.channels.find((item) => item.id === route.channelId)?.defaultModel || '';
+    effectiveRouteModel(config, route);
   const usedBy = (id: string) => stages.filter(([stage]) => !follows(stage) && routeOf(stage).channelId === id).map(([stage]) => short[stage]);
 
   // —— 阻止保存的问题（缺密钥只提醒，不阻止） ——

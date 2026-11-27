@@ -165,6 +165,7 @@ export function ImageSettings({ repository, openRouting, onDirtyChange }: {
         setAcknowledged(localStorage.getItem(legacyTextNotice) === '1');
     };
     window.addEventListener('storage', sync);
+    try { setAcknowledged(localStorage.getItem(legacyTextNotice) === '1'); } catch { /* No persisted acknowledgement. */ }
     return () => window.removeEventListener('storage', sync);
   }, []);
   const [keyDirty, setKeyDirty] = useState(false);

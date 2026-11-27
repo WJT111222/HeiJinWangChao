@@ -53,6 +53,13 @@ describe('AI 设置三方合并', () => {
       expect(merge).toThrow(AiConfigConflict);
     }
   });
+  it('各自有效的默认模型和路由修改合并后仍须有可用模型', () => {
+    const { mine, latest, merge } = fixture();
+    // One editor relies on the old channel default; the other relies on the old explicit model.
+    mine.config.routes.story.modelId = '';
+    latest.config.channels[0].defaultModel = '';
+    expect(merge).toThrow(AiConfigConflict);
+  });
   it('同一密钥和保存位置的相同修改可以合并', () => {
     const { mine, latest, now, merge } = fixture();
     mine.keys.one = latest.keys.one = 'same-new';
@@ -69,6 +76,7 @@ describe('AI 设置三方合并', () => {
     const { base, mine, latest, merge } = fixture();
     for (const state of [base, mine, latest]) state.config.channels.push({ ...newChannel(), id: 'two' });
     latest.config = removeChannel(latest.config, 'one');
+    latest.config.routes.story = { channelId: 'two', modelId: 'm' };
     mine.config.routes.phone = { mode: 'independent', channelId: 'two', modelId: 'm' };
     const result = merge();
     expect(result.draft.config.channels.map(channel => channel.id)).toEqual(['two']);

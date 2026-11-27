@@ -42,6 +42,10 @@ function mergeField(base: unknown, mine: unknown, latest: unknown, label: string
   throw new AiConfigConflict(label);
 }
 
+export function effectiveRouteModel(config: AiConfig, route: { channelId: string; modelId: string }) {
+  return route.modelId || config.channels.find(channel => channel.id === route.channelId)?.defaultModel || '';
+}
+
 export function mergeAiDraft(base: AiDraft, mine: AiDraft, latest: AiDraft, before: VaultSnapshot, now: VaultSnapshot) {
   const channels = [];
   const remove: string[] = [], write: string[] = [];
@@ -86,7 +90,12 @@ export function mergeAiDraft(base: AiDraft, mine: AiDraft, latest: AiDraft, befo
   }
   const result = AiConfigSchema.safeParse({ ...latest.config, channels, routes });
   if (!result.success) throw new AiConfigConflict('相互依赖的渠道或模型分配');
-  const draft = storedDraft(result.data, now);
+  const merged = result.data;
+  const invalidModel = Object.values(merged.routes).some(route => 'channelId' in route
+    && (merged.channels.length > 0 || 'mode' in route)
+    && (!route.channelId || !effectiveRouteModel(merged, route)));
+  if (invalidModel) throw new AiConfigConflict('模型分配依赖的渠道默认模型');
+  const draft = storedDraft(merged, now);
   for (const id of write) {
     draft.keys[id] = (mine.keys[id] ?? '').trim();
     draft.remember[id] = mine.remember[id] ?? true;
