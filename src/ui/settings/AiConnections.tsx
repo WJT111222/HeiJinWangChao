@@ -145,7 +145,6 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     }
     return list;
   }, [config, draft.presets]);
-  const warnings = config.channels.filter((item) => draft.presets[item.id] && !draft.keys[item.id]?.trim()).map((item) => `「${item.name}」还没填密钥`);
 
   // —— 修改草稿 ——
   function update(mutator: (next: Draft) => void) {
@@ -258,6 +257,11 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
 
   // —— 保存 / 放弃 ——
   const [saving, setSaving] = useState(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   async function save() {
     if (saving) return;
     if (problems.length) { setNotice(problems[0], 'warn'); return; }
@@ -268,6 +272,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     setSaving(true);
     try {
       await withAiSaveLock(publish => {
+        if (!mounted.current) return;
         const latest = readAiConfig(localStorage);
         const ids = new Set([...latest.channels, ...config.channels, ...saved.config.channels].map(item => item.id));
         const credentials = vault.snapshot(ids);
@@ -321,7 +326,8 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
         if (!merged.draft.config.channels.some(item => item.id === selectedId)) {
           setSelectedId(merged.draft.config.channels[0]?.id ?? ''); onEditingChange(false);
         }
-        setNotice(warnings.length ? `已保存。${warnings[0]}，这个渠道暂时不能使用。` : '已保存，下一次生成开始生效。', warnings.length ? 'warn' : 'ok');
+        const missing = merged.draft.config.channels.find(item => !merged.draft.keys[item.id]);
+        setNotice(missing ? `已保存。「${missing.name}」还没填密钥，这个渠道暂时不能使用。` : '已保存，下一次生成开始生效。', missing ? 'warn' : 'ok');
       });
     } catch (error) {
       setNotice(error instanceof AiConfigConflict ? error.message : '保存失败：无法读取密钥存储或最新配置，尚未写入密钥或配置。请检查浏览器存储权限后重试。');
