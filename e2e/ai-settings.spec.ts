@@ -104,6 +104,13 @@ test('新玩家测试回复后返回渠道列表，继续选正文模型并保�
   await page.goto('/');
   const settings = await openAiSettings(page);
   const add = settings.getByRole('button', { name: '＋ 添加渠道', exact: true });
+  // 分页后，只有真实的长渠道列表需要滚动。用未保存的渠道保留原来的滚动恢复断言。
+  if (isMobile) {
+    for (let i = 1; i <= 9; i++) {
+      await addChannel(settings, { preset: 'OpenAI', name: '草稿渠道 ' + i });
+      await backToList(settings);
+    }
+  }
   await add.scrollIntoViewIfNeeded();
   const body = settings.locator('.modal-body');
   const listPosition = isMobile ? await body.evaluate((element) => element.scrollTop) : 0;
