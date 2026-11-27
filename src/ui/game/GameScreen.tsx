@@ -107,6 +107,9 @@ import { actionSuggestions } from './actionSuggestions';
 import { appendActionOption, includesActionOption } from './actionOptions';
 
 const sidebarMedia = '(max-width: 900px)';
+const panelSeals: Record<(typeof panelNames)[number], string> = {
+  NPC: '人', 势力组织: '势', 我的势力: '盟', 后宫: '家', 地图: '图', 物品栏: '物', 世界事件: '事', 历史时间轴: '史', 记忆: '忆',
+};
 function subscribeSidebarSize(changed: () => void) {
   const media = window.matchMedia(sidebarMedia);
   media.addEventListener('change', changed);
@@ -648,8 +651,8 @@ export function GameScreen({
   const worldNavigation = <aside className="world-sidebar" aria-label="世界资料">
     <h2>世界资料</h2>
     <nav aria-label="世界资料分类">
-      {panelNames.map((name, index) => <button key={name} aria-description={compactSidebars&&changeBadges[name]?`本回合变化 ${changeBadges[name]} 项`:undefined} data-archive-panel={name} aria-current={!compactSidebars && !desktopSettings && panel === name ? 'true' : undefined} onClick={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);if(compactSidebars)setWorldDirectoryOpen(false); setPanel(!compactSidebars && panel === name ? undefined : name); })}>
-        <span className="dock-seal" aria-hidden="true">{['人', '势', '盟', '图', '物', '事', '史', '忆', '家'][index]}{compactSidebars&&Boolean(changeBadges[name])&&<span className="turn-change-badge" data-change-panel={name} aria-hidden="true">{changeBadges[name]}</span>}</span>
+      {panelNames.map(name => <button key={name} aria-description={compactSidebars&&changeBadges[name]?`本回合变化 ${changeBadges[name]} 项`:undefined} data-archive-panel={name} aria-current={!compactSidebars && !desktopSettings && panel === name ? 'true' : undefined} onClick={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);if(compactSidebars)setWorldDirectoryOpen(false); setPanel(!compactSidebars && panel === name ? undefined : name); })}>
+        <span className="dock-seal" aria-hidden="true">{panelSeals[name]}{compactSidebars&&Boolean(changeBadges[name])&&<span className="turn-change-badge" data-change-panel={name} aria-hidden="true">{changeBadges[name]}</span>}</span>
         <span>{name}</span>
       </button>)}
       <button data-archive-panel="小剧场" aria-current={!compactSidebars && panel === '小剧场' ? 'true' : undefined} onClick={() => outsideSettings(() => {
