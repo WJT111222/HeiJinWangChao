@@ -80,6 +80,7 @@ for (const theme of ['day', 'night']) {
     await page.setViewportSize(isMobile ? { width: 360, height: 640 } : { width: 901, height: 600 });
     const noPosts = await setup(page, theme);
     const settings = await openAiSettings(page);
+    await settingsCategory(page,'模型分配');
     const model = settings.getByRole('combobox', { name: '正文生成模型', exact: true });
     for (const width of isMobile ? [360, 900] : [1440, 1024, 901]) {
       await page.setViewportSize({ width, height: width < 1100 ? 600 : 900 });

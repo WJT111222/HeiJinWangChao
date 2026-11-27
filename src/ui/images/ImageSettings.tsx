@@ -26,7 +26,7 @@ function conflictPreview(value: unknown) {
   return text.length > 160 ? text.slice(0, 160) + '…' : text || '（空）';
 }
 
-function KeyField({ kind, base }: { kind: Backend | 'text'; base: string }) {
+function KeyField({ kind, base }: { kind: Backend; base: string }) {
   let id = '';
   try {
     id = credentialId(kind, base);
@@ -47,9 +47,9 @@ function KeyField({ kind, base }: { kind: Backend | 'text'; base: string }) {
   }, [id]);
   return (
     <fieldset>
-      <legend>{kind === 'text' ? '文本模型密钥' : '图片接口密钥'}</legend>
+      <legend>图片接口密钥</legend>
       <input
-        aria-label={kind === 'text' ? '文本密钥' : '图片密钥'}
+        aria-label="图片密钥"
         type="password"
         autoComplete="off"
         value={key}
@@ -206,6 +206,13 @@ export function ImageSettings({ repository, openRouting, onDirtyChange }: {
       setNotice(e instanceof Error ? e.message : '地址无效');
     }
   }
+  const converterRoute = <>
+            <div className="settings-form-row"><span>生图提示词</span><div><ModelRouteLabel route="imagePrompt"/> <button type="button" className="ai-link" onClick={openRouting}>在模型分配里改</button></div></div>
+            {c.textModel && !acknowledged && <div className="image-migration-note"><p>之前单独填写的文本模型（{c.textModel}）已不再使用，现在用模型分配里的生图提示词。需要原来那个服务的话，请在「渠道与密钥」里添加一个渠道。</p>
+              <button type="button" onClick={() => {
+                try { localStorage.setItem(legacyTextNotice, '1'); setAcknowledged(true); } catch { setNotice('无法保存确认，请检查本地存储权限。'); }
+              }}>知道了</button></div>}
+  </>;
   return (
     <div className="image-tools">
       <label className="image-check">
@@ -223,6 +230,7 @@ export function ImageSettings({ repository, openRouting, onDirtyChange }: {
         />
         启用文生图
       </label>
+      {!c.enabled && c.textModel && !acknowledged && converterRoute}
       {c.enabled && (
         <>
           <button onClick={() => setGallery(true)}>图片管理器</button>
@@ -417,11 +425,7 @@ export function ImageSettings({ repository, openRouting, onDirtyChange }: {
               />
               生成前调用文本模型
             </label>
-            <div className="settings-form-row"><span>生图提示词</span><div><ModelRouteLabel route="imagePrompt"/> <button type="button" className="ai-link" onClick={openRouting}>在模型分配里改</button></div></div>
-            {c.textModel && !acknowledged && <div className="image-migration-note"><p>之前单独填写的文本模型（{c.textModel}）已不再使用，现在用模型分配里的生图提示词。需要原来那个服务的话，请在「渠道与密钥」里添加一个渠道。</p>
-              <button type="button" onClick={() => {
-                try { localStorage.setItem(legacyTextNotice, '1'); setAcknowledged(true); } catch { setNotice('无法保存确认，请检查本地存储权限。'); }
-              }}>知道了</button></div>}
+            {converterRoute}
             <details>
               <summary>转换提示词</summary>
               {(Object.keys(templates) as (keyof typeof templates)[]).map((k) => (

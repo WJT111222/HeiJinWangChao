@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
-// AI 连接设置（重设计）的测试操作。电脑端渠道列表与编辑器并排；手机端点开渠道进入编辑，返回后看到各阶段模型。
+// AI 连接设置（重设计）的测试操作。电脑端渠道列表与编辑器并排；手机端点开渠道后进入编辑，模型路由在独立页面。
 type Scope = Page | Locator;
 const pageOf = (scope: Scope): Page => ('page' in scope && typeof scope.page === 'function' ? scope.page() : scope) as Page;
 
@@ -11,7 +11,7 @@ export async function openAiSettings(page: Page) {
   await settings.getByRole('button', { name: '渠道与密钥', exact: true }).click();
   return settings;
 }
-/** 设置已打开时确保停在「AI 连接」分类（手机端可能停在分类菜单）。 */
+/** 设置已打开时确保停在「渠道与密钥」页面（手机端可能停在分类菜单）。 */
 export async function aiTab(page: Page) {
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await expect(settings).toBeVisible();
@@ -29,7 +29,7 @@ export async function settingsCategory(page: Page, name: string) {
   }
   await entry.click();
 }
-/** 手机端如果正在编辑渠道，先返回渠道列表（各阶段模型在列表页）。 */
+/** 手机端如果正在编辑渠道，先返回渠道列表。 */
 export async function aiPage(scope: Scope, page: 'channels' | 'routing') {
   const browser = pageOf(scope);
   if (await browser.locator('.settings-layout[data-tab="' + page + '"] .settings-content').isVisible()) return;

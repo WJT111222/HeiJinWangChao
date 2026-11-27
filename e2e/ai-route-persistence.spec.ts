@@ -188,3 +188,38 @@ test('私聊回复继承现场模型，独立选择保存后可恢复',async({pa
   await selected(page,'私聊回复渠道','world');
   expect(posts).toHaveLength(0);
 });
+
+test('四条新增路由共享渠道草稿，恢复默认跟随后仍能找回独立选模', async ({page}) => {
+  test.setTimeout(120000);
+  const posts = await seed(page,false);
+  const root = settingsOf(page);
+  await openChannel(root,'story渠道');
+  await root.getByLabel('渠道名称',{exact:true}).fill('本页未保存渠道');
+  await aiPage(root,'routing');
+  const stages = [
+    ['phoneGroup','群聊回复','私聊'], ['blackbook','小黑书刷新','私聊'],
+    ['theater','小剧场','正文'], ['imagePrompt','生图提示词','主角与现场'],
+  ] as const;
+  for (const [,label,target] of stages) {
+    const controls = root.getByRole('group',{name:label+'模型来源'});
+    await expect(controls.getByRole('button',{name:'跟随'+target})).toHaveAttribute('aria-pressed','true');
+    await controls.getByRole('button',{name:'单独指定'}).click();
+    await choose(page,label+'渠道','world');
+  }
+  await expect(root.getByText('本页未保存渠道',{exact:true}).first()).toBeVisible();
+  await root.getByRole('button',{name:'恢复默认跟随'}).click();
+  for (const [,label,target] of stages) {
+    const controls = root.getByRole('group',{name:label+'模型来源'});
+    await expect(controls.getByRole('button',{name:'跟随'+target})).toHaveAttribute('aria-pressed','true');
+    await controls.getByRole('button',{name:'单独指定'}).click();
+    await selected(page,label+'渠道','world');
+  }
+  await aiPage(root,'channels');
+  await openChannel(root,'本页未保存渠道');
+  await expect(root.getByLabel('渠道名称',{exact:true})).toHaveValue('本页未保存渠道');
+  await saveAi(root);
+  const stored = await page.evaluate(()=>JSON.parse(localStorage.getItem('heijin.ai.v1')!));
+  for (const [key] of stages) expect(stored.routes[key]).toMatchObject({mode:'independent',channelId:'world'});
+  expect(stored.channels[0].name).toBe('本页未保存渠道');
+  expect(posts).toHaveLength(0);
+});

@@ -1,5 +1,5 @@
 import { oracleId } from '../../presets/meowssiah/definition';
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { builtInPresets } from '../../presets/library';
 import { nativeDeliveryId, presetSettingsKey, readPresetSettings, storyMode } from '../../presets/settings';
 import { assistantView, hostNeedsRefresh, pressScriptButton, switchPreset, type ScriptInstance } from '../../presets/tavern/hostState';
@@ -30,17 +30,20 @@ export function listenForMode(change: () => void) {
   window.addEventListener('storage', listener);
   return () => window.removeEventListener('storage', listener);
 }
-export function TavernAssistant({ dirty }: { dirty: boolean }) {
+type EditorProps = { dirty: boolean; onDirtyChange?: (changed: boolean) => void };
+export function TavernAssistant({ dirty, onDirtyChange }: EditorProps) {
   const mode = useSyncExternalStore(listenForMode, storedMode);
-  return <ModeSettings key={mode ?? 'invalid'} mode={mode} dirty={dirty}/>;
+  return <ModeSettings key={mode ?? 'invalid'} mode={mode} dirty={dirty} onDirtyChange={onDirtyChange}/>;
 }
-function ModeSettings({ mode, dirty }: { mode?: string; dirty: boolean }) {
+function ModeSettings({ mode, dirty, onDirtyChange }: EditorProps & { mode?: string }) {
   const recovery = new URLSearchParams(location.search).get('safe') === '1';
   const reset = recovery && mode === undefined;
   const active = mode === nativeDeliveryId ? '' : mode || '';
   const [selected, setSelected] = useState(active);
   const [native, setNative] = useState(mode === nativeDeliveryId);
   const target = selected || (native ? nativeDeliveryId : '');
+  useEffect(() => { onDirtyChange?.(mode !== undefined && target !== mode); }, [mode, target, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   const stale = !recovery && mode !== undefined && hostNeedsRefresh(mode || null);
   const [error, setError] = useState('');
   const rows = useSyncExternalStore(assistantView.subscribe, assistantView.snapshot);

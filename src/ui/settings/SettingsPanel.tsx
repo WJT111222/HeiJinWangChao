@@ -70,6 +70,7 @@ export function SettingsPanel({
   const aiWorkspace = useAiSettingsDraft();
   const [channelName, setChannelName] = useState('');
   const [imageDirty, setImageDirty] = useState(false);
+  const [literaryDirty, setLiteraryDirty] = useState(false);
   const [mobileHome,setMobileHome]=useState(!desktop);
   const host=useRef<HTMLDivElement>(null),lastCategory=useRef<SettingsPage>('channels'),homeScroll=useRef(0),categoryHeading=useRef<HTMLHeadingElement>(null);
   const [tab, setTab] = useState<SettingsPage>('channels');
@@ -124,7 +125,7 @@ export function SettingsPanel({
   const promptKeys = (keys: (keyof Settings['prompts'])[]) => keys.some(k => changed(editing.prompts[k], editingBase.prompts[k]));
   const runtimeKeys = (keys: (keyof Settings['runtime'])[]) => keys.some(k => changed(editing.runtime[k], editingBase.runtime[k]));
   const dirtyPages: Partial<Record<SettingsPage, boolean>> = {
-    channels: aiDirty, routing: aiDirty, variables: variablesDirty, worldbooks: worldbookDirty, images: imageDirty, memory: summaryDirty,
+    channels: aiDirty, routing: aiDirty, variables: variablesDirty, worldbooks: worldbookDirty, images: imageDirty, literary: literaryDirty, memory: summaryDirty,
     writing: promptKeys(['perspective','style','difficulty','minNarrativeChars','maxNarrativeChars']),
     prompts: promptKeys(['actionOptions','naturalProse','realWorld','noControl']),
     promptmgr: editing.theaterPrompt !== editingBase.theaterPrompt,
@@ -134,7 +135,7 @@ export function SettingsPanel({
     theater: changed(editing.theater, editingBase.theater),
   };
   const localDirty = Object.entries(dirtyPages).some(([key, value]) => value && draftGroup(key as SettingsPage) === 'local');
-  useLayoutEffect(() => { onLocalDirtyChange?.(localDirty || imageDirty); }, [localDirty, imageDirty, onLocalDirtyChange]);
+  useLayoutEffect(() => { onLocalDirtyChange?.(localDirty || imageDirty || literaryDirty); }, [localDirty, imageDirty, literaryDirty, onLocalDirtyChange]);
   useEffect(() => () => onLocalDirtyChange?.(false), [onLocalDirtyChange]);
   useEffect(() => {
     if (!localDirty) {
@@ -229,6 +230,8 @@ export function SettingsPanel({
     else showCategory(next);
   }
   const page = (settingsGroups.flatMap(([, items]) => [...items] as PageInfo[])).find(([id]) => id === tab)!;
+  const subject = group === 'ai' ? undefined : group === 'local' ? '本地偏好'
+    : tab === 'variables' ? '存档变量' : tab === 'memory' ? '记忆设置' : page[2];
   function showMobileHome() {
     setEditingChannel(false);
     setMobileHome(true);
@@ -358,7 +361,7 @@ export function SettingsPanel({
           </>
         )}
         {tab === 'network' && <NetworkSettings openTiming={() => navigate('timing')}/>}
-        {tab === 'literary' && <TavernAssistant dirty={localDirty || aiDirty || summaryDirty}/>}
+        {tab === 'literary' && <TavernAssistant onDirtyChange={setLiteraryDirty} dirty={localDirty || aiDirty || summaryDirty}/>}
         {tab === 'phone' && <PhoneSettings editing={editing} change={setEditing} navigate={navigate}/>}
         {tab === 'theater' && <TheaterSettings editing={editing} change={setEditing} navigate={navigate}/>}
         {tab === 'stages' && (
@@ -431,7 +434,7 @@ export function SettingsPanel({
           </button>
         )}</div>
       </div>}
-      {pendingTab && <UnsavedAiChanges onKeep={group === 'local' && pendingTab !== 'home' ? () => { showCategory(pendingTab); setPendingTab(undefined); } : undefined} subject={group === 'ai' ? undefined : group === 'local' ? '本地偏好' : page[2]} onContinue={() => { if (mobileHome) showCategory(tab); setPendingTab(undefined); }} onDiscard={() => {
+      {pendingTab && <UnsavedAiChanges onKeep={group === 'local' && pendingTab !== 'home' ? () => { showCategory(pendingTab); setPendingTab(undefined); } : undefined} subject={subject} onContinue={() => { if (mobileHome) showCategory(tab); setPendingTab(undefined); }} onDiscard={() => {
         if (group === 'local') { setEditing(settings); setEditingBase(settings); setCustomLength(false); }
         if (group === 'ai') { aiWorkspace.setDraft(structuredClone(aiWorkspace.saved)); aiDirtyChanged(false); }
         if (pendingTab === 'home') showMobileHome(); else showCategory(pendingTab);

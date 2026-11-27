@@ -218,7 +218,7 @@ test('旧转化器提示只确认一次，地址、模型和独立密钥原样�
   await page.evaluate(async () => {
     const path = '/src/services/images/config.ts';
     const {defaults,configKey,imageVault,credentialId} = await import(path);
-    const old = {...defaults,enabled:true,textModel:'legacy-converter',textBase:'https://legacy.mock.invalid'};
+    const old = {...defaults,enabled:false,textModel:'legacy-converter',textBase:'https://legacy.mock.invalid'};
     localStorage.setItem(configKey,JSON.stringify(old));
     imageVault().set(credentialId('text',old.textBase),'migration-test-value',true);
   });
@@ -229,6 +229,7 @@ test('旧转化器提示只确认一次，地址、模型和独立密钥原样�
   await expect(panel.getByLabel('文本密钥')).toHaveCount(0);
   await panel.getByRole('button',{name:'知道了'}).click();
   const next = await imageSettings(page);
+  await next.getByLabel('启用文生图').check();
   await expect(next.getByRole('button',{name:'在模型分配里改'})).toBeVisible();
   await expect(next.getByRole('button',{name:'知道了'})).toHaveCount(0);
   expect(await page.evaluate(async () => {
