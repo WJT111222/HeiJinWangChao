@@ -1,5 +1,7 @@
 # 设置界面重新分区 · 工程验收
 
+#262 的集中整改、独立复审交接及逐项复跑结果见[整改报告](review-fixes/README.md)。
+
 分支 `feat/settings-repartition` 从 `release/1.0@0096bdf191ae2303d79adf62b2648a4cf250c358` 建立。真实界面截图和对应的内容宽度、滚动宽度记录见[十七页双端日夜索引](./screenshots/README.md)。
 
 ## 页面与保存方式

@@ -1,0 +1,262 @@
+后续排查队列	套件	实际失败类型	首轮身份数	首个可检索身份
+产品可用性 · 无活动存档的变量管理入口	settings-worldbook-variables.spec.ts	节点数量	2	desktop / 世界书与变量设置保护未保存修改，保存后同时进入下一次正文请求
+产品布局 · 901 像素模型名	ui-compatibility.spec.ts	元素几何读取	1	desktop / 路由实际命中及保存、风格跨列与断点 night
+产品布局 · 901 像素模型名	ui-compatibility.spec.ts	几何或数值下限	1	desktop / 路由实际命中及保存、风格跨列与断点 day
+偶发断言 · 控制复跑通过	automatic-settlement.spec.ts	文本匹配	5	desktop / 完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型
+偶发断言 · 控制复跑通过	automatic-settlement.spec.ts	数值或布尔值比对	4	desktop / 普通回合天气与环境结算后重载，下一次 Story 使用已保存的两个字段
+偶发断言 · 控制复跑通过	peinture-settings.spec.ts	数值或布尔值比对	4	desktop / 普通回合与显式重生成读取本轮资料 deepseek SSE
+偶发断言 · 控制复跑通过	automatic-settlement.spec.ts	元素可见性	3	desktop / #190 taskCommands 的非法分组命令跳过，独立 World 字段仍保存
+偶发断言 · 控制复跑通过	action-recovery.spec.ts	数值或布尔值比对	2	desktop / B variables: disabled send versus legal stage continuation
+偶发断言 · 控制复跑通过	turn-coordinator.spec.ts	文本匹配	2	desktop / 瞬时服务失败重试一次后完成，费用与次数可见
+偶发断言 · 控制复跑通过	turn-undo.spec.ts	数值或布尔值比对	2	mobile / 开局不撤回，生成期间按钮禁用；取消后可以撤回且没有额外请求
+偶发断言 · 控制复跑通过	undo-summary-recovery.spec.ts	元素可见性	2	desktop / 真实 HTTP 失败经撤回仍保留，暂停本类不会启用其他自动类型
+偶发断言 · 控制复跑通过	undo-summary-recovery.spec.ts	数值或布尔值比对	2	desktop / NPC 短期 → 中期 在飞行中撤回后明确待确认；发送不重试，手动成功后自动恢复
+偶发断言 · 控制复跑通过	archive-step2.spec.ts	见原始错误	1	desktop / 四种组织颜色、完整字段、折叠、双滚动、纸色吸顶及桌面矩阵
+偶发断言 · 控制复跑通过	completion-chime.spec.ts	数值或布尔值比对	1	mobile / 正常回合：开局与下一条行动各结算一次，各响一次完成提示
+偶发断言 · 控制复跑通过	continuous-turns.spec.ts	数值或布尔值比对	1	mobile / 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+偶发断言 · 控制复跑通过	disabled-stage-turns.spec.ts	数值或布尔值比对	1	desktop / 开局通过真实开关关闭两阶段，连续三章保存、刷新不收费；重启两阶段后恢复完整流程
+偶发断言 · 控制复跑通过	dynasty-theater.spec.ts	几何或数值下限	1	mobile / 设置可编辑与恢复独立提示词，非流式请求沿用冻结值
+偶发断言 · 控制复跑通过	dynasty-theater.spec.ts	数值或布尔值比对	1	desktop / 日间 · 自定义万字剧场、长文滚动、复制、续写、Roll、备份和主线隔离
+偶发断言 · 控制复跑通过	event-entry-feedback.spec.ts	文本匹配	1	mobile / 两轮自动结算：选择性入场、留守离场、并行任务与独立模糊历史保存后刷新可读
+偶发断言 · 控制复跑通过	history-saves.spec.ts	数值或布尔值比对	1	desktop / 确认后正文失败保留历史基线及输入；刷新不自动请求，主动恢复后正式结算
+偶发断言 · 控制复跑通过	image-generation.spec.ts	几何或数值下限	1	mobile / 关闭时保持纯文字；设置、结算插画、相册与备份贯通
+偶发断言 · 控制复跑通过	issue-194-entry-handoff.spec.ts	数值或布尔值比对	1	desktop / 旧失败草稿授权单条纯通知，手动重做正文、跨页互斥、结算和撤回
+偶发断言 · 控制复跑通过	npc-context-tiers.spec.ts	数值或布尔值比对	1	desktop / 真实三阶段四级唯一注入、合法离返场与后台任务、Commit及刷新不改完整档案
+偶发断言 · 控制复跑通过	peinture-settings.spec.ts	见原始错误	1	desktop / 普通回合与显式重生成读取本轮资料 gemini SSE
+偶发断言 · 控制复跑通过	pr158-rebind-boundaries.spec.ts	数值或布尔值比对	1	desktop / 普通请求显式取消后刷新：不自动请求，可回填修改并进入下一回合
+偶发断言 · 控制复跑通过	story-continuation.spec.ts	数值或布尔值比对	1	desktop / 续写次数用完：已写部分仍显示、可复制，刷新后也在；不能再续写，可按「发送」重新生成
+偶发断言 · 控制复跑通过	story-continuation.spec.ts	时间限制	1	desktop / 连续截断：第二次续写又断了，第三次接着「第一次 + 第二次」的结尾写
+偶发断言 · 控制复跑通过	story-event-arbitration.spec.ts	文本匹配	1	desktop / Story主动mention无预先邀请，完整四阶段自动提交后刷新
+偶发断言 · 控制复跑通过	time-preflight.spec.ts	元素可见性	1	desktop / 长睡眠interrupt=true：真实三阶段、候选时间、正式结算及刷新
+偶发断言 · 控制复跑通过	turn-undo.spec.ts	状态或数组比对	1	desktop / 撤回后编辑发送才开始三阶段，失败可恢复且只保存新分支
+偶发超时 · 控制复跑通过	peinture-settings.spec.ts	交互目标	5	desktop / 原生交付使用渠道参数并保存正文 anthropic SSE
+偶发超时 · 控制复跑通过	day-readability.spec.ts	见原始错误	4	desktop / 四城正文 shanghai：主角/NPC/旁白、当前/历史、日夜与系统
+偶发超时 · 控制复跑通过	organization-archive.spec.ts	交互目标	4	desktop / PC三宽度/手机三宽度真实档案截图：未知身份、长概况、低频状态、只读查看不解锁
+偶发超时 · 控制复跑通过	peinture-settings.spec.ts	见原始错误	4	desktop / 原生模式、文学预设和关闭状态在双端保存后互斥
+偶发超时 · 控制复跑通过	tavern-assistant.spec.ts	见原始错误	4	desktop / 启用内置脚本：首次 Story、JSON/SSE、状态按钮、取消与刷新
+偶发超时 · 控制复跑通过	day-readability.spec.ts	上下文关闭	3	desktop / 四城正文 guangzhou：主角/NPC/旁白、当前/历史、日夜与系统
+偶发超时 · 控制复跑通过	narrative-length.spec.ts	见原始错误	3	desktop / 旧设置 1500 缺少上限：自定义显示，打开和保存均不补写，刷新不变
+偶发超时 · 控制复跑通过	pr158-rebind-boundaries.spec.ts	见原始错误	3	desktop / Web Locks：正常请求保护、真正失败后重发、下一回合及刷新
+偶发超时 · 控制复跑通过	turn-changes.spec.ts	元素可见性	3	desktop / 变化行使用真实目标定位 NPC、物品、组织、事件、地点、历史与记忆，回焦与存储不变
+偶发超时 · 控制复跑通过	turn-undo.spec.ts	见原始错误	3	desktop / 连续五次撤回、刷新恢复、回填覆盖和无Redo，全程零模型请求
+偶发超时 · 控制复跑通过	ui-compatibility.spec.ts	见原始错误	3	desktop / 历史地图人物、同刻纪事及纸面地图配色 day
+偶发超时 · 控制复跑通过	ai-route-persistence.spec.ts	见原始错误	2	desktop / 三阶段独立选择在启用跟随、保存和刷新后仍能恢复，不被正文模型覆盖
+偶发超时 · 控制复跑通过	archive-step3.spec.ts	交互目标	2	desktop / 物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转
+偶发超时 · 控制复跑通过	archive-step3.spec.ts	见原始错误	2	desktop / 经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环
+偶发超时 · 控制复跑通过	day-readability.spec.ts	交互目标	2	desktop / 四城正文 chongqing：主角/NPC/旁白、当前/历史、日夜与系统
+偶发超时 · 控制复跑通过	dynasty-theater.spec.ts	见原始错误	2	desktop / 备份标记跟随小剧场，另一标签的存档馆即时刷新，V2 导入恢复
+偶发超时 · 控制复跑通过	narrative-length.spec.ts	交互目标	2	desktop / 旧设置 1000 缺少上限：自定义显示，打开和保存均不补写，刷新不变
+偶发超时 · 控制复跑通过	npc-directory.spec.ts	见原始错误	2	desktop / 统一名录搜索筛选、详情、联系与单向关系、来源无技术ID；双端真实截图
+偶发超时 · 控制复跑通过	prompt-inspector.spec.ts	交互目标	2	desktop / 1000 NPC 真实快照按需 Worker 分析、动画帧继续、结果与原算法一致且复用缓存
+偶发超时 · 控制复跑通过	story-stream-reading.spec.ts	交互目标	2	desktop / 兼容公开思考 all：真实分块来源、原生优先去重和正文清空
+偶发超时 · 控制复跑通过	turn-undo.spec.ts	交互目标	2	desktop / 另一个标签仍在生成时撤回明确拒绝，取消后重新读取才可撤回
+偶发超时 · 控制复跑通过	ui-compatibility.spec.ts	交互目标	2	desktop / 预设编辑区与保存栏独立操作 day
+偶发超时 · 控制复跑通过	worldview-source.spec.ts	见原始错误	2	desktop / 神域 · 截断、重试、删除原书及显式重新生成使用各自的世界观
+偶发超时 · 控制复跑通过	action-recovery.spec.ts	交互目标	1	mobile / B commit: real atomic failure, saving lock, retry without new models
+偶发超时 · 控制复跑通过	action-recovery.spec.ts	元素可见性	1	desktop / D lifecycle: no Web Locks, tabs, settings, cancelled late response and reload
+偶发超时 · 控制复跑通过	action-workflow.spec.ts	文本匹配	1	desktop / 缺少AI配置零请求，设置后不自动补发，只在明确开始时运行
+偶发超时 · 控制复跑通过	ai-model-selection.spec.ts	交互目标	1	desktop / 填好密钥后自动获取一次、四阶段分别选择、只有被点的刷新按钮转动
+偶发超时 · 控制复跑通过	ai-settings.spec.ts	上下文关闭	1	desktop / AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置
+偶发超时 · 控制复跑通过	ai-settings.spec.ts	交互目标	1	desktop / 持续存储异常 partial：原副本、精确回滚状态、未保存与成功重试
+偶发超时 · 控制复跑通过	ai-settings.spec.ts	节点数量	1	mobile / AI 多渠道：选服务商后自动获取模型、测试回复、阶段路由与密钥保存位置
+偶发超时 · 控制复跑通过	ai-settings.spec.ts	见原始错误	1	desktop / 原生 DeepSeek 官方地址、四阶段独立选模与刷新恢复，纯设置不生成内容
+偶发超时 · 控制复跑通过	archive-final.spec.ts	上下文关闭	1	desktop / 游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态
+偶发超时 · 控制复跑通过	archive-final.spec.ts	交互目标	1	desktop / 地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性
+偶发超时 · 控制复跑通过	archive-final.spec.ts	见原始错误	1	desktop / 密钥保持遮蔽、跨901边界不重挂载；切换拦截、明确保存、Mock连接与删除
+偶发超时 · 控制复跑通过	archive-step2.spec.ts	交互目标	1	desktop / 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料
+偶发超时 · 控制复跑通过	archive-step2.spec.ts	元素可见性	1	desktop / 人物→NPC⇄组织→组织→旧事件，返回保留目标、焦点与输入隔离
+偶发超时 · 控制复跑通过	archive-step2.spec.ts	见原始错误	1	desktop / 长组织名/概况/状态、49组织与大量任务事件历史：独立滚动和分页不丢字段
+偶发超时 · 控制复跑通过	archive-step4.spec.ts	上下文关闭	1	desktop / 六层记忆原文与归属、多来源分页和层级缓存；手机保持原生界面
+偶发超时 · 控制复跑通过	archive-step4.spec.ts	文本匹配	1	desktop / 统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与地图档案切换
+偶发超时 · 控制复跑通过	archive-step4.spec.ts	见原始错误	1	desktop / 第四批事件家族、并行与退役成果，合法组织目标、缓存、Esc和只读性
+偶发超时 · 控制复跑通过	continuous-turns.spec.ts	见原始错误	1	desktop / 快速双击与另一标签发送最多结算一次；成功后数据库保留唯一下一草稿
+偶发超时 · 控制复跑通过	desktop-cabinet.spec.ts	见原始错误	1	desktop / 纸柜非模态焦点、dock切换、关联旧容器、Esc和浏览不写状态
+偶发超时 · 控制复跑通过	dynasty-theater.spec.ts	交互目标	1	mobile / 备份标记跟随小剧场，另一标签的存档馆即时刷新，V2 导入恢复
+偶发超时 · 控制复跑通过	event-entry-feedback.spec.ts	元素可见性	1	desktop / 现场事件结算→刷新后下一幕真实入场→拒绝回写同一事件，无重复请求或入场
+偶发超时 · 控制复跑通过	history-timeline-v2.spec.ts	交互目标	1	mobile / 后补历史统一插入、分页搜索和完整撤回重载，无额外AI请求
+偶发超时 · 控制复跑通过	history-timeline-v2.spec.ts	元素可见性	1	desktop / 后补历史统一插入、分页搜索和完整撤回重载，无额外AI请求
+偶发超时 · 控制复跑通过	memory-summary-v2.spec.ts	交互目标	1	mobile / NPC先失败也不阻断公共两类，失败重试仅一次；暂停只保存本类关闭
+偶发超时 · 控制复跑通过	memory.spec.ts	元素可见性	1	desktop / 旧M4七十回合档案：搜索约定、读取来源原文、分页和窗口显示，不泄露或改写
+偶发超时 · 控制复跑通过	meowssiah.spec.ts	交互目标	1	mobile / 双标签设置冲突、取消与方案回读均为零请求
+偶发超时 · 控制复跑通过	meowssiah.spec.ts	见原始错误	1	desktop / 双标签设置冲突、取消与方案回读均为零请求
+偶发超时 · 控制复跑通过	mobile-archives.spec.ts	交互目标	1	mobile / 设置分类、AI/记忆未保存保护、手动保存与存储失败、短视口可达
+偶发超时 · 控制复跑通过	mobile-archives.spec.ts	见原始错误	1	mobile / 人物分节、列表回焦、七字段资格与组织/事件链接，记忆各层只读
+偶发超时 · 控制复跑通过	mobile-home.spec.ts	见原始错误	1	mobile / 排序、四城、中性、页码、键盘与横滑纯浏览不写入
+偶发超时 · 控制复跑通过	mobile-info-sheets.spec.ts	见原始错误	1	mobile / 手机: 世界目录可展开收起、七分类、长 NPC 与事件阅读及返回
+偶发超时 · 控制复跑通过	narrative-length.spec.ts	元素可见性	1	desktop / 文学预设接管篇幅和人称，可打开控制台，停用后恢复原值
+偶发超时 · 控制复跑通过	npc-directory.spec.ts	交互目标	1	desktop / 跨标签过期星标准确失败并同步正式状态，完整候选不丢，无自动重试
+偶发超时 · 控制复跑通过	npc-directory.spec.ts	元素可见性	1	desktop / 初始同伴取消及恢复金星，七字段完整、普通记忆不丢、刷新及回填输入保留，零请求
+偶发超时 · 控制复跑通过	npc-importance.spec.ts	上下文关闭	1	desktop / 双标签页管理CAS与待输入草稿持久化，操作不发请求也不推进时间
+偶发超时 · 控制复跑通过	npc-importance.spec.ts	交互目标	1	desktop / 真实发送自动升级→玩家取消→下一回合不重新升级→恢复原档案，刷新不额外请求
+偶发超时 · 控制复跑通过	npc-importance.spec.ts	见原始错误	1	desktop / 玩家首升立即持久化待完善，正常Variables补齐且没有独立资料AI请求
+偶发超时 · 控制复跑通过	npc-memory-quality.spec.ts	见原始错误	1	desktop / 完整人物经历经真实三阶段、原子结算、刷新与撤回保留，只有四次Mock请求
+偶发超时 · 控制复跑通过	npc-memory.spec.ts	上下文关闭	1	desktop / 完整批次不缩减且必须选定NPC：A超长、B正常只整理B
+偶发超时 · 控制复跑通过	npc-memory.spec.ts	见原始错误	1	desktop / 手动仅一人一批；普通界面不暴露身份、原文、总结和秘密条数；来源完整且刷新不重复收费
+偶发超时 · 控制复跑通过	opening-packs.spec.ts	元素可见性	1	desktop / 完整五步保存、再次套用直达第五步、编辑刷新与正式建档隔离
+偶发超时 · 控制复跑通过	opening-talents-ui.spec.ts	见原始错误	1	desktop / 日夜正式人物档案：全文、对比度、展开关闭与 Repository 不变
+偶发超时 · 控制复跑通过	opening-time-recovery.spec.ts	见原始错误	1	desktop / 缺少开局时间时保留正文并阻止结算，刷新后可主动重新 Roll
+偶发超时 · 控制复跑通过	organization-archive.spec.ts	见原始错误	1	desktop / 真实三阶段Mock结案更新组织→刷新档案与已结束事件→撤回，主角财务和NPC无副作用
+偶发超时 · 控制复跑通过	peinture-settings.spec.ts	上下文关闭	1	desktop / 普通回合与显式重生成读取本轮资料 openai SSE
+偶发超时 · 控制复跑通过	peinture-settings.spec.ts	元素可见性	1	desktop / 原生破甲和玩家世界书同时进入正式 Story
+偶发超时 · 控制复跑通过	phone-private-chat.spec.ts	交互目标	1	desktop / 变量管理保存后刷新保留待输入的私聊
+偶发超时 · 控制复跑通过	phone-private-chat.spec.ts	见原始错误	1	desktop / 变量管理保存后刷新保留已冻结的私聊
+偶发超时 · 控制复跑通过	player-variables.spec.ts	见原始错误	1	desktop / 变量管理器手动保存天气与环境，刷新后保留且没有模型请求
+偶发超时 · 控制复跑通过	prompt-inspector.spec.ts	文本匹配	1	desktop / 四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示
+偶发超时 · 控制复跑通过	settings-stage-sync.spec.ts	元素可见性	1	desktop / 跨标签保存叙事视角不会重新打开另一页关闭的动态世界
+偶发超时 · 控制复跑通过	settings-stage-sync.spec.ts	见原始错误	1	mobile / 跨标签保存叙事视角不会重新打开另一页关闭的动态世界
+偶发超时 · 控制复跑通过	startup-notices.spec.ts	见原始错误	1	desktop / KV 新版本：只弹新公告不弹须知；勾选后刷新不再弹；次日照常
+偶发超时 · 控制复跑通过	story-continuation-consent.spec.ts	交互目标	1	desktop / 宿主占位文本不改变实际 HTTP、断点指纹或刷新后的续写
+偶发超时 · 控制复跑通过	story-raw-continuous.spec.ts	元素可见性	1	desktop / 连续原文：流式交错和迟到思考真实排序，正文阅读不变，长文本可滚动复制
+偶发超时 · 控制复跑通过	story-runtime.spec.ts	见原始错误	1	desktop / 快速重复点击、取消重试、迟到请求与切档隔离、刷新保留空草稿
+偶发超时 · 控制复跑通过	story-stream-reading.spec.ts	见原始错误	1	desktop / 流式阅读 both：实时思考→清空→仅正文，原文统一且严格验收
+偶发超时 · 控制复跑通过	tavern-assistant.spec.ts	交互目标	1	desktop / 正式游戏按钮跨存档生成，脚本保留普通正文并拒绝未处理工具
+偶发超时 · 控制复跑通过	time-preflight.spec.ts	交互目标	1	desktop / 变量失败与刷新恢复保留正文和候选，不提供主动Roll也不推进正式时间
+偶发超时 · 控制复跑通过	turn-changes.spec.ts	见原始错误	1	desktop / 最新结算回合六组胶囊、收起展开、键盘及四尺寸，手机使用正式深色抽屉
+偶发超时 · 控制复跑通过	ui-compatibility.spec.ts	上下文关闭	1	desktop / 历史地图人物、同刻纪事及纸面地图配色 night
+偶发超时 · 控制复跑通过	undo-summary-recovery.spec.ts	见原始错误	1	mobile / NPC 短期 → 中期 在飞行中撤回后明确待确认；发送不重试，手动成功后自动恢复
+偶发超时 · 控制复跑通过	unreadable-saves.spec.ts	见原始错误	1	desktop / 混合存档列表独立展示，坏记录不触发全局错误，正常存档都能进入且刷新保持
+偶发超时 · 控制复跑通过	variable-runtime.spec.ts	交互目标	1	desktop / 错误 JSON 安全失败可重试；取消、重复点击和切档迟到不串档
+偶发超时 · 控制复跑通过	world-handoff.spec.ts	见原始错误	1	desktop / 真实浏览器：世界成果/交接只是候选，正式原子提交后生效且完整人物永久保留
+偶发超时 · 控制复跑通过	world-npc-creation.spec.ts	见原始错误	1	desktop / 真实三阶段创建普通/特殊男性/成年女性，组织任务主子引用、七字段、重载与原人物原样
+偶发超时 · 控制复跑通过	world-runtime.spec.ts	见原始错误	1	desktop / 世界生成、补算、只读查看与刷新恢复，真实路由和快照；正式世界不变
+历史产品问题 · 文字实际对比度低于既定门槛	day-readability.spec.ts	像素对比度测量	8	desktop / 工作流 pending：深色浮层标题/正文/按钮、焦点、诊断、预览
+历史测试定位 · 同一定位器命中多个元素	ui-compatibility.spec.ts	定位器多匹配	2	mobile / 路由实际命中及保存、风格跨列与断点 day
+历史测试定位 · 同一定位器命中多个元素	archive-step3.spec.ts	定位器多匹配	1	mobile / 物品分类、只读搜索、三栏和选中详情，901边界、原槽位与归属跳转
+历史测试定位 · 同一定位器命中多个元素	story-runtime.spec.ts	定位器多匹配	1	desktop / 已有 regular 草稿生成正确模式，没有草稿时不自动创建下一回合
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	streaming-reliability.spec.ts	结果数量	28	desktop / 原生 held-finish
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-continuation-consent.spec.ts	见原始错误	24	desktop / 确认到首次 POST 的有效配置 · same · pace
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-tag-recovery.spec.ts	状态或数组比对	22	desktop / DeepSeek真实掉标签结构：Step0–15+明确转入句+旁白+全部尾块，一次请求安全恢复
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-continuation-transport.spec.ts	文本匹配	10	desktop / 直连受理后响应不允许跨域读取
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	opening-time.spec.ts	数值或布尔值比对	8	desktop / 开局时间待定→候选→首次发送正式确立：2022年12月31日晚上开始。
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	persistent-workflow-button.spec.ts	数值或布尔值比对	8	desktop / 某环节停下后按钮变为继续当前环节；运行中变为取消生成，取消后回到继续
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-legacy-writing.spec.ts	时间限制	6	desktop / V10 native 断点：确认 preset 续写后保留未知前缀并完成结算
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-archives.spec.ts	几何或数值上限	5	mobile / 档案纸 375×667：全部资料、单一滚动、只读与手机边界
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	catalog-wire-ui.spec.ts	见原始错误	4	desktop / opening 三阶段真实请求：World压缩目录在React检查器完整可读，其他阶段隔离且不写存档
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	disabled-stage-turns.spec.ts	数值或布尔值比对	4	desktop / 只关闭World：变量仍严格执行并正式结算，关闭状态可见
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	game-window.spec.ts	元素几何读取	4	desktop / 全窗口：长正文不撑高页面，标准/较小窗口和缩放尺寸均可输入
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	opening-life.spec.ts	文本匹配	4	desktop / 创角自动三阶段初始化生活基础，刷新不重复，下一回合正常消费
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	persistent-workflow-acceptance.spec.ts	数值或布尔值比对	4	desktop / 正文真正保存期间不可取消，失败回填中玩家修改的文字保持不变
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	settings-readability.spec.ts	文本匹配	4	desktop / 首页设置：AI 辅助文字、资源列表和嵌套确认主题隔离
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	spreset-isolation.spec.ts	数值或布尔值比对	4	desktop / 实际处理器与父游戏的存档、草稿、凭证和网络隔离
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	stage-response-observation.spec.ts	几何或数值下限	4	desktop / variables: reasoning-only failure is private until opened, copy/scroll/close/retry/reload preserve storage
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	stage-response-observation.spec.ts	数值或布尔值比对	4	desktop / 官方 DeepSeek V4 Pro 变量从 content 保存候选（stream=false）
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-continuation-transport.spec.ts	数值或布尔值比对	4	desktop / 直连成功
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-stream-reading.spec.ts	状态或数组比对	4	desktop / 流式network：公开思考可读但不保存，错误原文可查看且脱敏
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	world-handoff.spec.ts	元素可见性	4	desktop / 第三轮审查event-report：拒绝无效人物引用或否定授权，合法重试及正式提交保持隔离
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	archive-step2.spec.ts	交互目标	3	mobile / 人物档案真实字段、职业七槽、三入口、四尺寸与关闭回焦，手机保持原生资料
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	event-lifecycle.spec.ts	文本匹配	3	desktop / known场外事件自主延期：玩家可查、角色不自动知晓、刷新不重复请求
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-turn-changes.spec.ts	几何或数值上限	3	mobile / 手机变化 375×667：可靠六组、角标、单一滚动与只读
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	time-preflight.spec.ts	元素可见性	3	desktop / 长睡眠interrupt=false：真实三阶段、候选时间、正式结算及刷新
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	action-recovery.spec.ts	数值或布尔值比对	2	desktop / reference-only old options, shortcuts and no fabricated options preserve bound action
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	action-recovery.spec.ts	状态或数组比对	2	desktop / A 500-auto: inspect stopped state and explicit resend
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	ai-settings.spec.ts	结果数量	2	desktop / 真实浏览器加载原文、校验哈希并组装六种模式，记录模块顺序
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	anonymous-feedback.spec.ts	数值或布尔值比对	2	desktop / 错误日志统一上报：完整日志、可选字段严格分离、原文清除后仍可提交
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	beta-neutral-copy.spec.ts	状态或数组比对	2	desktop / 游戏工作流保留中性费用提醒，纯浏览不写入正式状态或草稿
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	beta-neutral-copy.spec.ts	节点数量	2	desktop / 中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	candidate-streaming.spec.ts	交互目标	2	desktop / world 实时只读、主动公开思考、跟随与复制、完整校验后结算
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	format-tail-wire.spec.ts	见原始错误	2	desktop / 三阶段真实出站提醒可在正式React检查器读取，原生请求体与独立上下文完整且不写存档
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	game-window.spec.ts	元素可见性	2	desktop / 缩短视口及模拟软键盘VisualViewport不遮住输入和发送
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	game-window.spec.ts	几何或数值下限	2	desktop / 设置、历史检索及创角长页仍可滚动，关闭资料保留阅读位置
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	game-window.spec.ts	文本匹配	2	mobile / 已完成草稿与V1.0 Beta展示刷新一致，不改变旧存档及npm/Schema含义
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	game.spec.ts	交互目标	2	desktop / 自定义职业、跳过同伴，多存档选择切换与确认删除
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	game.spec.ts	节点数量	2	desktop / 五步完整创建、返回修改及刷新恢复，保存特殊同伴和开局偏好
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	history-timeline-v2.spec.ts	几何或数值上限	2	mobile / 正式scope显示四类世界事件与主角标签，双端仍共用时间槽位且只读
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-batch2.spec.ts	数值或布尔值比对	2	mobile / 全局提示：抽屉上方、不挤布局、完整文案、不自动消失和关闭
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	npc-v2-foundation.spec.ts	见原始错误	2	desktop / V6旧档不可读且原样保留；V10档上旧RetireNpc拒绝，刷新不删档案
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	pr158-rebind-boundaries.spec.ts	数值或布尔值比对	2	desktop / failed 草稿正在手动重试：有锁或缺锁的他页均不可重绑，取消后刷新可恢复
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	prompt-inspector.spec.ts	元素可见性	2	desktop / 真实存档六种模式预览、内部内容主动揭示、合法排序保存恢复及状态隔离
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	prompt-inspector.spec.ts	时间限制	2	desktop / 无存档浏览真实模块、过滤与全文，缺少阶段请求时不伪造使用量
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	prompt-inspector.spec.ts	见原始错误	2	desktop / 已发送阶段快照保留原请求数据与真实 usage，默认隐藏秘密且始终去密钥，刷新不持久化
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	stage-failure-summary.spec.ts	时间限制	2	desktop / 自动失败后手动正文重试成功：清除过期当前错误，后续阶段仍需主动继续
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	startup-notices.spec.ts	交互目标	2	mobile / 首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-continuation-consent.spec.ts	数值或布尔值比对	2	desktop / 旧断点确认的页面及草稿作用域 · double
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-event-arbitration.spec.ts	文本匹配	2	desktop / Story主动enter无预先邀请，完整四阶段自动提交后刷新
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-legacy-writing.spec.ts	数值或布尔值比对	2	desktop / V10 native 断点：确认 native 续写后保留未知前缀并完成结算
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-raw-continuous.spec.ts	状态或数组比对	2	desktop / 连续原文：中断响应单框完整可复制且脱敏，正式状态草稿不变
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-reading.spec.ts	几何或数值上限	2	mobile / 历史与草稿共享阅读布局：PC剧本、手机原气泡，顺序和原文持久化不变
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-runtime.spec.ts	状态或数组比对	2	desktop / P6：截断请求不保存正文，明确预算诊断；失败重试无原生输出依然成功
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	tavern-backend.spec.ts	见原始错误	2	desktop / 启动捕获的传输、预设 Story 包装、候选保存与重新生成取消
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	turn-coordinator.spec.ts	状态或数组比对	2	desktop / opening 一次点击依次完成三阶段；真实快照、候选与移动布局
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	turn-undo.spec.ts	数值或布尔值比对	2	desktop / 开局不撤回，生成期间按钮禁用；取消后可以撤回且没有额外请求
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	workflow-feedback.spec.ts	元素可见性	2	mobile / 全局load真实错误路径保留文案和关闭操作
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	world-observer.spec.ts	交互目标	2	desktop / 全量世界观察：场外人物认知、总结、排程、任务与组织只读可查，搜索分页不触发模型
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	action-workflow.spec.ts	结果数量	1	desktop / 取消中的迟到响应不启动下游，刷新保留待生成草稿且明确恢复
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	action-workflow.spec.ts	节点数量	1	desktop / 单行状态跟随四个实际请求，展开收起不重发且自动结算后等待行动
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	archive-final.spec.ts	交互目标	1	mobile / 游戏设置与地图互切、记忆未保存确认、Esc和首页纸色模态
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	archive-final.spec.ts	数值或布尔值比对	1	desktop / 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	archive-final.spec.ts	文本匹配	1	mobile / 地图正式层级、当前位置、四入口同步与五尺寸，NPC/事件关联、缓存和只读性
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	archive-step3.spec.ts	交互目标	1	mobile / 经济资金、部分未知合计、全字段与原生手机，人物入口/旧Dialog/焦点闭环
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	archive-step4.spec.ts	见原始错误	1	mobile / 统一正式历史投影、双轨五尺寸、精度与详情全文，回焦与地图档案切换
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	automatic-settlement.spec.ts	数值或布尔值比对	1	mobile / 认知与组织字段错误各自隔离，World外层不合法时只重试World
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	city-night-followups.spec.ts	文本匹配	1	mobile / 四项修复：07:50 与完整状态/资金、双端真实 React 截图
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	city-night-followups.spec.ts	见原始错误	1	mobile / 触控点击详情、再次点击/关闭/外部点击收起，窄屏与缩放视口不溢出
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	city-night.spec.ts	节点数量	1	desktop / UI-2：真实 React 双端截图、五视口对齐与 HTML 对照
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	completion-chime.spec.ts	数值或布尔值比对	1	desktop / 正式结算成功只响一次完成提示（开始生成的点击解锁音频）
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	continuous-turns.spec.ts	文本匹配	1	desktop / 阶段未完成或主动关闭时，即使填写行动也不能部分结算
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	event-entry-feedback.spec.ts	元素可见性	1	mobile / World失败与刷新不消费入场，恢复只请求World并原子确认正文回执
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	event-entry-feedback.spec.ts	文本匹配	1	desktop / 两轮自动结算：选择性入场、留守离场、并行任务与独立模糊历史保存后刷新可读
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	event-lifecycle.spec.ts	元素可见性	1	desktop / 未处理到期事件不能伪装World成功，合法重试仍仅保存候选
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	event-lifecycle.spec.ts	状态或数组比对	1	desktop / Variables拒绝纯组织事件，合法现场更新可恢复；组织事件只能经World候选正式结算
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	game-window.spec.ts	交互目标	1	mobile / 滚轮在资料弹窗内滚动，不带动正文；世界资料入口可返回
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	game-window.spec.ts	时间限制	1	mobile / 默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式状态
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	game-window.spec.ts	节点数量	1	desktop / 生成中折叠不打断；取消和错误不被隐藏，失败重试成功保留正式状态
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	game.spec.ts	焦点	1	mobile / 七面板一键打开、键盘关闭、全量资料只读且保留阅读位置
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	history-timeline-v2.spec.ts	时间限制	1	mobile / 长纪事完整详情、同刻大组有界分页与键盘访问
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	issue-194-entry-handoff.spec.ts	数值或布尔值比对	1	mobile / 工作结果纯通知从 Story 收悉走完整三阶段、刷新和撤回
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	memory.spec.ts	元素可见性	1	desktop / 真实正文请求使用设置N=1/10/20，并独立召回第3回合；查看记忆不中断生成
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-batch2.spec.ts	交互目标	1	mobile / 删除操作表：取消与繁忙保护，确认后才删除真实存档
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-batch2.spec.ts	元素可见性	1	mobile / 记忆失败操作表：保留来源、重试授权与暂停条件
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-batch2.spec.ts	几何或数值下限	1	mobile / 真实触屏横滑：诊断横滑与阶段页签不误关闭，世界版本仍可查看
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-batch2.spec.ts	焦点	1	mobile / 第一批菜单与抽屉兼容：版本、四个导航操作、Esc、回焦和原状态
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-batch4-review.spec.ts	时间限制	1	mobile / 复审：手机开局包删除赭红、覆盖金色、取消中性；PC 不附加这些样式
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-home.spec.ts	节点数量	1	mobile / 真实撕票动画、重复操作锁与切换/刷新/卸载清理
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-main-batch1.spec.ts	元素可见性	1	mobile / 生成中与失败恢复：关闭抽屉不取消，显式取消，不额外请求
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-main-batch1.spec.ts	数值或布尔值比对	1	mobile / 真实触屏：长内容原生滚动不误关闭，内容顶部下拉不关闭、横条下拉关闭；reduced motion
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-main-batch1.spec.ts	焦点	1	mobile / 菜单与设置交接：保留既有配置入口、Esc 与回焦，浏览不保存
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-turn-changes.spec.ts	时间限制	1	mobile / 手机变化 900×800：可靠六组、角标、单一滚动与只读
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	mobile-turn-changes.spec.ts	节点数量	1	mobile / 变化抽屉可视区、触摸遮罩、拖动与原生关闭回焦
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	night-seal.spec.ts	交互目标	1	desktop / 长姓名、巨大金额及短横屏保持阅读与真实资料可访问
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	night-seal.spec.ts	元素几何读取	1	mobile / 长姓名、巨大金额及短横屏保持阅读与真实资料可访问
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	night-seal.spec.ts	节点数量	1	mobile / 夜幕金印：真实已结算存档、四导航、阅读与视觉验收
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	night-seal.spec.ts	见原始错误	1	desktop / 夜幕金印：真实已结算存档、四导航、阅读与视觉验收
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	pc-reading-layout.spec.ts	几何或数值上限	1	desktop / PC 阅读布局：同场景视口截图与尺寸记录
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	pr120-integration.spec.ts	元素可见性	1	mobile / 整合：抽屉打开时真实输入发送、失败恢复、取消和原子结算/刷新
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	pr125-compatibility.spec.ts	元素可见性	1	desktop / #125 兼容：车票主按钮进入存档，#120 双层非模态工作流与行动输入共存
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	prompt-inspector.spec.ts	元素可视区	1	mobile / 四开关显式保存：双页联动、未保存刷新丢弃、保存刷新持久化与再次编辑提示
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	prompt-inspector.spec.ts	几何或数值下限	1	desktop / 300 NPC 真实快照按需 Worker 分析、动画帧继续、结果与原算法一致且复用缓存
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	stage-failure-summary.spec.ts	交互目标	1	mobile / manual invalid_output：本页细节、持久摘要、复制、清空和刷新
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	startup-notices.spec.ts	焦点	1	mobile / 键盘焦点局限于当前弹窗，Escape 按顺序关闭
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	startup-notices.spec.ts	状态或数组比对	1	mobile / 完整定稿实际分段渲染：开头、架空社会声明与开发者落款
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-runtime.spec.ts	见原始错误	1	desktop / 真实开局流式分片、资料面板不打断、只展示正文，草稿刷新与行动复制、快照统计
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	story-stream-toggle.spec.ts	数值或布尔值比对	1	desktop / GLM 中转 SSE 完成三阶段结算；下回合中转 500 保留正式状态
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	time-preflight.spec.ts	文本匹配	1	desktop / 取消和迟到不推进时间；关闭阶段只保留正文草稿
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	turn-coordinator.spec.ts	交互目标	1	desktop / 关闭两个阶段只生成并结算正文，重新启用不会重算已结算回合
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	variable-runtime.spec.ts	文本匹配	1	desktop / 变量正常生成、真实独立路由/模块/usage，完整候选主动查看，刷新仍保留候选且正式资金不变
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	workflow-banner-scroll.spec.ts	数值或布尔值比对	1	desktop / 电脑端：错误横幅可关闭，新错误会重新出现；日志上滚轮可以滚动诊断区
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	world-events-archive-v2.spec.ts	焦点	1	mobile / 双端事件档案尺寸与真实截图，关闭后恢复资料入口焦点
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	world-handoff.spec.ts	见原始错误	1	desktop / V10 之前的旧档不可读也不迁移，原始数据原样保留
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	world-runtime.spec.ts	元素可见性	1	desktop / 非法地点与事件预结案拒绝；NPC双任务和合法预计时间可重试保存
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	world-runtime.spec.ts	文本匹配	1	desktop / 真实迎检准备文本：无效行动者安全失败，明确恢复后任务及合成事件入候选，正式状态不变
+同断言的历史失败 · 产品、夹具与断言的责任仍待单项验证	xianggui-private-profile.spec.ts	交互目标	1	mobile / 资格显示与切换不残留
+测试契约 · 分区后的入口、文案或前置页面	mobile-batch2.spec.ts	交互目标	7	mobile / 手机 390×844：候选、选择器和操作表
+测试契约 · 分区后的入口、文案或前置页面	candidate-streaming.spec.ts	时间限制	2	desktop / 旧运行设置不重置：两个独立开关默认关闭，显式保存、刷新和未保存取消
+测试契约 · 分区后的入口、文案或前置页面	model-list-hardening.spec.ts	交互目标	2	desktop / 官方结构的model字段真实选用，name-only不冒充模型
+测试契约 · 分区后的入口、文案或前置页面	narrative-length.spec.ts	文本匹配	2	desktop / 新玩家默认低档；选中档 / 高档后保存，刷新仍在；高档提示输出长度
+测试契约 · 分区后的入口、文案或前置页面	memory-maintenance.spec.ts	时间限制	1	desktop / 选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计
+测试契约 · 分区后的入口、文案或前置页面	mobile-select-sheet.spec.ts	交互目标	1	mobile / 手机选择抽屉：选项多时可以用手指滑到底并选中最后一项；高亮项为纸页浅金、文字清楚
+测试契约 · 分区后的入口、文案或前置页面	mobile-select-sheet.spec.ts	元素可见性	1	mobile / 手机选择抽屉：选项远离屏幕底边；没有渠道时提示先添加渠道
+测试采样时序 · 移动端入场动画	settings-repartition.spec.ts	几何或数值上限	1	mobile / 设置十七页逐页验收 · day
+触发点待核对 · 见本轮 13 项明细	story-continuation-transport.spec.ts	见原始错误	2	desktop / 预检期间另一标签改变节奏
+触发点待核对 · 见本轮 13 项明细	archive-final.spec.ts	交互目标	1	mobile / 设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载
+触发点待核对 · 见本轮 13 项明细	city-night.spec.ts	见原始错误	1	desktop / UI-2：四城五时段五天气、长文本及 reduced-motion
+触发点待核对 · 见本轮 13 项明细	event-entry-feedback.spec.ts	元素可见性	1	desktop / World失败与刷新不消费入场，恢复只请求World并原子确认正文回执
+触发点待核对 · 见本轮 13 项明细	mobile-turn-changes.spec.ts	几何或数值上限	1	mobile / 手机变化 430×932：可靠六组、角标、单一滚动与只读
+触发点待核对 · 见本轮 13 项明细	pc-reading-layout.spec.ts	元素可视区	1	desktop / PC 长状态限高、完整资料、九入口短屏可访问
+触发点待核对 · 见本轮 13 项明细	pr117-acceptance.spec.ts	交互目标	1	mobile / 最终验收：指定视口长正文、候选、输入与刷新不产生请求或写档
+触发点待核对 · 见本轮 13 项明细	stage-failure-summary.spec.ts	交互目标	1	mobile / automatic invalid_output：本页细节、持久摘要、复制、清空和刷新
+触发点待核对 · 见本轮 13 项明细	startup-notices.spec.ts	交互目标	1	mobile / localStorage 不可访问时仍能完成顺序并使用首页
+触发点待核对 · 见本轮 13 项明细	undo-summary-recovery.spec.ts	元素可见性	1	desktop / 短期 → 中期 在飞行中撤回后明确待确认；发送不重试，手动成功后自动恢复
+触发点待核对 · 见本轮 13 项明细	workflow-feedback.spec.ts	交互目标	1	mobile / 多个阶段错误完整保留；候选失败重试不重生成已有正文
+触发点待核对 · 见本轮 13 项明细	worldview-source.spec.ts	交互目标	1	mobile / default 恢复外部正文后必须验证来源，再发送或结算
+运行环境 · 跨人工暂停，须结合恢复后记录	mobile-archives.spec.ts	见原始错误	1	mobile / 手机设置真实保存 AI 与记忆：无模型 POST，关闭拦截、记忆费用保护和重载
+运行环境 · 跨人工暂停，须结合恢复后记录	mobile-batch2.spec.ts	交互目标	1	mobile / 手机 375×667：候选、选择器和操作表
