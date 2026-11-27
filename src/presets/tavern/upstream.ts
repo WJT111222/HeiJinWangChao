@@ -61,8 +61,7 @@ export class UpstreamFrames {
   // Exact visible text observed before the first tool. null means its position or content disqualifies it.
   private leadingPadding: string | null = '';
   boundary = false;
-  // nativeDelivery：内置原生交付对工具不符或参数不合规返回 unsupported，与文学预设的 invalid_output 区分。
-  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null, private contentField = 'content', private optionalTextFields: readonly string[] = [], private nativeDelivery = false) {}
+  constructor(private protocol: Protocol, private trace: UpstreamTrace, private expectedContentTool?: string | null, private contentField = 'content', private optionalTextFields: readonly string[] = []) {}
   private observeCompanionText(text: string, sharesToolFields = false) {
     if (!this.expectedContentTool || !text || this.leadingPadding === null) return;
     if (this.tools.size || sharesToolFields || /[^ \t\r\n]/u.test(text)) this.leadingPadding = null;
@@ -279,17 +278,10 @@ export class UpstreamFrames {
         const args = parse(tool.args);
         if (!objectArgs(args)) invalid();
         if (this.expectedContentTool !== undefined) {
-          const unsupported = () => { throw new AiError('unsupported', undefined, { fieldPath: 'tavern.native_delivery.response' }); };
           if (tool.name !== this.expectedContentTool || Object.entries(record(args)).some(([key, value]) =>
-            key !== this.contentField && (!this.optionalTextFields.includes(key) || typeof value !== 'string'))) {
-            if (this.nativeDelivery) unsupported();
-            invalid();
-          }
+            key !== this.contentField && (!this.optionalTextFields.includes(key) || typeof value !== 'string'))) invalid();
           const content = record(args)[this.contentField];
-          if (typeof content !== 'string' || !content.trim()) {
-            if (this.nativeDelivery) unsupported();
-            invalid();
-          }
+          if (typeof content !== 'string' || !content.trim()) invalid();
           const padding = this.leadingPadding;
           this.trace.matchesDelivery = (restored, leadingPadding) => {
             if (leadingPadding !== undefined) return !!padding && leadingPadding === padding && restored === content;
@@ -306,11 +298,11 @@ export class UpstreamFrames {
     this.trace.clock.first('upstreamCompleteMs');
   }
 }
-export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace, expectedContentTool?: string | null, literaryDelivery = false) {
+export async function normalizeUpstream(response: Response, protocol: Protocol, stream: boolean, signal: AbortSignal, trace: UpstreamTrace, expectedContentTool?: string | null) {
   trace.status = response.status;
   trace.contentType = safeMime(response.headers);
   trace.requestedStream = stream;
-  const frames = new UpstreamFrames(protocol, trace, expectedContentTool, 'content', [], expectedContentTool != null && !literaryDelivery);
+  const frames = new UpstreamFrames(protocol, trace, expectedContentTool);
   if (!response.body) throw new AiError('stream_interrupted', undefined, { fieldPath: 'tavern.upstream.missing_body' });
   const stopped = new AbortController();
   const reading = AbortSignal.any([signal, stopped.signal]);
