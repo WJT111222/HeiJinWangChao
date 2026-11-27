@@ -105,7 +105,7 @@
  .app-shell .settings-paper[data-tone=paper] .ar-close {padding:.45rem .9rem;font-size:.84rem;white-space:nowrap;}
  .app-shell .settings-paper[data-tone=paper] .modal-body,.app-shell .settings-paper[data-tone=paper] .ar-body {flex:1;min-height:0;display:flex;overflow:hidden;padding:0 1.6rem;}
  .app-shell .settings-paper[data-tone=paper] .settings-layout {flex:1;min-height:0;min-width:0;display:grid;grid-template-columns:12.5rem minmax(0,1fr);gap:0;}
- .app-shell .settings-paper[data-tone=paper] .settings-layout .settings-nav {overflow:auto;min-height:0;flex-direction:column;margin:0;}
+ .app-shell .settings-paper[data-tone=paper] .settings-layout .settings-nav {overflow-x:hidden;overflow-y:auto;min-height:0;flex-flow:column nowrap;margin:0;}
  .app-shell .settings-paper[data-tone=paper] .settings-layout .settings-nav>button {margin:0;white-space:normal;min-width:0;}
  .app-shell .settings-paper[data-tone=paper] .settings-content {min-height:0;overflow:auto;overscroll-behavior:contain;padding:1.3rem 1.5rem 0;display:block;scrollbar-gutter:stable;}
  .app-shell .settings-paper[data-tone=paper] .settings-content>h3 {font:1.35rem var(--font-title);letter-spacing:.2em;color:var(--head);margin:0 0 .7rem;}
