@@ -3,6 +3,10 @@ import { DatabaseSync } from 'node:sqlite';
 import { parseConfigFileTextToJson } from 'typescript';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import worker from '../worker';
+import { parsePartialEntities } from '../services/validation/partialOutputs';
+import { runtimeLogEvent } from '../ui/game/runtimeLog';
+import { prepareErrorPayload } from '../services/feedback/report';
+import { worldDraft, worldState } from './fixtures/world';
 import type { FeedbackDatabase } from '../feedback/database';
 import { feedbackPerMinute } from '../feedback/database';
 import { feedbackAdminPath, feedbackBytes, feedbackPath } from '../services/feedback/contract';
@@ -79,6 +83,20 @@ it('只接受明确 POST，将全部脱敏日志和选定附件保存，重复�
   expect(Object.keys(stored[0])).not.toContain('ip');
   expect((await submit(suggestion, nonce)).status).toBe(409);
   expect((await worker.fetch(new Request(base + feedbackPath), env())).status).toBe(405);
+});
+it('人物接触名单的整批诊断可经上报写入后台，保留阶段与规则且不含名单和原文', async () => {
+  const state = worldState();
+  const response = '<接触者>["private-undeclared"]</接触者><thinking>核对</thinking><说明>登记</说明><命令></命令>';
+  const failure = await parsePartialEntities(response,state,worldDraft(false,'opening')).then(()=>null,e=>e);
+  const entry = runtimeLogEvent(1,'entities','failed',failure);
+  const payload = prepareErrorPayload([entry],[],{content:false,reasoning:false})('');
+  expect((await submit(payload)).status).toBe(201);
+  const stored = JSON.parse(String(sqlite.prepare('SELECT payload FROM feedback').get()?.payload));
+  expect(stored.errors).toMatchObject([{stage:'entities',code:'data_integrity',variableStep:'simulation',
+    domainRule:'missing_contact_declaration_target',fieldPath:'contactedNpcIds'}]);
+  expect(stored.errors[0]).not.toHaveProperty('commandIndex');
+  expect(stored).not.toHaveProperty('attachments');
+  expect(JSON.stringify(stored)).not.toContain('private-undeclared');
 });
 it('拒绝未声明字段、跨源、超长和正文泄密，缺少 D1 或写入失败时返回安全错误', async () => {
   expect((await submit(suggestion, undefined, { Origin: 'https://elsewhere.test' })).status).toBe(403);

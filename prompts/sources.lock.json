@@ -1842,12 +1842,22 @@
     "stages/opening/entities.md": {
       "origin": "project",
       "sourceSha256": "d711606b6a89d4b4f239b40d8cce412dd466a48a55be9dc2a48e323ae0d05ce5",
-      "treatment": "three-variable-stages"
+      "treatment": "three-variable-stages",
+      "entityContactIsolation": {
+        "baseCommit": "9f66b36da5247ef76cbcc1981e66cd449323f7ae",
+        "notes": "澄清新建人物与重新到场的已有 NPC 均需接触声明。",
+        "sha256": "1456b9797a4f26093f7b7dfaf55936df5be441cb6b3fcba17e37baae71f8b344"
+      }
     },
     "stages/regular/entities.md": {
       "origin": "project",
       "sourceSha256": "083b24e8d3aa917d2258fc2804138e8b7f2a3b9ded3c1daf7c6fff65b57fdb86",
-      "treatment": "three-variable-stages"
+      "treatment": "three-variable-stages",
+      "entityContactIsolation": {
+        "baseCommit": "9f66b36da5247ef76cbcc1981e66cd449323f7ae",
+        "notes": "澄清新建人物与重新到场的已有 NPC 均需接触声明。",
+        "sha256": "f20a00fece973d6a5015061275438d2738225378af1014c0de5420226ca8a1fd"
+      }
     },
     "shared/entity_output.md": {
       "origin": "project",
@@ -1867,6 +1877,11 @@
         "baseCommit": "75e8abc2dee53078d126886058acbc2a0dce70de",
         "notes": "人物与实体记录正文手机消息与通话，正文提及标记可独立写入。",
         "sha256": "53d60c085739ce86301893f497fd21731972d165e2075f361edc47000e2ffb6a"
+      },
+      "entityContactIsolation": {
+        "baseCommit": "9f66b36da5247ef76cbcc1981e66cd449323f7ae",
+        "notes": "澄清新建人物与重新到场的已有 NPC 均需接触声明。",
+        "sha256": "6be5143719db0d84ea2a9cd394a26eb8722b1fe2afc562c333dc60eaacfcf46f"
       }
     },
     "shared/history_output.md": {

@@ -349,7 +349,8 @@ async function executePrepared(captured: ComposeInput & { stage: AiStage }, snap
   } catch (error) {
     // 兼容包装和协议错误已有具体位置；仅将实际正文错误归入 Story 格式诊断。
     const compatibilityError = prompt.preset && error instanceof AiError && error.details?.fieldPath?.startsWith('tavern.');
-    const failure = (captured.stage === 'variables' || captured.stage === 'entities') ? variableFailure(error, step)
+    const failure = error instanceof DataError && error.code === 'ENTITY_DEPENDENCY' ? variableFailure(error, 'simulation')
+      : (captured.stage === 'variables' || captured.stage === 'entities') ? variableFailure(error, step)
       : captured.stage === 'story' && !compatibilityError ? storyFailure(error, true) : error;
     if (captured.stage === 'story' && usesSpreset(presetSelection) && failure instanceof AiError) manualRetryOnly.add(failure);
     sealed = true;

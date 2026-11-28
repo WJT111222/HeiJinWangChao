@@ -59,11 +59,16 @@ describe('PR-B 条件式单项天赋上下文', () => {
   });
 
   it('有天赋 Variables/World 完整请求保留通用与专属规则及已核对的入场提示', async () => {
-    // 普通回合 Variables 目录增加天气与环境；开局、World 和天赋定义保留既有基线。
+    // 人物阶段说明区分新建和重新接触；其余阶段的请求及天赋内容沿用原基线。
     const requests = [];
     for (const definition of talentDefinitions) {
       for (const stage of ['entities','variables', 'world'] as const) for (const mode of ['opening', 'regular'] as const) {
         const prompt = await composePrompt(talentPromptInput(stage, mode, definition.id));
+        if (stage === 'entities') {
+          const sent = prompt.messages.map(message => message.content).join('\n');
+          expect(sent).toContain('<接触者>["su_min","chen_jun"]</接触者>');
+          expect(sent).toContain('未实际接触的场外人物不得列入');
+        }
         requests.push({ messages: prompt.messages, context: prompt.context, modules: prompt.modules });
       }
       const { commonRules, additionalRules } = talentContext(definition.id, 'story')!;

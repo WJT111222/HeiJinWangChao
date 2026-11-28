@@ -1,5 +1,5 @@
 import { checkEntityCommands, effectiveEntityCandidate } from '../../domain/entityCandidate';
-import { IdSchema } from '../../domain/common';
+import { CommandDataError, IdSchema } from '../../domain/common';
 import { commandsForPhase } from '../../domain/stageCommands';
 import { hasVisibleNarrative } from '../../domain/storyContent';
 import { storySceneAuthority, validateNarrationClock } from '../../domain/events/narration';
@@ -28,6 +28,7 @@ import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { parseVariableText, parseVariableResponse } from '../../parsers/variableText';
 import { compileVariableCommands, simulateVariablePlan } from '../../executors/variableText';
 import type { ExecutionError } from '../../executors/variableText';
+import { safeVariablePath } from '../../executors/variableText/diagnostics';
 import { isTimeDomainRule } from '../../executors/variableText/aggregateDiagnostics';
 
 function textExecutionError(error: ExecutionError, variableStep: 'mapping' | 'simulation') {
@@ -74,9 +75,17 @@ export async function validateEntityStatements(ast: readonly ParsedVariableComma
   const plan = await compileVariableCommands(ast, state, { draft, expectedRevision: state.revision, phase: 'entities' });
   if (!plan.ok) throw textExecutionError(plan.error, 'mapping');
   // System opening clocks belong to the scene/Story path, never to this candidate.
+  const origins = plan.value.origins.filter(origin => origin !== null);
   const commands = plan.value.commands.filter((_, index) => plan.value.origins[index] !== null);
   try { checkEntityCommands(state, draft, contactedNpcIds, commands); }
-  catch (error) { throw variableFailure(error, 'simulation'); }
+  catch (error) {
+    const failure = variableFailure(error, 'simulation');
+    if (!(error instanceof CommandDataError)) throw failure;
+    const origin = origins[error.commandIndex];
+    const index = origin ? origin.commandIndex - 1 : undefined;
+    throw new AiError(failure.code, failure.status, { ...failure.details, commandIndex: index,
+      commandType: error.commandType, valuePath: index === undefined ? undefined : safeVariablePath(ast[index]) });
+  }
   return VariableResultSchema.parse({ commands, rejectedSuggestions: [], unresolved: [] });
 }
 

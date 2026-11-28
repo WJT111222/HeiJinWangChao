@@ -1,6 +1,7 @@
-import { assertWorldEntityDependencies, effectiveEntityCandidate } from '../../domain/entityCandidate';
+import { assertWorldEntityDependencies, effectiveEntityCandidate, EntityDependencyError, isolatedEntityReason, rejectedEntityIds } from '../../domain/entityCandidate';
 import { z } from 'zod';
-import { DomainCommandSchema } from '../../domain/commands';
+import { IdSchema } from '../../domain/common';
+import { allEntityIds, DomainCommandSchema } from '../../domain/commands';
 import { WorldResultSchema } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
 import type { GameState } from '../../domain/state';
@@ -211,9 +212,8 @@ function addSceneDependencies(state: GameState, units: UpdateUnit<VariableStatem
 
 export async function parsePartialEntities(text: string, state: GameState, draft: TurnDraft) {
   const { text: body, contactedNpcIds } = entityEnvelope(text);
-  const result = await parseVariableBatch(body, state, draft, contactedNpcIds);
-  if (result.settlement) for (const update of result.settlement.skipped) update.group = 'entities';
-  return { ...result, contactedNpcIds };
+  const batch = await isolateVariableBatch(body, state, draft, 'entities', contactedNpcIds);
+  return { ...batch.result, contactedNpcIds: batch.contacts };
 }
 
 export function parsePartialVariables(text: string, state: GameState, draft: TurnDraft) {
@@ -221,7 +221,23 @@ export function parsePartialVariables(text: string, state: GameState, draft: Tur
 }
 
 export async function parseVariableBatch(text: string, state: GameState, draft: TurnDraft, phase: 'combined' | 'scene' | readonly string[]) {
-  const contacts = typeof phase === 'string' ? undefined : [...phase];
+  const batch = typeof phase === 'string' ? await isolateVariableBatch(text, state, draft, phase)
+    : await isolateVariableBatch(text, state, draft, 'entities', phase);
+  return batch.result;
+}
+
+// Recover only an explicit whole-entity set target, even when its value cannot be parsed.
+// A field update, a similarly named location, or a reference cannot declare a new NPC.
+function creationTarget(input: VariableStatement) {
+  const [root, target, ...fields] = variablePath(input);
+  const isSet = input.ast ? input.ast.operation === 'set' : /^\s*set\s/u.test(input.text);
+  if (isSet && !fields.length && target?.kind === 'id' && IdSchema.safeParse(target.id).success &&
+      (root?.kind === 'root' || root?.kind === 'field') && ['npc', 'organizations', 'locations'].includes(root.name))
+    return { root: root.name, id: target.id };
+}
+
+async function isolateVariableBatch(text: string, state: GameState, draft: TurnDraft,
+  phase: 'combined' | 'scene' | 'entities', contacts: readonly string[] = []) {
   const envelope = commandEnvelope(text);
   if (!envelope) throw new AiError('variable_text_syntax', undefined, { variableStep: 'envelope', fieldPath: 'text.block_structure' });
   const statements = variableStatements(envelope.text);
@@ -248,26 +264,65 @@ export async function parseVariableBatch(text: string, state: GameState, draft: 
         unit.atomicKeys = [...(unit.atomicKeys ?? []),'harem-transaction'];
     }
   }
+  const entityStage = phase === 'entities';
+  const creations = new Map<UpdateUnit<VariableStatement>, NonNullable<ReturnType<typeof creationTarget>>>();
+  if (entityStage) for (const unit of units) {
+    const target = creationTarget(unit.input);
+    if (!target) continue;
+    creations.set(unit, target);
+    // A rejected duplicate creation does not own an already existing person's other changes.
+    if (target.root === 'npc' && Object.hasOwn(state.npc, target.id) ||
+        target.root === 'organizations' && Object.hasOwn(state.organizations, target.id)) unit.writes = [];
+  }
+  const newContacts = new Set([...creations.values()].filter(target => target.root === 'npc' && !Object.hasOwn(state.npc, target.id)).map(target => target.id));
+  if (phase === 'scene' && draft.entities) {
+    const missing = rejectedEntityIds(draft.entities.result);
+    if (units.some(unit => [...unit.refs, ...unit.writes].some(id => missing.has(id)))) throw new EntityDependencyError();
+  }
   addSceneDependencies(state, units);
   // A world-clock statement is the temporal basis shared by application groups.
-  const clocks = contacts ? [] : units.filter(unit => unit.input.ast?.path.nodes.some(node => (node.kind === 'root' || node.kind === 'field') && node.name === 'worldClock') && unit.position.category === 'state');
+  const clocks = entityStage ? [] : units.filter(unit => unit.input.ast?.path.nodes.some(node => (node.kind === 'root' || node.kind === 'field') && node.name === 'worldClock') && unit.position.category === 'state');
   const optional = units.filter(unit => !clocks.includes(unit));
-  const { result, skipped } = await isolateUpdates(optional, selected => {
+  const { result: verified, skipped } = await isolateUpdates(optional, async selected => {
     const basis = units.filter(unit => clocks.includes(unit) || selected.includes(unit));
     const ast = basis.map(unit => unit.input.ast!);
-    const validation = contacts ? validateEntityStatements(ast, state, draft, contacts) :
-      validateVariableStatements(ast, state, draft, envelope.hasDescription, phase === 'scene');
-    return validation
-      .catch(error => {
-        if (!(error instanceof AiError)) throw error;
-        const offset = error.details?.commandIndex;
-        const failed = offset === undefined ? undefined : basis[offset];
-        if (failed && clocks.includes(failed)) throw new AiError('variable_runtime');
-        const local = failed ? selected.indexOf(failed) : undefined;
-        throw new AiError(error.code, error.status, { ...error.details, commandIndex: local });
-      });
+    const included = new Set(basis.flatMap(unit => {
+      const target = creations.get(unit);
+      return target?.root === 'npc' ? [target.id] : [];
+    }));
+    // Unknown declarations with no creator stay in every trial and fail the domain check.
+    const declared = contacts.filter(id => !newContacts.has(id) || included.has(id));
+    try {
+      const result = entityStage ? await validateEntityStatements(ast, state, draft, declared)
+        : await validateVariableStatements(ast, state, draft, envelope.hasDescription, phase === 'scene');
+      return { result, contacts: declared };
+    } catch (error) {
+      if (!(error instanceof AiError)) throw error;
+      const offset = error.details?.commandIndex;
+      const failed = offset === undefined ? undefined : basis[offset];
+      if (failed && clocks.includes(failed)) throw new AiError('variable_runtime');
+      const local = failed ? selected.indexOf(failed) : undefined;
+      throw new AiError(error.code, error.status, { ...error.details, commandIndex: local });
+    }
   });
+  const { result } = verified;
   if (skipped.length || envelope.formatWarning)
-    result.settlement = { skipped, accepted: result.commands.filter(command => command.commandId.startsWith(contacts ? 'entity-v1:' : 'text-v1:')).length, ...(envelope.formatWarning ? { formatWarning: true } : {}) };
-  return result;
+    result.settlement = { skipped, accepted: result.commands.filter(command => command.commandId.startsWith(entityStage ? 'entity-v1:' : 'text-v1:')).length, ...(envelope.formatWarning ? { formatWarning: true } : {}) };
+  if (entityStage && skipped.length) {
+    const existing = new Set(allEntityIds(state));
+    for (const command of result.commands) {
+      if (command.type === 'CreateNpc') existing.add(command.npc.id);
+      if (command.type === 'CreateOrganization') existing.add(command.organization.id);
+      if (command.type === 'CreateLocation') existing.add(command.location.id);
+    }
+    for (const update of skipped) {
+      update.group = 'entities';
+      const target = creations.get(units[update.commandIndex]);
+      if (target && !existing.has(target.id)) {
+        result.rejectedSuggestions.push({ reason: isolatedEntityReason, reference: target.id });
+        existing.add(target.id);
+      }
+    }
+  }
+  return verified;
 }

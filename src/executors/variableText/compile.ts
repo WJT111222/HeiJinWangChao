@@ -195,7 +195,10 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
           mapped = { ...common, type: 'UpdateProtagonist', expectedRevision: context.expectedRevision,
             protagonistId: base.protagonist.id, changes: changes.data };
         } else {
-          if (!id || !npcIds.has(id)) return failed('entity_not_found', origin);
+          if (!id || !npcIds.has(id)) return failed('entity_not_found', origin, [], {
+            ...diagnosticForRule(command, 'domain_schema'), domainRule: 'missing_person',
+            commandType: 'UpdateNpc',
+          });
           const changes = variableCommandSchemas[1].shape.changes.safeParse({ [mapping.field]: command.value });
           if (!changes.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, changes.error, mapping.field));
           mapped = { ...common, type: 'UpdateNpc', npcId: id, expectedRevision: context.expectedRevision, changes: changes.data };
@@ -233,7 +236,9 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
         // 余额按原领域引擎的交易顺序统一检查，不能在这里仅看初始余额。
         mapped = { ...common, type: 'SpendFunds', account, amount: -command.value, purpose: '剧情消费' };
       } else {
-        if (!id || !npcIds.has(id)) return failed('entity_not_found', origin);
+        if (!id || !npcIds.has(id)) return failed('entity_not_found', origin, [], {
+          ...diagnosticForRule(command, 'domain_schema'), domainRule: 'missing_person', commandType: 'RecordNpcMemory',
+        });
         const memory = await mapMemory(command, base, id, clock, context, common, i + 1, mapping.field);
         if (!memory.ok) return failed(memory.error.code, origin, [], memory.error.diagnostic);
         mapped = memory.value;
@@ -251,7 +256,9 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       : c.type === 'Borrow' ? c.debt.id : c.type === 'CreateLocation' ? c.location.id
       : c.type === 'CreateNpc' ? c.npc.id : c.type === 'CreateOrganization' ? c.organization.id : undefined;
     if (created !== undefined) {
-      if (createdIds.has(created)) return failed('duplicate_or_conflicting_command', origin);
+      if (createdIds.has(created)) return failed('duplicate_or_conflicting_command', origin, [], {
+        ...diagnosticForRule(command, 'domain_schema'), domainRule: 'duplicate_entity_id', commandType: c.type,
+      });
       createdIds.add(created);
     }
     if (c.type === 'CreateNpc') { npcIds.add(c.npc.id); npcIdentities.set(c.npc.id,c.npc.identityKey); }
