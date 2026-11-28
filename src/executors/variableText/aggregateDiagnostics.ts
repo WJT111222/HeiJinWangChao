@@ -4,6 +4,14 @@ import type { ExecutionDiagnostic } from './diagnostics';
 
 // 固定代码词典不带出异常原文；仅下方场景错误允许带出经 IdSchema 校验的 NPC ID。
 export const domainRuleNames = {
+  contact_permission: '人物未获本回合接触权限',
+  stage_permission: '此阶段无权执行该命令',
+  missing_contact_declaration_target: '接触名单中的人物既无正式档案，也没有参与验证的建档命令',
+  missing_person: '所引用人物不存在',
+  self_relationship: '人物关系引用了自身',
+  npc_profile_conflict: '专属档案已有资料，不能用补齐命令覆盖',
+  npc_importance_permission: '玩家选择的普通身份不允许模型升级',
+  entity_dependency: '后续命令依赖已隔离的实体，或实体来源无法唯一定位',
   harem_integrity: '后宫身份、地位、家庭引用或时间不符合事务条件',
   scene_event_permission: '现场事件更新缺少合法参与权限，或试图修改规划及来源字段',
   opening_initialization: '此存档已不允许开局初始化',
@@ -55,6 +63,10 @@ export function isDomainRule(value: unknown): value is DomainRule {
 const dataErrors: Record<string, DomainRule> = {
   HAREM_MEMBER:'harem_integrity', HAREM_CHILD:'harem_integrity', HAREM_STATE:'harem_integrity',
   HAREM_BATCH:'harem_integrity', HAREM_PAIR:'harem_integrity', HAREM_STANDING:'harem_integrity',
+  STAGE_PERMISSION: 'stage_permission', ENTITY_CONTACT_PERMISSION: 'contact_permission',
+  ENTITY_CONTACT_MISSING: 'missing_contact_declaration_target', ENTITY_PERSON_MISSING: 'missing_person',
+  ENTITY_LOCATION_MISSING: 'missing_location', ENTITY_DEPENDENCY: 'entity_dependency', LOCATION_CYCLE: 'location_cycle',
+  ENTITY_RELATION_SELF: 'self_relationship', NPC_PROFILE_EXISTS: 'npc_profile_conflict', NPC_PLAYER_CHOICE: 'npc_importance_permission',
   SCENE_PERMISSION: 'scene_event_permission',
   OPENING_INITIALIZATION: 'opening_initialization',
   INITIAL_VALUE_CONFLICT: 'initial_value_conflict',

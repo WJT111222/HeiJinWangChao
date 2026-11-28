@@ -28,6 +28,7 @@ export function variableValidationError(error: unknown, input?: unknown): AiErro
     const money = path.some((part) => part === 'amount' || part === 'price' || part === 'principal' || part === 'outstanding');
     return new AiError(time ? 'time_data' : money && !wrongType ? 'amount_balance' : input === undefined ? 'data_integrity' : 'schema_fields', undefined, {
       fieldPath: path.map((part) => typeof part === 'number' ? part : fields.has(String(part)) ? part : 'field').join('.'),
+      ...(input === undefined ? diagnostic : {}),
       ...(commandIndex === undefined ? {} : { commandIndex }), ...(type ? { commandType: type } : {}),
     });
   }
@@ -35,7 +36,7 @@ export function variableValidationError(error: unknown, input?: unknown): AiErro
     const diagnostic = aggregateDomainDiagnostic(error);
     if (isTimeDomainRule(diagnostic.domainRule)) return new AiError('time_data', undefined, { ...diagnostic,
       ...(error instanceof CommandDataError ? { commandIndex: error.commandIndex, commandType: error.commandType } : {}) });
-    const code = error.code === 'STAGE_PERMISSION' ? 'permission' : moneyCodes.has(error.code) ? 'amount_balance' : timeCodes.has(error.code) ? 'time_data' : conflictCodes.has(error.code) ? 'candidate_conflict' : 'data_integrity';
+    const code = ['STAGE_PERMISSION', 'ENTITY_CONTACT_PERMISSION'].includes(error.code) ? 'permission' : moneyCodes.has(error.code) ? 'amount_balance' : timeCodes.has(error.code) ? 'time_data' : conflictCodes.has(error.code) ? 'candidate_conflict' : 'data_integrity';
     if (error.code === 'SCENE_LOCATION') {
       const match = error.message.match(/NPC（([^）]+)）/);
       const parsed = match ? IdSchema.safeParse(match[1]) : null;
@@ -43,7 +44,8 @@ export function variableValidationError(error: unknown, input?: unknown): AiErro
       const domainRule = 'scene_location' as const;
       return new AiError(code, undefined, { domainRule, ...(relatedNpcId ? { relatedNpcId } : {}) });
     }
-    return new AiError(code);
+    return new AiError(code, undefined, { ...diagnostic,
+      ...(error.code === 'ENTITY_CONTACT_MISSING' ? { fieldPath: 'contactedNpcIds' } : {}) });
   }
   return new AiError('data_integrity');
 }

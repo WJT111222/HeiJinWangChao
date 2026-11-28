@@ -69,7 +69,9 @@ export async function compileSourceOperation(command: ParsedVariableCommand, val
   } else if (skills || goals) {
     const person = goals && second?.kind === 'id' ? values.npc.get(second.id) : undefined;
     const current = skills ? values.skills : person?.goals;
-    if (!current) return failed(goals && !person ? 'entity_not_found' : 'unsupported_path');
+    if (!current) return goals && !person
+      ? failed('entity_not_found', null, [], { ...diagnosticForRule(command, 'domain_schema'), commandType:'UpdateNpc', domainRule:'missing_person' })
+      : failed('unsupported_path');
     const index = skills ? third : fourth, expectedLength = skills ? 2 : 3;
     const next = [...current];
     if (nodes.length === expectedLength && command.operation === 'push') {
@@ -88,7 +90,7 @@ export async function compileSourceOperation(command: ParsedVariableCommand, val
     else return failed('unsupported_path');
   } else if (affinity && second?.kind === 'id') {
     const person = values.npc.get(second.id);
-    if (!person) return failed('entity_not_found');
+    if (!person) return failed('entity_not_found', null, [], { ...diagnosticForRule(command, 'domain_schema'), commandType:'UpdateNpc', domainRule:'missing_person' });
     if (command.operation !== 'set') return failed('unsupported_operation');
     // 模型写终值、本回合具体原因与当前关系描述；前值由程序按正式状态（同批按上一笔结果）读取，
     // 未确认初始同伴保持 from=null 语义。from 不由模型填写，出现即按未知字段拒绝。

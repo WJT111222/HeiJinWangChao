@@ -21,6 +21,7 @@ import type { Settings } from '../ui/settings/model';
 import { initialCompanionProfile, matchesCompanion } from '../services/local/companionProfile';
 import type { CompanionProfile } from '../services/local/companionProfile';
 import { commandCatalog } from '../services/validation/commandCatalog';
+import { variableFailure } from '../services/validation/variableDiagnostics';
 import { textVariableCatalog } from '../executors/variableText/catalog';
 import { AiError } from '../services/ai/errors';
 import type { AiStage } from '../services/ai/configuration';
@@ -189,7 +190,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       try {
         projection = projectTurnCandidates(original, draft!);
       } catch (error) {
-        if (error instanceof EntityDependencyError) throw new AiError('candidate_conflict');
+        if (error instanceof EntityDependencyError) throw variableFailure(error, 'simulation');
         throw new AiError('invalid_output');
       }
     }
@@ -230,7 +231,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         initialCompanionId: state.initialCompanionId,
         sceneNpcIds: [
           ...new Set([
-            ...(draft!.entities?.contactedNpcIds ?? []),
+            ...(draft!.entities?.contactedNpcIds ?? []).filter(id => !projection?.entities?.removedIds.has(id)),
             ...Object.values(temporary.npc)
               .filter((npc) => !worldNpcAllowed(temporary, draft!, npc.id, original))
               .map((npc) => npc.id),

@@ -1,4 +1,4 @@
-接触者名单使用 JSON 字符串数组，无新接触者时用空数组。已有在场者由程序加入名单。名单之后按 thinking、说明、命令顺序输出，只使用本阶段目录。
+接触者名单使用 JSON 字符串数组，列出本回合实际接触的新建人物和重新到场或恢复当面互动的已有人物。回合开始时已在场者由程序纳入；无须另行声明任何人时用空数组。不要把未接触的场外人物列入名单。名单之后按 thinking、说明、命令顺序输出，只使用本阶段目录。
 创建地点：`set locations[clinic] = {"name":"社区诊所","parentId":"chongqing"}`；人物地点引用需真实存在，主角移动时分别处理同行/留守NPC，不自动决定跟随。去向未知可set该NPC的onScene=false、locationId=null。
 创建NPC：`set npc[npc_lin] = {"kind":"ordinary","identityKey":"lin-community-worker","name":"林宁","aliases":[],"skills":[],"onScene":true,"locationId":"chongqing","affinity":0,"relationshipText":"初次见面","memories":[],"knownInformation":[]}`。开局和普通回合均可建档；先检索已有稳定ID、身份键、别名与同伴，避免重复。初始同伴已经存在，不能重建。
 更新好感唯一写法：`set npc[npc_lin].affinityChange = {"to":35,"reason":"主角替自己挡下加急费，彼此更信任","relationshipText":"愿意继续协作"}`（示例ID、数值和原因必须换成实际剧情）。to是变化后的好感终值[-100,100]，可为负；reason写本回合具体剧情原因，不写空泛套话；relationshipText写当前关系与态度；三项都不可省略。前值由程序读取正式状态，同批连续更新按上一笔结果，不填from。不能借记忆补写伪造好感。好感与个人记忆可在同批分别写入，不是冲突操作。关系不等于恋爱。未确认同伴from=null，不把占位0当确认结果。

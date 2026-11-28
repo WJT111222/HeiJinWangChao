@@ -6,7 +6,7 @@ import { validateSceneEventUpdate } from './events/scenePermission';
 import { structuredRefs } from './commandRefs';
 import { maintainSceneTransition, SceneLocationError } from './sceneTransitions';
 import type { SkippedUpdate } from './updateSettlement';
-import { DataError, requireData } from './common';
+import { CommandDataError, DataError, requireData } from './common';
 import { projectEntityChanges, type DomainCommand } from './commands';
 import type { TurnDraft } from './drafts';
 import type { GameState } from './state';
@@ -27,22 +27,30 @@ export function checkEntityCommands(state: GameState, draft: TurnDraft, declared
   const ids = contactIds(state, [...declared, ...(draft.phoneFreeze ? draft.phonePending ?? [] : []).flatMap(participants)]);
   const allowed = new Set(commandsForPhase('entities', draft.turnKind));
   const people = new Set(Object.keys(state.npc));
-  for (const command of commands)
-    requireData(allowed.has(command.type), 'STAGE_PERMISSION', '人物与实体阶段命令越权');
+  function commandCheck(command: DomainCommand | undefined, valid: boolean, code: string, message: string) {
+    if (valid) return;
+    const error = new DataError(code, message);
+    if (command) throw new CommandDataError(error, commands.indexOf(command), command.type);
+    throw error;
+  }
+  for (const command of commands) commandCheck(command, allowed.has(command.type), 'STAGE_PERMISSION', '人物与实体阶段命令越权');
   const base = draft.phoneFreeze && commands.some(command => command.type === 'RecordPhoneMessage') ? chatBase(state, draft.phonePending ?? [], draft.turnId) : state;
   const entities = commands.length ? projectEntityChanges(base, draft.turnId, commands) : declared.length ? structuredClone(state) : state;
-  const checkPerson = (id: string) => requireData(Object.hasOwn(entities.npc, id), 'NOT_FOUND', '人物引用不存在');
-  const checkLocation = (id: string) => requireData(Object.hasOwn(entities.locations, id), 'NOT_FOUND', '地点引用不存在');
+  const checkPerson = (id: string, command?: DomainCommand) =>
+    commandCheck(command, Object.hasOwn(entities.npc, id), 'ENTITY_PERSON_MISSING', '人物引用不存在');
+  const checkLocation = (id: string, command?: DomainCommand) =>
+    commandCheck(command, Object.hasOwn(entities.locations, id), 'ENTITY_LOCATION_MISSING', '地点引用不存在');
   requireData(new Set(commands.map(command => command.commandId)).size === commands.length, 'DUPLICATE_COMMAND', '候选命令 ID 重复');
   for (const command of commands) {
     if (command.type === 'CreateNpc') {
       requireData(!people.has(command.npc.id), 'DUPLICATE_ID', '新建人物 ID 重复');
       people.add(command.npc.id);
-      requireData(ids.has(command.npc.id), 'STAGE_PERMISSION', '新人物须列入本回合接触名单');
+      commandCheck(command, ids.has(command.npc.id), 'ENTITY_CONTACT_PERMISSION', '新人物须列入本回合接触名单');
     } else if ('npcId' in command) {
       const mentionOnly = command.type === 'UpdateNpc' && command.changes.appearedInStory === true &&
         Object.keys(command.changes).length === 1 && !command.affinityChange && !command.activeGoals;
-      requireData(people.has(command.npcId) && (ids.has(command.npcId) || mentionOnly), 'STAGE_PERMISSION', '人物引用或接触名单无效');
+      commandCheck(command, people.has(command.npcId), 'ENTITY_PERSON_MISSING', '人物引用不存在');
+      commandCheck(command, ids.has(command.npcId) || mentionOnly, 'ENTITY_CONTACT_PERMISSION', '人物不在本回合接触名单中');
     }
     if (command.type === 'CreateNpc') {
       const person = entities.npc[command.npc.id];
@@ -54,7 +62,7 @@ export function checkEntityCommands(state: GameState, draft: TurnDraft, declared
           requireData(actor?.kind === 'npc' && actor.id === command.npc.id, 'NOT_FOUND', '场外任务引用或归属无效');
         }
       }
-      if (command.npc.locationId) checkLocation(command.npc.locationId);
+      if (command.npc.locationId) checkLocation(command.npc.locationId, command);
     }
     if (command.type === 'CreateLocation') {
       const seen = new Set([command.location.id]);
@@ -68,24 +76,30 @@ export function checkEntityCommands(state: GameState, draft: TurnDraft, declared
     }
     if (command.type === 'CreateOrganization') {
       const org = command.organization;
-      org.keyNpcIds.forEach(checkPerson);
+      org.keyNpcIds.forEach(id => checkPerson(id, command));
       const departments = new Set(org.departments?.map(department => department.id));
-      org.departments?.forEach(department => { if (department.headNpcId) checkPerson(department.headNpcId); });
+      org.departments?.forEach(department => { if (department.headNpcId) checkPerson(department.headNpcId, command); });
       org.members?.forEach(member => {
-        checkPerson(member.npcId);
+        checkPerson(member.npcId, command);
         requireData(!member.departmentId || departments.has(member.departmentId), 'NOT_FOUND', '成员所属部门不存在');
       });
       for (const id of org.currentTaskIds) {
         const actor = state.tasks[id]?.actorRef;
         requireData(actor?.kind === 'organization' && actor.id === org.id, 'NOT_FOUND', '组织任务引用或归属无效');
       }
-      org.leadership?.forEach(leader => { if (leader.npcId) checkPerson(leader.npcId); });
+      org.leadership?.forEach(leader => { if (leader.npcId) checkPerson(leader.npcId, command); });
       org.relations?.forEach(ref => requireData(ref.organizationId !== org.id && Object.hasOwn(entities.organizations, ref.organizationId), 'NOT_FOUND', '组织引用不存在'));
     }
     if (command.type === 'UpdateNpc') {
-      if (command.changes.locationId) checkLocation(command.changes.locationId);
-      command.changes.usualLocations?.forEach(ref => checkLocation(ref.locationId));
-      command.changes.relationshipNetwork?.forEach(ref => { if (ref.npcId) checkPerson(ref.npcId); });
+      if (command.changes.locationId) checkLocation(command.changes.locationId, command);
+      command.changes.usualLocations?.forEach(ref => checkLocation(ref.locationId, command));
+    }
+    const relations = command.type === 'PromoteNpc' ? command.profile?.relationshipNetwork
+      : command.type === 'UpdateNpc' ? command.changes.relationshipNetwork : undefined;
+    if (relations && 'npcId' in command) for (const ref of relations) {
+      if (!ref.npcId) continue;
+      checkPerson(ref.npcId, command);
+      commandCheck(command, ref.npcId !== command.npcId, 'ENTITY_RELATION_SELF', '人物关系不能引用自身');
     }
     if (command.type === 'ApplyHaremChanges') for (const edit of command.changes) {
       if ('npcId' in edit) checkPerson(edit.npcId);
@@ -94,13 +108,19 @@ export function checkEntityCommands(state: GameState, draft: TurnDraft, declared
       if (edit.op === 'discloseChild') checkPerson(edit.childNpcId);
     }
   }
-  for (const id of declared) requireData(people.has(id), 'NOT_FOUND', '接触名单中的人物不存在');
+  for (const id of declared) requireData(people.has(id), 'ENTITY_CONTACT_MISSING', '接触名单中的人物不存在');
   markStoryPeople(entities, declared, commands);
   return entities;
 }
 
 export class EntityDependencyError extends DataError {
   constructor() { super('ENTITY_DEPENDENCY', '已隔离的人物命令存在依赖或无法唯一定位，请检查人物与实体候选'); }
+}
+
+// Persist only the rejected stable reference in the candidate's existing rejection list.
+export const isolatedEntityReason = '实体建档已隔离';
+export function rejectedEntityIds(result: NonNullable<TurnDraft['entities']>['result']) {
+  return new Set(result.rejectedSuggestions.flatMap(row => row.reason === isolatedEntityReason && row.reference ? [row.reference] : []));
 }
 
 function sourceIndex(command: DomainCommand, index: number, skipped: readonly SkippedUpdate[]) {
@@ -174,12 +194,13 @@ function assertEntityDependencies(removedIds: ReadonlySet<string>, commands: rea
 export function effectiveEntityCandidate(state: GameState, draft: TurnDraft, scene: readonly DomainCommand[],
   clock = effectiveTurnClock(state, draft, scene).endAt) {
   const candidate = draft.entities;
-  const removedIds = new Set<string>();
+  const removedIds = candidate ? rejectedEntityIds(candidate.result) : new Set<string>();
   const lostWorldActors = new Set<string>();
   if (!candidate) return { commands: [] as DomainCommand[], settlement: undefined, removedIds, lostWorldActors };
   const { result, contactedNpcIds } = candidate;
   const original = result.commands;
   const before = checkEntityCommands(state, draft, contactedNpcIds, original);
+  assertEntityDependencies(removedIds, scene);
   if (!original.length) return { commands: original, settlement: result.settlement, removedIds, lostWorldActors };
   const skipped = new Map<DomainCommand, SkippedUpdate>();
   const previous = result.settlement?.skipped ?? [];

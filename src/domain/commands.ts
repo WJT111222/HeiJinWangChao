@@ -70,7 +70,7 @@ export function fingerprint(value: unknown): string {
   return JSON.stringify(value) ?? 'null';
 }
 
-function allEntityIds(s: GameState): string[] {
+export function allEntityIds(s: GameState): string[] {
   return [s.protagonist.id, ...s.timeline.map(entry => entry.id), ...[s.npc, s.items, s.organizations, s.events, s.retiredEvents, s.tasks, s.locations,
     s.economy.incomes, s.economy.debts, s.economy.properties, s.economy.vehicles, s.economy.otherAssets].flatMap(Object.keys)];
 }

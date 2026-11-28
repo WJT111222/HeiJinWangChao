@@ -2594,7 +2594,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 263,
+      "characters": 382,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "always",
@@ -2604,7 +2604,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "418677bd03c3e0291b29809274fbf6803ed8f0d926e86dfc1e53a4e317e029fd",
+      "contentSha256": "1456b9797a4f26093f7b7dfaf55936df5be441cb6b3fcba17e37baae71f8b344",
       "placeholders": []
     },
     {
@@ -2620,7 +2620,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 191,
+      "characters": 310,
       "version": "0.1.0-m3-p1",
       "messageRole": "system",
       "activation": "always",
@@ -2630,7 +2630,7 @@
       "orderGroup": "stage",
       "reorderable": false,
       "category": "stage",
-      "contentSha256": "083b24e8d3aa917d2258fc2804138e8b7f2a3b9ded3c1daf7c6fff65b57fdb86",
+      "contentSha256": "f20a00fece973d6a5015061275438d2738225378af1014c0de5420226ca8a1fd",
       "placeholders": []
     },
     {
@@ -2647,7 +2647,7 @@
       ],
       "toggle": null,
       "domain": null,
-      "characters": 4360,
+      "characters": 4414,
       "version": "0.8.0-m8-p0a",
       "messageRole": "system",
       "activation": "always",
@@ -2657,7 +2657,7 @@
       "orderGroup": "output",
       "reorderable": false,
       "category": "output",
-      "contentSha256": "53d60c085739ce86301893f497fd21731972d165e2075f361edc47000e2ffb6a",
+      "contentSha256": "6be5143719db0d84ea2a9cd394a26eb8722b1fe2afc562c333dc60eaacfcf46f",
       "placeholders": []
     },
     {

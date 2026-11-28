@@ -25,7 +25,7 @@ async function seed(page: Page, remoteLocation = false, organization = false) {
 async function stored(page: Page) { return page.evaluate(async () => { const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path), repo = await SaveRepository.open(); try { return await repo.loadGame('save-a'); } finally { repo.close(); } }); }
 async function mock(page: Page) {
   const calls: string[] = [], responses = { entities: '', variables: '', world: '' };
-  const control: { bad?: boolean; hold?: Promise<void>; variables?: string; world?: string } = {};
+  const control: { bad?: boolean; hold?: Promise<void>; variables?: string; entities?: string; world?: string } = {};
   await page.route('https://auto-settlement.mock.invalid/**', async route => {
     const stage = String(route.request().postDataJSON().model); calls.push(stage);
     const turn = calls.filter(stage => stage === 'story').length;
@@ -33,7 +33,7 @@ async function mock(page: Page) {
     const world = control.world ?? (control.bad ? '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [ {"type":"SaveEvent","commandId":"missing-end","evidence":"{}","event":{"id":"review","title":"清点","status":"scheduled","startAt":"2026-10-19T08:00:00+08:00","actorRefs":[{"kind":"npc","id":"npc-a"}],"linkedTaskIds":[],"prerequisites":[],"blockers":[],"visibility":"hidden","impact":"minor","sourceTurnIds":["auto-opening"],"backgroundText":"值班清点","goalText":"完成清点"}} ], "visibleHooks": [], "unresolved": []\n}'
       : '{\n "worldCommands": [], "taskCommands": [], "eventCommands": [], "visibleHooks": [], "unresolved": []\n}');
     const worldText = world.replace('"evidence":"{}"', `"evidence":${JSON.stringify(JSON.stringify({ version: 1, kind: 'planned', at: '2026-10-18T08:05:00+08:00', sources: ['npc:npc-a'], fact: '计划进行内部清点。', rationale: '根据日常工作安排准备清点。' }))}`);
-    const text = stage === 'story' ? `<thinking>保持当前行动连续。</thinking>\n<正文>第${turn}幕：主角在街边用餐，观察来往行人。</正文>\n<短期记忆>在街边用餐。</短期记忆>\n<变量规划>[]</变量规划>` : (stage === 'entities' || stage === 'variables') ? stageFixtureReply(stage,variables) : worldText;
+    const text = stage === 'story' ? `<thinking>保持当前行动连续。</thinking>\n<正文>第${turn}幕：主角在街边用餐，观察来往行人。</正文>\n<短期记忆>在街边用餐。</短期记忆>\n<变量规划>[]</变量规划>` : (stage === 'entities' || stage === 'variables') ? (stage === 'entities' && control.entities !== undefined ? control.entities : stageFixtureReply(stage,variables)) : worldText;
     if (stage === 'variables' || stage === 'entities') responses[stage] = text;
     if (stage === 'world') { responses.world = text; if (control.hold) await control.hold; }
     await route.fulfill({ contentType: stage === 'story' ? 'text/event-stream' : 'application/json', body: stage === 'story'
@@ -112,6 +112,67 @@ test('发送下一条行动仅绑定草稿，commit日志必须等到三阶段�
   await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(2); await settled(page);
   expect(await commits('started')).toBe(2); expect(await commits('completed')).toBe(2);
   await page.reload(); await openGameTools(page); await settled(page); expect(server.calls).toHaveLength(8);
+});
+
+test('同批新建接触者和无权限更新：草稿保留有效名单，一次请求后四阶段结算', async ({page}) => {
+  await seed(page);
+  const server = await mock(page);
+  const before = await stored(page);
+  const visitor = {kind:'ordinary',identityKey:'visit-test',name:'来访者',aliases:[],skills:[],onScene:true,
+    locationId:'chongqing',affinity:0,relationshipText:'初次见面',memories:[],knownInformation:[]};
+  server.control.entities = '<接触者>["visitor"]</接触者>' + variableTextEnvelope('<说明>记录会面。</说明>\n<命令>\n' + [
+    'set npc[visitor] = '+JSON.stringify(visitor),
+    'set npc[npc-a].onScene = true',
+    'push npc[visitor].memories = {"text":"收到资料","knowledgeKind":"observed","knowledgeSource":"本人在场","visibility":"npc_private"}',
+    'set npc[scene].onScene = false',
+  ].join('\n') + '\n</命令>');
+  let release!: () => void;
+  server.control.hold = new Promise<void>(resolve => { release = resolve; });
+  await page.getByRole('button', {name:'自动生成开局',exact:true}).click();
+  try {
+    await expect.poll(() => server.calls).toEqual(['story','entities','variables','world']);
+    const pending = await stored(page);
+    expect(pending.state).toEqual(before.state);
+    expect(pending.draft.entities.contactedNpcIds).toEqual(['visitor']);
+    expect(pending.draft.entities.result.settlement.skipped).toMatchObject([{commandIndex:1,reason:'permission'}]);
+  } finally { release(); }
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(before.state.turnNumber + 1);
+  const next = await stored(page);
+  expect(next.state.revision).toBe(before.state.revision + 1);
+  expect(next.state.npc.visitor.memories).toHaveLength(1);
+  expect(next.state.npc.scene.onScene).toBe(false);
+  expect(next.state.npc['npc-a']).toEqual(before.state.npc['npc-a']);
+  await page.reload();
+  expect(await stored(page)).toEqual(next);
+  expect(server.calls).toEqual(['story','entities','variables','world']);
+});
+
+test('隔离建档后：World 依赖阻止正式结算，刷新后只补 World', async ({page}) => {
+  await seed(page);
+  const server = await mock(page);
+  const before = await stored(page);
+  server.control.entities = '<接触者>["visitor"]</接触者>' + variableTextEnvelope(
+    '<说明>记录现场。</说明>\n<命令>\nset npc[visitor] = {"kind":"ordinary"}\nset npc[scene].healthText = "精神良好"\n</命令>');
+  server.control.world = JSON.stringify({worldCommands:[{type:'UpdateNpc', commandId:'visit-again', evidence:'合成资料',
+    npcId:'visitor', expectedRevision:0, changes:{healthText:'良好'}}], taskCommands:[], eventCommands:[], visibleHooks:[], unresolved:[]});
+  await page.getByRole('button',{name:'自动生成开局',exact:true}).click();
+  await expect.poll(async () => (await stored(page)).draft.stageStatus.world).toBe('failed');
+  const failed = await stored(page);
+  expect(failed.state).toEqual(before.state);
+  expect(failed.draft.entities.contactedNpcIds).toEqual([]);
+  expect(failed.draft.entities.result.rejectedSuggestions).toContainEqual({reason:'实体建档已隔离',reference:'visitor'});
+  expect(failed.draft.world).toBeUndefined();
+  await page.reload();
+  await openGameTools(page);
+  expect(await stored(page)).toEqual(failed);
+  server.control.world = undefined;
+  await page.getByRole('button',{name:'继续未完成阶段',exact:true}).click();
+  await expect.poll(async () => (await stored(page)).state.turnNumber).toBe(before.state.turnNumber + 1);
+  const saved = await stored(page);
+  expect(saved.state.revision).toBe(before.state.revision + 1);
+  expect(saved.state.npc.visitor).toBeUndefined();
+  expect(saved.state.npc.scene.healthText).toBe('精神良好');
+  expect(server.calls).toEqual(['story','entities','variables','world','world']);
 });
 
 test('NPC场景位置与World字段错误各自隔离，独立主角状态照常结算', async ({page}) => {
