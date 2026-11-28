@@ -39,12 +39,17 @@ test('中性须知第四章与云端公告：保留六章、完整隐私提醒�
   await dialog.getByRole('button', { name: '关闭免责声明' }).click();
   const notice = page.getByRole('dialog', { name: '王朝公告', exact: true });
   await expect(notice.getByRole('heading', { name: '《黑金王朝》1.0 正式版上线' })).toBeVisible();
-  await expect(notice.getByRole('listitem')).toHaveCount(6);
+  await expect(notice.getByRole('listitem')).toHaveCount(16);
   await expect(notice).toContainText('更新前先导出备份');
   await expect(notice).toContainText('「独立文本模型」不再使用');
   await expect(notice).not.toContainText('服务商收取');
   await expect(notice).not.toContainText('收费的第三方');
-  await notice.getByRole('listitem').last().scrollIntoViewIfNeeded();
+  const lastUpdate = notice.getByText(/^【API 消耗说明】/);
+  await lastUpdate.scrollIntoViewIfNeeded();
+  await expect(lastUpdate).toBeInViewport();
+  const message = notice.getByText('感谢大家在 Beta 期间留下的每一条反馈，正式版里见！遇到问题，欢迎通过「设置 → 反馈建议」告诉我们，或者直接在群里说。', { exact: true });
+  await message.scrollIntoViewIfNeeded();
+  await expect(message).toBeInViewport({ ratio: 1 });
   await page.screenshot({ path: info.outputPath('announcement.png'), animations: 'disabled' });
 });
 
