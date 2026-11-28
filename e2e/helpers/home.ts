@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 export async function openLibrary(page: Page) {
+  await expect(page.locator('.mobile-home, .home-experience').first()).toBeVisible();
   if (await page.locator('.mobile-home').isVisible()) {
     await expect(page.locator('.mh-rail')).toBeVisible(); return;
   }

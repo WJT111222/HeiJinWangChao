@@ -72,7 +72,7 @@
   /* ── 展开态：单一面板（标题 / 提示横幅 / 左轨+详情 / 底部操作） ── */
   .app-shell-game .city-night .workflow-details {
     position: absolute;
-    inset-inline: max(28px, calc((100% - var(--read)) / 2));
+    inset-inline: 0;
     bottom: calc(100% - 0.2rem);
     z-index: 5;
     display: flex;

@@ -65,9 +65,15 @@ export async function openWorldArchive(page: Page) {
 }
 export async function openProfile(page: Page) {
   await closeWorkflowSheet(page);
-  const compact = page.getByRole('button', { name: '展开人物状态', exact: true });
-  if (await compact.isVisible()) await compact.click();
-  else await page.getByRole('button', { name: '人物档案', exact: true }).click();
+  const hero = page.getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '人物', exact: true });
+  if (await hero.isVisible()) {
+    await hero.click();
+    await page.getByRole('dialog', { name: '此时此地', exact: true }).getByRole('button', { name: '人物档案', exact: true }).click();
+  } else {
+    const compact = page.getByRole('button', { name: '展开人物状态', exact: true });
+    if (await compact.isVisible()) await compact.click();
+    else await page.getByRole('button', { name: '人物档案', exact: true }).click();
+  }
 }
 export async function goHome(page: Page) {
   await closeWorkflowSheet(page);

@@ -1,4 +1,4 @@
-import { openStoredSave } from './helpers/home';
+import { openLibrary, openStoredSave } from './helpers/home';
 import { openGameTools, goHome, openWorldArchive, openProfile } from './helpers/gameLayout';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
@@ -36,6 +36,8 @@ async function seed(page: Page) {
 }
 async function begin(page: Page, name: string) {
   await page.goto('/');
+  if (await page.locator('.mobile-home').isVisible())
+    await page.getByRole('button', { name: /空白车票/ }).click();
   await page.getByRole('button', { name: /开始新游戏/ }).click();
   await page.getByLabel('姓名', { exact: true }).fill(name);
   await page.getByLabel('年龄', { exact: true }).fill('30');
@@ -44,16 +46,26 @@ async function begin(page: Page, name: string) {
   await page.getByLabel('性格', { exact: true }).fill('沉稳');
   await page.getByRole('button', { name: /下一步/ }).click();
 }
+async function finishCreation(page: Page) {
+  await page.getByRole('button', { name: '确认并创建存档' }).click();
+  await expect(page.getByTestId('story-reader')).toBeVisible();
+  if (await page.locator('.mobile-city-pill').isVisible()) {
+    const diagnostic = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: '重试与变更详情' }) });
+    await expect(diagnostic).toContainText('错误码：configuration');
+    await diagnostic.getByRole('button', { name: '关闭资料界面' }).click();
+  }
+}
+
 async function readSave(page: Page) {
   return page.evaluate(async () => {
     const path = '/src/services/storage/saveRepository.ts';
     const { SaveRepository } = await import(path);
     const repo = await SaveRepository.open();
     try {
-      const [summary] = await repo.list();
+      const saveId = location.hash.slice('#game/'.length);
       return {
-        state: await repo.load(summary.saveId),
-        draft: await repo.loadDraft(summary.saveId),
+        state: await repo.load(saveId),
+        draft: await repo.loadDraft(saveId),
       };
     } finally {
       repo.close();
@@ -64,7 +76,12 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await begin(page, '林舟');
-  await expect(page.getByRole('radio')).toHaveCount(7);
+  const steps = page.getByRole('navigation', { name: '角色创建步骤' });
+  await expect(steps.getByRole('button', { name: '职业与能力' })).toHaveAttribute('aria-current', 'step');
+  const jobs = page.getByRole('group', { name: '选择职业' });
+  await jobs.getByRole('button', { name: '学生与人生阶段' }).click();
+  await expect(jobs.getByRole('radio')).toHaveCount(await page.locator('.mobile-creation').isVisible() ? 6 : 7);
+  await expect(page.getByRole('group', { name: '开局天赋（可选）' }).getByRole('radio', { checked: true })).toHaveAccessibleName(/不选择天赋/);
   await page.getByRole('button', { name: '专业与公共服务', exact: true }).click();
   await page.getByRole('radio', { name: /^教师/ }).check();
   const teacherSkills = await page.getByLabel('个人技能与专长').inputValue();
@@ -75,9 +92,11 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   await page.getByRole('button', { name: '专业与公共服务', exact: true }).click();
   await page.getByRole('radio', { name: /^教师/ }).check();
   await expect(page.getByLabel('个人技能与专长')).toHaveValue(teacherSkills);
+  const skillDisclosure = page.locator('.creation-manual-skills > summary');
+  if (await skillDisclosure.isVisible()) await skillDisclosure.click();
   await page.getByLabel('个人技能与专长').fill('我填写的技能\n沟通');
   await page.getByRole('button', { name: /下一步/ }).click();
-  await expect(page.getByRole('radio')).toHaveCount(9);
+  await expect(page.getByRole('group', { name: '初始城市' }).getByRole('radio')).toHaveCount(9);
   await page.getByLabel('人物背景（可选）').fill('已婚，有明确家庭经历，不应被覆盖。');
   for (const city of ['上海', '哈尔滨', '广州', '重庆']) {
     await page.getByRole('radio', { name: new RegExp(city) }).check();
@@ -108,13 +127,16 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   }))
     await page.getByLabel(label, { exact: true }).fill(value);
   await page.getByRole('button', { name: /下一步/ }).click();
+  const companionReview = page.locator('.creation-review-fold > summary').filter({ hasText: '初始同伴' });
+  if (await companionReview.isVisible()) await companionReview.click();
   await expect(page.getByText('大学时期相识', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '修改基本信息' }).click();
   await expect(page.getByLabel('姓名', { exact: true })).toHaveValue('林舟');
   await page.getByRole('button', { name: /确认与开局/ }).click();
   await page.getByLabel('开局偏好（可选）').fill('从日常工作开始。');
-  await page.getByRole('button', { name: '确认并创建存档' }).click(); await openGameTools(page, true);
+  await finishCreation(page);
   await expect(page.getByRole('heading', { name: '故事，尚未落笔。' })).toBeVisible();
+  await openGameTools(page);
   await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: '生成开局正文', exact: true })).toBeEnabled();
   const { state, draft } = await readSave(page);
@@ -126,13 +148,18 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
   expect(state.npc.companion.background).toBe('大学时期相识');
   expect(draft.userInput).toBe('从日常工作开始。');
   expect(draft.story).toBeUndefined();
-  await page.reload(); await openGameTools(page);
-  await expect(page.getByRole('heading', { name: '林舟' })).toBeVisible();
-  const sidebar = page.getByRole('complementary', { name: '主角信息' });
+  await page.reload();
+  await expect(page.getByTestId('story-reader')).toBeVisible();
+  const mobile = await page.locator('.mobile-city-pill').isVisible();
+  const sidebar = mobile ? page.getByRole('dialog', { name: '此时此地' }) : page.getByRole('complementary', { name: '主角信息' });
+  if (mobile) await page.getByRole('button', { name: '此时此地与主角状态' }).click();
+  await expect(sidebar).toContainText('林舟');
   await expect(sidebar).toContainText('未确认');
   await expect(sidebar).not.toContainText('0.00 元');
-  await openProfile(page);
-  await expect(page.getByRole('dialog', { name: '人物档案', exact: true }).locator('.detail').filter({ hasText: '主武器' })).toContainText('无');
+  if (mobile) await sidebar.getByRole('button', { name: '人物档案', exact: true }).click();
+  else await openProfile(page);
+  const equipment = page.getByRole('dialog', { name: '人物档案', exact: true });
+  await expect(equipment.getByText('主武器', { exact: true }).locator('..').getByRole('definition')).toHaveText('无');
   await page.keyboard.press('Escape');
   const workflow = await page.getByRole('region', { name: '四阶段工作流' }).boundingBox();
   const input = await page.getByLabel('你的行动').boundingBox();
@@ -213,36 +240,48 @@ test('五步完整创建、返回修改及刷新恢复，保存特殊同伴和�
 test('自定义职业、跳过同伴，多存档选择切换与确认删除', async ({ page }) => {
   await seed(page);
   await begin(page, '自定义角色');
-  await page.getByRole('radio', { name: '自由选择', exact: true }).check();
+  const customTab = page.getByRole('navigation', { name: '职业方向' }).getByRole('button', { name: /自由选择/ });
+  if (await customTab.isVisible()) await customTab.click();
+  else await page.getByRole('radio', { name: '自由选择', exact: true }).check();
   await page.getByLabel('职业名称', { exact: true }).fill('独立策展人');
   await page.getByRole('button', { name: /下一步/ }).click();
   await page.getByRole('button', { name: '跳过背景，继续' }).click();
   await page.getByRole('button', { name: '跳过同伴，继续' }).click();
-  await page.getByRole('button', { name: '确认并创建存档' }).click(); await openGameTools(page, true);
-  await expect(page.getByRole('heading', { name: '自定义角色' })).toBeVisible();
+  await finishCreation(page);
+  const { state } = await readSave(page);
+  expect(state.protagonist.name).toBe('自定义角色');
+  expect(state.protagonist.profession).toBe('独立策展人');
+  expect(state.npc.companion).toBeUndefined();
   await goHome(page);
-  await expect(page.locator('.save-card')).toHaveCount(2);
-  const first = page.locator('.save-card').filter({ hasText: '界面测试存档（隔离）' });
+  const mobile = await page.locator('.mobile-home').isVisible();
+  const cards = page.locator(mobile ? '.mh-ticket:not(.blank)' : '.save-card');
+  await expect(cards).toHaveCount(2);
+  async function actionsFor(title: string) {
+    if (!mobile) return cards.filter({ hasText: title });
+    const index = await cards.evaluateAll((rows, name) => rows.findIndex(row => row.getAttribute('aria-label')?.includes(name)), title);
+    expect(index).toBeGreaterThanOrEqual(0);
+    await page.getByRole('button', { name: new RegExp('^第 ' + (index + 1) + ' 张') }).click();
+    await expect(cards.nth(index).locator('..')).toHaveAttribute('aria-current', 'true');
+    return page.locator('.mobile-home');
+  }
+  const first = await actionsFor('界面测试存档（隔离）');
   await first.getByRole('button', { name: '选择', exact: true }).click();
-  await page.getByRole('button', { name: /继续游戏/ }).click();
+  if (mobile) await first.getByRole('button', { name: /继续游戏/ }).click();
+  else await openStoredSave(page, '界面测试存档（隔离）');
   await expect(page.getByText('这是隔离测试用正文。').first()).toBeVisible();
   await goHome(page);
-  await page
-    .locator('.save-card')
-    .filter({ hasText: '自定义角色' })
-    .getByRole('button', { name: '删除', exact: true })
-    .click();
+  const target = await actionsFor('自定义角色');
+  await target.getByRole('button', { name: '删除', exact: true }).click();
   await page.getByRole('button', { name: '取消', exact: true }).click();
-  await expect(page.locator('.save-card')).toHaveCount(2);
-  await page
-    .locator('.save-card')
-    .filter({ hasText: '自定义角色' })
-    .getByRole('button', { name: '删除', exact: true })
-    .click();
+  await expect(cards).toHaveCount(2);
+  await target.getByRole('button', { name: '删除', exact: true }).click();
   await page.getByRole('button', { name: '确认删除' }).click();
-  await expect(page.locator('.save-card')).toHaveCount(1);
-  await page.reload(); await openGameTools(page);
-  await expect(page.locator('.save-card')).toHaveCount(1);
+  await expect(cards).toHaveCount(1);
+  await page.reload();
+  await openLibrary(page);
+  await expect(cards).toHaveCount(1);
+  if (mobile) await expect(cards).toHaveAccessibleName(/界面测试存档（隔离）/);
+  else await expect(cards).toContainText('界面测试存档（隔离）');
 });
 test('七面板一键打开、键盘关闭、全量资料只读且保留阅读位置', async ({ page }) => {
   await seed(page);
@@ -252,14 +291,16 @@ test('七面板一键打开、键盘关闭、全量资料只读且保留阅读�
     el.scrollTop = 500;
   });
   const position = await reader.evaluate((el) => el.scrollTop);
-  await openWorldArchive(page);
+  const worldTab = page.getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '世界资料', exact: true });
   for (const title of ['NPC', '势力组织', '地图', '物品栏', '世界事件', '历史时间轴', '记忆']) {
+    await openWorldArchive(page);
     const opener = page
       .getByRole('complementary', { name: '世界资料' })
       .getByRole('button', { name: new RegExp(title) });
     await opener.click();
     const modal = page.getByRole('dialog', { name: title, exact: true });
     await expect(modal).toBeVisible();
+    await expect.poll(() => modal.evaluate(el => el.contains(document.activeElement))).toBe(true);
     if (title === 'NPC') {
       await page.getByLabel('搜索人物').fill('同事');
       await page.getByRole('button', { name: '查看人物：同事', exact: true }).click();
@@ -272,7 +313,24 @@ test('七面板一键打开、键盘关闭、全量资料只读且保留阅读�
       await modal.getByRole('button', { name: /公开会面/ }).first().click();
       await expect(modal).toContainText('2099');
       const back = modal.getByRole('button', { name: '返回事件列表', exact: true });
-      if (await back.isVisible()) await back.click();
+      if (await back.isVisible()) {
+        // 在详情按钮卸载的同一轮 DOM 更新观察焦点，避免自动等待掩盖下一帧才恢复焦点的回归。
+        const focusOnRemoval = await back.evaluateHandle(button => {
+          const dialog = button.closest('dialog, [role=dialog]')!;
+          const result = { inside: false };
+          const observer = new MutationObserver(() => {
+            if (button.isConnected) return;
+            result.inside = dialog.contains(document.activeElement);
+            observer.disconnect();
+          });
+          observer.observe(dialog, { childList: true, subtree: true });
+          return result;
+        });
+        await back.press('Enter');
+        expect(await focusOnRemoval.evaluate(result => result.inside)).toBe(true);
+        await focusOnRemoval.dispose();
+        await expect(modal.getByRole('button', { name: /公开会面/ }).first()).toBeFocused();
+      }
       await expect(modal).toContainText('秘密计划不可见');
     }
     if (title === '历史时间轴')
@@ -292,7 +350,8 @@ test('七面板一键打开、键盘关闭、全量资料只读且保留阅读�
     expect(await modal.evaluate((el) => el.contains(document.activeElement))).toBe(true);
     await page.keyboard.press('Escape');
     await expect(modal).toHaveCount(0);
-    await expect(opener).toBeFocused();
+    const returnTarget = await worldTab.isVisible() ? worldTab : opener;
+    await expect(returnTarget).toBeFocused();
     expect(await reader.evaluate((el) => el.scrollTop)).toBe(position);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
