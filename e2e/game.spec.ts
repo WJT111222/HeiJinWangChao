@@ -316,7 +316,7 @@ test('七面板一键打开、键盘关闭、全量资料只读且保留阅读�
       if (await back.isVisible()) {
         // 在详情按钮卸载的同一轮 DOM 更新观察焦点，避免自动等待掩盖下一帧才恢复焦点的回归。
         const focusOnRemoval = await back.evaluateHandle(button => {
-          const dialog = button.closest('[role=dialog]')!;
+          const dialog = button.closest('dialog, [role=dialog]')!;
           const result = { inside: false };
           const observer = new MutationObserver(() => {
             if (button.isConnected) return;
