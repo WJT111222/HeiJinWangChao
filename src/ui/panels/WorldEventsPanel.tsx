@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { ArchiveLinks } from './OrganizationPanel';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Detail, Empty } from '../Dialog';
 import { RecordList, WorldRecord } from './WorldRecord';
 import { dateTime } from './playerView';
@@ -74,13 +74,26 @@ export function WorldEventsPanel({view,onOpenHistory,initialId,desktop=false,uiS
   const child=valid?.stageId&&archive.records.get(valid.stageId)?.parentEventId===main?.id?archive.records.get(valid.stageId):undefined;
   const level=!valid?'list':child?'stage':family?'family':'record';
   function remember(id:string) {return {id,scroll:root.current?.closest(desktop?'.event-detail-pane':'.modal-body')?.scrollTop??0,pane:pane.current?.scrollTop??0};}
-  const pendingFocus=useRef(false);
-  function moveFileFocus(){requestAnimationFrame(()=>{if(pane.current)pane.current.scrollTop=0;const body=root.current?.closest('.modal-body');if(body&&!desktop)body.scrollTop=0;[...(root.current?.querySelectorAll<HTMLElement>('[data-file-heading]')??[])].find(e=>e.getClientRects().length)?.focus({preventScroll:true});});}
-  function focusFile(){if(desktop)pendingFocus.current=true;else moveFileFocus();}
-  useEffect(()=>{if(pendingFocus.current){pendingFocus.current=false;moveFileFocus();}},[selection]);
+  const pendingFocus = useRef<'file' | 'list' | 'family' | null>(null);
+  function focusFile() { pendingFocus.current = 'file'; }
+  useLayoutEffect(() => {
+    const target = pendingFocus.current;
+    if (!target || !root.current) return;
+    pendingFocus.current = null;
+    const pos = target === 'file' ? undefined : positions.current[target];
+    const body = root.current.closest<HTMLElement>(desktop ? '.event-detail-pane' : '.modal-body');
+    if (body && (target !== 'file' || !desktop)) body.scrollTop = pos?.scroll ?? 0;
+    if (pane.current) pane.current.scrollTop = pos?.pane ?? 0;
+    if (target === 'file') {
+      const heading = [...root.current.querySelectorAll<HTMLElement>('[data-file-heading]')].find(el => el.getClientRects().length);
+      heading?.focus({ preventScroll: true });
+    } else {
+      const row = [...root.current.querySelectorAll<HTMLButtonElement>('[data-event-id]')].find(el => el.dataset.eventId === pos?.id && el.getClientRects().length);
+      (row ?? root.current.querySelector<HTMLElement>('input, button'))?.focus({ preventScroll: true });
+    }
+  }, [desktop, selection]);
   function select(id:string,origin:Selection['origin']='active') {positions.current.list=remember(id);setSelection({id,origin});focusFile();}
   function selectStage(id:string) {if(!main)return;positions.current.family=remember(id);setSelection({id:main.id,origin:valid?.origin??'active',stageId:id});focusFile();}
-  function restore(kind:'list'|'family') {const pos=positions.current[kind];requestAnimationFrame(()=>{const body=root.current?.closest(desktop?'.event-detail-pane':'.modal-body');if(body)body.scrollTop=pos?.scroll??0;if(pane.current)pane.current.scrollTop=pos?.pane??0;const button=[...(root.current?.querySelectorAll<HTMLButtonElement>('[data-event-id]')??[])].find(e=>e.dataset.eventId===pos?.id);(button??root.current?.querySelector<HTMLButtonElement>('button'))?.focus({preventScroll:true});});}
   function related(id:string) {const e=archive.records.get(id);if(!e)return;if(e.eventKind==='sub'&&e.parentEventId&&archive.records.has(e.parentEventId)){const parent=archive.records.get(e.parentEventId)!;setSelection({id:parent.id,origin:archive.active.some(x=>x.id===parent.id)?'active':'other',stageId:id});focusFile();}else select(id,e.eventKind==='main'?(archive.active.some(x=>x.id===id)?'active':'other'):'legacy');}
   useEffect(()=>{if(initialId)related(initialId);},[initialId]);
   const stageRow=(e:ArchiveEvent)=><button className="event-stage-row" data-status={desktop?e.detail?.outcome??e.status:undefined} data-event-id={e.id} onClick={()=>selectStage(e.id)}><span><strong>{e.title}</strong><small>{e.startAt?dateTime(e.startAt):'开始未保留'} · 固定终止 {e.fixedEndAt?dateTime(e.fixedEndAt):'未保留'}</small></span><Outcome event={e} desktop={desktop}/></button>;
@@ -105,7 +118,7 @@ export function WorldEventsPanel({view,onOpenHistory,initialId,desktop=false,uiS
       </section>
       <div className="event-detail-pane" ref={pane}>
         {main?<>
-          <div className="event-back-links">{child?<button onClick={()=>{setSelection({id:main.id,origin:valid?.origin??'active'});restore('family');}}>返回主事件</button>:null}<button className="event-back-list" onClick={()=>{setSelection(undefined);restore('list');}}>返回事件列表</button></div>
+          <div className="event-back-links">{child?<button onClick={()=>{pendingFocus.current='family';setSelection({id:main.id,origin:valid?.origin??'active'});}}>返回主事件</button>:null}<button className="event-back-list" onClick={()=>{pendingFocus.current='list';setSelection(undefined);}}>返回事件列表</button></div>
           <div hidden={Boolean(child)}><EventFile key={main.id} event={main} view={view} archive={archive} onSelect={related} onOpenHistory={onOpenHistory} desktop={desktop} links={!desktop?links:undefined}>
             {family&&<section className={desktop ? "event-stages sec" : "event-stages"} aria-label="主事件阶段"><h4>并行阶段</h4>{stages('正在进行的阶段',family.running)}{stages('已结束的阶段经过',[...family.ended,...family.incomplete])}
               <details><summary>尚未开始的阶段 · {family.upcoming.length}</summary>{stages('尚未开始的阶段',family.upcoming)}</details></section>}

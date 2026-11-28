@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { expect, test } from './helpers/test';
 import { seedNightSeal, nightSealStored } from './helpers/nightSeal';
 
-const destination = '/tmp/ui2-legacy-layout-screenshots';
+
 const sizes = [
   { width: 1650, height: 927 }, { width: 1440, height: 900 },
   { width: 1280, height: 800 }, { width: 1024, height: 768 },
@@ -12,8 +12,8 @@ const sizes = [
 ];
 
 test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop');
   test.setTimeout(60000);
+  const destination = info.outputPath('layout');
   await mkdir(destination, { recursive: true });
   const external: string[] = [];
   await page.route('https://**/*', async route => { external.push(route.request().url()); await route.abort(); });
@@ -48,7 +48,7 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
         const el = document.querySelector(selector)!, rect = el.getBoundingClientRect();
         return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
       };
-      return { viewport: { width, height }, header: box('.app-header'), status: box(innerWidth > 900 ? '.bar' : '.player-status'),
+      return { viewport: { width, height }, header: box('.app-header'), status: box(innerWidth > 900 ? '.bar' : '.mobile-city-pill'),
         story: box('.reader-heading'), composer: box('.composer-action-row'), reader: box('.reader'),
         overflow: document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight };
     }, size));
@@ -102,10 +102,12 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
       await page.screenshot({ path: `${destination}/after-workflow-${size.width}x${size.height}.png` });
       await workflowTrigger(page).click();
     } else {
-      await expect(page.locator('.app-header')).toBeVisible();
+      await expect(page.getByRole('button', { name: '打开游戏菜单' })).toBeInViewport({ ratio: 1 });
       await expect(page.locator('.bar-city')).toBeHidden();
       const nav = page.getByRole('navigation', { name: '底部导航' });
-      await expect(nav.getByRole('button')).toHaveText(['故事', '人物', '世界资料', '设置']);
+      await expect(nav.getByRole('button')).toHaveCount(5);
+      for (const name of ['故事', '人物', '世界资料', '手机', '设置'])
+        await expect(nav.getByRole('button', { name, exact: true })).toBeVisible();
       await nav.getByRole('button', { name: '世界资料', exact: true }).click();
       await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(10);
       await expect(page.getByRole('navigation', { name: '系统操作' })).toHaveCount(0);
@@ -114,7 +116,7 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
   }
   expect(await nightSealStored(page)).toEqual(stored);
   expect(external).toEqual([]);
-  await writeFile(`/tmp/ui2-legacy-${phase}-measurements.json`, JSON.stringify(measurements, null, 2) + '\n');
+  await writeFile(info.outputPath(`${phase}-measurements.json`), JSON.stringify(measurements, null, 2) + '\n');
   if (phase === 'after') {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.getByRole('navigation', { name: '系统操作' }).getByRole('button', { name: '返回首页', exact: true }).click();
@@ -125,9 +127,11 @@ test('PC 阅读布局：同场景视口截图与尺寸记录', async ({ page }, 
 
 test('PC 长状态限高、完整资料、九入口短屏可访问', async ({ page }, info) => {
   test.setTimeout(60000);
-  test.skip(info.project.name !== 'desktop');
+  const destination = info.outputPath('layout');
+  await mkdir(destination, { recursive: true });
   await seedNightSeal(page, true);
   await openStoredSave(page);
+  await expect(page.getByTestId('story-reader')).toBeVisible();
   const before = await nightSealStored(page);
   for (const size of [...sizes.filter(size => size.width > 900), { width: 901, height: 600 }, { width: 2560, height: 1080 }]) {
     await page.setViewportSize(size);
@@ -149,7 +153,7 @@ test('PC 长状态限高、完整资料、九入口短屏可访问', async ({ pa
   await page.setViewportSize({ width: 1024, height: 520 });
   await page.screenshot({ path: `${destination}/after-long-status.png` });
   await page.setViewportSize({ width: 900, height: 700 });
-  await expect(page.locator('.app-header')).toBeVisible();
+  await expect(page.getByRole('button', { name: '打开游戏菜单' })).toBeInViewport({ ratio: 1 });
   await expect(page.locator('.bar-city')).toBeHidden();
   await expect(page.getByRole('navigation', { name: '系统操作' })).toHaveCount(0);
   expect(await nightSealStored(page)).toEqual(before);
