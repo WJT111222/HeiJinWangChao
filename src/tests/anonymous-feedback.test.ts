@@ -11,7 +11,7 @@ import type { FeedbackPayload } from '../services/feedback/contract';
 const base = 'https://heijin.game';
 const password = 'synthetic-local-test-password-only-0X7sd09T';
 const admin = 'Basic ' + btoa('developer:' + password);
-const runtime = { version: 'V1.0 Beta', browser: 'chrome', device: 'desktop' } as const;
+const runtime = { version: 'V1.0', browser: 'chrome', device: 'desktop' } as const;
 const suggestion: FeedbackPayload = { ...runtime, kind: 'suggestion', category: 'experience', text: '夜间阅读体验' };
 const report: FeedbackPayload = { ...runtime, kind: 'error', text: '变量错误合成报告 <script>demo()</script>', errors: [
   { ref: 1, time: '2026-11-24T03:00:00.000Z', stage: 'variables', code: 'empty', model: 'synthetic-model', protocol: 'deepseek' },
@@ -166,11 +166,11 @@ it('两个反馈入口均保存构建版本，后台可查看和复制，旧记�
     const detail = await adminRequest(feedbackAdminPath + '/' + id);
     expect(detail.status).toBe(200);
     const html = await detail.text();
-    expect(html).toContain('<p class="muted">产品版本 V1.0 Beta · 构建版本 <code>' + build + '</code></p>');
+    expect(html).toContain('<p class="muted">产品版本 V1.0 · 构建版本 <code>' + build + '</code></p>');
     expect(html).toContain('&quot;build&quot;: &quot;' + build + '&quot;');
   }
 
-  const legacy = await submit(suggestion);
+  const legacy = await submit({ ...suggestion, version: 'V1.0 Beta' });
   const { id } = await legacy.json();
   const oldDetail = await adminRequest(feedbackAdminPath + '/' + id);
   expect(oldDetail.status).toBe(200);
