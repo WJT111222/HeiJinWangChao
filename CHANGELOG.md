@@ -1,6 +1,56 @@
 # Changelog / 项目变更记录
 
-> 这里按**已合并 PR 和项目负责人确认的产品里程碑**记录。1.0 Beta 以 GitHub 预发布（pre-release）`v1.0.0-beta` 标记；1.0 正式版尚未发行。下面较早的“V1.0 可玩里程碑”是 2026-10-24 的历史口径，不代表当时打过 Tag 或重新部署。
+> 这里按**已合并 PR 和项目负责人确认的产品里程碑**记录。1.0 Beta 以 GitHub 预发布（pre-release）`v1.0.0-beta` 标记；1.0 正式版对应版本号 `v1.0.0`。下面较早的“V1.0 可玩里程碑”是 2026-10-24 的历史口径，不代表当时打过 Tag 或重新部署。
+
+## 1.0（2026-11-28 · 正式版 `v1.0.0`）
+
+本次更新加入游戏内手机，将变量记录拆成三个阶段，并开放新的城市、资产和文学设置。
+
+### 游戏内手机
+
+- 电脑端从顶栏、手机端从底部导航打开游戏内手机。通讯录保留已交换的号码，资产页可查存款、房产、车辆和贷款到期日；场外来信按游戏时间投递。 [#254](https://github.com/WJT111222/HeiJinWangChao/pull/254) [#255](https://github.com/WJT111222/HeiJinWangChao/pull/255)
+- 回合之间可以私聊有号码的人。对方按身份、关系与已知情况回复，也可能已读不回。聊天期间游戏时钟暂停，记录随下一回合结算，也可点「结束聊天」单独结算。 [#259](https://github.com/WJT111222/HeiJinWangChao/pull/259)
+- 可邀请联系人加入家庭群或工作群，并限制每轮回复人数。「小黑书」提供推荐、热榜、帖子、评论与楼中楼，和主角有关的帖子会进入通知。 [#260](https://github.com/WJT111222/HeiJinWangChao/pull/260)
+
+### 变量记录拆成三段
+
+- 「人物与实体」记录人物、组织、地点和关系，「主角与现场」记录钱物、时间与当场变化，「场外与网络」推进场外事件、来信和话题。三段可分别开关和分配模型；启用的阶段一起结算，恢复时可复用仍有效的上游候选。 [#250](https://github.com/WJT111222/HeiJinWangChao/pull/250) [#255](https://github.com/WJT111222/HeiJinWangChao/pull/255) [#260](https://github.com/WJT111222/HeiJinWangChao/pull/260) [#262](https://github.com/WJT111222/HeiJinWangChao/pull/262)
+
+### 我的势力与后宫
+
+- 主角可绑定一个主势力，查看职位、部门和成员，并区分势力实况与主角已经知道的信息。 [#218](https://github.com/WJT111222/HeiJinWangChao/pull/218)
+- 后宫与家庭档案可记录成员地位、和谐度、成员关系、家庭规划、妊娠与子女。 [#219](https://github.com/WJT111222/HeiJinWangChao/pull/219)
+
+### 房产与资产
+
+- 全款或按揭购房可直接登记，按揭房与房贷关联结算。股份、收藏品、继承及受赠的资产也能登记到主角名下。 [#253](https://github.com/WJT111222/HeiJinWangChao/pull/253)
+
+### 四座新城市
+
+- 新增北京·帝都、杭州·钱塘、长沙·夜城、三亚·鹿城，也可自选中国大陆城市开局。 [#245](https://github.com/WJT111222/HeiJinWangChao/pull/245)
+
+### 文学预设
+
+- 《我即浪潮 1124》与潮汐控制台接管正文文风、人称和篇幅，变量记录与世界演化照常运行。断点续写会核对生成时的文学设置。 [#247](https://github.com/WJT111222/HeiJinWangChao/pull/247) [#252](https://github.com/WJT111222/HeiJinWangChao/pull/252) [#266](https://github.com/WJT111222/HeiJinWangChao/pull/266)
+
+### 主世界书
+
+- 两本官方主世界书可以分别启停；自建或导入的世界书也可设为主世界书。 [#249](https://github.com/WJT111222/HeiJinWangChao/pull/249)
+
+### 文生图、小剧场与提示音
+
+- 文生图默认关闭。启用后可为人物生成形象或把重要场景存进人生相册，图片可随存档备份。 [#248](https://github.com/WJT111222/HeiJinWangChao/pull/248)
+- 王朝小剧场可在主线之外创作、续写、保存和改名，番外可随存档备份。回合生成完成后可播放提示音。 [#242](https://github.com/WJT111222/HeiJinWangChao/pull/242) [#244](https://github.com/WJT111222/HeiJinWangChao/pull/244)
+
+### 设置全新分区
+
+- 设置整理为七个分区。「模型分配」集中管理正文、三段变量、私聊、群聊、小黑书、记忆、小剧场和生图提示词。跨标签保存会检查设置冲突；电脑端的「设置」「返回首页」固定在右侧栏底部。 [#262](https://github.com/WJT111222/HeiJinWangChao/pull/262) [#263](https://github.com/WJT111222/HeiJinWangChao/pull/263) [#264](https://github.com/WJT111222/HeiJinWangChao/pull/264)
+
+### 更新须知
+
+- 更新前先导出备份。V10 存档会升级为 V11；旧版未结算草稿保留已生成的正文，从「人物与实体」开始重新记录变量。 [#254](https://github.com/WJT111222/HeiJinWangChao/pull/254) [#126](https://github.com/WJT111222/HeiJinWangChao/pull/126) [#250](https://github.com/WJT111222/HeiJinWangChao/pull/250)
+- 文生图原有的「独立文本模型」不再使用。要沿用原服务，请在「渠道与密钥」添加渠道，再到「模型分配」指定给「生图提示词」。 [#262](https://github.com/WJT111222/HeiJinWangChao/pull/262)
+- 开启全部三段变量后，每回合比原流程多一次请求。只翻看手机不调用模型；私聊每条调用一次，群聊先调度再按回复人数调用，小黑书展开未缓存话题时才调用。 [#250](https://github.com/WJT111222/HeiJinWangChao/pull/250) [#254](https://github.com/WJT111222/HeiJinWangChao/pull/254) [#259](https://github.com/WJT111222/HeiJinWangChao/pull/259) [#260](https://github.com/WJT111222/HeiJinWangChao/pull/260) [#262](https://github.com/WJT111222/HeiJinWangChao/pull/262)
 
 ## 1.0 Beta（2026-11-14 · 预发布 `v1.0.0-beta`）
 

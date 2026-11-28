@@ -1,4 +1,3 @@
-import { goHome } from './helpers/gameLayout';
 // 此文件故意不用 helpers/test：从未阅读公告的真实首次访问开始。
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -36,8 +35,8 @@ test('完整定稿实际分段渲染：开头、架空社会声明与开发者�
   const content = modal.getByLabel('免责声明内容');
   const expected = approvedDisclaimer.filter(block => !/^#{1,2} /.test(block) && block !== '---')
     .map(block => block.replace(/^### /, '').replaceAll('**', ''));
-  expect(await content.locator('p, h3').allTextContents()).toEqual(expected);
-  expect(await content.locator('strong').allTextContents()).toEqual(
+  expect(await content.locator('p, h3, .notice-age-block').allTextContents()).toEqual(expected);
+  expect(await content.locator('.notice-age-block, strong:not(.notice-age-block strong)').allTextContents()).toEqual(
     approvedDisclaimer.filter(block => block.startsWith('**')).map(block => block.replaceAll('**', '')),
   );
   await expect(content.getByText('欢迎来到《黑金王朝》。', { exact: true })).toBeInViewport();
@@ -51,7 +50,7 @@ test('完整定稿实际分段渲染：开头、架空社会声明与开发者�
   await expect(content.getByText('感谢你阅读以上说明。', { exact: true })).toBeInViewport();
   await expect(content.getByText('愿你在这个架空世界中，书写一段真正属于自己的人生。', { exact: true })).toBeInViewport();
   await expect(content.getByText('《黑金王朝》开发者', { exact: true })).toBeInViewport();
-  await expect(modal.locator('.notice-footer')).toHaveText('今日不再弹出');
+  await expect(modal.locator('.notice-footer').getByRole('checkbox', { name: '今日不再弹出', exact: true })).toBeVisible();
   await finishNotices(page);
 });
 
@@ -65,18 +64,23 @@ test('首次访问按序展示完整内容；关闭后导航不重播，未勾�
   await expect(disclaimer(page).locator('label')).toHaveText('今日不再弹出');
   await expect(announcement(page)).toHaveCount(0);
   await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
-  await expect(announcement(page).getByRole('heading', { name: '《黑金王朝》1.0 Beta · 世界事件与历史更新' })).toBeVisible();
-  await expect(announcement(page).getByRole('listitem')).toHaveCount(5);
-  await expect(announcement(page).getByText('记忆总结 V2 已支持短期转中期、中期转长期和 NPC 个人经历总结；自动维护可关闭，手动「立即总结」仍可用，已提交的历史原文保留可追溯。')).toBeVisible();
-  await expect(announcement(page).getByText('新增多回合撤回：可按完整快照恢复最近已结算的回合，每份存档最多保留 5 个恢复点；没有重做功能，撤回不会撤销已发生的生成请求。')).toBeVisible();
-  await expect(announcement(page).getByText('重大纪事时间轴已区分世界与主角的人生历史；传闻仍是传闻，日期不明确的往事不会被伪装成精确时间。')).toBeVisible();
-  await expect(announcement(page).getByText('世界事件 V2 已支持主事件、多个并行子事件、固定时刻结算和后续阶段；Story 可根据剧情决定主角介入、获知或不参与，事件档案保留已结束阶段的结果。')).toBeVisible();
-  await expect(announcement(page).getByText('「夜幕金印」已更新桌面和手机阅读布局、角色对白气泡及只读世界事件档案；目前为 1.0 Beta 测试阶段，真实模型长篇试玩、手机真机体验和 1.0 正式版发行尚待验收。')).toBeVisible();
-  await expect(announcement(page).getByText('王朝还在建设，城市已经有了自己的生活。感谢你在这里留下每一段经历。')).toBeVisible();
+  const notice = announcement(page);
+  await expect(notice.getByRole('heading', { name: '《黑金王朝》1.0 正式版上线' })).toBeVisible();
+  await expect(notice.getByRole('listitem')).toHaveCount(6);
+  await expect(notice.getByRole('listitem')).toContainText([
+    '更新前先导出备份。V10 存档会自动升级。旧版未结算草稿中已生成的正文会保留，从「人物与实体」重新记录变化。',
+    '主角有了自己的手机。查通讯录、看资产、读来信都不会推进时间或调用模型。你可以在回合间私聊、拉群，也可以上「小黑书」看城市热帖。聊天回复和展开未缓存的话题会调用模型。',
+    '变量记录分为「人物与实体」「主角与现场」「场外与网络」，可分别开关、分配模型。启用的阶段完成后，整回合一起存档。',
+    '新增北京、杭州、长沙、三亚，也可自选中国大陆城市开局。在「我的势力」查看职位与成员，在家庭档案记录伴侣和子女。全款或按揭买房、继承和受赠的资产都可登记。',
+    '《我即浪潮 1124》接管正文文风和篇幅，文学选项在潮汐控制台调整。两本官方主世界书可分别开关，也可使用自己的主世界书。文生图和人生相册可按需开启，小剧场可写主线之外的番外，回合完成时可播放提示音。',
+    '设置整理为七个分区。文生图原有的「独立文本模型」不再使用；要沿用原服务，请在「渠道与密钥」中添加渠道，再到「模型分配」指定给「生图提示词」。',
+  ]);
+  await expect(notice.getByText('感谢大家在测试期间留下的反馈。正式版里见！遇到问题，欢迎通过「设置 → 反馈建议」告诉我们。', { exact: true })).toBeVisible();
   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
   await page.getByRole('button', { name: /开始新游戏/ }).click();
   await expect(page.getByLabel('姓名', { exact: true })).toBeVisible();
-  await goHome(page);
+  await page.getByRole('button', { name: /^(返回首页|‹ 首页)$/ }).click();
+  await expect(page.locator('.home-experience, .mobile-home')).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(externalRequests).toEqual([]);
   await page.reload();

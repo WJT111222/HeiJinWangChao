@@ -23,7 +23,7 @@ async function mute(page: import('@playwright/test').Page) {
   });
 }
 
-test('中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知', async ({ page }, info) => {
+test('中性须知第四章与云端公告：保留六章、完整隐私提醒、正式版更新及迁移提醒', async ({ page }, info) => {
   await page.goto('/');
   const dialog = page.getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true });
   await expect(dialog.getByRole('heading', { level: 3 })).toHaveCount(6);
@@ -38,8 +38,10 @@ test('中性须知第四章与云端公告：保留六章、完整隐私提醒�
   await page.screenshot({ path: info.outputPath('privacy.png'), animations: 'disabled' });
   await dialog.getByRole('button', { name: '关闭免责声明' }).click();
   const notice = page.getByRole('dialog', { name: '王朝公告', exact: true });
-  await expect(notice.getByRole('listitem')).toHaveCount(11);
-  await expect(notice).toContainText('请妥善保管并备份重要游戏数据。');
+  await expect(notice.getByRole('heading', { name: '《黑金王朝》1.0 正式版上线' })).toBeVisible();
+  await expect(notice.getByRole('listitem')).toHaveCount(6);
+  await expect(notice).toContainText('更新前先导出备份');
+  await expect(notice).toContainText('「独立文本模型」不再使用');
   await expect(notice).not.toContainText('服务商收取');
   await expect(notice).not.toContainText('收费的第三方');
   await notice.getByRole('listitem').last().scrollIntoViewIfNeeded();
