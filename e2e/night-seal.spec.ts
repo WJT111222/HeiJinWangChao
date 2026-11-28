@@ -5,7 +5,7 @@ import { seedNightSeal, nightSealStored } from './helpers/nightSeal';
 import { workflowTrigger, workflowSummary, openProfile, openWorldArchive } from './helpers/gameLayout';
 
 const screenshots = '/tmp/ui2-legacy-night-seal-screenshots';
-test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收', async ({ page }, info) => {
+test('夜幕金印：真实已结算存档、导航、阅读与视觉验收', async ({ page }, info) => {
   test.setTimeout(60000);
   const requests: string[] = [];
   await page.route('https://**/*', async route => { requests.push(route.request().url()); await route.abort(); });
@@ -13,13 +13,9 @@ test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收',
   const mobile = info.project.name === 'mobile';
   await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1440, height: 900 });
   await seedNightSeal(page);
-  await expect(page.locator('.save-card')).toHaveCount(1);
+  await expect(page.locator(mobile ? '.mh-ticket:not(.blank)' : '.save-card')).toHaveCount(1);
   await page.screenshot({ path: `${screenshots}/after-home-${info.project.name}.png`, fullPage: true });
-  const choose = page.getByRole('button', { name: '选择', exact: true });
-  if (await choose.isVisible()) await choose.click();
-  else await expect(page.locator('.save-card')).toHaveClass(/selected/);
-  await page.locator('.lib-top .back').click();
-  await page.getByRole('button', { name: /继续游戏/ }).click();
+  await openStoredSave(page);
   await expect(page.getByTestId('story-reader')).toBeVisible();
   const before = await nightSealStored(page);
   await expect(page.locator('.story-entry')).toHaveCount(2);
@@ -32,10 +28,12 @@ test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收',
   await page.screenshot({ path: `${screenshots}/after-game-${info.project.name}.png` });
   if (mobile) {
     const nav = page.getByRole('navigation', { name: '底部导航' });
-    await expect(nav.getByRole('button')).toHaveText(['故事', '人物', '世界资料', '设置']);
+    await expect(nav.getByRole('button')).toHaveCount(5);
+    for (const name of ['故事', '人物', '世界资料', '手机', '设置'])
+      await expect(nav.getByRole('button', { name, exact: true })).toBeVisible();
     await nav.getByRole('button', { name: '故事', exact: true }).click();
     await expect(page.getByTestId('story-reader')).toBeFocused();
-    await nav.getByRole('button', { name: '人物', exact: true }).click();
+    await openProfile(page);
     await expect(page.getByRole('dialog', { name: '人物档案', exact: true })).toContainText('记者');
     await page.keyboard.press('Escape');
     await expect(nav.getByRole('button', { name: '人物', exact: true })).toBeFocused();
@@ -43,10 +41,12 @@ test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收',
     await page.screenshot({ path: `${screenshots}/after-world-mobile.png` });
     const directory = page.getByRole('dialog', { name: '世界资料', exact: true });
     for (const name of ['NPC', '势力组织', '地图', '物品栏', '世界事件', '历史时间轴', '记忆']) {
+      await openWorldArchive(page);
       const opener = directory.getByRole('button', { name, exact: true });
       await opener.click(); await expect(page.getByRole('dialog', { name, exact: true })).toBeVisible();
-      await page.keyboard.press('Escape'); await expect(opener).toBeFocused();
+      await page.keyboard.press('Escape'); await expect(nav.getByRole('button', { name: '世界资料', exact: true })).toBeFocused();
     }
+    await openWorldArchive(page);
     await page.keyboard.press('Escape'); await expect(nav.getByRole('button', { name: '世界资料', exact: true })).toBeFocused();
     await nav.getByRole('button', { name: '设置', exact: true }).click();
     await expect(page.getByRole('dialog', { name: '设置', exact: true })).toBeVisible();
@@ -64,10 +64,10 @@ test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收',
     await page.getByLabel('你的行动', { exact: true }).blur();
     await expect.poll(async () => (await page.locator('.app-shell-game').boundingBox())!.height).toBe(844);
   } else {
-    await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(7);
+    await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(10);
     await openProfile(page);
     await page.screenshot({ path: `${screenshots}/after-long-profile.png` });
-    const body = page.getByRole('dialog', { name: '人物档案', exact: true }).locator('.modal-body');
+    const body = page.getByRole('dialog', { name: '人物档案', exact: true }).locator('.pf');
     expect(await body.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
     await page.keyboard.press('Escape');
   }
@@ -85,7 +85,7 @@ test('夜幕金印：真实已结算存档、四导航、阅读与视觉验收',
   await page.reload();
   await workflowTrigger(page).click();
   await expect(page.getByRole('button', { name: '重新 Roll', exact: true })).toHaveCount(0);
-  await expect(page.locator('.workflow-stages > li')).toHaveCount(3);
+  await expect(page.locator('.workflow-stages > li')).toHaveCount(4);
   await page.screenshot({ path: `${screenshots}/after-workflow-${info.project.name}.png` });
 });
 
@@ -93,6 +93,7 @@ test('长姓名、巨大金额及短横屏保持阅读与真实资料可访问',
   test.setTimeout(60000);
   await seedNightSeal(page, true);
   await openStoredSave(page);
+  await expect(page.getByTestId('story-reader')).toBeVisible();
   for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 800 }, { width: 900, height: 700 }, { width: 390, height: 844 }, { width: 375, height: 667 }, { width: 320, height: 568 }, { width: 667, height: 375 }]) {
     await page.setViewportSize(viewport);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -108,7 +109,7 @@ test('长姓名、巨大金额及短横屏保持阅读与真实资料可访问',
       const npc = page.getByRole('dialog', { name: 'NPC', exact: true });
       await npc.getByRole('button', { name: /^查看人物：来自很远地方/ }).click();
       expect(await npc.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
-      await page.keyboard.press('Escape'); await page.keyboard.press('Escape');
+      await page.keyboard.press('Escape');
     }
   }
 });

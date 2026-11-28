@@ -64,7 +64,8 @@
 | SaveEvent | event |
 | SaveTask | task |
 | CreateOrganization | organization |
-| RecordOrgRelation | organizationId、relation、reason |
+| RecordOrgRelation | organizationId、relation、reason、faction?（主势力 bind/update/unbind，仅 Variables） |
+| RecordOrgKnowledge | organizationId、entry（主角已知的据点或内情；id 与 learnedAt 由程序填写，仅 Variables 逐条追加） |
 
 - [ ] 禁止把提示词旧名称当作已支持：NpcCreated/NpcPatched/NpcMemoryAppended、WorldClockSet、EquipmentSet、BalanceChanged、OrgCreated/OrgPatched、EventPatched/TaskPatched 等均不能直接通过当前 Schema。CreateNpc 不是 NPC 更新；CreateOrganization 不是组织补丁，不能盲目改名来模拟更新。当前没有通用主角补丁、位置/天气更新、NPC 关系/记忆更新、物品数量/状态补丁或房产/其他资产 upsert 命令；需先明确不支持时的 unresolved/拒绝路径，未来扩充命令须单独实现和验证。
 - [ ] 以 PurchaseItem/PurchaseVehicle 等领域操作表达交易，不把旧 BalanceChanged 与 ItemCreated 任意拼成等价购买。金额使用**整数人民币分**；price/amount 等要求正值，账户只允许 cash/onlineBalance。提示词当前的 account/oldValue/newValue/reason 通用余额提案不是实际可执行命令。未知余额仍为 null，不猜零；借贷、还款、收入与内部转账须保留各自业务语义。
@@ -210,3 +211,9 @@ UpdateNpc新增phoneContact/usualLocations、特殊人物detailedBackground/habi
 
 ## V10 测试期清理（正式发布前存档重置）
 存档 schemaVersion 升至 10，只读取 V10；V6–V9 迁移代码移除，旧档提示重新开局且不覆盖原始数据。随存档重置删除：RetireNpc 命令、retiredNpcs 退场表、contactReviewNpcIds 旧档复核名单、长期记忆的 retiredNpcSource 标记。好感写入统一为 set npc[id].affinityChange={to,reason,relationshipText}：模型写终值、本回合具体原因与当前关系描述，前值由程序读取（未确认初始同伴为 null），不再接受模型填写 from，也不再提供纯数值 set/add npc[id].affinity。提示词侧同步移除旧 JSON 双轨（legacy/variables_json）与上述机制的兼容说明；04/05 统一为三阶段共用版本，组织 init 的 World 建档变体改为 variableGroups/*/init_world.md。
+
+**手机消息**：人物阶段的 `RecordPhoneMessage` 从 `push npc[id].phoneMessages` 编译，保留正文消息或通话原话；场外阶段的 `SchedulePhoneMessage` 按稳定消息 ID 排期，正式回合结算时投递到期来信。
+
+**后宫家庭事务**：Variables 的正式文本路径是 `set harem.changes = [...]`，编译为 `ApplyHaremChanges`。子女建档与家庭关系共用结算，现役正宫在整组变更后验证。World 不能写 `ApplyHaremChanges`；它只读家庭事实，并可用 `ApplyHaremBackground`（changes 仅含 plan、pair、overview）推进离场成员的计划、离场成员之间的关系和家庭总体局势，不碰在场成员和本回合 Variables 已写的同一项。地位、加入退出、妊娠、子女与亲子知情只属于 Variables。
+
+普通回合的场外与网络阶段可通过 `worldCommands` 提交零到五条 `SeedTopic`。每条提供公开标题、概要、是否与主角有关、过期时间和可选来源事件 ID。热榜只展示关联现存主事件的有效公开种子。场外阶段根据剧情判断信息是否已经公开；主角私下获知的详情不能据此登榜。同一主事件只展示最新公开种子的标题与概要。开局和回顾往事不加载此命令。帖子、评论与楼中楼仅在玩家打开时由手机模型展开，存入本机缓存。

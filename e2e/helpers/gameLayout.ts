@@ -27,11 +27,10 @@ export async function openWorkflow(page: Page) {
 
 // 两端复用阶段页签；手机在 #122 原生模态 Dialog 中提供两层导航。
 const desktopWorkflow = (page: Page) => (page.viewportSize()?.width ?? 0) > 900;
-const stageIndex = { story: 0, variables: 1, world: 2 } as const;
-export type WorkflowStage = keyof typeof stageIndex;
+export type WorkflowStage = 'story' | 'entities' | 'variables' | 'world';
 export async function openStageSwitches(page: Page) {
   await openWorkflow(page);
-  const back=page.getByRole('button',{name:'返回三阶段列表',exact:true});
+  const back=page.getByRole('button',{name:'返回四阶段列表',exact:true});
   if(await back.isVisible())await back.click();
 }
 async function openRailView(page:Page,name:'运行诊断'|'已绑定输入') {
@@ -40,7 +39,7 @@ async function openRailView(page:Page,name:'运行诊断'|'已绑定输入') {
 export async function openWorkflowDiagnostics(page:Page){await openRailView(page,'运行诊断');}
 export async function openBoundInput(page:Page){await openRailView(page,'已绑定输入');}
 export async function openWorkflowStage(page:Page,stage:WorkflowStage){
-  await openStageSwitches(page);await page.locator('.wf-rail .workflow-stages>li').nth(stageIndex[stage]).locator('.wf-ri').click();
+  await openStageSwitches(page);await page.locator(`.wf-rail .workflow-stages > li[data-stage=${stage}]`).locator('.wf-ri').click();
 }
 export async function openStageTab(page:Page,stage:WorkflowStage,tab:'概览'|'候选'|'模型原文'|'校验结果'){
   await openWorkflowStage(page,stage);await page.locator('.wf-stage').getByRole('tab',{name:new RegExp(`^${tab}`)}).click();
@@ -51,12 +50,12 @@ export async function openStageRaw(page: Page, stage: WorkflowStage) {
     .getByRole('tabpanel', { name: '模型原文', exact: true })
     .getByRole('region', { name: '模型原文', exact: true });
 }
-export async function openStageCandidates(page:Page,stage:'variables'|'world'){await openStageTab(page,stage,'候选');return page.locator('.wf-stage');}
-export async function openCandidateRaw(page:Page,stage:'variables'|'world'){await openStageTab(page,stage,'模型原文');return page.getByRole('region',{name:'模型原文',exact:true});}
+export async function openStageCandidates(page:Page,stage:'entities'|'variables'|'world'){await openStageTab(page,stage,'候选');return page.locator('.wf-stage');}
+export async function openCandidateRaw(page:Page,stage:'entities'|'variables'|'world'){await openStageTab(page,stage,'模型原文');return page.getByRole('region',{name:'模型原文',exact:true});}
 export async function openStoryInspection(page:Page){return openStageRaw(page,'story');}
 // Candidate is a tab inside the workflow now; return to its first level on phones.
 export async function closeStageCandidates(page:Page){if(!desktopWorkflow(page))await openStageSwitches(page);}
-export async function closeWorkflowSheet(page:Page){if(!desktopWorkflow(page)&&await page.getByRole('dialog',{name:'三阶段工作流',exact:true}).isVisible())await page.keyboard.press('Escape');}
+export async function closeWorkflowSheet(page:Page){if(!desktopWorkflow(page)&&await page.getByRole('dialog',{name:'四阶段工作流',exact:true}).isVisible())await page.keyboard.press('Escape');}
 
 // Responsive navigation opens the existing directory/profile dialogs, without touching save state.
 export async function openWorldArchive(page: Page) {
@@ -66,9 +65,15 @@ export async function openWorldArchive(page: Page) {
 }
 export async function openProfile(page: Page) {
   await closeWorkflowSheet(page);
-  const compact = page.getByRole('button', { name: '展开人物状态', exact: true });
-  if (await compact.isVisible()) await compact.click();
-  else await page.getByRole('button', { name: '人物档案', exact: true }).click();
+  const hero = page.getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '人物', exact: true });
+  if (await hero.isVisible()) {
+    await hero.click();
+    await page.getByRole('dialog', { name: '此时此地', exact: true }).getByRole('button', { name: '人物档案', exact: true }).click();
+  } else {
+    const compact = page.getByRole('button', { name: '展开人物状态', exact: true });
+    if (await compact.isVisible()) await compact.click();
+    else await page.getByRole('button', { name: '人物档案', exact: true }).click();
+  }
 }
 export async function goHome(page: Page) {
   await closeWorkflowSheet(page);

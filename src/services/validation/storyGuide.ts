@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { StoryRule } from '../../domain/storyDiagnostics';
 import { parseOpeningTimeFact } from '../../domain/openingTime';
 import { ordinaryGuideGroup, StorySchema, storyGuideReferenceChars, storyGuideReferenceLimit, storyGuideRawLimit } from '../../domain/state';
 import { AiError } from '../ai/errors';
@@ -194,13 +195,20 @@ function parseLegacyHints(source: string) {
 
 /** Raw notes are data for the current Variables request. Only complete, validated
  * legacy hints can participate in the narrowly scoped legacy protocols. */
-export function parseStoryGuide(source: string) {
+export function parseStoryGuide(source: string): {
+  guide: Pick<Story, 'variableGuide' | 'variableGuideRaw' | 'variableGuideRawTruncated' | 'variableGuideReferences'>;
+  notes: string[];
+  failureRule?: StoryRule;
+} {
   if (source.length > storyGuideRawLimit)
-    return { variableGuideRaw: source.slice(0, storyGuideRawLimit), variableGuideRawTruncated: true as const,
-      variableGuide: [], notes: ['变量参考笔记过长，仅保留开头部分。'] };
-  try { return { variableGuideRaw: source, ...parseLegacyHints(source) }; }
+    return { guide: { variableGuideRaw: source.slice(0, storyGuideRawLimit), variableGuideRawTruncated: true as const,
+      variableGuide: [] }, notes: ['变量参考笔记过长，仅保留开头部分。'] };
+  try {
+    const { notes, ...guide } = parseLegacyHints(source);
+    return { guide: { variableGuideRaw: source, ...guide }, notes };
+  }
   catch (error) {
     if (!(error instanceof AiError)) throw error;
-    return { variableGuideRaw: source, variableGuide: [], notes: [] };
+    return { guide: { variableGuideRaw: source, variableGuide: [] }, notes: [], failureRule: error.details?.storyRule };
   }
 }

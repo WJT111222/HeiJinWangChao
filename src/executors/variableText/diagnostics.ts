@@ -18,7 +18,7 @@ export interface ExecutionDiagnostic {
 }
 
 const allowedPaths = new Set([
-  'opening.initialState', 'weatherText', 'environmentText',
+  'harem.changes', 'opening.initialState', 'weatherText', 'environmentText',
   'protagonist', 'worldClock', 'protagonist.healthText', 'protagonist.emotionText',
   'protagonist.locationId', 'protagonist.profession', 'protagonist.professionDescription', 'protagonist.professionLongTermImpact', 'protagonist.publicStatus',
   'protagonist.legalStatus', 'protagonist.skills', 'protagonist.currentWear',
@@ -28,11 +28,11 @@ const allowedPatterns = [
   /^protagonist\.skills\[index\]$/,
   /^protagonist\.currentWear\.(?:topItemId|bottomItemId|shoesItemId|primaryWeaponItemId|secondaryWeaponItemId|currentVehicleAssetId|accessoryItemIds)(?:\[index\])?$/,
   /^npc\[id\]\.(?:activeGoals(?:\[index\])?|affinityChange)$/,
-  /^npc\[id\](?:\.(?:name|aliases|identity|relationshipText|healthText|locationId|onScene|lastInteractionAt|memories|longTermMemories|knownInformation|activeGoals|contact|specialProfile|addressing|phoneContact|usualLocations|detailedBackground|habits|relationshipNetwork))?$/,
+  /^npc\[id\](?:\.(?:name|aliases|identity|relationshipText|healthText|locationId|onScene|lastInteractionAt|memories|longTermMemories|knownInformation|activeGoals|contact|specialProfile|addressing|phoneContact|phoneMessages|appearedInStory|usualLocations|detailedBackground|habits|relationshipNetwork))?$/,
   /^items\[id\](?:\.(?:conditionText|locationId|quantity|purchase|transfer|loss|description|referenceValue|itemDetails|category|questItem))?$/,
   /^items\[id\](?:\.purchase)?\.ownerRef$/,
   /^locations\[id\]$/,
-  /^organizations\[id\](?:\.protagonistRelation)?$/,
+  /^organizations\[id\](?:\.(?:protagonistRelation|protagonistKnown))?$/,
   /^events\[id\]\.sceneState$/,
   /^tasks\[id\]$/,
   /^economy\.(?:incomes|debts|vehicles)\[id\](?:\.(?:repayments|purchase))?$/,

@@ -22,12 +22,12 @@ test('跨标签保存叙事视角不会重新打开另一页关闭的动态世�
     const { hostname } = new URL(route.request().url());
     return hostname === '127.0.0.1' || hostname === 'localhost' ? route.continue() : route.abort();
   });
-  const a = await settings(page, '提示词');
-  const perspective = a.getByLabel('叙事人称');
-  await perspective.selectOption('first');
+  const a = await settings(page, '正文与风格');
+  const perspective = a.getByRole('group', {name:'叙事人称'}).getByRole('button', {name:'第一人称'});
+  await perspective.click();
   const other = await context.newPage();
-  const b = await settings(other, '运行');
-  const world = b.getByRole('checkbox', { name: '动态世界', exact: true });
+  const b = await settings(other, '生成阶段');
+  const world = b.getByRole('checkbox', { name: '场外与网络', exact: true });
   await expect(world).toBeChecked();
   await world.uncheck();
   await b.getByRole('button', { name: '保存本地设置' }).click();
@@ -37,13 +37,14 @@ test('跨标签保存叙事视角不会重新打开另一页关闭的动态世�
   await b.getByRole('button', { name: '保存记忆设置' }).click();
   await expect(b.getByText('记忆设置已保存', { exact: false })).toBeVisible();
 
-  await category(a, '外观');
+  await category(a, '外观与提示音');
+  await page.getByRole('button', { name:'保留草稿并前往' }).click();
   await a.getByRole('radio', { name: /^日间/ }).check();
   await expect(a.getByText('外观已切换。', { exact: true })).toBeVisible();
-  await category(a, '运行');
+  await category(a, '超时与重试');
   await a.getByLabel('请求超时（秒）').fill('150');
-  await category(a, '提示词');
-  await expect(perspective).toHaveValue('first');
+  await category(a, '正文与风格');
+  await expect(perspective).toHaveAttribute('aria-pressed','true');
 
   const read = (tab: Page) => tab.evaluate(async () => {
     const path = '/src/ui/settings/model.ts';
@@ -72,42 +73,43 @@ test('跨标签保存叙事视角不会重新打开另一页关闭的动态世�
   await save.click();
   await expect(a.getByText('本地保存失败', { exact: false })).toBeVisible();
   expect(await read(page)).toEqual(before);
-  await expect(perspective).toHaveValue('first');
-  await expect(a.locator('[data-settings-category="提示词"] .dirty')).toBeAttached();
+  await expect(perspective).toHaveAttribute('aria-pressed','true');
+  await expect(a.locator('[data-settings-category="正文与风格"] .dirty')).toBeAttached();
 
   await save.click();
   await expect(a.getByRole('status').filter({ hasText: '本地偏好已保存' })).toBeVisible();
-  await expect(a.locator('[data-settings-category="提示词"] .dirty')).toHaveCount(0);
+  await expect(a.locator('[data-settings-category="正文与风格"] .dirty')).toHaveCount(0);
   for (const tab of [page, other]) await expect.poll(() => read(tab)).toMatchObject({
     prompts: { perspective: 'first' },
     runtime: { useWorldStage: false, timeoutSeconds: 150 },
     memory: { immediateWindowSize: 15 },
     display: { appearance: 'day' },
   });
-  await category(b, '运行');
+  await category(b, '超时与重试');
   await expect(b.getByLabel('请求超时（秒）')).toHaveValue('150');
+  await category(b, '生成阶段');
   await expect(world).not.toBeChecked();
-  const reopened = await settings(page, '提示词');
-  await expect(reopened.getByLabel('叙事人称')).toHaveValue('first');
-  await expect(reopened.locator('[data-settings-category="提示词"] .dirty')).toHaveCount(0);
+  const reopened = await settings(page, '正文与风格');
+  await expect(reopened.getByRole('group', { name: '叙事人称' }).getByRole('button', { name: '第一人称' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(reopened.locator('[data-settings-category="正文与风格"] .dirty')).toHaveCount(0);
   expect(posts).toBe(0);
   await other.close();
 });
 
 test('两个标签分别保存正文空闲与总时限，刷新保留旧请求超时', async ({ page, context }) => {
-  const a = await settings(page, '运行');
-  const other = await context.newPage(), b = await settings(other, '运行');
+  const a = await settings(page, '超时与重试');
+  const other = await context.newPage(), b = await settings(other, '超时与重试');
   await a.getByLabel('正文流式无有效输出超时（秒）').fill('180');
   await b.getByLabel('正文流式总时限（秒）').fill('900');
   const save = (panel: typeof a) => panel.getByRole('button', { name: '保存本地设置', exact: true }).click();
   await save(a); await save(b);
-  const after = await settings(page, '运行');
+  const after = await settings(page, '超时与重试');
   await expect(after.getByLabel('正文流式无有效输出超时（秒）')).toHaveValue('180');
   await expect(after.getByLabel('正文流式总时限（秒）')).toHaveValue('900');
   await expect(after.getByLabel('请求超时（秒）', { exact: true })).toHaveValue('120');
   await after.getByLabel('正文流式总时限（秒）').fill('100');
   await save(after);
   await expect(after).toContainText('正文流式总时限不能小于无有效输出时限');
-  const retained = await settings(page, '运行');
+  const retained = await settings(page, '超时与重试');
   await expect(retained.getByLabel('正文流式总时限（秒）')).toHaveValue('900');
 });

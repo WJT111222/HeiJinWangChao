@@ -16,7 +16,7 @@ async function seed(page: Page) {
       await repo.create(worldState());
       await repo.commitTurn({ draft: await completeDraft(repo), nextAction: '', useVariableStage: true, useWorldStage: true });
     } finally { repo.close(); }
-    const settings = defaultSettings(); settings.prompts.minNarrativeChars = 5; settings.prompts.actionOptions = false;
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false; settings.prompts.minNarrativeChars = 5; settings.prompts.actionOptions = false;
     for (const config of Object.values(settings.memory.summaries) as { automatic: boolean }[]) config.automatic = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel(), config = defaultAiConfig(); channel.baseUrl = 'https://pr158-boundary.mock.invalid/v1';

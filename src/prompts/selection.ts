@@ -1,3 +1,4 @@
+import { historyCatalogReason } from './historyCatalog';
 import { type OfficialId } from '../domain/worldbook/mainWorldbook';
 import { promptManifest } from './manifest';
 import type { PromptModule } from './manifest';
@@ -7,7 +8,7 @@ import { AiError } from '../services/ai/errors';
 export type SelectionInput = Pick<
   ComposeInput,
   'stage' | 'mode' | 'settings' | 'domains' | 'memoryTask' | 'cotAllowed' | 'worldview'
->;
+> & Partial<Pick<ComposeInput, 'state' | 'draft'>>;
 export function moduleActivation(module: PromptModule, input: SelectionInput) {
   if (module.activation === 'never')
     return { status: 'not-applicable', reason: '参考/文档资源，永不注入' } as const;
@@ -20,6 +21,11 @@ export function moduleActivation(module: PromptModule, input: SelectionInput) {
   if (module.activation === 'always') {
     enabled = true;
     reason = '在所属阶段常驻，无关闭开关';
+  }
+  if (module.activation === 'history-recording') {
+    const use = input.state && input.draft && historyCatalogReason(input.state, input.draft);
+    enabled = Boolean(use);
+    reason = use || '需要回合上下文';
   }
   if (module.activation === 'main-worldbook') {
     enabled = input.worldview?.official[module.id as OfficialId] ?? true;

@@ -1,3 +1,4 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { writeFile } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -7,8 +8,7 @@ import { TurnCoordinator } from '../workflows/turnCoordinator';
 import { AiClient } from '../services/ai/client';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
-import { defaultSettings } from '../ui/settings/model';
-import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { rerollStory } from '../domain/drafts';
 import { composePrompt } from '../prompts/composer';
 import { selectVariableDomains } from '../prompts/variableDomains';
 import { selectWorldDomains } from '../prompts/worldDomains';

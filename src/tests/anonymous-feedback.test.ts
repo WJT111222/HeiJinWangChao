@@ -11,7 +11,7 @@ import type { FeedbackPayload } from '../services/feedback/contract';
 const base = 'https://heijin.game';
 const password = 'synthetic-local-test-password-only-0X7sd09T';
 const admin = 'Basic ' + btoa('developer:' + password);
-const runtime = { version: 'V1.0 Beta', browser: 'chrome', device: 'desktop' } as const;
+const runtime = { version: 'V1.0', browser: 'chrome', device: 'desktop' } as const;
 const suggestion: FeedbackPayload = { ...runtime, kind: 'suggestion', category: 'experience', text: '夜间阅读体验' };
 const report: FeedbackPayload = { ...runtime, kind: 'error', text: '变量错误合成报告 <script>demo()</script>', errors: [
   { ref: 1, time: '2026-11-24T03:00:00.000Z', stage: 'variables', code: 'empty', model: 'synthetic-model', protocol: 'deepseek' },
@@ -166,11 +166,11 @@ it('两个反馈入口均保存构建版本，后台可查看和复制，旧记�
     const detail = await adminRequest(feedbackAdminPath + '/' + id);
     expect(detail.status).toBe(200);
     const html = await detail.text();
-    expect(html).toContain('<p class="muted">产品版本 V1.0 Beta · 构建版本 <code>' + build + '</code></p>');
+    expect(html).toContain('<p class="muted">产品版本 V1.0 · 构建版本 <code>' + build + '</code></p>');
     expect(html).toContain('&quot;build&quot;: &quot;' + build + '&quot;');
   }
 
-  const legacy = await submit(suggestion);
+  const legacy = await submit({ ...suggestion, version: 'V1.0 Beta' });
   const { id } = await legacy.json();
   const oldDetail = await adminRequest(feedbackAdminPath + '/' + id);
   expect(oldDetail.status).toBe(200);
@@ -279,7 +279,7 @@ it('定时邮件统计半开区间，按报告与日志聚合，并只输出白�
   for (const line of [
     '2026-11-24 08:00 至 2026-11-24 20:00', '新增反馈 6 份', '错误报告 2 份，失败日志 4 条',
     '功能建议 · 1 份', '游戏问题 · 1 份', '游玩体验 · 1 份', '其他反馈 · 1 份',
-    '正文生成 · 2 份报告 / 3 条日志', '动态世界 · 1 份报告 / 1 条日志',
+    '正文生成 · 2 份报告 / 3 条日志', '场外与网络 · 1 份报告 / 1 条日志',
     'invalid_json · 2 份报告 / 3 条日志', 'gpt-5 · 2 份报告 / 3 条日志', '其他或未提供 · 1 份报告 / 1 条日志',
     '0123456789ab · 2 份', '未记录 · 4 份', 'https://heijinwangchao.de5.net/admin/feedback',
   ]) expect(text).toContain(line);

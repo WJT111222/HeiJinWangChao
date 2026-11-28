@@ -1,4 +1,4 @@
-// 基础定稿来源：PR #66 issuecomment-6694107863；第四章按 Beta 对外文案任务更新，其余章节与强调保留。
+// 基础定稿来源：PR #66 issuecomment-6694107863；第四章更新隐私说明，第五章随 1.0 正式版更新版本信息。
 export interface DisclaimerParagraph { text: string; emphasis?: boolean }
 
 export const disclaimer = {
@@ -48,12 +48,12 @@ export const disclaimer = {
       ],
     },
     {
-      title: '五、Demo 测试版与存档声明',
+      title: '五、版本与存档声明',
       paragraphs: [
-        { text: '《黑金王朝》目前仍处于 Demo 测试阶段，并非最终正式版本。' },
+        { text: '《黑金王朝》当前版本为 1.0 正式版。' },
         { text: '游戏可能存在程序错误、功能缺失、存档异常、版本兼容问题及其他不稳定情况。' },
         { text: '游戏存档主要保存在玩家当前浏览器的本地存储中。清除浏览器数据、更换设备、浏览器存储故障或未来版本更新，均可能影响存档的正常使用。' },
-        { text: '建议玩家妥善保管重要游戏数据，并理解测试版本可能发生的调整。' },
+        { text: '建议玩家在更新前导出备份，妥善保管重要游戏数据。' },
       ],
     },
     {

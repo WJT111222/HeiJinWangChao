@@ -8,17 +8,21 @@ async function seed(page: Page) {
   await page.goto('/');
   await page.evaluate(async ({state,draft}) => {
     const paths = {repo:'/src/services/storage/saveRepository.ts',drafts:'/src/domain/drafts.ts',config:'/src/services/ai/configuration.ts',vault:'/src/services/ai/credentials.ts'};
-    const {SaveRepository} = await import(paths.repo), {createTurnDraft,rerollStory,TurnDraftSchema} = await import(paths.drafts);
+    const {SaveRepository} = await import(paths.repo), {createTurnDraft,rerollStory} = await import(paths.drafts);
     const {defaultAiConfig,newChannel,saveAiConfig} = await import(paths.config), {CredentialVault} = await import(paths.vault);
+    const { defaultSettings, settingsKey } = await import('/src/ui/settings/model.ts' as string);
+    const settings = defaultSettings(); settings.runtime.useEntityStage = draft.useEntityStage;
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = 'https://scene-contract.mock.invalid/v1'; channel.defaultModel = 'world';
     config.channels = [channel]; config.routes.story = {channelId:channel.id,modelId:'world'};
     saveAiConfig(localStorage,config); new CredentialVault(sessionStorage,localStorage).set(channel.id,'scene-contract-mock-only');
     const repo = await SaveRepository.open();
     try {
       await repo.create(state);
-      const initial = createTurnDraft(state.saveId,state.revision,draft.turnId,'opening',''); await repo.saveDraft(initial,null);
-      const selected = await repo.saveDraft(rerollStory(initial,draft.story),initial.draftRevision,undefined,initial,await repo.prepareWorldview(initial,false));
-      await repo.saveDraft(TurnDraftSchema.parse({...selected,draftRevision:selected.draftRevision+1,variables:draft.variables,stageStatus:{...selected.stageStatus,variables:'ready'}}),selected.draftRevision);
+      const initial = createTurnDraft(state.saveId,state.revision,draft.turnId,'opening','',true,true,draft.useEntityStage); await repo.saveDraft(initial,null);
+      await repo.saveDraft(rerollStory(initial,draft.story),initial.draftRevision,undefined,initial,await repo.prepareWorldview(initial,false));
+      const { persistSceneFixture } = await import('/src/tests/fixtures/stageScope.ts' as string);
+      await persistSceneFixture(repo,draft);
     } finally { repo.close(); }
   },a);
   await page.goto('/#game/save-a'); await page.reload(); await openGameTools(page);
@@ -34,7 +38,7 @@ test('自然现场记录与JSON围栏：候选自动结算，原文保留围栏�
   await expect.poll(async()=>(await stored(page)).state.turnNumber).toBe(1);
   const saved=await stored(page);expect(saved.state.events.event_hanhai_lens_extortion.status).toBe('active');expect(saved.state.economy).toEqual(a.state.economy);expect(saved.state.npc).toEqual(a.state.npc);
   await openStageRaw(page,'world');
-  expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(text);
+  expect(await page.getByLabel('场外与网络模型完整原文').textContent()).toBe(text);
   await page.reload();expect(await stored(page)).toEqual(saved);expect(calls).toBe(1);
 });
 test('无效人物引用跳过并保留临时原文，独立候选结算无附加请求', async ({page}) => {
@@ -49,6 +53,6 @@ ${JSON.stringify(a.response,null,2)}
   expect(saved.state.events).toEqual(a.state.events);
   expect(saved.state.journal.at(-1).story.narrative).toBe(a.draft.story!.narrative);
   await openStageRaw(page,'world');
-  expect(await page.getByLabel('动态世界模型完整原文').textContent()).toBe(bad);
+  expect(await page.getByLabel('场外与网络模型完整原文').textContent()).toBe(bad);
   await page.reload();await expect(summary).toBeVisible();expect(calls).toBe(1);
 });

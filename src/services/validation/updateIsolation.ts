@@ -20,31 +20,7 @@ export function settlementField(paths: readonly (string | undefined)[]) {
   }
 }
 
-const referenceFields = new Set([
-  'locationId', 'parentId', 'npcId', 'organizationId', 'itemId', 'taskId', 'eventId', 'parentEventId',
-  'linkedEventId', 'linkedTaskIds', 'predecessorEventIds', 'fromTaskId', 'offscreenTaskIds',
-  'currentTaskIds', 'keyNpcIds', 'mortgageDebtId', 'collateralAssetIds', 'debtId', 'relatedEntryIds',
-  'topItemId', 'bottomItemId', 'shoesItemId', 'primaryWeaponItemId', 'secondaryWeaponItemId',
-  'accessoryItemIds', 'currentVehicleAssetId',
-]);
-const referenceObjects = new Set([
-  'location', 'npc', 'organization', 'event', 'task', 'item', 'entry', 'vehicle', 'property', 'asset', 'debt', 'memory', 'actorRef',
-  'properties', 'vehicles', 'otherAssets', 'debts',
-  'actorRefs', 'ownerRef', 'affectedEntityRefs', 'expectedOwner', 'from', 'to', 'transfer', 'loss', 'changes',
-  'purchase', 'profile', 'specialProfile', 'usualLocations', 'relationshipNetwork', 'relations', 'leadership',
-  'handoff', 'continuation', 'protagonistEntry', 'currentWear', 'equipment', 'state',
-]);
-const actorObjects = new Set(['actorRef','actorRefs','ownerRef','affectedEntityRefs','expectedOwner','from','to']);
-
-export function structuredRefs(value: unknown, key = ''): string[] {
-  if (typeof value === 'string') return referenceFields.has(key) ? [value] : [];
-  if (Array.isArray(value)) return value.flatMap(item => structuredRefs(item, key));
-  if (!value || typeof value !== 'object' || key && !referenceObjects.has(key)) return [];
-  const refs = Object.entries(value).flatMap(([name, item]) => structuredRefs(item, name));
-  if (actorObjects.has(key) && 'kind' in value && 'id' in value && typeof value.id === 'string')
-    refs.push(value.id);
-  return refs;
-}
+export { structuredRefs } from '../../domain/commandRefs';
 
 function isolationGroups<T>(units: readonly UpdateUnit<T>[]) {
   const group = new Map(units.map(unit => [unit, new Set([unit])]));

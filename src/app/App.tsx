@@ -1,6 +1,9 @@
+import { readPresetSettings } from '../presets/settings';
+import { withdrawnPresetId, withdrawnPresetNotice } from '../presets/withdrawnPreset';
 import { authorizeHistoryStart } from '../ui/history/authorize';
 import {GlobalFeedback} from '../ui/GlobalFeedback';
 import { canAcceptNpcView } from '../ui/game/npcManagement';
+import type { TheaterLeaveGuard } from '../ui/game/TheaterPanel';
 import { lazy, Suspense, useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { DataError, IdSchema } from '../domain/common';
@@ -8,6 +11,8 @@ import type { GameState } from '../domain/state';
 import type { TurnDraft } from '../domain/drafts';
 import { maxBackupEntries } from '../services/storage/backup';
 import { SaveRepository } from '../services/storage/saveRepository';
+import { imageChange } from '../services/images/library';
+import { theaterChangeKey } from '../services/storage/theaters';
 import { readDocument, writeDocument } from '../services/local/documents';
 import { loadCompanionProfile, companionProfileKey } from '../services/local/companionProfile';
 import type { CompanionProfile } from '../services/local/companionProfile';
@@ -78,6 +83,10 @@ function bootstrap() {
   } catch {
     /* 可重新选择存档。 */
   }
+  try {
+    const presets = readPresetSettings();
+    if (presets.enabled && presets.selected === withdrawnPresetId) warnings.push(withdrawnPresetNotice);
+  } catch { /* The preset editor handles unreadable settings in recovery mode. */ }
   return { settings, form, hasDraft, selected, warning: warnings.join(' ') };
 }
 export function App() {
@@ -122,6 +131,7 @@ export function App() {
   const lock = useRef(false);
   const openingStart = useRef<OpeningStart | undefined>(undefined);
   const navigationRevision = useRef(0);
+  const theaterLeave = useRef<TheaterLeaveGuard | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [localSettingsDirty, setLocalSettingsDirty] = useState(false);
@@ -145,16 +155,26 @@ export function App() {
   useEffect(() => {
     let disposed = false;
     let connection: SaveRepository | undefined;
-    SaveRepository.open()
+    SaveRepository.open(undefined, undefined, () => {
+      if (!disposed) {
+        setRepository(undefined);
+        setError('其他页面正在升级本机存档库。请刷新本页，载入新版后继续。');
+      }
+    })
       .then((repo) => {
         connection = repo;
         if (disposed) repo.close();
-        else setRepository(repo);
+        else {
+          setRepository(repo);
+          if (repo.upgradedFrom) setError('本机存档库已升级，已有数据保留。请刷新其他旧版游戏页面后继续使用。');
+        }
       })
-      .catch(() => {
+      .catch(failure => {
         if (!disposed) {
-          setError(openFailure);
-          setListError(openFailure);
+          const message = failure instanceof DataError && ['STORAGE_BLOCKED', 'STORAGE_SCHEMA'].includes(failure.code)
+            ? failure.message : openFailure;
+          setError(message);
+          setListError(message);
           setLoading(false);
         }
       });
@@ -167,12 +187,12 @@ export function App() {
   const onRouteChange = useEffectEvent(() => {
     const nextRoute = window.location.hash;
     if (nextRoute === route) return;
-    if (settingsOpen && settingsDirty) {
+    if (theaterLeave.current || (settingsOpen && settingsDirty)) {
       // Browser history and direct hash navigation bypass the application's navigation buttons.
       const previous = new URL(window.location.href);
       previous.hash = route;
       window.history.replaceState(window.history.state, '', previous);
-      requestSettingsClose(() => changeRoute(nextRoute.slice(1)));
+      navigate(nextRoute.slice(1));
       return;
     }
     if (settingsOpen) requestSettingsClose();
@@ -237,13 +257,40 @@ export function App() {
       disposed = true;
     };
   }, [repository, route]);
+  useEffect(() => {
+    if (!repository || gameRoute || route === '#create') return;
+    let latest = 0;
+    const reload = () => {
+      const request = ++latest;
+      void repository.list().then(items => { if (request === latest) acceptList(items); },
+        () => { if (request === latest) setListError(listFailure); });
+    };
+    const storage = (event: StorageEvent) => { if (event.key === theaterChangeKey || event.key === imageChange) reload(); };
+    window.addEventListener('storage', storage);
+    window.addEventListener('focus', reload);
+    window.addEventListener(imageChange,reload);
+    return () => {
+      latest++;
+      window.removeEventListener('storage', storage);
+      window.removeEventListener('focus', reload);
+      window.removeEventListener(imageChange,reload);
+    };
+  }, [repository, route, gameRoute]);
   function acceptList(items: SaveSummary[]) {
     setSaves(orderedSaves(items)); setListError('');
     setError(current => [listFailure, openFailure, loadFailure].includes(current) ? '' : current);
   }
   function navigate(hash = '') {
-    if (settingsOpen) requestSettingsClose(() => changeRoute(hash));
-    else changeRoute(hash);
+    const leave = () => {
+      if (settingsOpen) requestSettingsClose(() => changeRoute(hash));
+      else changeRoute(hash);
+    };
+    if (theaterLeave.current) theaterLeave.current(leave);
+    else leave();
+  }
+  function openSettings() {
+    if (theaterLeave.current) theaterLeave.current(() => setSettingsOpen(true));
+    else setSettingsOpen(true);
   }
   function changeRoute(hash: string) {
     navigationRevision.current++;
@@ -355,7 +402,7 @@ export function App() {
       try { acceptList(await repository.list()); }
       catch { setListError(listFailure); setError(listFailure); }
     } catch (error) {
-      setDeleteError(error instanceof DataError && error.code === 'HISTORY_RECOVERY_REQUIRED'
+      setDeleteError(error instanceof DataError && ['HISTORY_RECOVERY_REQUIRED', 'THEATER_RECOVERY_REQUIRED','IMAGE_RECOVERY_REQUIRED'].includes(error.code)
         ? error.message : '删除失败，存档可能已更新或存储不可用。请刷新列表后重试；本次未删除数据。');
     } finally {
       lock.current = false;
@@ -442,7 +489,7 @@ export function App() {
         </a>
         <nav className="header-navigation" aria-label="主导航">
           <button onClick={() => navigate()}>游戏首页</button>
-          <button onClick={() => setSettingsOpen(true)}>设置</button>
+          <button onClick={openSettings}>设置</button>
           {gameRoute && <button onClick={() => navigate()}>切换存档</button>}
           <span className="version">{PRODUCT_VERSION}</span>
         </nav>
@@ -457,7 +504,7 @@ export function App() {
         <nav className="game-menu" aria-label="游戏菜单">
           <button onClick={() => { setMenuOpen(false); navigate(); }}>{!desktopUi&&<span className="mobile-seal" aria-hidden="true">首</span>}游戏首页</button>
           <button onClick={() => { setMenuOpen(false); navigate(); }}>{!desktopUi&&<span className="mobile-seal" aria-hidden="true">票</span>}切换存档</button>
-          <button onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}>{!desktopUi&&<span className="mobile-seal" aria-hidden="true">设</span>}设置</button>
+          <button onClick={() => { setMenuOpen(false); openSettings(); }}>{!desktopUi&&<span className="mobile-seal" aria-hidden="true">设</span>}设置</button>
           <span className="version">{!desktopUi&&'黑金王朝 · '}{PRODUCT_VERSION}</span>
         </nav>
         </div>
@@ -491,7 +538,8 @@ export function App() {
             <GameScreen
               key={`${loaded.state.saveId}:${loaded.undoGeneration ?? 0}`}
               openingStart={openingStart.current}
-              onOpenSettings={() => settingsOpen?requestSettingsClose():setSettingsOpen(true)}
+              onOpenSettings={() => settingsOpen?requestSettingsClose():openSettings()}
+              theaterLeave={theaterLeave}
               onCloseSettings={requestSettingsClose}
               state={loaded.state}
               draft={loaded.draft}
@@ -581,7 +629,7 @@ export function App() {
         closeDisabled={backupExport.exporting} onClose={() => { if (!backupExport.exporting) setExportAllOpen(false); }}>
         <p>把 {readableSaves.length} 份可读取的存档打包成一个备份文件。{saves.length > readableSaves.length && '无法读取的存档不会打包，请用它卡片上的「导出原始数据」。'}</p>
         <ul className="dialog-consequences">
-          <li>包含：游戏进度、未结算的草稿</li>
+          <li>包含：游戏进度、未结算的草稿、小剧场</li>
           <li>不包含：AI 密钥、渠道与设置、撤回记录、手动历史收藏（请单独导出节点）</li>
         </ul>
         {readableSaves.length > maxBackupEntries && <Feedback role="alert" level="err">单个备份最多容纳 {maxBackupEntries} 份存档，请分别导出。</Feedback>}
@@ -596,7 +644,7 @@ export function App() {
       {notices.kind && <NoticeDialog announcement={notices.announcement} key={desktopUi?notices.kind:'mobile-notice'} automatic={notices.automatic} kind={notices.kind} muted={notices.muted}
         onMutedChange={notices.setMuted} onClose={notices.close} />}
       {settingsOpen && !(gameRoute && loaded) && renderSettings()}
-      <PeintureLauncher />
+      <PeintureLauncher state={loaded && route === `#game/${loaded.state.saveId}` ? loaded.state : undefined} />
       {settingsOpen && confirmSettingsClose && <UnsavedAiChanges subject={variablesDirty ? '存档变量' : worldbookDirty ? '世界书' : summarySettingsDirty ? '记忆设置' : localSettingsDirty ? '本地偏好' : undefined} onContinue={() => {setConfirmSettingsClose(false);settingsDestination.current=undefined;}} onDiscard={() => {
         setConfirmSettingsClose(false);
         setLocalSettingsDirty(false); setAiSettingsDirty(false); setSummarySettingsDirty(false); setVariablesDirty(false); setWorldbookDirty(false);
@@ -611,8 +659,8 @@ export function App() {
           }}
         >
           <p>{deleting.status === 'readable'
-            ? `将永久删除「${deleting.title}」及其关联草稿、回合提交回执、全部自动历史和手动收藏。此操作无法撤销，请先导出重要历史节点。`
-            : `仅在没有关联手动收藏时，才允许永久删除「${deleting.title}」及其草稿、回合提交回执和自动历史。此操作无法撤销。`}</p>
+            ? `将永久删除「${deleting.title}」及其小剧场、关联草稿、回合提交回执、全部自动历史和手动收藏。此操作无法撤销，请先导出重要历史节点。`
+            : `仅在没有关联手动收藏或小剧场时，才允许永久删除「${deleting.title}」及其草稿、回合提交回执和自动历史。此操作无法撤销。`}</p>
           <p className="save-record-key">存档记录 ID：{saveKeyText(deleting.storageKey)}</p>
           {deleting.status === 'unreadable' && <p>此存档无法读取，建议取消并先导出主存档原始数据。{rawSaveHistoryNotice}</p>}
           {deleteError && <Feedback role="alert" level="err" mobileAs="p">{deleteError}</Feedback>}

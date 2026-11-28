@@ -1,10 +1,7 @@
 // 电脑端（≥901px）创角五步的展示组件。只读取 Creation 草稿，不写入任何新字段。
-import { useMemo } from 'react';
-import type { CSSProperties } from 'react';
-import { CITY_TICKET_META, skyline } from '../home/skyline';
-import { cities, professionProfile } from './model';
+import { creationCityName, professionProfile } from './model';
 import type { Creation } from './model';
-import { creationCity } from './MobileCreation';
+import { creationCityVisual } from './CityChoice';
 import { getTalentDefinition } from '../../domain/protagonist/talents';
 
 export const creationSteps = ['基本信息', '职业与能力', '城市与背景', '初始同伴', '确认与开局'] as const;
@@ -19,19 +16,19 @@ export const creationStepHints = [
 
 /** 城市色只在走到第 3 步（城市与背景）之后才写上档案，和手机端车票一致。 */
 export function creationTint(form: Creation) {
-  return form.step >= 3 ? CITY_TICKET_META[creationCity[form.city]].tint : '#C9A961';
+  return form.step >= 3 ? creationCityVisual(form).tint : '#C9A961';
 }
 
 /** 左侧人物档案：右侧填什么，这里就实时写上什么。纯展示，屏幕阅读器直接读右侧表单。 */
 export function CreationDossier({ form, busy }: { form: Creation; busy: boolean }) {
-  const profile = professionProfile(form), city = cities.find(item => item.id === form.city), talent = getTalentDefinition(form.talentId);
-  const meta = CITY_TICKET_META[creationCity[form.city]], cityOn = form.step >= 3;
+  const profile = professionProfile(form), talent = getTalentDefinition(form.talentId);
+  const meta = creationCityVisual(form), cityOn = form.step >= 3;
   const companion = [form.companion.name, form.companion.identity, form.companion.relationship].filter(text => text.trim()).join(' · ');
   const text = (value: string, pending = '（待填）') => value.trim() ? <dd>{value}</dd> : <dd className="pending">{pending}</dd>;
   const para = (value: string, pending = '（待填）') => <p className={`dz-text${value.trim() ? '' : ' pending'}`}>{value.trim() || pending}</p>;
   return <aside className="creation-dossier" aria-hidden="true">
     <div className="dz-band"><b>人物档案</b><small>黑金王朝 · 立档处</small>
-      <span className="dz-no">No. {form.saveId.replace(/[^0-9a-z]/gi, '').slice(-4).toUpperCase() || '0000'}-{cityOn ? creationCity[form.city].toUpperCase() : '—'}</span></div>
+      <span className="dz-no">No. {form.saveId.replace(/[^0-9a-z]/gi, '').slice(-4).toUpperCase() || '0000'}-{cityOn ? (meta.key === 'custom' ? 'CN' : meta.key.toUpperCase()) : '—'}</span></div>
     <div className="dz-body">
       <div className="dz-top">
         <div className={`dz-photo${form.person.name.trim() ? '' : ' empty'}`}>{[...form.person.name.trim()][0] ?? '人'}
@@ -41,7 +38,7 @@ export function CreationDossier({ form, busy }: { form: Creation; busy: boolean 
           <div><dt>年龄</dt>{text(form.person.age ? `${form.person.age} 岁` : '')}</div>
           <div><dt>性别</dt>{text(form.person.gender)}</div>
           <div><dt>职业</dt>{text(profile.name)}</div>
-          <div><dt>起点城市</dt>{text(cityOn ? city?.name ?? '' : '')}</div>
+          <div><dt>起点城市</dt>{text(cityOn ? creationCityName(form) : '')}</div>
         </dl>
       </div>
       <h3 className="dz-sec">外貌</h3>{para(form.person.appearance)}
@@ -82,16 +79,4 @@ export function TemplateCards({ label, value, options, onChange }: {
       <b>{item.name}</b><span aria-hidden="true">{item.description}</span>
     </button>)}
   </div>;
-}
-
-/** 城市卡顶部的天际线、城市印与经度；沿用首页同一套确定性剪影。 */
-export function CityCardArt({ city, selected }: { city: Creation['city']; selected: boolean }) {
-  const key = creationCity[city], meta = CITY_TICKET_META[key];
-  const svg = useMemo(() => skyline(key, 'aria-hidden="true" focusable="false"', false), [key]);
-  return <span className="creation-city-art" aria-hidden="true" style={{ '--c': meta.tint } as CSSProperties}>
-    <span className="creation-city-sky" dangerouslySetInnerHTML={{ __html: svg }} />
-    <span className="creation-city-seal">{meta.seal}</span>
-    <span className="creation-city-lon">{meta.longitude}</span>
-    {selected && <span className="creation-city-start">起点</span>}
-  </span>;
 }

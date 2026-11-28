@@ -5,43 +5,47 @@ import { organizationChangeFields } from '../../domain/organizations/schema';
 import { DomainCommandSchema } from '../../domain/commands';
 import { OrdinaryNpcCreationSchema, SpecialNpcCreationSchema } from '../../domain/npc/schema';
 import { WorldResultSchema } from '../../domain/drafts';
-import type { AiStage } from '../ai/configuration';
-import type { factorRepeatedSchemas } from './catalogCompaction';
+import { compactWorldCommandSchema, type factorRepeatedSchemas } from './catalogCompaction';
 import generatedSchemas from './commandCatalogSchemas.json';
-export const worldTypes = [
-  'CreateNpc',
-  'UpdateNpc',
-  'RecordNpcMemory',
-  'CreateLocation',
-  'CreateOrganization',
-  'UpdateOrganization',
-  'RecordOrgRelation',
-  'RecordHistory',
-] as const;
-type CatalogStage = Exclude<AiStage, 'story'>;
+import { offscreenGroups, stageCommands } from '../../domain/stageCommands';
+export const worldTypes = offscreenGroups.worldCommands;
+type CatalogStage = 'variables' | 'world';
 const CATALOG_REF_RULE = 'schema.definitions 是只写一次的公共结构；字段写作 {"$ref":"#/definitions/名称"} 时，表示它的格式与该同名定义完全相同，按展开后的结构填写，输出中不要写 $ref。';
-const compactCatalogs = new Map<CatalogStage, ReturnType<typeof compactCatalog>>();
-function compactCatalog(stage: CatalogStage) {
-  const inline = inlineCommandCatalog(stage);
+const compactCatalogs = new Map<string, ReturnType<typeof compactCatalog>>();
+function compactCatalog(stage: CatalogStage, historical: boolean, allowLetters: boolean) {
+  const inline = inlineCommandCatalog(stage, historical);
   // Greedy factoring runs in catalog:refresh, never on the player's main thread.
   // Formal equivalence tests reject stale generated schemas after domain changes.
   type Schema = ReturnType<typeof factorRepeatedSchemas<(typeof inline.schema.oneOf)[number]>>;
-  const schema = structuredClone(generatedSchemas[stage]) as unknown as Schema;
+  const schema = structuredClone(generatedSchemas[stage === 'world' && !historical ? 'regularWorld' : stage]) as unknown as Schema;
+  if (!allowLetters && stage === 'world') {
+    for (const type of ['SchedulePhoneMessage','SeedTopic'] as const) {
+      const index=inline.commandTypes.indexOf(type);
+      inline.commandTypes.splice(index,1);
+      schema.oneOf.splice(index,1);
+    }
+    inline.worldStateRules=inline.worldStateRules?.filter(rule=>!rule.startsWith('SeedTopic'));
+    const available = worldTypes.filter(type => !['SchedulePhoneMessage','SeedTopic'].includes(type) && (historical || type !== 'RecordHistory'));
+    if (typeof inline.stagePermissions === 'object') inline.stagePermissions.worldCommands = available;
+    if (inline.outputFields) inline.outputFields.worldCommands.commandTypes = available;
+  }
   return { ...inline, schema, rules: [...inline.rules, CATALOG_REF_RULE] };
 }
 /** 发给模型的命令目录：重复结构只写一次（见 catalogCompaction）。程序校验不读取本目录。 */
-export function commandCatalog(stage: CatalogStage) {
-  let catalog = compactCatalogs.get(stage);
-  if (!catalog) { catalog = compactCatalog(stage); compactCatalogs.set(stage, catalog); }
+export function commandCatalog(stage: CatalogStage, historical = true, allowLetters = true) {
+  const key = stage + historical + allowLetters;
+  let catalog = compactCatalogs.get(key);
+  if (!catalog) { catalog = compactCatalog(stage, historical, allowLetters); compactCatalogs.set(key, catalog); }
   return structuredClone(catalog);
 }
 /** 未合并重复结构的原始内联目录，仅供测试核对合并前后逐字段等价。 */
-export function inlineCommandCatalog(stage: CatalogStage) {
-  const options = DomainCommandSchema.options.filter(
-    (option) =>
-      (stage === 'variables' && !['DeleteEvent','RecordHistory'].includes(option.shape.type.value)) ||
-      (stage === 'world' && [...worldTypes, 'SaveTask', 'SaveEvent','DeleteEvent'].includes(option.shape.type.value)),
-  );
+export function inlineCommandCatalog(stage: CatalogStage, historical = true) {
+  // The legacy JSON Variables catalog predates the household text operation.
+  const types = new Set<string>(stage === 'world' ? stageCommands.offscreen :
+    [...stageCommands.entities, ...stageCommands.scene].filter(type => type !== 'ApplyHaremChanges' && type !== 'RecordPhoneMessage'));
+  if (!historical) types.delete('RecordHistory');
+  const worldCommands = worldTypes.filter(type => historical || type !== 'RecordHistory');
+  const options = DomainCommandSchema.options.filter(option => types.has(option.shape.type.value));
   return {
     currencyUnit: 'CNY_FEN_INTEGER',
     commandTypes: options.map((option) => option.shape.type.value),
@@ -49,7 +53,7 @@ export function inlineCommandCatalog(stage: CatalogStage) {
       $schema: 'http://json-schema.org/draft-07/schema#',
       oneOf: options.map((option) => {
         const modelOption = stage === 'world' && option.shape.type.value === 'UpdateNpc'
-          ? variableCommandSchemas[1].safeExtend({changes:variableCommandSchemas[1].shape.changes.omit({name:true,aliases:true,identity:true,addressing:true,phoneContact:true,usualLocations:true,detailedBackground:true,habits:true,relationshipNetwork:true})})
+          ? variableCommandSchemas[1].safeExtend({changes:variableCommandSchemas[1].shape.changes.omit({name:true,aliases:true,identity:true,addressing:true,phoneContact:true,appearedInStory:true,usualLocations:true,detailedBackground:true,habits:true,relationshipNetwork:true})})
           : option.shape.type.value === 'CreateNpc'
           ? option.extend({ npc: z.discriminatedUnion('kind', [OrdinaryNpcCreationSchema, SpecialNpcCreationSchema.omit({longTermMemories:true})]) })
           : option.shape.type.value==='SaveEvent' ? option.extend({event:z.union([WorldEventSchema,StoredWorldEventSchema.extend({status:z.enum(['resolved','cancelled'])})])}) : option;
@@ -84,6 +88,10 @@ export function inlineCommandCatalog(stage: CatalogStage) {
             }];
           }
         }
+        if (stage === 'world' && option.shape.type.value === 'RecordOrgRelation' && schema.properties?.faction) {
+          // 主势力绑定只属于Variables；World目录不展示该可选字段。
+          delete schema.properties.faction;
+        }
         if (stage === 'world' && option.shape.type.value === 'CreateOrganization') {
           const organization = schema.properties?.organization;
           if (organization && typeof organization === 'object') {
@@ -94,8 +102,15 @@ export function inlineCommandCatalog(stage: CatalogStage) {
               // 仅描述既有 World 创建权限，不改变正式 OrganizationSchema。
               for (const field of ['funds', 'assetsEstimate', 'liquidityEstimate'])
                 if (field in variant.properties) variant.properties[field] = false;
+              // 部门、成员创建后经UpdateOrganization补充；主角已知不属于World。只精简展示，不改变正式Schema。
+              for (const field of ['departments', 'members', 'protagonistKnown']) delete variant.properties[field];
             }
           }
+        }
+        if (stage === 'world') {
+          // The containing catalog declares the same draft-07 meta-schema once.
+          delete schema.$schema;
+          return compactWorldCommandSchema(schema);
         }
         return schema;
       }),
@@ -104,7 +119,7 @@ export function inlineCommandCatalog(stage: CatalogStage) {
       stage === 'variables'
         ? '只提议正文已成立的现场结果；新 NPC 必须实际在场。'
         : {
-            worldCommands: worldTypes,
+            worldCommands,
             taskCommands: ['SaveTask'],
             eventCommands: ['SaveEvent','DeleteEvent'],
             actorBoundary: '以合法Variables投影判断现场：新离场NPC可承担后台任务，仍在场者和开局同伴受保护；只自主推进场外NPC/组织；SaveEvent以稳定ID记录事件参与者，不执行参与者动作。引用参与者不是后台行动授权。禁止主角交易、现场重复行动、独立推进时钟。',
@@ -148,18 +163,21 @@ export function inlineCommandCatalog(stage: CatalogStage) {
           },
           // 顶层输出不是存档投影：从真实 Schema 生成易混淆的数组值形状。
           outputFields: {
-            worldCommands: { type: 'array', commandTypes: worldTypes },
+            worldCommands: { type: 'array', commandTypes: worldCommands },
             taskCommands: { type: 'array', commandTypes: ['SaveTask'] },
             eventCommands: { type: 'array', commandTypes: ['SaveEvent', 'DeleteEvent'] },
             ...Object.fromEntries((['visibleHooks', 'unresolved'] as const).map(field =>
               [field, z.toJSONSchema(WorldResultSchema.shape[field], { target: 'draft-7', unrepresentable: 'any' })])),
           },
           worldStateRules: [
+            'SeedTopic 每回合可写零到五条，每条含 title、summary、related、expiresAt，可选 eventId。多数为城市日常。只依公开消息，传播有延迟、可失真，主角无名时不点名。关联主事件时只填写已向社会公开的标题与概要，主角私下知情不等于公开。传闻不构成正式事件，不在这里写帖子或评论。',
             'CreateNpc按World专用Schema使用合法初值，亲属/认识关系不是affinityConfirmed；后续RecordNpcMemory分开输出，不能在创建对象内塞记忆。CreateLocation.parentId是实际地理从属，不是玩家所在国家或默认根；海外地点不硬挂china，未知父级可省略，不虚构ID。',
             '任务—事件允许单侧关联：task.linkedEventId或event.linkedTaskIds填一侧即可，程序补齐反向ID；两侧都填须一致，一个任务只能关联一个事件。引用须已存在或本批创建，不能通过补齐改写既有终态。复用已有实体ID，不重复创建或无声丢弃冲突关联。',
+            ...(historical ? [
             'worldCommands用RecordHistory独立记录历史：entry={id,title,summary,knowledgeKind,occurredAt?,occurredTimeText?,sourceRef?,sourceText?,actorRefs?,locationId?,eventId?,relatedEntryIds?,chronicle?}。knowledgeKind为established/reported/suspected。不带chronicle的普通史料不要求正式事件、重要等级或结案；可记录传述、猜测和模糊过去，不编造精确日期，不自动授予角色知识。recordedAt/sourceTurnId由程序生成，不由AI输出。新披露用新ID并关联旧条目，无需每轮新增历史。',
             '重大纪事可选entry.chronicle：category=world/protagonist、nature=fact/statement/rumor/inference（与entry.knowledgeKind一致）、milestoneId、结构化time、narrative、process、results、impacts。world必填scope、scopeText、basis、endTime；event_result必须引用最终投影的终态eventId，以实际startAt定位、resolvedAt作endTime；historical_event保留已结束往事的真实精度且不关联事件；cancellation_decision以cancelled事件的resolvedAt记录实际撤销决定。未开始的计划不可当作已发生结果。主角重大事实发生时记录。重大性由World决定，不依据impact阈值。',
             '重大纪事time支持instant/day/month/season/year/range/unknown，保留原始文本，未知不补造日期；若提供entry.occurredAt，time须为相同精确时刻。冬季在同年12月精确与月模糊记录后、全年模糊记录前，不跨年。双视角相同milestoneId须同time且类别不同；relations仅关联真实历史，follows/corrects不成环。新发展新ID，普通旧史料不自动升级；所有节点只经原子Commit生效。',
+            ] : []),
             '事件参与者可随发展变化，保持ID与原startAt；引用本批合法创建或已有实体，参与记录不授权主角行动。未来安排只输出SaveEvent，程序从事件状态派生调度，不重复填写镜像。',
             'World创建组织时relationHistory=[]，不要复制存档中的历史数组。确需记录关系变化时另用RecordOrgRelation。gang不填funds；business不填assetsEstimate/liquidityEstimate（也不填null）。创建命令不是资产入账或历史追加。',
             '新事件提供startAt、backgroundText、goalText、actorRefs。eventKind=main的estimatedEndAt仅供参考，不强制到期处理；sub提供parentEventId及fixedEndAt，不填estimatedEndAt。sub未到期不例行改写，到期须按原fixedEndAt结案，必填outcome/resolutionText；sub不得修改fixedEndAt延期，继续用新ID。旧事件沿用原预计时间和延期语义。',

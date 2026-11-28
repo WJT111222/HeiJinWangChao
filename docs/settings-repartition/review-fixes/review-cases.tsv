@@ -1,0 +1,35 @@
+原归属	平台	套件	用例	原基线	原分支	整改首轮	末次定向结果	末次证据文件	与此次设置修改的关系
+21 项新增触发点	desktop	candidate-streaming.spec.ts	旧运行设置不重置：两个独立开关默认关闭，显式保存、刷新和未保存取消	failed	failed	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	desktop	memory-maintenance.spec.ts	选择并恢复独立模型；手动整理、原文来源及真实memory快照/Token统计	passed	failed	timedOut	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	desktop	model-list-hardening.spec.ts	官方结构的model字段真实选用，name-only不冒充模型	passed	timedOut	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	desktop	narrative-length.spec.ts	新玩家默认低档；选中档 / 高档后保存，刷新仍在；高档提示输出长度	passed	failed	timedOut	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	desktop	ui-compatibility.spec.ts	路由实际命中及保存、风格跨列与断点 day	failed	failed	timedOut	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	desktop	settings-worldbook-variables.spec.ts	世界书与变量设置保护未保存修改，保存后同时进入下一次正文请求	timedOut	failed	passed	passed	last-control.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	candidate-streaming.spec.ts	旧运行设置不重置：两个独立开关默认关闭，显式保存、刷新和未保存取消	passed	failed	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	desktop	ui-compatibility.spec.ts	路由实际命中及保存、风格跨列与断点 night	failed	timedOut	timedOut	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	mobile-batch2.spec.ts	手机 375×667：候选、选择器和操作表	passed	timedOut	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	mobile-batch2.spec.ts	手机 390×844：候选、选择器和操作表	passed	timedOut	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	mobile-batch2.spec.ts	手机 430×932：候选、选择器和操作表	passed	timedOut	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	mobile-batch2.spec.ts	手机 750×800：候选、选择器和操作表	passed	timedOut	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	mobile-batch2.spec.ts	手机 900×800：候选、选择器和操作表	passed	timedOut	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	mobile-batch2.spec.ts	模型选择：搜索高亮、原键盘语义、缓存及显式刷新，Token 值不改语义	passed	timedOut	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	mobile-batch2.spec.ts	底部选择器：无匹配、Tab 环、Esc、遮罩与下拉仅关闭顶层	failed	timedOut	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	mobile-select-sheet.spec.ts	手机选择抽屉：选项远离屏幕底边；没有渠道时提示先添加渠道	passed	failed	failed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	mobile-batch2.spec.ts	reduced-motion 与显式刷新禁用：不增加列表或生成请求	failed	timedOut	failed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	model-list-hardening.spec.ts	官方结构的model字段真实选用，name-only不冒充模型	passed	timedOut	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	mobile-select-sheet.spec.ts	手机选择抽屉：选项多时可以用手指滑到底并选中最后一项；高亮项为纸页浅金、文字清楚	passed	timedOut	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	narrative-length.spec.ts	新玩家默认低档；选中档 / 高档后保存，刷新仍在；高档提示输出长度	passed	failed	timedOut	passed	confirmed-final.jsonl	在新分区运行原业务断言
+21 项新增触发点	mobile	settings-worldbook-variables.spec.ts	世界书与变量设置保护未保存修改，保存后同时进入下一次正文请求	passed	failed	passed	passed	confirmed-final.jsonl	在新分区运行原业务断言
+13 项原归因待核对	desktop	city-night.spec.ts	UI-2：四城五时段五天气、长文本及 reduced-motion	timedOut	timedOut	timedOut	timedOut	unknown1.jsonl	未进入设置编辑器；城市天气、正文阅读器的加载与可见性。
+13 项原归因待核对	desktop	event-entry-feedback.spec.ts	World失败与刷新不消费入场，恢复只请求World并原子确认正文回执	failed	failed	failed	failed	unknown1.jsonl	夹具直接写入模型配置；等待 World 的正式结算状态。
+13 项原归因待核对	desktop	pc-reading-layout.spec.ts	PC 长状态限高、完整资料、九入口短屏可访问	timedOut	timedOut	timedOut	timedOut	unknown1.jsonl	游戏主阅读栏与九入口几何测量；未保存 AI 配置。
+13 项原归因待核对	desktop	undo-summary-recovery.spec.ts	短期 → 中期 在飞行中撤回后明确待确认；发送不重试，手动成功后自动恢复	failed	failed	failed	failed	unknown1.jsonl	等候短期到中期的待确认对话框，位于后续打开设置之前。
+13 项原归因待核对	desktop	story-continuation-transport.spec.ts	预检期间另一标签改变节奏	timedOut	timedOut	timedOut	timedOut	unknown1.jsonl	测试钩子改变续写节奏，停于预检；双端基线与旧分支也超时。
+13 项原归因待核对	mobile	archive-final.spec.ts	设置全部五类、长表单与双端截图，浏览零写入，显式保存和重新加载	failed	timedOut	timedOut	passed	fixed-selectors.jsonl	修正移动分区导航，超时输入在「超时与重试」；整项包含显式保存和重载。
+13 项原归因待核对	mobile	mobile-turn-changes.spec.ts	手机变化 430×932：可靠六组、角标、单一滚动与只读	failed	failed	failed	failed	unknown1.jsonl	当前回合变化对话框的可见性与滚动；未进入设置编辑。
+13 项原归因待核对	mobile	pr117-acceptance.spec.ts	最终验收：指定视口长正文、候选、输入与刷新不产生请求或写档	failed	timedOut	timedOut	timedOut	unknown1.jsonl	主游戏工作流与长正文导航，未经过本次设置保存。
+13 项原归因待核对	mobile	stage-failure-summary.spec.ts	automatic invalid_output：本页细节、持久摘要、复制、清空和刷新	failed	timedOut	timedOut	timedOut	unknown1.jsonl	运行日志内的操作与故障摘要；未使用 AI 设置保存。
+13 项原归因待核对	mobile	startup-notices.spec.ts	localStorage 不可访问时仍能完成顺序并使用首页	failed	timedOut	timedOut	timedOut	unknown1.jsonl	主动拒绝 localStorage 的公告流程；停在首页或公告操作。
+13 项原归因待核对	mobile	workflow-feedback.spec.ts	多个阶段错误完整保留；候选失败重试不重生成已有正文	failed	timedOut	timedOut	timedOut	unknown1.jsonl	工作流诊断返回四阶段列表；夹具直接设置路由，没有经过保存合并。
+13 项原归因待核对	mobile	worldview-source.spec.ts	default 恢复外部正文后必须验证来源，再发送或结算	failed	timedOut	passed	passed	unknown1.jsonl	外部世界书正文的恢复与来源校验；本轮通过。
+13 项原归因待核对	mobile	story-continuation-transport.spec.ts	预检期间另一标签改变节奏	timedOut	timedOut	timedOut	timedOut	unknown1.jsonl	测试钩子改变续写节奏，停于预检；双端基线与旧分支也超时。

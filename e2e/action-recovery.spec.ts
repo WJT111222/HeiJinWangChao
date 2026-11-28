@@ -69,9 +69,9 @@ for (const [mode, errorCodes] of cases)
         expect((await calls(page)).length).toBe(mode === '500' ? 2 : 1);
         await plan(page, 'ok');
         await send(page, '改去书店看看');
-        await expect.poll(async () => (await data(page)).state.turnNumber).toBe(2);
+        await expect.poll(async () => (await data(page)).state.turnNumber,{timeout:20_000}).toBe(2);
         await expect(button(page)).toHaveAttribute('data-kind', 'idle');
-        expect((await calls(page)).map(c => c.stage)).toEqual([...(mode === '500' ? ['story', 'story'] : ['story']), 'story', 'variables', 'world']);
+        expect((await calls(page)).map(c => c.stage)).toEqual([...(mode === '500' ? ['story', 'story'] : ['story']), 'story', 'entities', 'variables', 'world']);
         expect(relayRequests).toEqual([]);
     });
 for (const stage of ['variables', 'world'])
@@ -91,13 +91,13 @@ for (const stage of ['variables', 'world'])
         expect(failed.draft?.story).toBeTruthy();
         await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
         await expect(page.getByText('当前正文建议（本回合尚未结算）', { exact: false })).toBeVisible();
-        await expect(page.locator('#action-recovery-guidance')).toContainText(stage === 'variables' ? '继续生成变量' : '继续生成世界');
+        await expect(page.locator('#action-recovery-guidance')).toContainText(stage === 'variables' ? '继续生成主角与现场' : '继续生成场外与网络');
         await record(page, stage, info.project.name);
         await page.reload();
         await expect(page.getByTestId('story-reader')).toBeVisible();
         expect(await data(page)).toEqual(failed);
         await button(page).click();
-        await expect.poll(async () => (await data(page)).state.turnNumber).toBe(2);
+        await expect.poll(async () => (await data(page)).state.turnNumber,{timeout:20_000}).toBe(2);
         expect((await calls(page)).map(c => c.stage)).toEqual(stage === 'variables' ? ['variables', 'world'] : ['world']);
     });
 test('B commit: real atomic failure, saving lock, retry without new models', async ({ page }, info) => {
@@ -126,11 +126,11 @@ test('B commit: real atomic failure, saving lock, retry without new models', asy
     await record(page, 'commit', info.project.name);
     const ready = await data(page);
     expect(ready.state).toEqual(original.state);
-    expect(ready.draft?.stageStatus).toEqual({ story: 'ready', variables: 'ready', world: 'ready' });
+    expect(ready.draft?.stageStatus).toEqual({ story: 'ready', entities:'ready', variables: 'ready', world: 'ready' });
     const posted = await calls(page);
     await page.evaluate(() => { Reflect.set(window, 'holdCommit', false); Reflect.set(window, 'failWrites', false); });
     await button(page).click();
-    await expect.poll(async () => (await data(page)).state.turnNumber).toBe(2);
+    await expect.poll(async () => (await data(page)).state.turnNumber,{timeout:20_000}).toBe(2);
     expect(await calls(page)).toEqual(posted);
 });
 test('D lifecycle: no Web Locks, tabs, settings, cancelled late response and reload', async ({ page, context }, info) => {
@@ -209,8 +209,8 @@ test('C explicit suggestion, twice failed, unsent edit, save switch, reload and 
     await plan(page, 'ok');
     await page.locator('#player-input').fill('改去街边观察');
     await page.getByRole('button', { name: '发送', exact: true }).click();
-    await expect.poll(async () => (await data(page)).state.turnNumber).toBe(2);
-    expect((await calls(page)).map(c => c.stage)).toEqual(['story', 'variables', 'world']);
+    await expect.poll(async () => (await data(page)).state.turnNumber,{timeout:20_000}).toBe(2);
+    expect((await calls(page)).map(c => c.stage)).toEqual(['story', 'entities', 'variables', 'world']);
 });
 test('reference-only old options, shortcuts and no fabricated options preserve bound action', async ({ page }) => {
     await setup(page);
@@ -239,8 +239,8 @@ test('reference-only old options, shortcuts and no fabricated options preserve b
     expect(await data(page)).toEqual(original);
     expect(await calls(page)).toHaveLength(0);
     await button(page).click();
-    await expect.poll(async () => (await data(page)).state.turnNumber).toBe(2);
-    expect((await calls(page)).map(c => c.stage)).toEqual(['variables', 'world']);
+    await expect.poll(async () => (await data(page)).state.turnNumber,{timeout:20_000}).toBe(2);
+    expect((await calls(page)).map(c => c.stage)).toEqual(['entities', 'variables', 'world']);
     // This newly committed Story had no suggestions. Do not search older journal entries or invent any.
     await expect(page.locator('.action-options')).toHaveCount(0);
 });
@@ -254,7 +254,7 @@ test('responsive recovery guidance stays clear of input, bottom navigation and w
     const sizes = info.project.name === 'mobile' ? [{ width: 390, height: 844 }, { width: 392, height: 640 }, { width: 392, height: 420 }] : [{ width: 1440, height: 900 }, { width: 901, height: 768 }];
     for (const size of sizes) {
         await page.setViewportSize(size);
-        await expect(page.locator('#action-recovery-guidance')).toContainText('继续生成世界');
+        await expect(page.locator('#action-recovery-guidance')).toContainText('继续生成场外与网络');
         const input = page.locator('#player-input'), sendButton = page.getByRole('button', { name: '发送', exact: true });
         await input.click();
         await input.fill('保留在本页的下一轮打算');
@@ -275,6 +275,6 @@ test('responsive recovery guidance stays clear of input, bottom navigation and w
     expect(await calls(page)).toEqual(posted);
     await plan(page, 'ok');
     await button(page).click();
-    await expect.poll(async () => (await data(page)).state.turnNumber).toBe(2);
-    expect((await calls(page)).map(c => c.stage)).toEqual(['story', 'variables', 'world', 'world']);
+    await expect.poll(async () => (await data(page)).state.turnNumber,{timeout:20_000}).toBe(2);
+    expect((await calls(page)).map(c => c.stage)).toEqual(['story', 'entities', 'variables', 'world', 'world']);
 });

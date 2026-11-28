@@ -77,7 +77,8 @@ test('真实三阶段Mock结案更新组织→刷新档案与已结束事件→�
     const raw=body.messages.find((m:{content:string})=>m.content.startsWith('<GAME_CONTEXT>')).content,context=JSON.parse(raw.slice('<GAME_CONTEXT>\n'.length,-'\n</GAME_CONTEXT>'.length));
     if(stage==='story'){const text='<thinking>承接现有世界。</thinking><正文>【旁白】日常工作继续，远处企业的业务整合已经完成。</正文><短期记忆>整合已完成。</短期记忆><变量规划>[]</变量规划>';await route.fulfill({contentType:'text/event-stream',body:`data: ${JSON.stringify({choices:[{delta:{content:text}}]})}\n\ndata: [DONE]\n\n`});return;}
     let content:string;
-    if(stage==='variables')content=`<thinking>实际经过一分钟。</thinking><说明></说明><命令>set worldClock = "${new Date(Date.parse(context.SAVE_STATE.worldClock)+60000).toISOString()}"</命令>`;
+    if(stage==='entities')content='<接触者>[]</接触者><thinking>现场无人物更新。</thinking><说明></说明><命令></命令>';
+    else if(stage==='variables')content=`<thinking>实际经过一分钟。</thinking><说明></说明><命令>set worldClock = "${new Date(Date.parse(context.SAVE_STATE.worldClock)+60000).toISOString()}"</命令>`;
     else{
       const event=context.SAVE_STATE.events['org-active'],now=context.SAVE_STATE.worldClock;
       content=JSON.stringify({worldCommands:[{type:'UpdateOrganization',commandId:'org-update',evidence:'本轮业务整合结案',organizationId:'org-business',expectedRevision:context.BASE_SAVE_REVISION,changes:{operatingStatus:'业务整合正式完成',leadership:[{position:'总经理',publicName:'沈向南'}],assetsEstimate:80000000,liquidityEstimate:600000},financialBasis:{at:now,note:'整合后各自估计，不是玩家收入'}}],taskCommands:[],eventCommands:[{type:'SaveEvent',commandId:'org-close',evidence:'业务整合完成',event:{...event,status:'resolved',resolvedAt:now,resolutionText:'新车间交接完成，后续维护任务继续。',outcome:'success',sourceTurnIds:[...event.sourceTurnIds,context.TURN_CONTEXT.turnId],continuation:{direction:'end',reason:'本次整合结束'}}}],visibleHooks:[],unresolved:[]});
@@ -86,7 +87,7 @@ test('真实三阶段Mock结案更新组织→刷新档案与已结束事件→�
   });
   await page.getByLabel('你的行动',{exact:true}).fill('继续日常工作');await page.getByRole('button',{name:'发送',exact:true}).click();
   await expect.poll(async()=>(await rosterGame(page)).state.turnNumber,{timeout:20000}).toBe(before.state.turnNumber+1);
-  const saved=await rosterGame(page);expect(saved.state.npc).toEqual(before.state.npc);expect(saved.state.economy).toEqual(before.state.economy);expect(calls).toEqual(['story','variables','world']);
+  const saved=await rosterGame(page);expect(saved.state.npc).toEqual(before.state.npc);expect(saved.state.economy).toEqual(before.state.economy);expect(calls).toEqual(['story','entities','variables','world']);
   await page.reload();let dialog=await open(page);await dialog.getByRole('button',{name:'查看组织：澄川工贸',exact:true}).click();
   const detail=dialog.getByRole('region',{name:'组织详情',exact:true});await expect(detail).toContainText('业务整合正式完成');await expect(detail).toContainText('沈向南');
   await detail.getByText('已结束事件 · 2',{exact:true}).click();await detail.getByRole('button',{name:'业务整合与新车间交接',exact:true}).click();
@@ -94,5 +95,5 @@ test('真实三阶段Mock结案更新组织→刷新档案与已结束事件→�
   const directory=page.getByRole('dialog',{name:'世界资料',exact:true});if(await directory.isVisible())await directory.getByRole('button',{name:'关闭资料界面',exact:true}).click();
   await page.getByRole('button',{name:/^撤回（1）$/}).click();await page.getByRole('dialog',{name:'撤回上一回合',exact:true}).getByRole('button',{name:'确认撤回',exact:true}).click();
   await expect.poll(async()=>(await rosterGame(page)).state.turnNumber).toBe(before.state.turnNumber);const undone=await rosterGame(page);
-  expect(undone.state.organizations).toEqual(before.state.organizations);expect(undone.state.events).toEqual(before.state.events);expect(undone.state.npc).toEqual(before.state.npc);expect(calls).toHaveLength(3);
+  expect(undone.state.organizations).toEqual(before.state.organizations);expect(undone.state.events).toEqual(before.state.events);expect(undone.state.npc).toEqual(before.state.npc);expect(calls).toHaveLength(4);
 });

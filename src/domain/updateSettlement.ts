@@ -4,11 +4,11 @@ import { CountSchema, IdSchema } from './common';
 export const SettlementFieldSchema = z.enum([
   'ownerRef', 'parentId', 'createdAtGameTime', 'locationId', 'actorRef', 'actorRefs', 'linkedEventId', 'linkedTaskIds', 'predecessorEventIds',
   'protagonistEntry', 'entryIntent', 'status', 'resolvedAt', 'fixedEndAt', 'estimatedEndAt', 'lastInteractionAt', 'worldClock', 'commandId',
-  'expectedRevision', 'amount', 'price', 'healthText', 'quantity', 'name', 'type',
+  'at', 'expectedRevision', 'amount', 'price', 'healthText', 'quantity', 'name', 'type',
 ]);
 export const SkippedUpdateSchema = z.strictObject({
   commandIndex: CountSchema,
-  group: z.enum(['variables', 'worldCommands', 'taskCommands', 'eventCommands']),
+  group: z.enum(['entities', 'variables', 'worldCommands', 'taskCommands', 'eventCommands']),
   groupIndex: CountSchema,
   category: z.enum(['item', 'economy', 'person', 'task', 'event', 'world', 'state']),
   field: SettlementFieldSchema.optional(),
@@ -21,6 +21,7 @@ export const UpdateSettlementSchema = z.strictObject({
   formatWarning: z.literal(true).optional(),
 });
 export const JournalSettlementSchema = z.strictObject({
+  entities: UpdateSettlementSchema.optional(),
   variables: UpdateSettlementSchema.optional(),
   world: UpdateSettlementSchema.optional(),
   deferred: CountSchema.optional(),

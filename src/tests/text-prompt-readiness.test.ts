@@ -23,9 +23,9 @@ function input(mode:'opening'|'regular'='regular') {
 }
 const textModules=promptManifest.modules.filter(m=>m.applicableStages.join()==='variables');
 describe('文本协议真实资源与离线组装',()=>{
-  it('普通回合目录90条路径类型齐备，含一条开局专用初始化，现场任务事件复用旧命令',()=>{
+  it('普通回合目录93条路径类型齐备，含一条开局专用初始化，现场任务事件复用旧命令',()=>{
     const catalog=textVariableCatalog();
-    expect(catalog.entries).toHaveLength(90);
+    expect(catalog.entries).toHaveLength(93);
     for (const path of ['weatherText', 'environmentText']) {
       expect(catalog.entries.find(e => e.path === path)).toMatchObject({
         operation: 'set', commandType: 'SetSceneDescription', valueSchema: {type: 'string'},
@@ -33,10 +33,12 @@ describe('文本协议真实资源与离线组装',()=>{
       expect(textVariableCatalog('opening').entries.some(e => e.path === path)).toBe(false);
     }
     expect(catalog.entries).toContainEqual(expect.objectContaining({operation:'set',path:'organizations[id].state',commandType:'UpdateOrganization'}));
-    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(90);
+    expect(new Set(catalog.entries.map(e=>`${e.operation}:${e.path}`)).size).toBe(93);
     for (const field of ['name', 'aliases', 'identity', 'addressing'])
       expect(catalog.entries).toContainEqual(expect.objectContaining({ operation: 'set', path: `npc[id].${field}`, commandType: 'UpdateNpc' }));
-    expect(new Set(catalog.entries.map(e=>e.commandType)).size).toBe(30);
+    expect(new Set(catalog.entries.map(e=>e.commandType)).size).toBe(31);
+    expect(catalog.entries.some(entry => entry.commandType === 'RegisterContact')).toBe(false);
+    expect(catalog.entries.some(entry => entry.path === 'npc[id].phoneContact')).toBe(true);
     for(const e of catalog.entries)expect(e.valueSchema).toHaveProperty('$schema');
     expect(catalog.entries.some(e=>['RetireNpc'].includes(e.commandType))).toBe(false);
     // 好感唯一入口：set npc[id].affinityChange={to,reason,relationshipText}，纯数值 set/add affinity 不在目录中。
@@ -50,10 +52,10 @@ describe('文本协议真实资源与离线组装',()=>{
     expect(a).toEqual(before);
     const ids=r.modules.map(m=>m.id);
     expect(ids.filter(id=>id.startsWith('stages.'))).toEqual([`stages.${mode}.variables`]);
-    expect(ids.filter(id=>id.startsWith('variableGroups.'))).toHaveLength(9);
-    for(const group of domains)expect(ids).toContain(`variableGroups.${group}.${mode==='opening'?'init':'update'}`);
+    expect(ids.filter(id=>id.startsWith('variableGroups.'))).toHaveLength(7);
+    for(const group of domains.filter(domain=>!domain.startsWith('npc_')))expect(ids).toContain(`variableGroups.${group}.${mode==='opening'?'init':'update'}`);
     expect(ids).toContain('shared.07_command_output');
-    expect(r.context).not.toHaveProperty('COMMAND_CATALOG');expect(r.context).toHaveProperty('TEXT_COMMAND_CATALOG',textVariableCatalog(mode));
+    expect(r.context).not.toHaveProperty('COMMAND_CATALOG');expect(r.context).toHaveProperty('TEXT_COMMAND_CATALOG',textVariableCatalog(mode,'scene'));
     for(const m of textModules)expect(m.title).not.toMatch(/严格JSON|协议准备/);
     const systems=r.messages.filter(m=>m.role==='system').map(m=>m.content).join('\n');
     expect(systems).not.toContain('输出严格JSON {commands,rejectedSuggestions,unresolved}');
@@ -83,8 +85,8 @@ describe('文本协议真实资源与离线组装',()=>{
     await expect(Reflect.apply(composeTextVariablesPrompt,undefined,[dynamic])).rejects.toMatchObject({code:'configuration'});
   });
   it('九组选择与排序仍来自Manifest，不默认全加载或放宽固定顺序',async()=>{
-    const a={...input(),domains:['npc_ordinary']},r=await composeTextVariablesPrompt(a);
-    expect(r.modules.filter(m=>m.id.startsWith('variableGroups.')).map(m=>m.id)).toEqual(['variableGroups.npc_ordinary.update']);
+    const a={...input(),domains:['economy']},r=await composeTextVariablesPrompt(a);
+    expect(r.modules.filter(m=>m.id.startsWith('variableGroups.')).map(m=>m.id)).toEqual(['variableGroups.economy.update']);
     await expect(composeTextVariablesPrompt({...a,domains:['invented']})).rejects.toMatchObject({code:'configuration'});
     await expect(composeTextVariablesPrompt({...a,orderOverrides:{'stages.regular.variables':0}})).rejects.toMatchObject({code:'configuration'});
   });

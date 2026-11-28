@@ -171,11 +171,11 @@ it('同页已有请求或浏览器没有 Web Locks，拒绝覆盖且不改任何
   await expect(repo.history.restore(fresh.confirmation, '无锁', true, true)).rejects.toMatchObject({ code: 'concurrency_unavailable' });
   expect(await raw()).toEqual(before);
 });
-it('旧自动描述符无新摘要仍可读，升级 V4 不清空存档或撤回链', async () => {
+it('旧自动描述符无新摘要仍可读，当前数据库版本保留历史与撤回链', async () => {
   await turns(3); const before = await raw(), control = before.records.saveControls![0].value as { records: object[] };
   await edit('saveControls', s => s.put({ ...control, records: control.records.map(entry => { const row = { ...entry } as { summary?: unknown }; delete row.summary; return row; }) }));
   const preview = await repo.history.preview('save-a', await oldest()); expect(preview.state.turnNumber).toBe(1);
-  expect(saveDatabaseVersion).toBe(5);
+  expect(saveDatabaseVersion).toBe(13);
 });
 it('删除正式存档原子删除关联收藏；导入同 ID 备份保留收藏但标记旧时间线', async () => {
   await turns(3); await repo.history.create('save-a', '收藏');
@@ -185,14 +185,16 @@ it('删除正式存档原子删除关联收藏；导入同 ID 备份保留收藏
   const game = await repo.loadGame('save-a'); await repo.delete('save-a', game.state.revision, game.instance);
   await repo.create(worldState()); expect((await repo.history.list('save-a')).nodes).toEqual([]);
 });
-it('真实 V4 数据库升级保留五仓库全部字节语义；旧连接关闭且不能重新打开 V4', async () => {
+it.each([4, 5])('真实 V%i 数据库升级保留五仓库全部字节语义；旧连接关闭且不能重新打开旧版本', async version => {
   await turns(4); const records = (await raw()).records, legacyFactory = new IDBFactory();
   const legacy = await new Promise<IDBDatabase>((resolve, reject) => {
-    const open = legacyFactory.open('legacy-v4', 4);
+    const open = legacyFactory.open('legacy-upgrade', version);
     open.onupgradeneeded = () => {
       const db = open.result;
       for (const name of ['saves', 'drafts', 'saveControls']) db.createObjectStore(name, { keyPath: 'saveId' });
       for (const name of ['turnUndo', 'turnReceipts']) db.createObjectStore(name, { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
+      if (version === 5) for (const name of ['historyMetadata', 'historyPayloads'])
+        db.createObjectStore(name, { keyPath: ['saveId', 'id'] }).createIndex('saveId', 'saveId');
     };
     open.onsuccess = () => resolve(open.result); open.onerror = () => reject(open.error);
   });
@@ -202,12 +204,13 @@ it('真实 V4 数据库升级保留五仓库全部字节语义；旧连接关闭
     tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error);
   });
   legacy.onversionchange = () => legacy.close();
-  const upgraded = await SaveRepository.open('legacy-v4', legacyFactory);
+  const upgraded = await SaveRepository.open('legacy-upgrade', legacyFactory);
   try {
     expect((await upgraded.exportRaw('save-a')).records).toEqual(records);
+    expect(await upgraded.theaters.getOwner('save-a')).toMatchObject({ saveId: 'save-a' });
     expect((await upgraded.history.list('save-a')).nodes).toHaveLength(3);
     expect((await upgraded.history.preview('save-a', (await upgraded.history.list('save-a')).nodes[0])).state.turnNumber).toBe(1);
-    await expect(new Promise((resolve, reject) => { const open = legacyFactory.open('legacy-v4', 4); open.onerror = () => reject(open.error); open.onsuccess = () => { open.result.close(); resolve(undefined); }; })).rejects.toMatchObject({ name: 'VersionError' });
+    await expect(new Promise((resolve, reject) => { const open = legacyFactory.open('legacy-upgrade', version); open.onerror = () => reject(open.error); open.onsuccess = () => { open.result.close(); resolve(undefined); }; })).rejects.toMatchObject({ name: 'VersionError' });
   } finally { upgraded.close(); }
 });
 it('新增自动历史仍严格受 64 MiB 限制，超额不会伪造可读节点', async () => {
@@ -240,4 +243,18 @@ it('正式世界私密七字段和休眠档案压缩往返完全一致；未知�
   const dormant = hibernateNpcProfile(state, 'npc-a', state.npc['npc-a'].identityKey);
   expect(await decodeHistory(await encodeHistory(dormant))).toEqual(dormant);
   await expect(decodeHistory({ ...payload, version: 2 } as unknown as typeof payload)).rejects.toThrow();
+});
+
+it('历史回溯重新核对本档纸条，只有仍有效的确认能清理旧实例', async () => {
+  await turns(2);
+  const node = await oldest();
+  const previous = await repo.history.preview('save-a', node);
+  let sheet = await repo.readOracleNote('save-a');
+  sheet = await repo.writeOracleNote('save-a', sheet, '回溯之前的纸条', true);
+  await expect(repo.history.restore(previous.confirmation, '恢复', true, true)).rejects.toMatchObject({ code: 'HISTORY_CONFLICT' });
+  expect(await repo.readOracleNote('save-a')).toEqual(sheet);
+  const fresh = await repo.history.preview('save-a', node);
+  await repo.history.restore(fresh.confirmation, '恢复', true, true);
+  expect(await repo.readOracleNote('save-a')).toMatchObject({ note: null, history: [] });
+  await expect(repo.clearOracleHistory('save-a', sheet)).rejects.toMatchObject({ code: 'REVISION_CONFLICT' });
 });

@@ -1,10 +1,11 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { expectWorldWithNpcProjection } from './fixtures/contextAssertions';
 import { expect, it } from 'vitest';
 import { StorySchema } from '../domain/state';
 import { parseVariables } from '../services/validation/aiOutputs';
 import { timePreflight } from '../domain/timePreflight';
 import { composePrompt } from '../prompts/composer';
-import { defaultSettings } from '../ui/settings/model';
+
 import { stageContext } from './fixtures/eventStages';
 
 it('无旧邀请时真实Story结构可声明入场，保持原有标签与规划字段',()=>{
@@ -26,7 +27,7 @@ it('实际普通Story请求含新增裁定Step，原有末步顺延',async()=>{
 
 import { afterEach, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
-import { createTurnDraft, rerollStory, TurnDraftSchema } from '../domain/drafts';
+import { rerollStory, TurnDraftSchema } from '../domain/drafts';
 import { GameStateSchema } from '../domain/state';
 import { projectTurn } from '../domain/turnProjection';
 import { validateStoryEventInteractions } from '../domain/events/interactions';

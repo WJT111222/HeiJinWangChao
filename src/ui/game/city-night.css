@@ -485,7 +485,7 @@ to {transform:translateX(18%)}
 
 .app-shell-game .city-night .workflow strong .p:not(:where(.modal, .modal *)) {color:var(--dim)}
 
-.app-shell-game .city-night .rail:not(:where(.modal, .modal *)) {flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;min-width:0}
+.app-shell-game .city-night .rail:not(:where(.modal, .modal *)) {flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.35rem;min-width:0}
 
 .app-shell-game .city-night .rail li:not(:where(.modal, .modal *)) {list-style:none;min-width:0}
 
@@ -647,7 +647,7 @@ to {transform:translateX(250%)}
   .city-night .workflow-disclosure > summary strong { font-size: .8rem; font-weight: 500; white-space: nowrap; }
   .city-night .workflow-disclosure > summary strong::before, .city-night .workflow-disclosure > summary::after { content: none; }
   .city-night .workflow-toggle { font-size: .74rem; border: 1px solid var(--line-2); border-radius: 6px; padding: .2rem .6rem; flex: none; }
-  .city-night .rail { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); flex: 1; gap: .35rem; min-width: 0; }
+  .city-night .rail { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); flex: 1; gap: .35rem; min-width: 0; }
   .city-night .rail > span { min-width: 0; }
   .city-night .rail .bar-seg { display: block; }
   .city-night .rail .lbl { display: block; overflow: hidden; text-overflow: ellipsis; font-size: .66rem; margin-top: .3rem; white-space: nowrap; }
@@ -659,10 +659,12 @@ to {transform:translateX(250%)}
   .city-night .composer-footer { flex-direction: column; justify-content: space-between; gap: .4rem; }
   .city-night .composer-footer button { min-height: 0; flex: 1; padding: .6rem 1.5rem; }
   .city-night .composer-footer .kbd { display: block; }
-  .city-night > .world-sidebar { grid-column: 3; grid-row: 1 / 3; background: var(--glass); backdrop-filter: blur(18px); min-height: 0; overflow: auto; padding: .9rem .5rem; }
+  /* 标题与底部「设置／返回首页」固定，只让中间的资料列表滚动。 */
+  .city-night > .world-sidebar { grid-column: 3; grid-row: 1 / 3; background: var(--glass); backdrop-filter: blur(18px); min-height: 0; overflow: hidden; padding: .9rem .5rem; }
   .city-night > .world-sidebar nav button { min-height: 0; flex: none; }
-  .city-night > .world-sidebar h2 { font-size: .56rem; }
-  .city-night > .world-sidebar .dock-system { margin-top: auto; padding-top: .6rem; }
+  .city-night > .world-sidebar h2 { font-size: .56rem; flex: none; }
+  .city-night > .world-sidebar > nav:not(.dock-system) { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  .city-night > .world-sidebar .dock-system { flex: none; margin-top: auto; padding-top: .6rem; }
   .city-night .atmo .skyline { margin: 0; border: 0; }
   .city-night .atmo [style*="home-train"] { animation: city-night-train 14s linear infinite !important; }
   .app-shell-game .city-night > .mobile-game-nav { display: none; }

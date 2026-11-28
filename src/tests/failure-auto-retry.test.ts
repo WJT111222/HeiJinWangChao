@@ -1,3 +1,4 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { AiClient } from '../services/ai/client';
@@ -5,10 +6,10 @@ import { AiError, manualRetryOnly } from '../services/ai/errors';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import type { AiStage } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
-import { createTurnDraft } from '../domain/drafts';
+
 import { SaveRepository } from '../services/storage/saveRepository';
 import { DataError } from '../domain/common';
-import { defaultSettings, SettingsSchema } from '../ui/settings/model';
+import { SettingsSchema } from '../ui/settings/model';
 import { TurnCoordinator } from '../workflows/turnCoordinator';
 import { VariableStage } from '../workflows/variableStage';
 import { reserveStageSession, withHeldStageLock } from '../workflows/stageGuard';
@@ -191,7 +192,7 @@ describe('失败自动重试', () => {
     const draft = createTurnDraft('save-a', 0, 'turn-a', 'opening', '');
     await repo.saveDraft(draft, null);
     retryDelays.scale = 0;
-    const counts = { story: 0, variables: 0, world: 0 };
+    const counts = { story: 0, entities: 0, variables: 0, world: 0 };
     const failures: string[] = [];
     const coordinator = new TurnCoordinator(repo, new AiClient(async (_url, init) => {
       const stage = model(init);
@@ -206,7 +207,7 @@ describe('失败自动重试', () => {
         onAttemptFailure: (_stage, error) => { failures.push(error instanceof AiError ? error.code : 'other'); },
       });
       expect(result.status).toBe('complete');
-      expect(counts).toEqual({ story: 1, variables: 4, world: 1 });
+      expect(counts).toEqual({ story: 1, entities:0, variables: 4, world: 1 });
       expect(failures).toHaveLength(3);
       expect((await repo.load('save-a')).turnNumber).toBe(0);
     } finally {

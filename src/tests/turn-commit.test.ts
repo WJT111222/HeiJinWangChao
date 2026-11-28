@@ -1,3 +1,4 @@
+import { startStageAttempt } from '../domain/drafts';
 import { history } from './fixtures/historyRecord';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
@@ -199,19 +200,8 @@ describe('真实 Repository → 候选重验 → 单事务正式结算', () => {
   });
   it('关闭阶段但复用候选也不能冒充完整提交', async () => {
     const draft = await completeDraft(repo);
-    const changed = await repo.saveDraft(
-      {
-        ...draft,
-        draftRevision: draft.draftRevision + 1,
-        executionRevision: 1,
-        requestedStages: ['world'],
-        stageRequestRevisions: { variables: 0, world: 1 },
-        useVariableStage: false,
-        world: undefined,
-        stageStatus: { ...draft.stageStatus, world: 'pending' },
-      },
-      draft.draftRevision,
-    );
+    const changed = await repo.saveDraft(startStageAttempt(draft,['world'],{useVariableStage:false}),draft.draftRevision);
+    expect(changed.inactiveCandidates?.variables).toEqual(draft.variables);
     await unchanged(submission(changed));
   });
   it('世界 preview 不得提交，错误变量依赖版本亦拒绝', async () => {
@@ -624,7 +614,7 @@ describe('最终重验与存储兼容', () => {
     legacy.close();
     repo = await SaveRepository.open('legacy', legacyFactory);
     expect(await repo.loadGame('save-a')).toEqual({ state, draft });
-    expect((await repo.load('save-a')).schemaVersion).toBe(10);
+    expect((await repo.load('save-a')).schemaVersion).toBe(11);
   });
   it('删除存档时回执一并删除，不污染同 ID 的新游戏', async () => {
     const draft = await completeDraft(repo);

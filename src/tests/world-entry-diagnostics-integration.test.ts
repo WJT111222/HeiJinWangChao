@@ -1,3 +1,4 @@
+import { sceneWorldSettings as defaultSettings } from './fixtures/stageScope';
 import { IDBFactory } from 'fake-indexeddb';
 import { expect, it } from 'vitest';
 import { TurnDraftSchema } from '../domain/drafts';
@@ -8,7 +9,7 @@ import { parseStory, parseTextVariables, parseWorld } from '../services/validati
 import { validateTurnCandidates } from '../services/validation/turnCommit';
 import { eventEntryReasonNames } from '../services/validation/worldDiagnostics';
 import { worldNormalizationNotes } from '../services/validation/worldSceneWrites';
-import { defaultSettings } from '../ui/settings/model';
+
 import { runtimeLogEvent } from '../ui/game/runtimeLog';
 import { endStage, stageCommand } from './fixtures/eventStages';
 import { handoffDeadline, issue194 } from './fixtures/issue194';

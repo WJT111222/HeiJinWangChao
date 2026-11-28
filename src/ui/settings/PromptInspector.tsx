@@ -1,5 +1,6 @@
+import { nativeLiteraryModule, storyModuleText } from '../../prompts/literaryStory';
 import { narrativeRange } from './model';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { promptManifest } from '../../prompts/manifest';
 import type { OfficialId, OfficialSelection } from '../../domain/worldbook/mainWorldbook';
 import { WorldbookLibrary } from '../../services/storage/worldbookLibrary';
@@ -29,8 +30,8 @@ import './prompt-manager.css';
 
 const stages: Record<AiTask, string> = {
   story: '正文生成',
-  variables: '变量管理',
-  world: '动态世界',
+  entities: '人物与实体', variables: '主角与现场',
+  world: '场外与网络',
   memory: '记忆维护（独立任务）',
 };
 const categories: Record<string, string> = {
@@ -61,7 +62,7 @@ const groups = [
 ] as const;
 type GroupKey = (typeof groups)[number]['key'];
 const groupOf = (item: PromptModule) => groups.find((group) => (group.categories as readonly string[]).includes(item.category))!;
-const stageNames: Record<string, string> = { story: '正文', variables: '变量', world: '世界', memory: '记忆' };
+const stageNames: Record<string, string> = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', memory: '记忆' };
 const domainNames: Record<string, string> = {
   protagonist: '主角', npc_ordinary: '普通NPC', npc_special: '特殊NPC', items: '重要物品', economy: '经济与资产',
   org_gang: '黑帮势力', org_government: '官方势力', org_civil: '民间组织', org_business: '企业与资本势力',
@@ -72,11 +73,12 @@ const switchFields = ['noControl', 'naturalProse', 'actionOptions', 'realWorld']
 type SwitchField = (typeof switchFields)[number];
 type PromptSettings = Settings['prompts'];
 /* 状态只看 manifest 和当前写作偏好，不依赖「高级」里选的阶段与模式。 */
-function moduleState(item: PromptModule, prompts: PromptSettings, flags?: OfficialSelection): { kind: 'switch'; field: SwitchField } | { kind: 'always' | 'ondemand' | 'never' | 'current' | 'unused'; label: string } {
+function moduleState(item: PromptModule, prompts: PromptSettings, presetOwnsWriting: boolean, flags?: OfficialSelection): { kind: 'switch'; field: SwitchField } | { kind: 'always' | 'ondemand' | 'never' | 'current' | 'unused'; label: string } {
   if (item.activation === 'main-worldbook') {
     if (!flags) return { kind: 'ondemand', label: '待读取开关' };
     return flags[item.id as OfficialId] ? { kind:'current', label:'已启用' } : { kind:'unused', label:'已关闭' };
   }
+  if (presetOwnsWriting && nativeLiteraryModule(item.id)) return { kind: 'unused', label: '由当前文学预设接管' };
   if (item.toggle) {
     const [field, value] = item.toggle.split(':');
     if ((switchFields as readonly string[]).includes(field)) return { kind: 'switch', field: field as SwitchField };
@@ -91,7 +93,7 @@ function moduleState(item: PromptModule, prompts: PromptSettings, flags?: Offici
   return { kind: 'always', label: '常驻' };
 }
 function usage(item: PromptModule) {
-  const used = item.applicableStages.map((value) => stageNames[value]).join('、');
+  const used = item.applicableStages.map((value) => value === 'theater' ? '小剧场' : stageNames[value]).join('、');
   if (item.toggle && (switchFields as readonly string[]).includes(item.toggle.split(':')[0]))
     return `打开时，每次${used}请求都会带上；关闭后不发送。和「提示词」页的同名开关是同一个设置。`;
   if (item.toggle?.startsWith('perspective') || item.toggle?.startsWith('style'))
@@ -103,6 +105,7 @@ function usage(item: PromptModule) {
     always: `每次${used}请求都会带上。`,
     setting: `随设置开关，发送给${used}阶段。`,
     'relevant-domain': `本回合涉及「${domainNames[item.domain ?? ''] ?? item.domain}」时，才会加进${used}请求。`,
+    'history-recording': '回顾往事或场外阶段可能记录当回合结案时加载。',
     'memory-task': '只在记忆维护任务里使用。',
     'protocol-compatibility': '模型协议需要兼容处理时才会带上。',
     'creation-action': '仅点击对应的创角 AI 补全按钮时使用。',
@@ -132,19 +135,35 @@ function configuration() {
   }
 }
 export function PromptInspector({
-  settings,
+  settings, presetOwnsWriting = false,
   repository,
   activeSaveId,
   onPromptChange,
+  onOrderDirtyChange,
+  onTheaterPromptChange,
 }: {
   settings: Settings;
+  presetOwnsWriting?: boolean;
+  onOrderDirtyChange?: (value: boolean) => void;
   repository?: SaveRepository;
   activeSaveId?: string;
+  onTheaterPromptChange?: (value?: string) => void;
   onPromptChange?: <K extends keyof PromptSettings>(key: K, value: PromptSettings[K]) => void;
 }) {
   const [initial] = useState(initialOrder);
+  const [theaterDefault, setTheaterDefault] = useState<string>();
+  const [theaterResourceError, setTheaterResourceError] = useState(false);
+  const editTheater = Boolean(onTheaterPromptChange);
+  useEffect(() => {
+    if (!editTheater) return;
+    let active = true;
+    void readPromptResource('theater.novel').then(text => { if (active) setTheaterDefault(text); },
+      () => { if (active) setTheaterResourceError(true); });
+    return () => { active = false; };
+  }, [editTheater]);
   const [orders, setOrders] = useState(initial.orders);
   const [dirty, setDirty] = useState(false);
+  useLayoutEffect(() => { onOrderDirtyChange?.(dirty); }, [dirty, onOrderDirtyChange]);
   const [notice, setNotice] = useState(initial.error);
   const [stage, setStage] = useState<AiStage>('story');
   const [mode, setMode] = useState<'opening' | 'regular'>('opening');
@@ -239,7 +258,8 @@ export function PromptInspector({
     readPromptResource(moduleId)
       .then((text) => {
         if (!disposed) {
-          setSource(text);
+          const selected = promptManifest.modules.find(item => item.id === moduleId);
+          setSource(selected ? storyModuleText(selected, text, presetOwnsWriting) ?? text : text);
           setSourceModuleId(moduleId);
         }
       })
@@ -249,7 +269,7 @@ export function PromptInspector({
     return () => {
       disposed = true;
     };
-  }, [moduleId]);
+  }, [moduleId, presetOwnsWriting]);
   function invalidate() {
     generation.current++;
     setPreviews({});
@@ -363,7 +383,7 @@ export function PromptInspector({
     setPage('read');
   }
   function control(item: PromptModule) {
-    const state = moduleState(item, settings.prompts, flags);
+    const state = moduleState(item, settings.prompts, presetOwnsWriting, flags);
     if (state.kind === 'switch') {
       const checked = settings.prompts[state.field];
       return (
@@ -380,18 +400,18 @@ export function PromptInspector({
     return <span className={`pm-state ${state.kind}`}>{state.label}</span>;
   }
   const effectiveOn = (item: PromptModule) => {
-    const state = moduleState(item, settings.prompts, flags);
+    const state = moduleState(item, settings.prompts, presetOwnsWriting, flags);
     return state.kind === 'switch' ? settings.prompts[state.field] : state.kind !== 'never' && state.kind !== 'unused';
   };
   const meta = (item: PromptModule) =>
     [
       groupOf(item).label,
       `${item.characters.toLocaleString()} 字`,
-      item.applicableStages.map((value) => stageNames[value]).join(' / '),
+      item.applicableStages.map((value) => value === 'theater' ? '小剧场' : stageNames[value]).join(' / '),
     ]
       .filter(Boolean)
       .join(' · ');
-  const currentState = module ? moduleState(module, settings.prompts, flags) : undefined;
+  const currentState = module ? moduleState(module, settings.prompts, presetOwnsWriting, flags) : undefined;
   const variableFormats = variable
     ? (['json', 'text'] as const).filter((format) => {
         const target = variableModule(variable.domain, variable.part, format);
@@ -408,6 +428,15 @@ export function PromptInspector({
             <span aria-hidden="true">⚙</span>高级
           </button>
         </div>
+        {onTheaterPromptChange && <details className="card">
+          <summary>小剧场提示词</summary>
+          <label>小剧场创作提示词
+            <textarea rows={7} maxLength={8000} value={settings.theaterPrompt ?? theaterDefault ?? ''}
+              disabled={!theaterDefault} onChange={event => onTheaterPromptChange(event.target.value)} />
+          </label>
+          {theaterResourceError && <p role="alert">无法读取默认小剧场提示词。</p>}
+          <button type="button" onClick={() => onTheaterPromptChange()}>恢复小剧场默认提示词</button>
+        </details>}
         {initial.error && notice === initial.error && (
           <p className="notice" role="alert">
             {notice}
@@ -511,7 +540,7 @@ export function PromptInspector({
             <p className="pm-chips">
               <span>{groupOf(module).label}</span>
               <span>{module.characters.toLocaleString()} 字</span>
-              <span>{module.applicableStages.map((value) => stageNames[value]).join(' / ') || (module.activation === 'creation-action' ? '创角' : '不注入')}</span>
+              <span>{module.applicableStages.map((value) => value === 'theater' ? '小剧场' : stageNames[value]).join(' / ') || (module.activation === 'creation-action' ? '创角' : '不注入')}</span>
               <span>{currentState?.kind === 'switch' ? '可开关' : currentState?.label}</span>
             </p>
             {variable && (
@@ -544,7 +573,7 @@ export function PromptInspector({
             )}
             <p className="pm-when">
               <b>什么时候用</b>
-              <span>{usage(module)}</span>
+              <span>{presetOwnsWriting && nativeLiteraryModule(module.id) ? '原生写作要求已停用，当前使用预设控制台中的文学选项。' : usage(module)}</span>
             </p>
             {currentState?.kind === 'switch' && (
               <label className="pm-when pm-toggle">
@@ -681,7 +710,7 @@ export function PromptInspector({
             disabled={!repository || !saveId || busy}
             onClick={() => void assemble()}
           >
-            {busy ? '组装中…' : '生成三阶段组装预览（不联网）'}
+            {busy ? '组装中…' : '生成四阶段组装预览（不联网）'}
           </button>
         </div>
         {!saveId && <p className="notice">没有已选存档，无法组装游戏上下文。模块资源仍可浏览。</p>}
@@ -852,7 +881,7 @@ export function PromptInspector({
                     此阶段/模式没有实际请求快照。正文、变量和世界支持手动生成；不会用组装预览冒充发送。
                   </p>
                 )}
-                <p>记忆维护快照在选择请求中独立标识，不属于三阶段或开局/普通回合预览。</p>
+                <p>记忆维护快照在选择请求中独立标识，不属于四阶段或开局/普通回合预览。</p>
                 <label>
                   选择请求
                   <select
@@ -863,7 +892,7 @@ export function PromptInspector({
                     {availableRecords.map((record) => (
                       <option key={record.id} value={record.id}>
                         {record.scope
-                          ? record.scope.kind === 'memory' ? `记忆维护 ${record.scope.memoryTask}` : `${record.scope.mode} ${stages[record.stage]}`
+                          ? record.scope.kind === 'memory' ? `记忆维护 ${record.scope.memoryTask}` : `${record.scope.mode} ${record.stage === 'imagePrompt' ? '生图提示词' : record.stage === 'theater' ? '小剧场' : record.stage === 'phone' ? '手机私聊' : stages[record.stage]}`
                           : '连接测试（非游戏阶段）'}{' '}
                         · {record.createdAt} · {record.status}
                       </option>
@@ -887,7 +916,7 @@ export function PromptInspector({
                     </p>
                     <p>
                       {actual.scope
-                        ? actual.scope.kind === 'memory' ? `记忆维护 / ${actual.scope.memoryTask} / 存档版本 ${actual.scope.revision}` : `${actual.scope.mode} / ${stages[actual.stage]} / 存档版本 ${actual.scope.revision}`
+                        ? actual.scope.kind === 'memory' ? `记忆维护 / ${actual.scope.memoryTask} / 存档版本 ${actual.scope.revision}` : `${actual.scope.mode} / ${actual.stage === 'imagePrompt' ? '生图提示词' : actual.stage === 'theater' ? '小剧场' : actual.stage === 'phone' ? '手机私聊' : stages[actual.stage]} / 存档版本 ${actual.scope.revision}`
                         : '连接测试；没有游戏阶段或模块组装'}
                     </p>
                     <p>

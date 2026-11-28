@@ -1,5 +1,6 @@
 import { timeoutKinds } from '../../presets/tavern/timing';
 import { z } from 'zod';
+import { openingTimeFailureReasons } from '../../domain/openingTime';
 import { PRODUCT_VERSION } from '../../app/product';
 import { modelIdSchema } from './configuration';
 import { browserCredentials } from './credentials';
@@ -17,7 +18,7 @@ export const upstreamClasses = [
 export const failurePhases = [
   'request_build', 'preset_init', 'upstream_connect', 'awaiting_headers', 'awaiting_bytes',
   'upstream_read', 'upstream_error', 'tool_parse', 'wrapper_restore', 'story_validation',
-  'candidate_save', 'unknown',
+  'candidate_save', 'commit_validation', 'unknown',
 ] as const;
 export const retryStops = [
   'disabled', 'budget', 'cancelled', 'quota', 'relay_manual', 'tavern_manual', 'program',
@@ -51,7 +52,7 @@ const phaseNames: Record<(typeof failurePhases)[number], string> = {
   awaiting_headers: '等待响应头', awaiting_bytes: '等待首个响应数据', upstream_read: '上游响应读取',
   upstream_error: '上游错误对象或 SSE 错误事件', tool_parse: '工具调用结果解析',
   wrapper_restore: '预设包装与正文还原', story_validation: '正文结构校验', candidate_save: '候选保存',
-  unknown: '未知',
+  commit_validation: '正式结算校验', unknown: '未知',
 };
 const classNames: Record<(typeof upstreamClasses)[number], string> = {
   overload: '服务过载', rate_limit: '临时限流', quota: '明确额度不足', authorization: '鉴权失败',
@@ -103,6 +104,13 @@ export const failureDiagnosticSchema = z.strictObject({
   parseInputChars: count.optional(),
   complete: z.boolean().optional(),
   phase: z.enum(failurePhases).optional(),
+  openingTime: z.strictObject({
+    pending: z.boolean(),
+    useVariableStage: z.boolean(),
+    useWorldStage: z.boolean(),
+    clockSource: z.enum(['story', 'variables', 'none']),
+    reason: z.enum(openingTimeFailureReasons),
+  }).optional(),
   upstreamClass: z.enum(upstreamClasses).optional(),
   upstreamCode: z.string().regex(token).optional(),
   upstreamType: z.string().regex(token).optional(),

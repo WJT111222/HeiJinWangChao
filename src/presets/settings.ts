@@ -17,7 +17,8 @@ export function readPresetSettings(
   storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage,
 ): PresetSettings {
   const raw = storage?.getItem(presetSettingsKey);
-  return raw == null ? defaults() : schema.parse(JSON.parse(raw));
+  if (raw == null) return defaults();
+  return schema.parse(JSON.parse(raw));
 }
 export function savePresetSettings(
   settings: PresetSettings,

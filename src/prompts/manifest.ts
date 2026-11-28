@@ -2,7 +2,7 @@ import { STORY_STYLE_IDS } from '../ui/settings/storyStyles';
 import { z } from 'zod';
 import source from '../../prompts/manifest.json';
 
-const StageSchema = z.enum(['story', 'variables', 'world', 'memory']);
+const StageSchema = z.enum(['story', 'entities', 'variables', 'world', 'memory', 'theater']);
 const ModeSchema = z.enum(['opening', 'regular']);
 const ModuleSchema = z.strictObject({
   id: z.string().min(1),
@@ -21,6 +21,7 @@ const ModuleSchema = z.strictObject({
     'main-worldbook',
     'setting',
     'relevant-domain',
+    'history-recording',
     'memory-task',
     'protocol-compatibility',
     'creation-action',
@@ -199,7 +200,7 @@ export const PromptManifestSchema = z
         );
       }
     }
-    for (const stage of ['story', 'variables', 'world'] as const) {
+    for (const stage of ['story', 'entities', 'variables', 'world'] as const) {
       for (const mode of ['opening', 'regular'] as const) {
         const main = modules.filter(
           (m) => m.category === 'stage' && m.applicableStages.includes(stage) && m.modes.includes(mode),
@@ -214,7 +215,7 @@ export const PromptManifestSchema = z
     check(
       prefix.every(
         (m, index) =>
-          !!m && (index === 0 ? m.permanent && !m.configurable : m.activation === 'main-worldbook' && m.configurable && m.applicableStages.join() === 'story,variables,world') &&
+          !!m && (index === 0 ? m.permanent && !m.configurable : m.activation === 'main-worldbook' && m.configurable && m.applicableStages.join() === 'story,entities,variables,world') &&
           m.messageRole === 'system' &&
           !m.reorderable &&
           m.modes.length === 2,

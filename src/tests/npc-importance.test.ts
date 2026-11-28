@@ -144,7 +144,7 @@ it('新能力不扩大World权限，不允许World升级或填写新的Variables
 
 it('V10存档保留身份/原始记忆/初始同伴，读取不自动声明玩家选择',()=>{
   const raw=unifiedNpcMemories();
-  const before=structuredClone(raw),state=migrateSave(raw);expect(state.schemaVersion).toBe(10);expect(raw).toEqual(before);
+  const before=structuredClone(raw),state=migrateSave(raw);expect(state.schemaVersion).toBe(11);expect(raw).toEqual(before);
   expect(state.npc['npc-a'].memories).toHaveLength(21);expect(state.npc['npc-a'].importancePreference).toBeUndefined();
 });
 
@@ -195,7 +195,7 @@ it.each(['没有姓名的过路人递来纸巾。','店员完成一次结账，�
  const state=worldState(),draft=input(state);draft.story!.narrative='【旁白】'+narrative;
  const result=await parseTextVariables(response('set protagonist.emotionText = "感谢对方的帮助"'),state,draft);
  expect(result.commands).toHaveLength(1);expect(result.commands[0].type).toBe('UpdateProtagonist');expect(Object.keys(state.npc)).toEqual(Object.keys(worldState().npc));
- const request=await composePrompt({stage:'variables',mode:'opening',state,draft,settings:defaultSettings(),userInput:'继续'}),text=request.messages.map(m=>m.content).join('\n');
+ const request=await composePrompt({stage:'entities',mode:'opening',state,draft,settings:defaultSettings(),userInput:'继续'}),text=request.messages.map(m=>m.content).join('\n');
  expect(text).toContain('不编造无名路人姓名');expect(text).toContain('事件追踪价值');
 });
 

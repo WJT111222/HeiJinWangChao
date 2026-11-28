@@ -40,7 +40,7 @@ const npcChanges = OrdinaryNpcSchema.pick({
   lastInteractionAt: true,
   gender: true,
   addressing: true,
-  phoneContact: true, usualLocations: true,
+  appearedInStory: true, phoneContact: true, usualLocations: true,
 })
   .partial()
   .extend({
@@ -164,6 +164,7 @@ export function applyVariableCommand(
   turnId: string,
   newEntity: (id: string) => void,
   debit: (account: 'cash' | 'onlineBalance', amount: number) => void,
+  pendingSceneClock = false,
 ) {
   if ('expectedRevision' in command)
     requireData(
@@ -226,7 +227,7 @@ export function applyVariableCommand(
       }
       if (command.changes.lastInteractionAt)
         requireData(
-          Date.parse(command.changes.lastInteractionAt) <= Date.parse(state.worldClock) &&
+          (pendingSceneClock || Date.parse(command.changes.lastInteractionAt) <= Date.parse(state.worldClock)) &&
             (!npc.lastInteractionAt ||
               Date.parse(command.changes.lastInteractionAt) >= Date.parse(npc.lastInteractionAt)),
           'NPC_TIME',
@@ -281,7 +282,7 @@ export function applyVariableCommand(
         memory.sourceTurnIds.length === 1 &&
           memory.sourceTurnIds[0] === turnId &&
           memory.affectedEntityRefs.some((ref) => ref.kind === 'npc' && ref.id === npc.id) &&
-          Date.parse(memory.createdAtGameTime) <= Date.parse(state.worldClock),
+          (pendingSceneClock || Date.parse(memory.createdAtGameTime) <= Date.parse(state.worldClock)),
         'MEMORY_SOURCE',
         '记忆缺少当前回合、人物或合法时间来源',
       );

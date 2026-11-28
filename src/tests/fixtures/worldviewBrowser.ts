@@ -48,6 +48,7 @@ export async function action(
     | 'import'
     | 'view'
     | 'story'
+    | 'entities'
     | 'variables'
     | 'world'
     | 'commit'
@@ -101,14 +102,14 @@ export async function action(
     channel.baseUrl = 'https://worldview-source.mock.invalid/v1';
     config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: 'story' };
-    for (const stage of ['variables', 'world'] as const)
+    for (const stage of ['entities', 'variables', 'world'] as const)
       config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     const vault = new CredentialVault(sessionStorage, localStorage);
     vault.set(channel.id, 'mock-source-key');
     const settings = defaultSettings();
     settings.prompts.actionOptions = false;
     settings.prompts.minNarrativeChars = 5;
-    settings.runtime.streamStory = settings.runtime.streamVariables = settings.runtime.streamWorld = false;
+    settings.runtime.streamEntities = settings.runtime.streamStory = settings.runtime.streamVariables = settings.runtime.streamWorld = false;
     if (op === 'configure') {
       localStorage.setItem(settingsKey, JSON.stringify(settings));
       saveAiConfig(localStorage, config);
@@ -128,7 +129,7 @@ export async function action(
         activeStory = undefined;
       }
     }
-    if (op === 'variables') return await new VariableStage(repo).generate(input);
+    if (op === 'variables' || op === 'entities') return await new VariableStage(repo, undefined, undefined, op).generate(input);
     return await new WorldStage(repo).generate(input);
   } finally {
     repo.close();

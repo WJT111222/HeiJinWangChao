@@ -1,3 +1,4 @@
+import { ImageEntry } from '../images/ImageGallery';
 import type { CSSProperties, ReactNode } from 'react';
 import { useState } from 'react';
 import type { PlayerView } from './playerView';
@@ -61,7 +62,8 @@ export function EconomyPanel({ view,mobile=false }: { view:PlayerView;mobile?:bo
         return <section key={kind}><div className="asset-k"><h4>{label}</h4><span>{entries.length}</span></div>
           {entries.length ? <Records label={`${label}记录`} entries={entries} text={a=>`${a.name} ${a.statusText} ${a.source}`} render={asset=><article className="asset" data-asset-id={asset.id}>
             <span className="ic"><AssetIcon kind={asset.kind}/></span><h4>{asset.name}</h4><span className={`val ${asset.estimatedValue===null?'null':''}`}>估值 {money(asset.estimatedValue)}</span>
-            {asset.kind==='vehicle'&&<span className="src">{asset.model}{asset.plate?` · ${asset.plate}`:''}{asset.id===view.protagonist.currentWear.currentVehicleAssetId?' · 当前载具':''}</span>}
+            {asset.kind==='vehicle'&&<ImageEntry kind="vehicle" id={asset.id}/>}
+          {asset.kind==='vehicle'&&<span className="src">{asset.model}{asset.plate?` · ${asset.plate}`:''}{asset.id===view.protagonist.currentWear.currentVehicleAssetId?' · 当前载具':''}</span>}
             <span className="st">{asset.statusText}</span><span className="src">来源：{asset.source}</span>
             {'locationId' in asset&&asset.locationId&&<span className="src">地点：{location(asset.locationId)}</span>}
             {asset.acquiredAt&&<span className="src">取得时间：{dateTime(asset.acquiredAt)}</span>}

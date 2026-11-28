@@ -11,18 +11,18 @@ test.beforeEach(async({page})=>{
 });
 async function enter(page:Page,long=false){await seedNightSeal(page,long);await page.goto('/#game/save-a');await page.reload();await expect(page.getByTestId('story-reader')).toBeVisible();}
 async function noOverflow(page:Page){expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.documentElement.scrollHeight<=innerHeight)).toBe(true);}
-async function workflow(page:Page){await page.getByRole('button',{name:'三阶段工作流详情',exact:true}).click();return page.getByRole('dialog',{name:'三阶段工作流',exact:true});}
+async function workflow(page:Page){await page.getByRole('button',{name:'四阶段工作流详情',exact:true}).click();return page.getByRole('dialog',{name:'四阶段工作流',exact:true});}
 
 for(const [width,height] of [[375,667],[390,844],[430,932],[750,800],[900,800]])test(`手机骨架 ${width}×${height}：真实数据、建议、发送和抽屉`,async({page})=>{
  await page.setViewportSize({width,height});await enter(page);const before=await nightSealStored(page);
- await expect(page.locator('.mobile-city-pill')).toBeVisible();await expect(page.locator('.player-status')).toHaveCount(0);await expect(page.locator('.atmo')).toHaveAttribute('data-city','cq');await expect(page.locator('.mobile-game-nav button')).toHaveCount(4);
+ await expect(page.locator('.mobile-city-pill')).toBeVisible();await expect(page.locator('.player-status')).toHaveCount(0);await expect(page.locator('.atmo')).toHaveAttribute('data-city','cq');await expect(page.locator('.mobile-game-nav button')).toHaveCount(5);await expect(page.locator('.mobile-game-nav button').nth(3)).toHaveAttribute('data-phone-entry','mobile');
  const input=page.getByLabel('你的行动',{exact:true}),send=page.getByRole('button',{name:'发送',exact:true});await expect(input).toHaveCSS('font-size','16px');await expect(send).toBeDisabled();await expect(send).toBeInViewport({ratio:1});
  await page.getByTestId('story-reader').evaluate(e=>{e.scrollTop=0;});await page.screenshot({path:`${shots}/react-main-${width}.png`});
  const option=page.locator('.rail-cards .opt').first();await option.scrollIntoViewIfNeeded();await option.click();await expect(option.locator('.go')).toBeVisible();await expect(input).toHaveValue('回复编辑，确认明天的会面');await expect(option).toHaveAttribute('aria-pressed','true');await expect(send).toBeEnabled();await expect(input).toBeFocused();
  await input.fill('长输入测试。'.repeat(100));expect((await input.boundingBox())!.height).toBeLessThanOrEqual(120);await expect(send).toBeInViewport({ratio:1});await input.fill('');
- const box=await input.boundingBox(),sheet=await workflow(page);await expect(sheet).toBeFocused();await expect(sheet).toHaveAttribute('aria-modal','false');await expect(sheet.locator('.workflow-stages>li')).toHaveCount(3);await page.screenshot({path:`${shots}/react-workflow-${width}.png`});await page.keyboard.press('Escape');await expect(sheet).toHaveCount(0);await expect(page.getByRole('button',{name:'三阶段工作流详情'})).toBeFocused();expect(await input.boundingBox()).toEqual(box);
+ const box=await input.boundingBox(),sheet=await workflow(page);await expect(sheet).toBeFocused();await expect(sheet).toHaveAttribute('aria-modal','false');await expect(sheet.locator('.workflow-stages>li')).toHaveCount(4);await page.screenshot({path:`${shots}/react-workflow-${width}.png`});await page.keyboard.press('Escape');await expect(sheet).toHaveCount(0);await expect(page.getByRole('button',{name:'四阶段工作流详情'})).toBeFocused();expect(await input.boundingBox()).toEqual(box);
  await page.locator('.mobile-city-pill').click();const status=page.getByRole('dialog',{name:'此时此地',exact:true});await expect(status.locator('.wear dd')).toHaveCount(7);await expect(status).toContainText('身体');await expect(status).toContainText('情绪');await page.screenshot({path:`${shots}/react-status-${width}.png`});await page.keyboard.press('Escape');await expect(page.locator('.mobile-city-pill')).toBeFocused();
- await page.getByRole('button',{name:'世界资料',exact:true}).click();const world=page.getByRole('dialog',{name:'世界资料',exact:true});await expect(world.getByRole('navigation').getByRole('button')).toHaveCount(7);await page.screenshot({path:`${shots}/react-world-${width}.png`});await world.getByRole('button',{name:'NPC',exact:true}).click();await expect(world).toHaveCount(0);await expect(page.getByRole('dialog',{name:'NPC',exact:true})).toBeVisible();await page.keyboard.press('Escape');await expect(page.locator('[data-mobile-tab=world]')).toBeFocused();
+ await page.getByRole('button',{name:'世界资料',exact:true}).click();const world=page.getByRole('dialog',{name:'世界资料',exact:true});await expect(world.getByRole('navigation').getByRole('button')).toHaveCount(10);await page.screenshot({path:`${shots}/react-world-${width}.png`});await world.getByRole('button',{name:'NPC',exact:true}).click();await expect(world).toHaveCount(0);await expect(page.getByRole('dialog',{name:'NPC',exact:true})).toBeVisible();await page.keyboard.press('Escape');await expect(page.locator('[data-mobile-tab=world]')).toBeFocused();
  await page.getByRole('button',{name:'打开游戏菜单'}).click();const menu=page.getByRole('dialog',{name:'游戏菜单',exact:true});await expect(menu.getByRole('button')).toHaveCount(4);await page.screenshot({path:`${shots}/react-menu-${width}.png`});await menu.getByRole('button',{name:'关闭',exact:true}).click();await expect(page.getByRole('button',{name:'打开游戏菜单'})).toBeFocused();
  expect(await nightSealStored(page)).toEqual(before);await noOverflow(page);
 });
@@ -42,13 +42,13 @@ async function seedWorkflow(page:Page,mode:'opening'|'ready'|'error',long=false)
 for(const mode of ['opening','ready','error'] as const)test(`工作流 ${mode}：保留全部操作、候选与正式状态`,async({page})=>{
  await seedWorkflow(page,mode);const before=await nightSealStored(page);
  if(mode==='opening'){await expect(page.locator('.mobile-city-pill')).toContainText('--:--');await page.locator('.mobile-city-pill').click();await expect(page.getByRole('dialog',{name:'此时此地'})).toContainText('开局时间待确认');await expect(page.locator('.st-place')).not.toContainText('早晨');await page.keyboard.press('Escape');await openTurnTools(page);await expect(page.getByRole('button',{name:'生成开局正文',exact:true})).toBeVisible();await page.keyboard.press('Escape');}
- const sheet=await workflow(page);await expect(sheet.locator('.workflow-stages>li')).toHaveCount(3);await expect(sheet.getByRole('checkbox',{name:'变量管理',exact:true})).toBeChecked();await expect(sheet.getByRole('checkbox',{name:'动态世界',exact:true})).toBeChecked();
+ const sheet=await workflow(page);await expect(sheet.locator('.workflow-stages>li')).toHaveCount(4);await expect(sheet.getByRole('checkbox',{name:'主角与现场',exact:true})).toBeChecked();await expect(sheet.getByRole('checkbox',{name:'场外与网络',exact:true})).toBeChecked();
  if(mode==='ready'){
   await expect(sheet.getByRole('button',{name:'完成本回合结算',exact:true})).toBeEnabled();
   for(const [stage,label] of [['variables','变量'],['world','世界']] as const){
    const candidate=await openStageCandidates(page,stage);await expect(candidate).toBeVisible();await expect(candidate.getByLabel(`完整${label}候选`,{exact:true})).toHaveCount(0);
    await candidate.getByRole('button',{name:`主动查看完整${label}候选`,exact:true}).click();await expect(candidate.getByLabel(`完整${label}候选`,{exact:true})).not.toBeEmpty();
-   await sheet.getByRole('button',{name:'返回三阶段列表',exact:true}).click();await expect(sheet).toBeVisible();await expect(sheet.locator('.workflow-stages>li').nth(stage==='variables'?1:2).locator('.wf-ri')).toBeFocused();
+   await sheet.getByRole('button',{name:'返回四阶段列表',exact:true}).click();await expect(sheet).toBeVisible();await expect(sheet.locator(`.workflow-stages > li[data-stage=${stage}]`).locator('.wf-ri')).toBeFocused();
   }
  }
  if(mode==='error'){await expect(sheet.getByRole('button',{name:'继续未完成阶段',exact:true})).toBeEnabled();await openWorkflowDiagnostics(page);await expect(sheet.locator('.workflow-diagnostics')).toContainText('world_schema');}
@@ -130,7 +130,7 @@ test('沉浸长正文与台词：全文可读，滚动位置保留，状态入�
 test('菜单与设置交接：保留既有配置入口、Esc 与回焦，浏览不保存',async({page})=>{
  await enter(page);const before=await nightSealStored(page),config=await page.evaluate(()=>({...localStorage}));
  const menuToggle=page.getByRole('button',{name:'打开游戏菜单',exact:true});await menuToggle.click();await page.getByRole('dialog',{name:'游戏菜单'}).getByRole('button',{name:'设置',exact:true}).click();
- const settings=page.getByRole('dialog',{name:'设置',exact:true});await expect(settings).toBeVisible();for(const name of ['AI 连接','提示词','记忆','运行','提示词管理'])await expect(settings.getByRole('button',{name,exact:true})).toBeVisible();
+ const settings=page.getByRole('dialog',{name:'设置',exact:true});await expect(settings).toBeVisible();for(const name of ['渠道与密钥','正文与风格','记忆','生成阶段','提示词管理'])await expect(settings.getByRole('button',{name,exact:true})).toBeVisible();
  await page.keyboard.press('Escape');await expect(settings).toHaveCount(0);await expect(menuToggle).toBeFocused();expect(await nightSealStored(page)).toEqual(before);expect(await page.evaluate(()=>({...localStorage}))).toEqual(config);
 });
 

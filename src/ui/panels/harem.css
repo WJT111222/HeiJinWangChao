@@ -1,0 +1,85 @@
+/* 后宫档案：电脑端夜色档案与手机端纸页共用，颜色全部取自宿主主题变量。 */
+.household{min-width:0;overflow-wrap:anywhere;padding:clamp(.65rem,2vw,1.4rem) clamp(.2rem,1vw,.4rem) 2rem;display:flex;flex-direction:column;gap:1.1rem;color:var(--text)}
+.household h3,.household h4{margin:0}
+.household .household-person{font:inherit;color:var(--gold-hi,inherit);background:none;border:0;padding:.15rem 0;min-height:44px;cursor:pointer;text-align:left;text-decoration:none}
+.household .household-person:hover{text-decoration:underline;text-underline-offset:.2em}
+.household .household-person:focus-visible{outline:2px solid currentColor;outline-offset:2px;border-radius:3px}
+.household .hh-pill{display:inline-flex;align-items:center;font-size:.75rem;line-height:1.6;padding:.05rem .55rem;border-radius:999px;border:1px solid var(--line-2);color:var(--muted);white-space:nowrap}
+.household .hh-pill[data-tone=gold]{color:var(--gold-hi);border-color:var(--gold-lo,var(--line-2));background:color-mix(in srgb,var(--gold) 12%,transparent)}
+.household .hh-pill[data-tone=teal]{color:var(--text);border-color:color-mix(in srgb,#7FA7A0 55%,transparent);background:color-mix(in srgb,#7FA7A0 14%,transparent)}
+.household .hh-pill[data-tone=warn]{color:var(--text);border-color:color-mix(in srgb,#C26A4A 55%,transparent);background:color-mix(in srgb,#C26A4A 12%,transparent)}
+.household .hh-meter{height:4px;border-radius:999px;background:color-mix(in srgb,var(--text) 10%,transparent);overflow:hidden}
+.household .hh-meter span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--gold-lo,var(--gold)),var(--gold))}
+.household .hh-visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* 总览 */
+.household .hh-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1rem;border:1px solid var(--line);border-radius:12px;padding:1.1rem 1.2rem;background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 8%,transparent),transparent 60%)}
+.household .hh-primary{display:flex;gap:1rem;align-items:flex-start;min-width:0}
+.household .hh-crown{flex:none;width:3.2rem;height:3.2rem;border:1px solid var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-title,serif);font-size:1.4rem;color:var(--gold-hi);background:color-mix(in srgb,var(--gold) 10%,transparent)}
+.household .hh-primary-body{display:flex;flex-direction:column;gap:.25rem;min-width:0}
+.household .hh-eyebrow{font-size:.72rem;letter-spacing:.2em;color:var(--dim,var(--muted))}
+.household .hh-primary-body h3{font-family:var(--font-title,serif);font-size:1.45rem;letter-spacing:.1em;font-weight:500;line-height:1.2}
+.household .hh-primary-name{font-size:inherit;min-height:0}
+.household .hh-sub{margin:0;font-size:.85rem;color:var(--muted)}
+.household .hh-quote{margin:.3rem 0 0;font-size:.88rem;line-height:1.7;color:var(--muted);border-left:2px solid var(--gold-lo,var(--line-2));padding-left:.6rem}
+.household .hh-stats{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.household .hh-stat{border:1px solid var(--line);border-radius:10px;padding:.6rem .8rem;display:flex;flex-direction:column;gap:.2rem;min-width:0}
+.household .hh-stat dt{font-size:.75rem;letter-spacing:.12em;color:var(--dim,var(--muted))}
+.household .hh-stat dd{margin:0;display:flex;flex-direction:column;gap:.3rem}
+.household .hh-stat-value{font-family:var(--font-title,serif);font-size:1.45rem;line-height:1.2;color:var(--gold-hi)}
+.household .hh-stat-value[data-unknown]{font-family:inherit;font-size:.95rem;color:var(--muted)}
+.household .hh-stat small{font-size:.72rem;color:var(--dim,var(--muted))}
+.household .hh-situation{grid-column:1/-1;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem 1.2rem;padding-top:.8rem;border-top:1px solid var(--line)}
+.household .hh-situation dt{font-size:.75rem;letter-spacing:.12em;color:var(--dim,var(--muted))}
+.household .hh-situation dd{margin:.2rem 0 0;font-size:.9rem;line-height:1.7}
+
+/* 分区 */
+.household .hh-heading{display:flex;align-items:baseline;gap:.5rem;font-size:.95rem;font-weight:500;letter-spacing:.14em;color:var(--gold-hi);margin-bottom:.7rem}
+.household .hh-heading small{font-size:.75rem;letter-spacing:0;font-weight:400;color:var(--dim,var(--muted))}
+.household .hh-empty{margin:0;color:var(--muted);font-size:.9rem}
+.household .hh-box{border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem;min-width:0}
+
+/* 成员卡 */
+.household .household-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr));gap:.8rem}
+.household .household-card{min-width:0;border:1px solid var(--line);border-radius:12px;padding:.85rem 1rem .75rem;display:flex;flex-direction:column;gap:.5rem;background:color-mix(in srgb,var(--text) 2%,transparent);transition:border-color .15s}
+.household .household-card:hover{border-color:var(--line-2)}
+.household .household-card[data-primary]{border-color:var(--gold-lo,var(--gold));background:linear-gradient(160deg,color-mix(in srgb,var(--gold) 10%,transparent),transparent 70%)}
+.household .household-card header{display:flex;align-items:center;gap:.55rem;min-width:0}
+.household .household-card h4{flex:1;min-width:0;font-family:var(--font-title,serif);font-size:1.08rem;font-weight:500;letter-spacing:.06em}
+.household .household-card h4 .household-person{min-height:2.2rem}
+.household .hh-rank{flex:none;font-family:var(--font-mono,monospace);font-size:.72rem;color:var(--dim,var(--muted));border:1px solid var(--line-2);border-radius:4px;padding:.05rem .3rem}
+.household .hh-meta{margin:0;font-size:.82rem;color:var(--muted)}
+.household .hh-relation{margin:0;font-size:.88rem;line-height:1.65;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.household .hh-tags{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+.household .hh-tags:empty{display:none}
+.household .hh-child{display:inline-flex;align-items:center;gap:.25rem;font-size:.78rem;color:var(--muted);border:1px dashed var(--line-2);border-radius:999px;padding:0 .55rem}
+.household .hh-child .household-person{min-height:1.8rem;font-size:.8rem}
+.household .hh-child small{font-size:.7rem;color:var(--dim,var(--muted))}
+.household .hh-purpose{margin:0;font-size:.8rem;color:var(--muted)}
+.household .household-card footer{margin-top:auto;padding-top:.45rem;border-top:1px solid var(--line);font-size:.72rem;color:var(--dim,var(--muted))}
+
+/* 关系与变动 */
+.household .hh-lower{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.household .hh-lower>:only-child{grid-column:1/-1}
+.household .hh-pairs,.household .hh-timeline{list-style:none;margin:0;padding:0}
+.household .hh-pairs li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.1rem .6rem;padding:.55rem 0;border-top:1px solid var(--line)}
+.household .hh-pairs li:first-child{border-top:0;padding-top:0}
+.household .hh-pair-names{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+.household .hh-pair-names .household-person{min-height:2rem}
+.household .hh-pair-names>span[aria-hidden]{color:var(--dim,var(--muted))}
+.household .hh-pair-tags{grid-column:2;grid-row:1;display:flex;gap:.3rem;align-self:center}
+.household .hh-pair-text{grid-column:1/-1;font-size:.85rem;color:var(--muted)}
+.household .hh-timeline li{position:relative;display:flex;flex-direction:column;gap:.1rem;padding:0 0 .8rem 1.1rem;border-left:1px solid var(--line-2);margin-left:.3rem;font-size:.88rem}
+.household .hh-timeline li::before{content:'';position:absolute;left:-4px;top:.4rem;width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.household .hh-timeline li:last-child{padding-bottom:0}
+.household .hh-when{font-family:var(--font-mono,monospace);font-size:.72rem;color:var(--dim,var(--muted))}
+.household .hh-reason{font-size:.8rem;color:var(--muted)}
+.household .hh-exited{border:1px solid var(--line);border-radius:12px;padding:.2rem 1.1rem}
+.household .hh-exited summary{cursor:pointer;padding:.7rem 0;color:var(--muted);font-size:.9rem;min-height:44px;display:flex;align-items:center}
+.household .hh-exited ul{list-style:none;margin:0 0 .7rem;padding:0}
+.household .hh-exited li{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;border-top:1px solid var(--line);font-size:.85rem;color:var(--muted)}
+
+@media (max-width:900px){
+  .household .hh-hero{grid-template-columns:minmax(0,1fr);padding:1rem}
+  .household .hh-situation,.household .hh-lower{grid-template-columns:minmax(0,1fr)}
+}

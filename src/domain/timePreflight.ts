@@ -1,3 +1,4 @@
+import { requireStoryData } from './storyDiagnostics';
 import { z } from 'zod';
 import { openingTimeSelection, variablesChooseOpening } from './openingTime';
 import { GameTimeSchema, requireData } from './common';
@@ -184,16 +185,28 @@ export function timeOutcome(state: GameState, draft: Pick<TurnDraft, 'userInput'
   else requireData(guide.subjectHint === 'time:end' || guide.subjectHint === 'time:pause', 'TIME_PREFLIGHT', '未知时间结果类型');
   return { at: guide.observedFact, evidence };
 }
+export function effectiveTurnClock(state: GameState, draft: TurnDraft, scene: readonly DomainCommand[]) {
+  if (draft.useVariableStage && draft.turnKind === 'regular' && draft.story?.variableGuideRaw === undefined
+      && draft.story?.variableGuide.some(guide => guide.group === 'time' && guide.subjectHint === 'time:pause')) {
+    const pause = timeOutcome(state, draft)!;
+    return { endAt: pause.at, pause };
+  }
+  const authorized = draft.useVariableStage ? scene : [];
+  const opening = openingTimeSelection(state, draft, authorized);
+  const clocks = authorized.filter(command => command.type === 'SetWorldClock');
+  return { endAt: opening?.endAt ?? clocks.at(-1)?.worldClock ?? state.worldClock };
+}
+
 export function validateTimeCommands(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]) {
   if (state.openingTimePending && variablesChooseOpening(draft)) {
     requireData(!historicalPerspective(state, draft), 'TIME_PREFLIGHT', '纯历史回顾不能初始化当前世界时钟');
-    requireData(openingTimeSelection(state, draft, commands), 'OPENING_TIME', '请在变量命令中给出本幕实际开局时钟');
+    requireStoryData(openingTimeSelection(state, draft, commands), 'OPENING_TIME', '请在变量命令中给出本幕实际开局时钟', { storyRule: 'opening_missing' });
     return;
   }
   const opening = openingTimeSelection(state, draft);
   if (opening) {
-    requireData(commands.filter((c) => c.type === 'SetWorldClock').every((c) => Date.parse(c.worldClock) === Date.parse(opening.endAt)),
-      'OPENING_TIME', '变量时钟与Story开局候选冲突');
+    requireStoryData(commands.filter((c) => c.type === 'SetWorldClock').every((c) => Date.parse(c.worldClock) === Date.parse(opening.endAt)),
+      'OPENING_TIME', '变量时钟与Story开局候选冲突', { storyRule: 'opening_clock_conflict' });
     return;
   }
   if (historicalPerspective(state, draft)) {

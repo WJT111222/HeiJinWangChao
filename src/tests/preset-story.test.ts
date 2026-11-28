@@ -370,7 +370,8 @@ describe('正式组装入口', () => {
     expect(adapted.messages.filter((m) => m.content === '合成前回合行动')).toEqual([
       { role: 'user', content: '合成前回合行动' },
     ]);
-    expect(adapted.messages.at(-1)).toEqual(native.messages.at(-1));
+    expect(adapted.messages.at(-1)?.role).toBe('user');
+    expect(adapted.messages.at(-1)?.content).toBe(native.messages.at(-1)?.content.replace(/<正文>纯文本不少于 [^；]+；/u, ''));
     expect(adapted.modules.some((m) => m.id.startsWith('writing.style'))).toBe(false);
     expect(second.messages.map((m) => m.content).join('')).toContain('独立档案乙');
     expect(adapted.messages.map((m) => m.content).join('')).not.toContain('独立档案乙');
@@ -443,6 +444,23 @@ describe('正式组装入口', () => {
     expect(b).toEqual(a);
     expect(wireRequest(snap, b.messages, false)).toEqual(wireRequest(snap, a.messages, false));
   });
+  it.each(['opening', 'regular'] as const)('%s 文学归属决定实际出站篇幅与短正文候选', async mode => {
+    const { config, vault } = channelSetup();
+    const input = talentPromptInput('story', mode);
+    input.settings.prompts.minNarrativeChars = 4000;
+    input.settings.prompts.maxNarrativeChars = 5678;
+    const content = '<正文>' + recoveryNarrative + '</正文><短期记忆>' + recoverySummary + '</短期记忆><变量规划>[]</变量规划>';
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ choices: [{ message: { content }, finish_reason: 'stop' }] }));
+    const run = () => runStageRequest(input, config, vault, { stream: false }, new AiClient(fetcher));
+    await expect(run()).rejects.toMatchObject({ details: { storyRule: 'narrative_short' } });
+    savePresetSettings(selection());
+    expect((await run()).result).toMatchObject({ narrative: recoveryNarrative });
+    const wire = fetcher.mock.calls.map(call => JSON.parse(String(call[1]?.body)).messages as {content:string}[]);
+    expect(wire).toHaveLength(2);
+    expect(wire[0].at(-1)?.content).toContain('4000');
+    expect(JSON.stringify(wire[1])).not.toMatch(/4000～5678|不少于 4000|最低正文长度为4000|最低字数4000|minNarrativeChars/);
+    expect(wire[1].at(-1)?.content).toContain('<短期记忆>');
+  });
   it('真实 Runtime 单次 Mock，保留渠道预算、严格解析和行动选项规则', async () => {
     savePresetSettings(selection());
     const { config, vault } = channelSetup();
@@ -482,6 +500,8 @@ describe('正式组装入口', () => {
     const input = talentPromptInput('story', 'opening');
     input.state.openingTimePending = true;
     input.state.worldClock = pendingOpeningClock;
+    input.settings.runtime.useVariableStage = false;
+    input.settings.runtime.useWorldStage = false;
     const output = '<正文>' + recoveryNarrative + '</正文><短期记忆>' + recoverySummary
       + '</短期记忆><变量规划>[' + wrappedOpeningGuide() + ']</变量规划>';
     const fetcher = vi.fn<typeof fetch>(async () =>
@@ -490,7 +510,9 @@ describe('正式组装入口', () => {
     expect(result.result).toMatchObject({ variableGuide: [openingGuideEntry(JSON.stringify(openingGuideTimes))] });
     expect(fetcher).toHaveBeenCalledTimes(1);
     const body = JSON.parse(String(fetcher.mock.calls[0][1]?.body));
-    expect(body.messages.at(-1).content).toContain('observedFact 直接填含 startAt、endAt 的 JSON 对象');
+    expect(body.messages.at(-1).content).toContain('<变量规划>必填');
+    expect(body.messages.at(-1).content).toContain('observedFact 直接填 JSON 对象');
+    expect(body.messages.at(-1).content).not.toContain('可留空或省略');
   });
 });
 
@@ -710,5 +732,24 @@ describe('预设正文采样兼容', () => {
     await run();
     expect([1, 2, 3, 4, 6].map((i) => body(i).top_p)).toEqual([0, 0, 0, 0, 0]);
     expect(body(5)).not.toHaveProperty('top_p');
+  });
+});
+
+describe('已下架的文学预设', () => {
+  it.each(['', '?safe=1', '?spreset=prototype'])('旧选择必须重新确认，普通或恢复入口 %s 均不派发替代请求', async search => {
+    vi.stubGlobal('location', new URL('http://localhost/' + search));
+    const preferences = { enabled: true, selected: 'meowssiah', packages: {
+      meowssiah: { version: 'previous', scripts: {}, entries: { custom: { content: '玩家的原稿' } } },
+    } };
+    savePresetSettings(preferences);
+    expect(builtInPresets.map(p => p.id)).not.toContain('meowssiah');
+    expect(() => captureAssistantSelection()).toThrow(/重新选择正文预设/);
+    const input = talentPromptInput('story', 'regular');
+    const client = new AiClient();
+    const generate = vi.spyOn(client, 'generate');
+    await expect(runStageRequest({ ...input, stage: 'story' }, defaultAiConfig(), new CredentialVault(store, store), {}, client))
+      .rejects.toMatchObject({details:{fieldPath:'tavern.preset_withdrawn'}});
+    expect(generate).not.toHaveBeenCalled();
+    expect(readPresetSettings()).toEqual(preferences);
   });
 });

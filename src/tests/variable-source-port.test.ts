@@ -1,7 +1,8 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { saveFixtureStory } from './fixtures/turn';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
-import { createTurnDraft, rerollStory } from '../domain/drafts';
+import { rerollStory } from '../domain/drafts';
 import { parseVariableText } from '../parsers/variableText';
 import { compileVariableCommands, simulateVariablePlan } from '../executors/variableText';
 import { parseTextVariables } from '../services/validation/aiOutputs';
@@ -11,7 +12,6 @@ import { AiClient } from '../services/ai/client';
 import { SaveRepository } from '../services/storage/saveRepository';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
 import { CredentialVault } from '../services/ai/credentials';
-import { defaultSettings } from '../ui/settings/model';
 import { worldState } from './fixtures/world';
 import { story } from './fixtures/game';
 

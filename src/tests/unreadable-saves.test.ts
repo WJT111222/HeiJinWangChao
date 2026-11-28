@@ -1,5 +1,7 @@
+import { checkImageStores } from '../services/images/library';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createTheaterStores, createTheaterVersionStore } from '../services/storage/theaters';
 import { SaveRepository, saveDatabaseVersion } from '../services/storage/saveRepository';
 import { game } from './fixtures/game';
 import { saveKeyText, serializeRawSave } from '../services/storage/saveManagement';
@@ -193,8 +195,13 @@ describe('targeted unreadable deletion stays atomic', () => {
         open.result.createObjectStore('turnReceipts', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
         open.result.createObjectStore('turnUndo', { keyPath: ['saveId', 'turnId'] }).createIndex('saveId', 'saveId');
         open.result.createObjectStore('saveControls', { keyPath: 'saveId' });
+        open.result.createObjectStore('phoneBookPosts');
+        open.result.createObjectStore('oracleNotes', { keyPath: 'saveId' });
         for (const name of ['historyMetadata', 'historyPayloads'])
           open.result.createObjectStore(name, { keyPath: ['saveId', 'id'] }).createIndex('saveId', 'saveId');
+        checkImageStores(open.result, open.transaction!);
+        createTheaterStores(open.result);
+        createTheaterVersionStore(open.transaction!);
       };
       open.onsuccess = () => resolve(open.result); open.onerror = () => reject(open.error);
     });

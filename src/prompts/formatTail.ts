@@ -16,23 +16,35 @@ import type { AiStage } from '../services/ai/configuration';
  */
 export function formatTailMessage(
   stage: AiStage | 'memory',
-  options: { actionOptions: boolean; minNarrativeChars: number; maxNarrativeChars?: number; openingTimePending?: boolean },
+  options: { actionOptions: boolean; minNarrativeChars?: number; maxNarrativeChars?: number; openingTime?: 'required' | 'reference' },
 ): string | undefined {
   if (stage === 'story') {
     const actionsSkeleton = options.actionOptions ? '\n<行动选项>每行一条短行动</行动选项>' : '';
     const actionsRule = options.actionOptions
       ? '<行动选项>共3～5条、每行一条；'
       : '行动选项未启用，不要输出<行动选项>块；';
+    const openingTimeRequired = options.openingTime === 'required';
+    const guideSkeleton = openingTimeRequired
+      ? '<变量规划>[{"group":"time","subjectHint":"time:opening","observedFact":{"startAt":"开场时间","endAt":"结束时间"}}]</变量规划>'
+      : '<变量规划>[]</变量规划>';
+    const guideRule = openingTimeRequired
+      ? '<变量规划>必填，须为 JSON 数组，含唯一一条 time:opening，不能混用其他 time: 协议；observedFact 直接填 JSON 对象，起止均为合法公历日期时间（ISO 8601，+08:00），结束不得早于开始。'
+      : '<变量规划>只作参考，可用文字或数组，也可留空或省略；';
+    const lengthRule = options.minNarrativeChars === undefined ? '' : `<正文>纯文本不少于 ${options.minNarrativeChars} 字${options.maxNarrativeChars && options.maxNarrativeChars > options.minNarrativeChars ? `（目标约 ${options.minNarrativeChars}～${options.maxNarrativeChars} 字，写到自然收束点即可）` : ''}；`;
     return [
       '【最终格式提醒】从输出的第一个字符起就是协议内容，不加前言、解释或Markdown代码围栏。创作提纲（thinking 块）可选：不输出它时，第一个标签直接是正文块。顶层骨架如下（占位文字不可照抄，各块写入真实内容；骨架之前不得输出任何文字）：',
       '<thinking>创作要点提纲</thinking>',
       '<正文>完整连续的小说正文</正文>',
       '<短期记忆>本回合事实摘要</短期记忆>',
-      `<变量规划>[]</变量规划>${actionsSkeleton}`,
-      ...(options.openingTimePending ? ['可用 time:opening 建议开局窗口；纯小说开局请提供此条目，observedFact 直接填含 startAt、endAt 的 JSON 对象，不给对象套引号。'] : []),
-      `要求：顶层标签顺序固定、各至多一次、打开必须闭合，各块内容中不得再出现顶层标签字面量；<正文>纯文本不少于 ${options.minNarrativeChars} 字${options.maxNarrativeChars && options.maxNarrativeChars > options.minNarrativeChars ? `（目标约 ${options.minNarrativeChars}～${options.maxNarrativeChars} 字，写到自然收束点即可）` : ''}；<变量规划>只作参考，可用文字或数组，也可留空或省略；${actionsRule}写完最后一个闭合标签立即结束输出。`,
+      `${guideSkeleton}${actionsSkeleton}`,
+      ...(options.openingTime === 'reference' ? ['可用 time:opening 建议开局窗口；observedFact 直接填含 startAt、endAt 的 JSON 对象。'] : []),
+      `要求：顶层标签顺序固定、各至多一次、打开必须闭合，各块内容中不得再出现顶层标签字面量；${lengthRule}${guideRule}${actionsRule}写完最后一个闭合标签立即结束输出。`,
     ].join('\n');
   }
+  if (stage === 'entities') return [
+    '先声明本回合新接触人物的稳定 ID，再输出人物与实体阶段的文本命令。',
+    '<接触者>[]</接触者>', '<thinking>人物变化依据</thinking>', '<说明>本轮变化</说明>', '<命令>', '</命令>',
+  ].join('\n');
   if (stage === 'variables') {
     return [
       '【最终格式提醒】从输出的第一个字符起依次给出三个顶层区块，顺序固定、各一次、打开必须闭合，区块之外不得有任何文字或Markdown代码围栏。没有任何变化时的完整合法形状（占位文字换成真实内容）：',

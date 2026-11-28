@@ -19,10 +19,10 @@ function CompactRecords<T>({label,entries,render}:{label:string;entries:readonly
 }
 function CurrentState({ org, desktop }: { org: Organization; desktop: boolean }) {
   const fields: [string, string | number | string[] | undefined][] = org.kind === 'gang'
-    ? [['活动与控制范围',org.territoryText],['主要产业',org.industries],['人员与实力',org.powerText],['内部现状',org.internalStatus],['组织持有资金（非主角账户）',org.funds]]
-    : org.kind === 'government' ? [['管辖范围',org.jurisdictionText],['法定职权',org.lawfulPowers],['主要案件',org.cases],['行政事务',org.administrativeAffairs],['执行能力',org.enforcementCapacityText],['公众信任',org.publicTrustText],['内部现状',org.internalStatus]]
-      : org.kind === 'civil' ? [['组织宗旨',org.missionText],['成员与参与者',org.membershipText],['支持者',org.supportersText],['主要活动',org.activities],['活动范围',org.activityAreaText],['社会影响',org.publicInfluenceText]]
-        : [['行业与业务',org.sectors],['股权与控制',org.ownershipText],['经营与内部现状',org.operatingStatus],['资产估值',org.assetsEstimate],['流动资金估计',org.liquidityEstimate]];
+    ? [['活动与控制范围',org.territoryText],['主要产业',org.industries],['人员与实力',org.powerText],['内部现状',org.internalStatus],['组织持有资金（非主角账户）',org.funds],['名声',org.reputationText]]
+    : org.kind === 'government' ? [['管辖范围',org.jurisdictionText],['法定职权',org.lawfulPowers],['主要案件',org.cases],['行政事务',org.administrativeAffairs],['执行能力',org.enforcementCapacityText],['公众信任',org.publicTrustText],['经费',org.fundingText],['内部现状',org.internalStatus]]
+      : org.kind === 'civil' ? [['组织宗旨',org.missionText],['成员与参与者',org.membershipText],['支持者',org.supportersText],['主要活动',org.activities],['活动范围',org.activityAreaText],['社会影响',org.publicInfluenceText],['经费',org.fundingText]]
+        : [['行业与业务',org.sectors],['股权与控制',org.ownershipText],['经营与内部现状',org.operatingStatus],['经营范围',org.operatingAreaText],['名声',org.reputationText],['资产估值',org.assetsEstimate],['流动资金估计',org.liquidityEstimate]];
   const present=fields.filter(([,value])=>Array.isArray(value)?value.length:value!==undefined && value!=='');
   return present.length?<dl className={desktop ? 'dl org-state' : undefined}>{present.map(([label,value])=><Detail key={label} label={label}>{typeof value==='number'?(desktop ? <span className="money">{money(value)}</span> : money(value)):Array.isArray(value)?value.join('；'):value}</Detail>)}</dl>:<Empty>暂无补充的当前状况</Empty>;
 }

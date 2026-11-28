@@ -1,5 +1,7 @@
+import { chatBase } from './phone';
+import { assertWorldEntityDependencies, effectiveEntityCandidate, markStoryPeople, sceneAndEntityCommands } from './entityCandidate';
 import { storySceneAuthority, validateNarrationClock } from './events/narration';
-import { timeOutcome, validateTimeCommands } from './timePreflight';
+import { effectiveTurnClock, historicalPerspective, validateTimeCommands } from './timePreflight';
 import { eventInteractionCommands } from './events/interactions';
 import { openingTimeBase, openingTimeSelection, variablesChooseOpening } from './openingTime';
 import { commitCommands } from './commands';
@@ -25,11 +27,16 @@ export function variableCommandsForTurn(state: GameState, draft: TurnDraft, comm
 export function prepareVariableProjection(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]) {
   requireData(draft.turnKind === 'opening' || commands.every(c => c.type !== 'InitializeOpeningState'),
     'OPENING_INITIALIZATION', '普通回合不能初始化原有生活状态');
+  // 开局一律孤身一人：正式候选入口同样拒绝开局绑定主势力，不只依赖文本编译。
+  requireData(draft.turnKind === 'regular' || commands.every(c => c.type !== 'RecordOrgRelation' || !c.faction),
+    'FACTION_BINDING', '开局回合不能绑定主势力');
+  const clock = effectiveTurnClock(state, draft, commands);
+  const entities = effectiveEntityCandidate(state, draft, commands, clock.endAt);
+  commands = sceneAndEntityCommands(draft, commands, entities);
   validateTimeCommands(state,draft,commands);
   let variables = variableCommandsForTurn(state, draft, commands);
-  if(draft.story?.variableGuideRaw === undefined && draft.turnKind==='regular' && draft.story?.variableGuide.some(g=>g.group==='time'&&g.subjectHint==='time:pause')) {
-    const stop=timeOutcome(state,draft)!;
-    variables=[{type:'SetWorldClock',commandId:`story-pause-clock:${draft.storyRevision}`,worldClock:stop.at,evidence:'所选Story结构化实际停止时间'},
+  if (clock.pause) {
+    variables=[{type:'SetWorldClock',commandId:`story-pause-clock:${draft.storyRevision}`,worldClock:clock.endAt,evidence:'所选Story结构化实际停止时间'},
       ...variables.filter(c=>c.type!=='SetWorldClock')];
   }
   const events = { ...state.events };
@@ -49,7 +56,7 @@ export function prepareVariableProjection(state: GameState, draft: TurnDraft, co
     ...receipts.filter(command=>command.type==='SaveEvent' && !lastWrite.has(command.event.id))];
   // Only commands derived by eventInteractionCommands from the selected Story receive this
   // in-memory permission. Candidate JSON cannot create it, and it is never persisted.
-  return { commands: prepared, acknowledgedReceipts: new Set(prepared.flatMap(command =>
+  return { entities, commands: prepared, acknowledgedReceipts: new Set(prepared.flatMap(command =>
     command.type === 'SaveEvent' && acknowledged.has(command.event) ? [command.commandId] : [])) };
 }
 export function preparedVariableCommands(state: GameState, draft: TurnDraft, commands: readonly DomainCommand[]) {
@@ -57,13 +64,20 @@ export function preparedVariableCommands(state: GameState, draft: TurnDraft, com
 }
 // 每份内存投影都从同一正式基线开始。不能把模拟产生的 revision 当作新正式版本。
 export function projectTurn(state: GameState, draft: TurnDraft, worldCommands: readonly DomainCommand[] = []) {
+  return projectTurnCandidates(state, draft, worldCommands).state;
+}
+
+export function projectTurnCandidates(state: GameState, draft: TurnDraft, worldCommands: readonly DomainCommand[] = []) {
   const validated = draft.variables?.validation === 'validated';
   const variables = draft.variables?.validation === 'validated' ? draft.variables.result.commands : [];
-  const prepared = validated ? prepareVariableProjection(state,draft,variables)
-    : { commands:variableCommandsForTurn(state,draft,variables), acknowledgedReceipts:undefined };
-  const projected = commitCommands(openingTimeBase(state, draft), draft.turnId, state.revision,
-    [...prepared.commands, ...worldCommands], state.updatedAt, validated ? storySceneAuthority(state,draft,variables) : undefined,
-    prepared.acknowledgedReceipts);
+  const prepared = validated || draft.entities ? prepareVariableProjection(state,draft,variables)
+    : { commands:variableCommandsForTurn(state,draft,variables), acknowledgedReceipts:undefined, entities:undefined };
+  if (prepared.entities) assertWorldEntityDependencies(prepared.entities, worldCommands, state.tasks);
+  const baseline = chatBase(openingTimeBase(state, draft), draft.phoneFreeze ? draft.phonePending ?? [] : [], draft.turnId);
+  const projected = commitCommands(baseline, draft.turnId, state.revision,
+    prepared.commands, state.updatedAt, validated ? storySceneAuthority(state,draft,variables) : undefined,
+    prepared.acknowledgedReceipts, worldCommands);
+  if (draft.entities && prepared.entities && !historicalPerspective(state,draft)) markStoryPeople(projected, draft.entities.contactedNpcIds.filter(id => !prepared.entities?.removedIds.has(id)), prepared.entities.commands);
   if(validated) validateNarrationClock(state,draft,projected.worldClock);
-  return projected;
+  return { state:projected, entities:prepared.entities };
 }

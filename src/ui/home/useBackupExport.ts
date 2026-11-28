@@ -1,3 +1,4 @@
+import { config } from '../../services/images/config';
 import { useRef, useState } from 'react';
 import { PRODUCT_VERSION } from '../../app/product';
 import { backupFileName, serializeBackup } from '../../services/storage/backup';
@@ -25,7 +26,7 @@ export async function shareFile(file: File) {
 
 /**
  * 导出一份或多份可读取的存档为 .heijin.json。只读数据库；成功后在本机记下备份状态。
- * 文件只含正式存档与未结算草稿，不含 AI 密钥、渠道、设置、撤回快照与提交回执。
+ * 文件含正式存档、未结算草稿和小剧场。标记使用导出事务读取的版本。
  */
 export function useBackupExport(repository: SaveRepository | undefined) {
   const [exporting, setExporting] = useState(false);
@@ -34,12 +35,12 @@ export function useBackupExport(repository: SaveRepository | undefined) {
     if (!repository || lock.current || !saveIds.length) throw new Error('导出暂不可用');
     lock.current = true; setExporting(true);
     try {
-      const entries = await repository.exportBackup(saveIds);
+      const entries = await repository.exportBackup(saveIds,config().includeImages);
       const now = new Date();
       const name = backupFileName(entries, now);
       const file = new File([await serializeBackup(entries, PRODUCT_VERSION, now)], name, { type: 'application/json' });
       download(file);
-      recordBackup(entries.map(entry => entry.state), now);
+      recordBackup(entries.map(({ state, theaterVersion,imageVersion }) => ({ ...state, theaterVersion,imageVersion })), now);
       const text = entries.length === 1
         ? `已导出「${entries[0].summary.title}」第 ${entries[0].summary.turnNumber} 回合的备份：${name}`
         : `已导出 ${entries.length} 份存档的备份：${name}`;

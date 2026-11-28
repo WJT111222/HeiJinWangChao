@@ -1,3 +1,7 @@
+import type { ContinuationRoute } from '../../services/ai/corsRelay';
+import { canRelayLegacyStory, prepareLegacyContinuation } from '../../workflows/legacyContinuation';
+import { readDocument } from '../../services/local/documents';
+import { continuationMinimum } from '../../domain/storyWriting';
 import { FeedbackCorrelation, linkMemoryFeedback } from '../../services/feedback/report';
 import { assistantView, bindTavernPage, enterTavernChat } from '../../presets/tavern/hostState';
 import { ScriptButtons } from '../settings/TavernAssistant';
@@ -7,8 +11,10 @@ import {MobileDiagnostics} from './MobileDiagnostics';
 import { useNpcManagement } from './useNpcManagement';
 import type { NpcManagementResult } from './npcManagement';
 import { ArchivePanel } from '../ArchivePanel';
+import { HaremPanel } from '../panels/HaremPanel';
 import { NpcPanel } from '../panels/NpcPanel';
 import { OrganizationPanel } from '../panels/OrganizationPanel';
+import { FactionPanel } from '../panels/FactionPanel';
 import { ProfilePanel } from '../panels/ProfilePanel';
 import { InventoryPanel } from '../panels/InventoryPanel';
 import { EconomyPanel } from '../panels/EconomyPanel';
@@ -31,9 +37,18 @@ import { TurnUndoControl } from './TurnUndoControl';
 import type { TurnUndoResult } from '../../services/storage/saveRepository';
 import { ProfessionProfile } from '../components/ProfessionProfile';
 import { TalentProfile } from '../components/TalentProfile';
+import { ImageAvatar, ImageEntry, Portraits } from '../images/ImageGallery';
+import { ImageScope } from '../images/ImageScope';
+import { config as imageConfig } from '../../services/images/config';
+import { afterSettlement } from '../../services/images/queue';
 import { StoryReading } from './StoryReadingView';
+import { TheaterPanel } from './TheaterPanel';
+import type { TheaterLeaveGuard } from './TheaterPanel';
 import { StoryStreamReading } from './StoryStreamReading';
 import { openingTimeSelection } from '../../domain/openingTime';
+import { storyRuleNames } from '../../domain/storyDiagnostics';
+import { openingSettlementIssue } from '../../services/validation/turnCommit';
+import { configureTurnStages } from '../../domain/drafts';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import type { GameState } from '../../domain/state';
@@ -49,7 +64,7 @@ import { useStoryGeneration } from './useStoryGeneration';
 import { useVariableGeneration } from './useVariableGeneration';
 import { useWorldGeneration } from './useWorldGeneration';
 import { useTurnGeneration } from './useTurnGeneration';
-import { completeTurnDraft, awaitingPlayerAction, rebindableAfterStoryStop } from '../../domain/turnCommit';
+import { completeTurnDraft, awaitingPlayerAction, rebindableAfterStoryStop, settlementDraft } from '../../domain/turnCommit';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
 import { DataError } from '../../domain/common';
 import { storyError } from '../../workflows/storyStage';
@@ -69,12 +84,17 @@ import type { StageAction, WorkflowStage, WorkflowTab, WorkflowView } from './Wo
 import type { MemoryFailureObservation } from '../../services/ai/memoryObservation';
 import { MemoryIssueDetails } from './MemoryResponses';
 import type { RuntimeLogEntry, RuntimeLogReporter } from './runtimeLog';
+import { isPrivate } from '../../domain/phoneChat';
+import { usePrivateChat } from '../phone/usePrivateChat';
+import { GamePhone, PhoneEntry } from '../phone/GamePhone';
+import { usePhoneReminders } from '../phone/usePhoneReminders';
 import { CityAtmosphere, CityBar, CityChapter } from './CityNight';
 import { deriveAtmosphere } from './atmosphere';
 import './city-night.css';
 import './workflow-feedback.css';
 import './mobile-game.css';
 import './day-appearance.css';
+import '../city-art.css';
 import {MobileCityBar,MobileStatus,mobileCitySeal} from './MobileCity';
 import {MobileActions} from './MobileActions';
 import {ComposerTools} from './ComposerTools';
@@ -87,6 +107,9 @@ import { actionSuggestions } from './actionSuggestions';
 import { appendActionOption, includesActionOption } from './actionOptions';
 
 const sidebarMedia = '(max-width: 900px)';
+const panelSeals: Record<(typeof panelNames)[number], string> = {
+  NPC: '人', 势力组织: '势', 我的势力: '盟', 后宫: '家', 地图: '图', 物品栏: '物', 世界事件: '事', 历史时间轴: '史', 记忆: '忆',
+};
 function subscribeSidebarSize(changed: () => void) {
   const media = window.matchMedia(sidebarMedia);
   media.addEventListener('change', changed);
@@ -96,6 +119,7 @@ function subscribeSidebarSize(changed: () => void) {
 export function GameScreen({
   openingStart,
   onOpenSettings,
+  theaterLeave,
   onCloseSettings,
   state,
   draft,
@@ -114,6 +138,7 @@ export function GameScreen({
 }: {
   openingStart?: OpeningStart;
   onOpenSettings: () => void;
+  theaterLeave: RefObject<TheaterLeaveGuard | null>;
   onCloseSettings?: (afterClose?:()=>void)=>void;
   state: GameState;
   draft?: TurnDraft;
@@ -131,9 +156,6 @@ export function GameScreen({
   instance?: string;
   renderSettings?: (maintenance: ReactNode) => ReactNode;
 }) {
-  const openingTime = useMemo(() => {
-    try { return draft && openingTimeSelection(state, draft); } catch { return undefined; }
-  }, [state, draft]);
   const [archiveTarget, setArchiveTarget] = useState<{panel: 'NPC' | '势力组织' | '世界事件' | '地图' | '物品栏'; id: string}>();
   const archiveReading=useRef<{events?:WorldEventsUiState;history?:HistoryUiState;memory?:MemoryUiState;map?:MapUiState}>({});
   const changeOpener=useRef<HTMLElement|null>(null);
@@ -142,13 +164,25 @@ export function GameScreen({
     if (panel !== '世界事件') archiveSelection.current[panel] = id;
     setArchiveTarget({panel,id}); setPanel(panel);
   };
-  const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产'>();
+  const [panel, setPanel] = useState<PanelName | '人物档案' | '经济与资产' | '小剧场' | '手机'>();
   useEffect(() => () => stageResponses.clearSave(state.saveId), [state.saveId]);
   const compactSidebars = useSyncExternalStore(subscribeSidebarSize, () => window.matchMedia(sidebarMedia).matches, () => false);
   const desktopSettings=!compactSidebars&&Boolean(renderSettings);
   useEffect(()=>{if(desktopSettings)setPanel(undefined);},[desktopSettings]);
-  function outsideSettings(action:()=>void){if(desktopSettings&&onCloseSettings)onCloseSettings(action);else action();}
-  const desktopArchive = !compactSidebars && !desktopSettings && (panel === 'NPC' || panel === '势力组织' || panel === '人物档案' || panel === '物品栏' || panel === '经济与资产' || panel === '世界事件' || panel === '历史时间轴' || panel === '记忆' || panel === '地图') ? panel : undefined;
+  function outsideTheater(action: () => void) {
+    if (theaterLeave.current) theaterLeave.current(action);
+    else action();
+  }
+  function outsideSettings(action: () => void) {
+    if (desktopSettings && onCloseSettings) onCloseSettings(action);
+    else outsideTheater(action);
+  }
+  const phone = usePhoneReminders(state, instance ?? null, settings.phone);
+  const phoneOpen = panel === '手机' && !desktopSettings;
+  const phoneButton = (mobile: boolean) => <PhoneEntry mobile={mobile} count={phone.unreadCount} open={phoneOpen}
+    onClick={() => outsideSettings(() => setPanel(phoneOpen ? undefined : '手机'))}/>;
+  const theaterActive = panel === '小剧场' && !desktopSettings;
+  const desktopArchive = !compactSidebars && !desktopSettings && (panel === 'NPC' || panel === '势力组织' || panel === '我的势力' || panel === '人物档案' || panel === '物品栏' || panel === '经济与资产' || panel === '世界事件' || panel === '历史时间轴' || panel === '记忆' || panel === '地图' || panel === '后宫') ? panel : undefined;
   function openChange(target:ChangeTarget){
     changeOpener.current=compactSidebars?document.querySelector<HTMLButtonElement>('.chg-btn'):document.activeElement as HTMLElement|null;
     if(target.panel==='NPC'||target.panel==='势力组织'||target.panel==='世界事件'){
@@ -172,6 +206,18 @@ export function GameScreen({
   const [diagnosticsOpen,setDiagnosticsOpen]=useState(false);
   const [legacyRecoveryDialog,setLegacyRecoveryDialog] = useState<string>();
   const legacyRecoveryOptions = useMemo(() => legacyNotificationRecoveryOptions(state,draft),[state,draft]);
+  const [confirmationError, setConfirmationError] = useState<{ draft: TurnDraft; message: string }>();
+  const confirmation = useRef<symbol | undefined>(undefined);
+  useLayoutEffect(() => {
+    const revoke = () => { confirmation.current = undefined; };
+    window.addEventListener('hashchange', revoke);
+    window.addEventListener('pagehide', revoke);
+    return () => {
+      revoke();
+      window.removeEventListener('hashchange', revoke);
+      window.removeEventListener('pagehide', revoke);
+    };
+  }, [instance, state.saveId, state.revision, draft]);
   const recoveryDraftKey = draft && `${draft.saveId}:${draft.turnId}:${draft.draftRevision}`;
   // 玩家关掉的错误横幅：只记住当时那组错误，出现新的错误时会重新显示。
   const [dismissedError, setDismissedError] = useState('');
@@ -208,13 +254,14 @@ export function GameScreen({
     [],
   );
   const {
-    generate,
+    generate: generateStory,
     cancel,
     progress: manualProgress,
     error,
     retry: storyRetry,
   } = useStoryGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent, instance ?? null);
-  const variables = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent, instance ?? null);
+  const entities = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent, 'entities', instance ?? null);
+  const variables = useVariableGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent, 'variables', instance ?? null);
   const world = useWorldGeneration(repository, draft, settings, onDraftSaved, reportRuntimeEvent, instance ?? null);
   const automatic = useTurnGeneration(repository, draft, settings, companionProfile, onDraftSaved, reportRuntimeEvent, handleSettled, instance ?? null);
   // 延后一微任务，让 StrictMode 的首次 effect 清理先完成。消费的是创角或历史覆盖确认的单次事件授权，
@@ -241,7 +288,10 @@ export function GameScreen({
     memoryState.revision >= state.revision ? memoryState : state;
   function handleSettled(result: TurnCommitResult) {
     onCommitted(result);
-    if (!result.replayed) void memory.run(true);
+    if (!result.replayed) {
+      void memory.run(true);
+      if(imageConfig().enabled) queueMicrotask(()=>afterSettlement(repository.images,state,result.state,instance));
+    }
   }
   const progress =
     automatic.progress?.stage === 'story' && automatic.progress.phase !== 'retrying'
@@ -252,10 +302,11 @@ export function GameScreen({
     progress?.phase === 'retrying' || (automatic.progress?.stage === 'story' && automatic.progress.phase === 'retrying'),
   );
   const workflowBusy = Boolean(
-    submitting || automatic.running || progress || storyRetry || variables.phase || world.phase,
+    submitting || automatic.running || progress || storyRetry || entities.phase || variables.phase || world.phase,
   );
-  const npcManagement = useNpcManagement(repository, state, draft, workflowBusy, onNpcManaged, instance);
-  const busy = workflowBusy || Boolean(npcManagement.pendingId);
+  const privateChat = usePrivateChat(repository, state, draft, instance ?? null, settings, onDraftSaved);
+  const npcManagement = useNpcManagement(repository, state, draft, workflowBusy || privateChat.busy, onNpcManaged, instance);
+  const busy = workflowBusy || privateChat.busy || Boolean(npcManagement.pendingId);
   useEffect(() => { enterTavernChat(state.saveId, instance); }, [state.saveId, instance]);
   const recentActions = useRef<{ state: GameState; actions: Record<string, string> }>(undefined);
   useEffect(() => {
@@ -328,14 +379,33 @@ export function GameScreen({
     draft.baseSaveRevision === state.revision &&
     !state.journal.some((entry) => entry.turnId === draft.turnId) &&
     (draft.turnKind !== 'opening' || state.turnNumber === 0);
-  const stageSettingsChanged = Boolean(draft && (draft.useVariableStage !== settings.runtime.useVariableStage || draft.useWorldStage !== settings.runtime.useWorldStage));
-  const canCommit = Boolean(validDraft && draft && !stageSettingsChanged && completeTurnDraft(draft));
+  const stageSettingsChanged = Boolean(draft && (draft.useEntityStage !== settings.runtime.useEntityStage || draft.useVariableStage !== settings.runtime.useVariableStage || draft.useWorldStage !== settings.runtime.useWorldStage));
+  const { useEntityStage, useVariableStage, useWorldStage } = settings.runtime;
+  const effectiveOpening = useMemo(() => {
+    if (!state.openingTimePending || !validDraft || !draft?.story || draft.legacyNotificationRecovery) return undefined;
+    return settlementDraft(configureTurnStages(draft, { useEntityStage, useVariableStage, useWorldStage }));
+  }, [state.openingTimePending, validDraft, draft, useEntityStage, useVariableStage, useWorldStage]);
+  const openingIssue = useMemo(() => {
+    if (!effectiveOpening || (useVariableStage && effectiveOpening.variables?.validation !== 'validated')) return undefined;
+    return openingSettlementIssue(state, effectiveOpening)?.diagnostic;
+  }, [state, effectiveOpening, useVariableStage]);
+  const openingTime = useMemo(() => {
+    if (!effectiveOpening || openingIssue) return undefined;
+    try { return openingTimeSelection(state, effectiveOpening); } catch { return undefined; }
+  }, [state, effectiveOpening, openingIssue]);
+  const canCommit = Boolean(validDraft && draft && !stageSettingsChanged && !openingIssue && completeTurnDraft(draft));
+  const retainedOpeningVariables = (draft?.variables ?? draft?.inactiveCandidates?.variables)?.validation === 'validated';
+  const openingGuidance = openingIssue && `${storyRuleNames[openingIssue.reason]}，正文已保留。可重新 Roll 开局正文，或${useVariableStage
+    ? '在主角与现场重新生成候选。'
+    : retainedOpeningVariables ? '重新启用主角与现场，继续时重新校验并尝试复用已有候选。' : '启用主角与现场后主动补算时间。'}`;
+  const openingReuse = Boolean(openingTime && useVariableStage && effectiveOpening?.variables?.validation === 'validated');
   const awaitingAction = awaitingPlayerAction(state, draft);
   // 正文失败或被取消、尚无候选时：原行动放回输入框，玩家可原样或修改后直接重新发送。
   const rebindAction = !busy && rebindableAfterStoryStop(state, draft);
   // 正文被截断：显示已写出的部分（只取正文，不显示规划和尾部标签）；续写次数用完后仍显示，只是不能再续写。
   // 「正文已闭合但字数不足」也不能续写（续写只能补 </正文> 之后的标签）；按本次设置的最低字数判断。
   const minNarrativeChars = settings.prompts.minNarrativeChars;
+  const partialMinimum = continuationMinimum(draft?.storyPartial?.writing, minNarrativeChars);
   const storyContinuable = !busy && canContinueStory(draft, minNarrativeChars);
   const partialBlock = continuationBlock(draft, minNarrativeChars);
   const partialText = (!busy || storyRetryWait) && storyPartialVisible(draft) ? draft?.storyPartial?.text : undefined;
@@ -368,9 +438,9 @@ export function GameScreen({
     restoredText.current = undefined;
     setInput((current) => (current.trim() === restored.text.trim() ? '' : current));
   }, [draft, awaitingAction]);
-  async function send() {
+  async function send(action = input) {
     const bindAction = awaitingAction || rebindAction;
-    if (!draft || (!canCommit && !bindAction) || busy || submitLock.current || !input.trim()) return;
+    if (!draft || (!canCommit && !bindAction) || busy || submitLock.current || !action.trim()) return;
     submitLock.current = true;
     const token = submitToken.current;
     setSubmitting(true);
@@ -378,9 +448,9 @@ export function GameScreen({
     setConcurrencyBlocked(false);
     try {
       if (bindAction) {
-        const bound = await repository.bindTurnAction(draft, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage,instance ?? null);
+        const bound = await repository.bindTurnAction(draft, action, settings.runtime.useVariableStage, settings.runtime.useWorldStage, settings.runtime.useEntityStage, instance ?? null);
         if (submitToken.current !== token) return;
-        onDraftSaved(bound); setInput(''); setSubmitting(false);
+        onDraftSaved(bound); setInput(current => current === action ? '' : current); setSubmitting(false);
         await automatic.generate(bound);
         return;
       }
@@ -388,15 +458,14 @@ export function GameScreen({
       reportRuntimeEvent('commit', 'started');
       const result = await repository.commitTurn({
         draft,
-        nextAction: input,
-        useVariableStage: settings.runtime.useVariableStage,
+        nextAction: action,
+        useEntityStage: settings.runtime.useEntityStage, useVariableStage: settings.runtime.useVariableStage,
         useWorldStage: settings.runtime.useWorldStage,
       },instance ?? null);
       if (submitToken.current !== token) return;
       reportRuntimeEvent('commit', 'completed');
-      onCommitted(result);
-      if (!result.replayed) void memory.run(true);
-      setInput('');
+      handleSettled(result);
+      setInput(current => current === action ? '' : current);
       setSubmitting(false);
       // 发送明确授权下一轮请求；重复回执只恢复数据库真值，不再次发起付费生成。
       if (!result.replayed) await automatic.generate(result.draft);
@@ -427,6 +496,7 @@ export function GameScreen({
   }
   // 「放弃这段」：只清掉没写完的正文，不调用 AI，也不撤回上一回合；原行动留在输入框里。
   async function discardPartial() {
+    confirmation.current = undefined;
     if (!draft?.storyPartial || busy || submitLock.current) return;
     submitLock.current = true;
     const token = submitToken.current;
@@ -475,42 +545,39 @@ export function GameScreen({
   const options = suggestions?.options;
   // Old suggestions are references until the existing binding/commit rules allow an action.
   const referenceOptions = Boolean(suggestions?.previous && !canCommit && !awaitingAction && !rebindAction);
-  const workflowError = error || variables.error || world.error || automatic.error || submitError;
-  const failedStage = (['story', 'variables', 'world'] as const).some((stage) => draft?.stageStatus[stage] === 'failed');
+  const workflowError = error || entities.error || variables.error || world.error || automatic.error || submitError;
+  const failedStage = (['story', 'entities', 'variables', 'world'] as const).some((stage) => draft?.stageStatus[stage] === 'failed');
   // 仅用于入口展示，与 TurnCoordinator 的 needed 条件保持一致；实际执行仍由协调器重验。
   const storyNeeded = !draft?.story || draft.stageStatus.story !== 'ready';
+  const entitiesNeeded = settings.runtime.useEntityStage && (storyNeeded || !draft?.entities);
   const variablesNeeded = settings.runtime.useVariableStage &&
-    (draft?.stageStatus.variables !== 'ready' || draft.variables?.validation !== 'validated' || storyNeeded);
+    (draft?.stageStatus.variables !== 'ready' || draft.variables?.validation !== 'validated' || entitiesNeeded || storyNeeded);
   const worldNeeded = settings.runtime.useWorldStage &&
-    (!draft?.world || !['ready', 'preview'].includes(draft.stageStatus.world) || variablesNeeded || storyNeeded);
-  const retryWorldOnly = Boolean(validDraft && !stageSettingsChanged && !storyNeeded && !variablesNeeded && worldNeeded
+    (!draft?.world || !['ready', 'preview'].includes(draft.stageStatus.world) || entitiesNeeded || variablesNeeded || storyNeeded);
+  const retryWorldOnly = Boolean(validDraft && !stageSettingsChanged && !storyNeeded && !entitiesNeeded && !variablesNeeded && worldNeeded
     && draft?.useVariableStage && draft.stageStatus.variables === 'ready' && draft.variables?.validation === 'validated'
     && (draft.stageStatus.world === 'failed' || draft.failures.some(failure =>
       failure.stage === 'world' && failure.storyRevision === draft.storyRevision)));
-  const worldRetryHint = '本次仅重试动态世界，保留已通过的正文和变量。重新请求可能产生模型费用。';
-  const canGenerate = Boolean(validDraft && !awaitingAction && (storyNeeded || variablesNeeded || worldNeeded || stageSettingsChanged));
+  const worldRetryHint = '本次仅重试场外与网络，保留已通过的正文和变量。重新请求可能产生模型费用。';
+  const canGenerate = Boolean(validDraft && !awaitingAction && !openingIssue && (storyNeeded || entitiesNeeded || variablesNeeded || worldNeeded || stageSettingsChanged));
   const recoveryStagesOff = Boolean(draft?.legacyNotificationRecovery
-    && (!settings.runtime.useVariableStage || !settings.runtime.useWorldStage));
+    && ( !settings.runtime.useVariableStage || !settings.runtime.useWorldStage));
   const disabledGuidance = recoveryStagesOff
-    ? '结算旧通知需要启用变量管理和动态世界。'
-    : !settings.runtime.useVariableStage && !settings.runtime.useWorldStage
-    ? '变量管理和动态世界已关闭：正文通过校验后正式结算。纯小说模式不更新世界变量和普通回合时钟。'
-    : !settings.runtime.useVariableStage && draft?.variables?.validation !== 'validated'
-      ? '动态世界依赖合法变量候选。变量管理已关闭，世界结果仅供预览，不能正式结算；请启用变量补算，或同时关闭动态世界。'
-      : !settings.runtime.useWorldStage
-        ? '动态世界已关闭：正文与变量候选通过校验后正式结算，不执行场外世界更新。'
-        : '';
+    ? '结算旧通知需要启用主角与现场和场外与网络。'
+    : !useEntityStage || !useVariableStage || !useWorldStage
+      ? '已关闭的阶段将跳过。其余阶段生成成功后一起结算。' : '';
   const workflowGuidance = validDraft && !awaitingAction && !busy && !canCommit
-    ? disabledGuidance || (!canGenerate
+    ? openingGuidance || disabledGuidance || (!canGenerate
       ? draft?.world?.validation === 'preview'
         ? '当前世界结果仅为预览。请在高级操作中补算世界候选，完成后才能正式结算。'
         : '当前候选尚不满足正式结算条件。请展开高级设置检查并补算必要候选。'
       : '')
     : '';
-  function openRuntimeSettings() {
+  const disabledStage = !useEntityStage && !recoveryStagesOff ? 'entities' : !useVariableStage ? 'variables' : 'world';
+  function openRuntimeSettings(target: 'entities' | 'variables' | 'world' = disabledStage) {
     if (!compactSidebars) {
-      // PC：选中提示所指的阶段，并聚焦该阶段自己的开关（而非列表中第一个未勾选项）。
-      const target = !settings.runtime.useVariableStage ? "variables" : "world";
+      // PC：选中提示所指的阶段，并聚焦该阶段自己的开关。
+
       openWorkflowView(target);
       requestAnimationFrame(() => {
         const toggle = runtimeSwitches.current?.querySelector<HTMLInputElement>(`input[data-stage="${target}"]`);
@@ -525,35 +592,36 @@ export function GameScreen({
       runtimeSwitches.current?.scrollIntoView({ block: "nearest" });
       (
         runtimeSwitches.current?.querySelector<HTMLInputElement>(
-          "input:not(:checked)",
+          `input[data-stage="${target}"]`,
         ) ?? runtimeSwitches.current?.querySelector<HTMLInputElement>("input")
       )?.focus({ preventScroll: true });
     });
   }
 
-  const stageLabels = { story: '正文', variables: '变量', world: '动态世界' };
+  const stageLabels = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络' };
   const activeStage = automatic.running ? automatic.progress?.stage
-    : progress ? 'story' : variables.phase ? 'variables' : world.phase ? 'world' : undefined;
+    : progress ? 'story' : entities.phase ? 'entities' : variables.phase ? 'variables' : world.phase ? 'world' : undefined;
   const activePhase = automatic.running ? automatic.progress?.phase
-    : progress?.phase || variables.phase || world.phase;
+    : progress?.phase || entities.phase || variables.phase || world.phase;
   // Hook 错误可能在其他入口恢复成功后仍保留；展示优先使用最新运行结果。
   const latestResult = [...runtimeLogs].reverse().find((entry) => entry.stage !== 'memory' && entry.kind !== 'started');
   const currentFailure = latestResult && latestResult.kind !== 'completed' ? latestResult : undefined;
   const hasWorkflowError = Boolean(failedStage || (workflowError && (!latestResult || currentFailure)));
   const errorStage = currentFailure?.stage
-    ?? (['story', 'variables', 'world'] as const).find((stage) => draft?.stageStatus[stage] === 'failed')
-    ?? (error ? 'story' : variables.error ? 'variables' : world.error ? 'world' : undefined);
+    ?? (['story', 'entities', 'variables', 'world'] as const).find((stage) => draft?.stageStatus[stage] === 'failed')
+    ?? (error ? 'story' : entities.error ? 'entities' : variables.error ? 'variables' : world.error ? 'world' : undefined);
   const errorLabel = errorStage && errorStage in stageLabels ? stageLabels[errorStage as keyof typeof stageLabels]
     : errorStage === 'commit' ? '结算' : '';
-  const retryNotice = automatic.progress?.retry ?? variables.retry ?? world.retry ?? storyRetry;
+  const retryNotice = automatic.progress?.retry ?? entities.retry ?? variables.retry ?? world.retry ?? storyRetry;
   const retrySeconds = retryNotice ? Math.max(0, Math.ceil(retryNotice.remainingMs / 1000)) : 0;
   const retryIndex = retryNotice?.count;
   // 手机诊断页会在失败时自动弹出。自动重试进行中先让出，避免挡住次数、等待和取消。
   useEffect(() => { if (retryIndex !== undefined) setDiagnosticsOpen(false); }, [retryIndex, activeStage]);
   const workflowLabel = submitting ? (awaitingAction ? '正在发送行动' : '正在正式结算')
     : automatic.settling ? '正在正式结算'
-    : activeStage ? `${stageLabels[activeStage]}${activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? `自动重试 ${retryNotice?.count ?? ''}/${retryNotice?.max ?? ''}` : '生成中'} · ${{ story: 1, variables: 2, world: 3 }[activeStage]}/3`
+    : activeStage ? `${stageLabels[activeStage]}${activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? `自动重试 ${retryNotice?.count ?? ''}/${retryNotice?.max ?? ''}` : '生成中'} · ${{ story: 1, entities: 2, variables: 3, world: 4 }[activeStage]}/4`
     : automatic.running ? '正在准备生成'
+    : openingIssue ? '开局时间待补齐'
     : hasWorkflowError && submitError ? `${awaitingAction || rebindAction ? '行动发送' : '结算'}失败 · 查看详情`
     : hasWorkflowError && (currentFailure?.kind === 'cancelled' || currentFailure?.code === 'cancelled') ? '已取消 · 可恢复'
     : hasWorkflowError ? `${errorLabel}${errorStage === 'commit' ? '' : '生成'}失败 · 查看详情`
@@ -566,27 +634,33 @@ export function GameScreen({
   const draftScene = state.openingTimePending
     ? openingTime ? { worldClock: openingTime.startAt, locationId: state.protagonist.locationId } : undefined
     : { worldClock: state.worldClock, locationId: state.protagonist.locationId };
-  const progressSteps = (['story', 'variables', 'world'] as const).map((stage, i) => {
+  const progressSteps = (['story', 'entities', 'variables', 'world'] as const).map((stage, i) => {
     const status = draft?.stageStatus[stage];
     const auto = automatic.progress?.stage === stage ? automatic.progress : undefined;
     const skipped = automatic.outcome?.draft.draftRevision === draft?.draftRevision && automatic.outcome?.skipped.includes(stage);
-    const enabled = stage === 'story' || (busy && draft ? stage === 'variables' ? draft.useVariableStage : draft.useWorldStage : stage === 'variables' ? settings.runtime.useVariableStage : settings.runtime.useWorldStage);
-    const text = !enabled ? '已关闭' : awaitingAction ? '已结算'
+    const enabled = stage === 'story' || (busy && draft ? stage === 'entities' ? draft.useEntityStage : stage === 'variables' ? draft.useVariableStage : draft.useWorldStage : stage === 'entities' ? settings.runtime.useEntityStage : stage === 'variables' ? settings.runtime.useVariableStage : settings.runtime.useWorldStage);
+    const text = !enabled ? '已跳过' : awaitingAction ? '已结算'
       : auto ? auto.phase === 'saving' ? '保存中' : auto.phase === 'retrying' ? `重试 ${auto.retry?.count ?? ''}/${auto.retry?.max ?? ''}` : '生成中'
       : activeStage === stage ? activePhase === 'saving' ? '保存中' : activePhase === 'retrying' ? `重试 ${retryNotice?.count ?? ''}/${retryNotice?.max ?? ''}` : '生成中'
       : skipped || status === 'skipped' ? '已跳过'
       : status === 'failed' || errorStage === stage && hasWorkflowError ? '失败 · 可重试'
       : status === 'preview' ? '仅预览' : status === 'ready' ? '已完成' : '待生成';
-    return { stage, name: ['正文', '变量', '动态世界'][i], text,
-      visual: awaitingAction ? 'done' : auto || activeStage === stage ? 'run' : text === '失败 · 可重试' ? 'fail' : status === 'ready' ? 'done' : 'idle' };
+    return { stage, name: ['正文', '人物与实体', '主角与现场', '场外与网络'][i], text,
+      visual: !enabled ? 'off' : awaitingAction ? 'done' : auto || activeStage === stage ? 'run' : text === '失败 · 可重试' ? 'fail' : status === 'ready' ? 'done' : 'idle' };
   });
   const worldNavigation = <aside className="world-sidebar" aria-label="世界资料">
     <h2>世界资料</h2>
     <nav aria-label="世界资料分类">
-      {panelNames.map((name, index) => <button key={name} aria-description={compactSidebars&&changeBadges[name]?`本回合变化 ${changeBadges[name]} 项`:undefined} data-archive-panel={name} aria-current={!compactSidebars && !desktopSettings && panel === name ? 'true' : undefined} onClick={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);if(compactSidebars)setWorldDirectoryOpen(false); setPanel(!compactSidebars && panel === name ? undefined : name); })}>
-        <span className="dock-seal" aria-hidden="true">{['人', '势', '图', '物', '事', '史', '忆'][index]}{compactSidebars&&Boolean(changeBadges[name])&&<span className="turn-change-badge" data-change-panel={name} aria-hidden="true">{changeBadges[name]}</span>}</span>
+      {panelNames.map(name => <button key={name} aria-description={compactSidebars&&changeBadges[name]?`本回合变化 ${changeBadges[name]} 项`:undefined} data-archive-panel={name} aria-current={!compactSidebars && !desktopSettings && panel === name ? 'true' : undefined} onClick={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);if(compactSidebars)setWorldDirectoryOpen(false); setPanel(!compactSidebars && panel === name ? undefined : name); })}>
+        <span className="dock-seal" aria-hidden="true">{panelSeals[name]}{compactSidebars&&Boolean(changeBadges[name])&&<span className="turn-change-badge" data-change-panel={name} aria-hidden="true">{changeBadges[name]}</span>}</span>
         <span>{name}</span>
       </button>)}
+      <button data-archive-panel="小剧场" aria-current={!compactSidebars && panel === '小剧场' ? 'true' : undefined} onClick={() => outsideSettings(() => {
+        changeOpener.current = null;
+        setArchiveTarget(undefined);
+        if (compactSidebars) setWorldDirectoryOpen(false);
+        setPanel(!compactSidebars && panel === '小剧场' ? undefined : '小剧场');
+      })}><span className="dock-seal" aria-hidden="true">剧</span><span>小剧场</span></button>
     </nav>
     {!compactSidebars && <nav className="dock-system" aria-label="系统操作">
       <button data-settings-open aria-current={desktopSettings?'true':undefined} onClick={onOpenSettings}><span className="dock-seal" aria-hidden="true">设</span><span>设置</span></button>
@@ -594,27 +668,30 @@ export function GameScreen({
     </nav>}
   </aside>;
   const autoWorkflowView: WorkflowStage =
-    (activeStage === 'story' || activeStage === 'variables' || activeStage === 'world' ? activeStage : undefined)
+    (activeStage === 'story' || activeStage === 'entities' || activeStage === 'variables' || activeStage === 'world' ? activeStage : undefined)
     ?? progressSteps.find((step) => step.visual === 'fail')?.stage
     ?? progressSteps.find((step) => step.text === '待生成' || step.text === '仅预览')?.stage
-    ?? (disabledGuidance ? (!settings.runtime.useVariableStage ? 'variables' : 'world') : undefined)
+    ?? (disabledGuidance ? disabledStage : undefined)
     ?? 'story';
   const rawTurnId = awaitingAction ? state.journal.at(-1)?.turnId : draft?.turnId;
   const staleDraftMessage = draft ? '当前草稿已过期，请重新读取存档。' : '没有可执行的回合草稿。请重新读取存档；暂时无法生成或结算。';
-  const setStageEnabled = (key: 'useVariableStage' | 'useWorldStage', checked: boolean) =>
+  const setStageEnabled = (key: 'useEntityStage' | 'useVariableStage' | 'useWorldStage', checked: boolean) =>
     onSettings({ ...settings, runtime: { ...settings.runtime, [key]: checked } });
   const followLatest = () => {
     follow.current = true;
     setFollowing(true);
     if (reader.current) reader.current.scrollTop = reader.current.scrollHeight;
   };
-  const stageActions: Record<'variables' | 'world', StageAction> = {
+  const stageActions: Record<'entities' | 'variables' | 'world', StageAction> = {
+    entities: { label: entities.phase ? '取消人物与实体生成' : draft?.entities ? '重新生成人物与实体' : '生成人物与实体',
+      cancel: Boolean(entities.phase), disabled: entities.phase ? entities.phase === 'saving' : !validDraft || !draft?.story || !useEntityStage || busy,
+      onClick: entities.phase ? entities.cancel : () => void entities.generate() },
     variables: variables.phase
       ? { label: '取消变量生成', cancel: true, disabled: variables.phase === 'saving', onClick: variables.cancel }
       : {
           label: draft?.variables ? '重新生成变量候选' : draft?.useVariableStage === false ? '启用并补算变量' : '生成变量候选',
           cancel: false,
-          disabled: !validDraft || !draft?.story || draft.stageStatus.story !== 'ready' || !settings.runtime.useVariableStage || busy,
+          disabled: !validDraft || !draft?.story || draft.stageStatus.story !== 'ready' || !settings.runtime.useVariableStage || entitiesNeeded || busy,
           onClick: () => void variables.generate(),
         },
     world: world.phase
@@ -622,10 +699,42 @@ export function GameScreen({
       : {
           label: draft?.world ? '重新生成世界候选' : draft?.useWorldStage === false ? '启用并补算世界' : '生成世界候选',
           cancel: false,
-          disabled: !validDraft || !draft?.story || draft.stageStatus.story !== 'ready' || !settings.runtime.useWorldStage || busy,
+          disabled: !validDraft || !draft?.story || draft.stageStatus.story !== 'ready' || entitiesNeeded || !settings.runtime.useWorldStage || busy,
           onClick: () => void world.generate(),
         },
   };
+  function generate(...args: Parameters<typeof generateStory>) {
+    confirmation.current = undefined;
+    return generateStory(...args);
+  }
+  async function continueWorkflow(transport: ContinuationRoute = 'direct') {
+    if (!draft || busy) return;
+    if (storyContinuable && !draft.storyPartial?.writing) {
+      if (confirmation.current) return;
+      const operation = Symbol('legacy continuation');
+      confirmation.current = operation;
+      setConfirmationError(undefined);
+      const route = location.hash;
+      const active = () => confirmation.current === operation && location.hash === route;
+      try {
+        const offer = await prepareLegacyContinuation(draft, repository,
+          () => (readDocument(localStorage, settingsKey, SettingsSchema) ?? settings).prompts, active);
+        if (!active()) return;
+        const writing = offer.writing;
+        const label = writing.source === 'native' ? '王朝原生文学设置' : `${writing.id}（${writing.version}）`;
+        const path = transport === 'relay' ? '通过本站中转' : '直连模型服务';
+        if (!window.confirm(`旧版断点没有记录文学来源。保留已写内容，使用${label}续写？本次${path}，游戏只发起一次请求。仅新续写部分使用此来源。取消可继续阅读、复制或重新生成。`)) return;
+        const failure = await automatic.generate(draft, offer.confirm(transport));
+        if (active() && failure) setConfirmationError({draft, message:failure});
+      } catch (error) {
+        if (active()) setConfirmationError({draft, message:storyError(error)});
+      } finally {
+        if (active()) confirmation.current = undefined;
+      }
+      return;
+    }
+    await automatic.generate(draft);
+  }
   const workflowPrimaryButton = automatic.running ? (
     <button
       disabled={automatic.settling || automatic.progress?.phase === "saving"}
@@ -637,7 +746,7 @@ export function GameScreen({
     <button
       className="primary"
       disabled={!validDraft || busy}
-      onClick={() => void automatic.generate()}
+      onClick={() => void continueWorkflow()}
     >
       {canCommit
         ? "完成本回合结算"
@@ -651,41 +760,45 @@ export function GameScreen({
   // 输入栏常驻的多功能按钮：运行中=取消；某环节停下=继续当前环节；已结算=留在原位不可点。
   // 全阶段模式沿用原来的独立正文入口；关闭阶段时自动完成已启用阶段并结算。均使用已绑定行动。
   // 变量、世界与结算环节等同详情里的「继续未完成阶段」。
-  const nextStage = storyNeeded ? 'story' : variablesNeeded ? 'variables' : worldNeeded ? 'world' : undefined;
+  const nextStage = storyNeeded ? 'story' : entitiesNeeded ? 'entities' : variablesNeeded ? 'variables' : worldNeeded ? 'world' : undefined;
   const runningCancel = automatic.running ? { onClick: automatic.cancel, saving: automatic.settling || automatic.progress?.phase === 'saving' }
     : manualProgress ? { onClick: cancel, saving: manualProgress.phase === 'saving' }
+    : entities.phase ? { onClick: entities.cancel, saving: entities.phase === 'saving' }
     : variables.phase ? { onClick: variables.cancel, saving: variables.phase === 'saving' }
     : world.phase ? { onClick: world.cancel, saving: world.phase === 'saving' }
     : undefined;
   const storyLabel = draft?.turnKind === 'regular' ? '生成本回合正文' : '生成开局正文';
   const continueStory = () => {
     if (!draft || busy || !mayStartStory(draft)) return;
-    if (!settings.runtime.useVariableStage || !settings.runtime.useWorldStage) void automatic.generate();
+    if (!settings.runtime.useEntityStage || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage) void automatic.generate();
     else void generate();
   };
-  const continueWorkflow = () => { if (draft && !busy) void automatic.generate(); };
   const workflowAction: { kind: 'cancel' | 'continue' | 'idle'; label: string; short: string; title?: string; disabled: boolean; onClick?: () => void } =
     runningCancel ? { kind: 'cancel', label: runningCancel.saving ? '正在保存…' : '取消生成', short: '停', disabled: runningCancel.saving,
       title: runningCancel.saving ? '正在保存，稍候即可' : '取消正在进行的生成', onClick: runningCancel.onClick }
     : awaitingAction ? { kind: 'idle', label: '本回合已完成', short: '完', disabled: true, title: '本回合已结算；发送新行动后继续' }
     : nextStage === 'story' && storyContinuable ? { kind: 'continue', label: '续写正文', short: '续', disabled: !validDraft || busy,
-        title: !validDraft ? staleDraftMessage : '从中断处接着写正文，写完后完成已启用阶段并正式结算', onClick: continueWorkflow }
+        title: !validDraft ? staleDraftMessage : '从中断处接着写正文，写完后完成已启用阶段并正式结算', onClick: () => void continueWorkflow() }
     : nextStage === 'story' ? { kind: 'continue', label: storyLabel, short: '续', disabled: !validDraft || busy || !mayStartStory(draft),
         title: !validDraft ? staleDraftMessage : '生成本回合正文（使用已绑定的行动）', onClick: continueStory }
     : !validDraft ? { kind: 'idle', label: '继续', short: '续', disabled: true, title: staleDraftMessage }
-    : canCommit && !nextStage ? { kind: 'continue', label: '完成本回合结算', short: '结', disabled: busy, title: '候选已完成，保存本回合结果', onClick: continueWorkflow }
-    : stageSettingsChanged && !nextStage ? { kind: 'continue', label: '应用阶段设置并继续', short: '续', disabled: busy, title: '在执行锁内保存本次阶段选择，再校验并结算', onClick: continueWorkflow }
-    : nextStage && canGenerate ? { kind: 'continue', label: nextStage === 'variables' ? '继续生成变量' : '继续生成世界', short: '续', disabled: busy,
-        title: '从当前环节继续，完成后自动结算', onClick: continueWorkflow }
+    : openingIssue ? { kind: 'continue', label: '重新 Roll 开局正文', short: '重', disabled: busy,
+        title: '重新生成开局正文。当前正文保留到新正文保存成功。', onClick: () => void generate(undefined, 'openingTime') }
+    : canCommit && !nextStage ? { kind: 'continue', label: '完成本回合结算', short: '结', disabled: busy, title: '候选已完成，保存本回合结果', onClick: () => void continueWorkflow() }
+    : stageSettingsChanged && !nextStage ? { kind: 'continue', label: '应用阶段设置并继续', short: '续', disabled: busy, title: '在执行锁内保存本次阶段选择，再校验并结算', onClick: () => void continueWorkflow() }
+    : nextStage && canGenerate ? { kind: 'continue', label: '继续生成' + stageLabels[nextStage], short: '续', disabled: busy,
+        title: '从当前环节继续，完成后自动结算', onClick: () => void continueWorkflow() }
     : { kind: 'idle', label: '继续', short: '续', disabled: true, title: workflowGuidance || '当前没有可继续的环节' };
   const actionGuidance = submitting || automatic.settling || runningCancel?.saving
     ? '正在保存，请稍候；保存期间不能取消或发送新行动。'
     : busy ? `${activeStage ? stageLabels[activeStage] : '当前操作'}正在处理，请等待完成或使用原有取消按钮。`
     : !validDraft ? staleDraftMessage
     : !navigator.locks ? '当前浏览器缺少 Web Locks，不能安全启动请求。输入仍保留，请使用支持的浏览器重新读档。'
+    : openingIssue ? undefined
+    : openingReuse ? '继续时会重新校验已有变量候选，通过后直接复用。'
     : workflowGuidance || (awaitingAction ? undefined
       : canCommit ? '候选已完成，可点击左侧按钮完成本回合结算；发送新行动将先结算，再绑定下一回合。'
-      : nextStage === 'variables' || nextStage === 'world'
+      : nextStage === 'entities' || nextStage === 'variables' || nextStage === 'world'
         ? `本回合尚未结算，请点击输入框左侧${compactSidebars ? `“续”（${workflowAction.label}）` : `“${workflowAction.label}”`}。${retryWorldOnly ? worldRetryHint : '输入仅本页暂存，不会替换已绑定行动。'}`
         : rebindAction ? `尚无正文候选。可修改回填行动后尝试发送；左侧“${compactSidebars ? '续' : workflowAction.label}”使用原已绑定行动。请求前仍会检查运行锁。`
         : '请先使用左侧按钮生成本回合正文，再继续必要阶段。');
@@ -701,10 +814,11 @@ export function GameScreen({
             ? "off"
             : "pending";
 
-  const errorMessages = [automatic.error, error, submitError, variables.error, world.error].filter((message): message is string => Boolean(message));
+  const errorMessages = [automatic.error, error, submitError, entities.error, variables.error, world.error].filter((message): message is string => Boolean(message));
   const diagnosticRecovery = busy ? '当前仍在处理，请等待结束或使用原有取消操作。'
     : !validDraft ? '当前草稿版本不可继续，请重新读取存档后检查。'
     : !navigator.locks ? '当前浏览器缺少 Web Locks，不能安全启动请求；请更换支持的浏览器并重新读档。'
+    : openingGuidance ? openingGuidance
     : retryWorldOnly ? `点击「继续未完成阶段」恢复本回合。${worldRetryHint}`
     : workflowAction.kind === 'continue' && !workflowAction.disabled ? `当前可主动${workflowAction.label}；生成可能产生费用，查看诊断不会发起请求。`
     : '当前暂不可继续，请检查阶段开关与现有操作按钮。';
@@ -727,7 +841,7 @@ export function GameScreen({
         </div>
       )}
       {validDraft && currentFailure?.fieldPath === 'worldbook.unbound' &&
-        <button type="button" disabled={busy} onClick={() => void generate(undefined,true)}>按当前世界观重新生成正文</button>}
+        <button type="button" disabled={busy} onClick={() => void generate(undefined, 'worldview')}>按当前世界观重新生成正文</button>}
       {legacyRecoveryOptions.length > 0 && (
         <div className="wf-banner" data-level="warn" role="note">
           <span className="wf-banner-tag" aria-hidden="true">复</span>
@@ -743,7 +857,7 @@ export function GameScreen({
         <div className="wf-banner" data-level="warn" role="note" aria-label="阶段设置提示">
           <span className="wf-banner-tag" aria-hidden="true">注</span>
           <div className="wf-banner-msg"><p>{workflowGuidance}</p></div>
-          <button onClick={openRuntimeSettings} aria-controls="workflow-runtime-switches">前往阶段开关</button>
+          <button onClick={() => openRuntimeSettings()} aria-controls="workflow-runtime-switches">前往阶段开关</button>
         </div>
       )}
       {!validDraft && (
@@ -769,7 +883,7 @@ export function GameScreen({
     <small className="wf-idle">{awaitingAction ? "发送新行动后开始下一回合" : busy ? "正在处理，请稍候" : "当前没有可执行的自动操作"}</small>
   );
   const renderWorkflow = (layout: 'desktop' | 'sheet') => (
-                      <DesktopWorkflowPanel layout={layout}
+                      <DesktopWorkflowPanel layout={layout} formalState={state}
                         label={workflowLabel}
                         state={workflowState}
                         onClose={closeWorkflow}
@@ -783,6 +897,7 @@ export function GameScreen({
                         tab={workflowTab}
                         onTab={setWorkflowTab}
                         switches={{
+                          entities: { checked: useEntityStage, onChange: checked => setStageEnabled("useEntityStage", checked) },
                           variables: { checked: settings.runtime.useVariableStage, onChange: (checked) => setStageEnabled("useVariableStage", checked) },
                           world: { checked: settings.runtime.useWorldStage, onChange: (checked) => setStageEnabled("useWorldStage", checked) },
                         }}
@@ -799,23 +914,23 @@ export function GameScreen({
                       />
   );
   return (
-    <main className="game-layout city-night" data-city={atmosphere.city} data-time={atmosphere.time} data-wx={atmosphere.weather}
+    <ImageScope key={JSON.stringify([state.saveId,state.createdAt,instance])} lib={repository.images} state={state} instance={instance}><main className="game-layout city-night" data-city={atmosphere.city} data-time={atmosphere.time} data-wx={atmosphere.weather}
       onKeyDown={event => {
-        if (compactSidebars || desktopArchive || desktopSettings || event.nativeEvent.isComposing || event.repeat || (event.target as HTMLElement).closest('dialog, .archive')) return;
+        if (compactSidebars || desktopArchive || desktopSettings || theaterActive || event.nativeEvent.isComposing || event.repeat || (event.target as HTMLElement).closest('dialog, .archive')) return;
         if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.altKey) {
           event.preventDefault(); void send(); return;
         }
         if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey ||
-          (event.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
+          (event.target as HTMLElement).closest('input, textarea, select, [contenteditable], .game-phone')) return;
         if (/^[1-5]$/.test(event.key) && settings.prompts.actionOptions && !busy && !progress && !referenceOptions && options && options.length >= 3 && options.length <= 5) {
           const option = options[Number(event.key) - 1];
           if (option) { event.preventDefault(); setInput((current) => appendActionOption(current, option)); document.getElementById('player-input')?.focus(); }
         }
       }}>
       <CityAtmosphere state={state} />
-      {compactSidebars?<MobileCityBar state={state} mini={mobileMini} onStatus={()=>setMobileStatusOpen(true)}/>:<CityBar state={state} />}
-      {!compactSidebars&&<PlayerStatus state={state} equipment={equipment} activePanel={compactSidebars || desktopSettings ? undefined : panel} onProfile={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined); setPanel(desktopArchive === '人物档案' ? undefined : '人物档案'); })} onEconomy={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);setPanel(desktopArchive === '经济与资产' ? undefined : '经济与资产'); })} />}
-      <section inert={Boolean(desktopArchive||desktopSettings)} className="story-column" aria-label="剧情与行动">
+      {compactSidebars?<MobileCityBar state={state} mini={mobileMini} onStatus={()=>setMobileStatusOpen(true)}/>:<CityBar state={state} phone={phoneButton(false)} />}
+      {!compactSidebars&&<PlayerStatus state={state} equipment={equipment} activePanel={compactSidebars || desktopSettings || panel === '手机' ? undefined : panel} onProfile={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined); setPanel(desktopArchive === '人物档案' ? undefined : '人物档案'); })} onEconomy={() => outsideSettings(()=>{ changeOpener.current=null;setArchiveTarget(undefined);setPanel(desktopArchive === '经济与资产' ? undefined : '经济与资产'); })} />}
+      <section inert={Boolean(desktopArchive || desktopSettings || theaterActive)} className="story-column" aria-label="剧情与行动">
         <div
           className={`reader ${!view.journal.length && !draft?.story && !streamingPreview && !storyRetryWait ? 'reader-empty' : ''}`}
           ref={reader}
@@ -849,6 +964,7 @@ export function GameScreen({
               <CityChapter number={index + 1} state={state} scene={state.journal[index]?.scene} desktop={!compactSidebars} />
               <StoryReading narrative={entry.narrative} protagonistName={hero.name} />
               <SettlementNotice settlement={state.journal[index]?.settlement} />
+              <ImageEntry kind="story" id={entry.turnId}/>
               {index===view.journal.length-1&&showChanges&&<TurnChanges state={state} comparison={turnComparison} mobile={compactSidebars} onOpen={openChange}/>}
             </article>
           ))}
@@ -866,7 +982,9 @@ export function GameScreen({
                 : partialBlock === 'used_up'
                 ? `正文未写完 · 已续写 ${STORY_CONTINUATION_LIMIT} 次，不能再续写；可复制已写内容，按「发送」重新生成`
                 : partialBlock === 'closed_short'
-                  ? `正文已结束但只有 ${partialCount?.chars ?? 0} 字，低于最低 ${minNarrativeChars} 字，续写无法补足 · 可复制已写内容，按「发送」重新生成`
+                  ? `正文已结束但只有 ${partialCount?.chars ?? 0} 字，低于最低 ${partialMinimum} 字，续写无法补足 · 可复制已写内容，按「发送」重新生成`
+                  : !draft?.storyPartial?.writing
+                    ? (confirmationError && confirmationError.draft === draft ? confirmationError.message : undefined) ?? '旧版断点的文学来源未知。点「续写正文」确认新续写的来源，也可保留行动并重新生成正文。'
                   : partialCount?.closed
                     ? '正文已写完，只差结尾的记录标签 · 点「续写正文」补齐，或按「发送」重新生成'
                     : '正文未写完 · 点「续写正文」从断点接着写，或按「发送」重新生成'}</span>
@@ -874,11 +992,16 @@ export function GameScreen({
                 : <p className="field-hint">模型还在写创作提纲时就中断了，{storyContinuable ? '续写会从提纲处接着往下写。' : '没有可阅读的正文。'}</p>}
               {!partialCount?.closed && <p className="story-partial-end" aria-hidden="true">……</p>}
               <div className="story-partial-actions" role="group" aria-label="未写完的正文">
-                <span className="story-partial-meta">已写 <b>{partialCount?.chars ?? 0}</b> 字 · 最低 {minNarrativeChars} 字</span>
+                <span className="story-partial-meta">已写 <b>{partialCount?.chars ?? 0}</b> 字{partialMinimum !== undefined && ` · 最低 ${partialMinimum} 字`}</span>
                 {partialNarrative && <button type="button" className={`partial-action partial-copy${partialCopy?.text === partialNarrative ? (partialCopy.ok ? ' is-done' : ' is-failed') : ''}`}
                   onClick={() => void copyPartial(partialNarrative)} title="把已写出的正文复制到剪贴板">
                   <span className="partial-seal" aria-hidden="true">{partialCopy?.text === partialNarrative && partialCopy.ok ? '✓' : '抄'}</span>
                   {partialCopy?.text !== partialNarrative ? '复制已写内容' : partialCopy.ok ? '已复制' : '复制失败，请手动选中'}</button>}
+                {storyContinuable && !draft?.storyPartial?.writing && canRelayLegacyStory() &&
+                  <button type="button" className="partial-action" disabled={busy}
+                    onClick={() => void continueWorkflow('relay')}>通过本站中转续写</button>}
+                {!draft?.storyPartial?.writing && <button type="button" className="partial-action" disabled={busy}
+                  onClick={() => void generate()} title="使用当前文学设置重新生成；成功前保留旧片段">重新生成正文</button>}
                 <button type="button" className="partial-action partial-discard" disabled={busy} onClick={() => void discardPartial()}
                   title="只丢掉这段没写完的正文，不调用 AI，也不会撤回上一回合；原行动留在输入框里">
                   <span className="partial-seal" aria-hidden="true">弃</span>放弃这段</button>
@@ -936,7 +1059,7 @@ export function GameScreen({
             )}
             <section
               className="workflow"
-              aria-label="三阶段工作流"
+              aria-label="四阶段工作流"
               data-state={workflowState}
             >
               {retryNotice && (
@@ -944,14 +1067,14 @@ export function GameScreen({
                   <span>{activeStage ? stageLabels[activeStage] : '当前阶段'} · 第 {retryNotice.count}/{retryNotice.max} 次自动重试</span>
                   <span>上次失败：{retryNotice.reason}</span>
                   <span>{retrySeconds > 0 ? `${retrySeconds} 秒后重试` : '即将重试'}</span>
-                  <button type="button" onClick={() => (automatic.running ? automatic.cancel() : variables.phase ? variables.cancel() : world.phase ? world.cancel() : cancel())}>取消</button>
+                  <button type="button" onClick={() => (automatic.running ? automatic.cancel() : entities.phase ? entities.cancel() : variables.phase ? variables.cancel() : world.phase ? world.cancel() : cancel())}>取消</button>
                 </p>
               )}
               {compactSidebars ? (
                 <div className="workflow-disclosure mobile-workflow-line" data-open={workflowOpen} {...(workflowOpen?{open:true}:{})}>
-                  <div className="workflow-summary"><button type="button" className="workflow-toggle" ref={workflowToggle} aria-label="三阶段工作流详情" aria-expanded={workflowOpen} aria-controls="workflow-pop" onClick={()=>setWorkflowOpen(true)}>
+                  <div className="workflow-summary"><button type="button" className="workflow-toggle" ref={workflowToggle} aria-label="四阶段工作流详情" aria-expanded={workflowOpen} aria-controls="workflow-pop" onClick={()=>setWorkflowOpen(true)}>
                     <span className="mobile-progress-segments" aria-hidden="true">{progressSteps.map(step=><i key={step.stage} data-s={step.visual}/>)}</span>
-                    <strong role="status" aria-live="polite"><span className="sr-only">三阶段 · </span>{workflowLabel}</strong><span className="more">详情 ›</span>
+                    <strong role="status" aria-live="polite"><span className="sr-only">四阶段 · </span>{workflowLabel}</strong><span className="more">详情 ›</span>
                   </button></div>
                   {workflowOpen&&<MobileWorkflowDrawer inputRef={inputElement} onClose={closeWorkflow}><ScriptButtons/>{renderWorkflow('sheet')}</MobileWorkflowDrawer>}
                 </div>
@@ -963,7 +1086,7 @@ export function GameScreen({
                 >
                   <div className="workflow-summary">
                     <strong role="status" aria-live="polite">
-                      <span className="workflow-prefix">三阶段 · </span>
+                      <span className="workflow-prefix">四阶段 · </span>
                       {workflowLabel}
                     </strong>
                     <span className="rail">
@@ -1024,16 +1147,20 @@ export function GameScreen({
               </button>
             </ComposerTools>
             <label className="sr-only" htmlFor="player-input">你的行动</label>
-            <textarea id="player-input" ref={inputElement} aria-describedby={[concurrencyBlocked && 'action-concurrency-error', actionGuidance && 'action-recovery-guidance'].filter(Boolean).join(' ') || undefined} disabled={submitting} value={input}
+            <textarea id="player-input" ref={inputElement} aria-describedby={[concurrencyBlocked && 'action-concurrency-error', (actionGuidance || openingIssue) && 'action-recovery-guidance'].filter(Boolean).join(' ') || undefined} disabled={submitting} value={input}
               onChange={(e) => setInput(e.target.value)} rows={compactSidebars?1:2}
-              placeholder={compactSidebars ? '填写你的行动' : !settings.runtime.useVariableStage || !settings.runtime.useWorldStage
-                ? '填写你的行动；发送后完成已启用阶段并自动结算' : '填写你的行动；发送后生成三阶段并自动结算'} />
+              placeholder={compactSidebars ? '填写你的行动' : !settings.runtime.useEntityStage || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage
+                ? '填写你的行动；发送后完成已启用阶段并自动结算' : '填写你的行动；发送后生成四阶段并自动结算'} />
             <div className="composer-footer">
               <button className="primary" disabled={(!canCommit && !awaitingAction && !rebindAction) || busy || !input.trim()}
-                onClick={() => void send()}>{submitting ? '正在结算…' : '发送'}</button>
+                title={privateChat.busy ? '手机消息还在等回复' : undefined} onClick={() => void send()}>{submitting ? '正在结算…' : '发送'}</button>
               {!compactSidebars && <span className="kbd">Ctrl + Enter</span>}
             </div>
           </div>
+          {!busy && openingGuidance && <div id="action-recovery-guidance" className="wf-banner" data-level="warn" role="note" aria-label="开局时间恢复">
+            <div className="wf-banner-msg"><p>{openingGuidance}</p></div>
+            <button type="button" onClick={() => useVariableStage ? openWorkflowView('variables') : openRuntimeSettings('variables')}>{useVariableStage ? '查看变量阶段' : '前往变量开关'}</button>
+          </div>}
           {actionGuidance && <p id="action-recovery-guidance" className="field-hint" role="status">{actionGuidance}</p>}
         </div>
       </section>
@@ -1042,9 +1169,38 @@ export function GameScreen({
         <button aria-current={!panel && !mobileStatusOpen && !worldDirectoryOpen && !renderSettings ? 'page' : undefined}
           onClick={() => { reader.current?.focus({ preventScroll: true }); }}><span className="mobile-seal" aria-hidden="true">文</span>故事</button>
         <button data-mobile-tab="hero" aria-current={mobileStatusOpen||panel==='人物档案'||panel==='经济与资产'?'page':undefined} onClick={() => setMobileStatusOpen(true)}><span className="mobile-seal" aria-hidden="true">我</span>人物</button>
-        <button data-mobile-tab="world" aria-current={worldDirectoryOpen||(panel&&panel!=='人物档案'&&panel!=='经济与资产')?'page':undefined} onClick={() => setWorldDirectoryOpen(true)}><span className="mobile-seal" aria-hidden="true">世</span>世界资料</button>
+        <button data-mobile-tab="world" aria-current={worldDirectoryOpen||(panel&&panel!=='手机'&&panel!=='人物档案'&&panel!=='经济与资产')?'page':undefined} onClick={() => setWorldDirectoryOpen(true)}><span className="mobile-seal" aria-hidden="true">世</span>世界资料</button>
+        {compactSidebars && phoneButton(true)}
         <button data-settings-open aria-current={renderSettings?'page':undefined} onClick={onOpenSettings}><span className="mobile-seal" aria-hidden="true">设</span>设置</button>
       </nav>
+      {phoneOpen && <GamePhone key={JSON.stringify([state.saveId,state.createdAt,instance])} state={state} view={view} mobile={compactSidebars} instance={instance ?? null} data={phone} pending={draft?.phonePending ?? []}
+        controls={{
+          chat: privateChat,
+          frozen: Boolean(draft && !awaitingAction) || !state.turnNumber,
+          inactive: workflowBusy || Boolean(npcManagement.pendingId),
+          enabled: settings.runtime.phoneChat !== false,
+          canAbandon: Boolean(state.turnNumber && draft?.turnKind === 'regular'),
+          canEnd: Boolean(awaitingAction && !busy && draft?.phonePending?.length),
+          end: () => {
+            if (!awaitingAction || busy || !draft?.phonePending?.length) return;
+            const names = new Set<string>();
+            const groupNames = new Map(Object.values(state.phone.groups ?? {}).map(group => [group.id, group.name]));
+            for (const row of draft.phonePending) {
+              if (isPrivate(row)) names.add(state.npc[row.reply.npcId].name);
+              else {
+                if (row.action.type === 'create') groupNames.set(row.groupId, row.action.name);
+                names.add(groupNames.get(row.groupId)!);
+              }
+            }
+            setPanel(undefined);
+            void send('用手机和' + [...names].join('、') + '聊了一会儿');
+          },
+        }}
+        close={action => {
+          setPanel(undefined);
+          requestAnimationFrame(() => (action ? inputElement.current : document.querySelector<HTMLButtonElement>('[data-phone-entry]'))?.focus());
+        }}
+        showNpc={id => { changeOpener.current = document.querySelector('[data-phone-entry]'); openArchive('NPC', id); }}/>}
       {legacyRecoveryDialog && legacyRecoveryDialog === recoveryDraftKey && draft?.story && legacyRecoveryOptions.length > 0 && (
         <LegacyNotificationRecoveryDialog options={legacyRecoveryOptions} narrative={draft.story.narrative}
           onClose={() => setLegacyRecoveryDialog(undefined)} onConfirm={selection => {
@@ -1060,11 +1216,12 @@ export function GameScreen({
         {worldNavigation}
         <p className="muted mobile-world-hint">从身边的人，到更远的城市。</p>
       </Dialog>}
-      {desktopArchive && <ArchivePanel key={desktopArchive} title={desktopArchive} className={desktopArchive === '世界事件' ? 'world-events-dialog' : desktopArchive === '历史时间轴' ? 'history-dialog' : undefined} seal={desktopArchive === 'NPC' ? '人' : desktopArchive === '势力组织' ? '势' : desktopArchive === '物品栏' ? '物' : desktopArchive === '经济与资产' ? '财' : desktopArchive === '世界事件' ? '事' : desktopArchive === '历史时间轴' ? '史' : desktopArchive === '记忆' ? '忆' : desktopArchive === '地图' ? '图' : '档'} index={desktopArchive === '势力组织' ? 2 : desktopArchive === '物品栏' ? 4 : desktopArchive === '世界事件' ? 5 : desktopArchive === '历史时间轴' ? 6 : desktopArchive === '记忆' ? 7 : desktopArchive === '地图' ? 3 : 1}
+      {desktopArchive && <ArchivePanel key={desktopArchive} title={desktopArchive} className={desktopArchive === '世界事件' ? 'world-events-dialog' : desktopArchive === '历史时间轴' ? 'history-dialog' : undefined} seal={desktopArchive === 'NPC' ? '人' : desktopArchive === '势力组织' ? '势' : desktopArchive === '我的势力' ? '盟' : desktopArchive === '物品栏' ? '物' : desktopArchive === '经济与资产' ? '财' : desktopArchive === '世界事件' ? '事' : desktopArchive === '历史时间轴' ? '史' : desktopArchive === '记忆' ? '忆' : desktopArchive === '地图' ? '图' : desktopArchive === '后宫' ? '家' : '档'} total={panelNames.length + 1} index={(panelNames as readonly string[]).indexOf(desktopArchive) + 1 || 1}
         eyebrow={desktopArchive === '人物档案' || desktopArchive === '经济与资产' ? 'PROTAGONIST · 主角档案' : undefined}
-        subtitle={desktopArchive === '人物档案' ? `主角 · ${hero.name}` : desktopArchive === 'NPC' ? '人物名录' : desktopArchive === '物品栏' ? '随身与仓储' : desktopArchive === '经济与资产' ? '现金、收入与资产' : desktopArchive === '世界事件' ? '进行中的事' : desktopArchive === '历史时间轴' ? '已发生的事' : desktopArchive === '记忆' ? '主角的记忆' : desktopArchive === '地图' ? '地点层级' : '势力与机构'}
+        subtitle={desktopArchive === '人物档案' ? `主角 · ${hero.name}` : desktopArchive === 'NPC' ? '人物名录' : desktopArchive === '物品栏' ? '随身与仓储' : desktopArchive === '经济与资产' ? '现金、收入与资产' : desktopArchive === '世界事件' ? '进行中的事' : desktopArchive === '历史时间轴' ? '已发生的事' : desktopArchive === '记忆' ? '主角的记忆' : desktopArchive === '地图' ? '地点层级' : desktopArchive === '我的势力' ? '主角的主势力' : desktopArchive === '后宫' ? '成员与家庭' : '势力与机构'}
         onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }} returnFocus={() => changeOpener.current?.isConnected?changeOpener.current:document.querySelector<HTMLButtonElement>(`[data-archive-panel="${desktopArchive}"]`)}>
         {desktopArchive === '人物档案' ? <ProfilePanel state={state} equipment={equipment} candidateTime={openingTime?.endAt} onEconomy={() => setPanel('经济与资产')} onNpc={() => { setArchiveTarget(undefined); setPanel('NPC'); }} onSaves={onSaves} />
+          : desktopArchive === '后宫' ? <HaremPanel view={view} management={npcManagement}/>
           : desktopArchive === 'NPC' ? <NpcPanel view={view} management={npcManagement} initialId={archiveTarget?.panel === 'NPC' ? archiveTarget.id : archiveSelection.current.NPC} onOpenOrganization={id => openArchive('势力组织', id)} onSelect={id => { archiveSelection.current.NPC = id; }} desktop />
           : desktopArchive === '物品栏' ? <InventoryPanel view={view} desktop initialId={archiveSelection.current['物品栏']} onSelect={id=>{archiveSelection.current['物品栏']=id;}} onOpenProfile={id=>{if(id===hero.id){setArchiveTarget(undefined);setPanel('人物档案');}}} />
           : desktopArchive === '经济与资产' ? <EconomyPanel view={view} />
@@ -1072,12 +1229,24 @@ export function GameScreen({
           : desktopArchive === '历史时间轴' ? <HistoryPanel view={view} desktop uiState={archiveReading.current.history} onUiStateChange={value=>{archiveReading.current.history=value;}} />
           : desktopArchive === '地图' ? <MapPanel view={view} initialId={archiveTarget?.panel==='地图'?archiveTarget.id:undefined} uiState={archiveReading.current.map} onUiStateChange={value=>{archiveReading.current.map=value;}} onNpc={id=>openArchive('NPC',id)} onEvent={id=>openArchive('世界事件',id)}/>
           : desktopArchive === '记忆' ? <MemoryPanel view={view} desktop uiState={archiveReading.current.memory} onUiStateChange={value=>{archiveReading.current.memory=value;}} />
+          : desktopArchive === '我的势力' ? <FactionPanel view={view} links={{npc:id=>openArchive('NPC',id), organization:id=>openArchive('势力组织',id), event:id=>openArchive('世界事件',id)}} desktop />
           : <OrganizationPanel view={view} initialId={archiveTarget?.panel === '势力组织' ? archiveTarget.id : archiveSelection.current['势力组织']} links={{npc:id=>openArchive('NPC',id), organization:id=>openArchive('势力组织',id), event:id=>openArchive('世界事件',id)}} onSelect={id => { archiveSelection.current['势力组织'] = id; }} desktop />}
       </ArchivePanel>}
-      {panel && !desktopArchive && !desktopSettings && (
-        <Dialog title={panel} mobileVariant="sheet" sheetFull seal={{NPC:'人',势力组织:'势',地图:'图',物品栏:'物',世界事件:'事',历史时间轴:'史',记忆:'忆',人物档案:'人',经济与资产:'财'}[panel]} eyebrow="WORLD · ARCHIVE" returnFocus={()=>changeOpener.current?.isConnected?changeOpener.current:mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={`mobile-archive ${panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : ''}`} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
+      {theaterActive && <Dialog title="王朝小剧场" mobileVariant="sheet" sheetFull fitVisualViewport
+        nonmodal={!compactSidebars} className={compactSidebars ? 'mobile-archive theater-archive' : 'theater-archive'}
+        seal="剧" eyebrow="WORLD · ARCHIVE"
+        archiveHeading={compactSidebars ? undefined : { title: '王朝小剧场', seal: '剧', subtitle: '非正史创作', index: panelNames.length + 1, total: panelNames.length + 1 }}
+        returnFocus={() => compactSidebars ? mobileReturnFocus('world') : document.querySelector<HTMLButtonElement>('[data-archive-panel="小剧场"]')}
+        onClose={() => outsideTheater(() => { setPanel(undefined); setArchiveTarget(undefined); })}>
+        <TheaterPanel key={state.saveId + ':' + (instance ?? '')} leaveGuard={theaterLeave}
+          repository={repository.theaters} owner={{ saveId: state.saveId, createdAt: state.createdAt, instance: instance ?? null }} settings={settings}
+          latest={{ turn: state.turnNumber, time: state.openingTimePending ? null : state.worldClock }} />
+      </Dialog>}
+      {panel && panel !== '手机' && panel !== '小剧场' && !desktopArchive && !desktopSettings && (
+        <Dialog title={panel} mobileVariant="sheet" sheetFull seal={{NPC:'人',势力组织:'势',我的势力:'盟',地图:'图',物品栏:'物',世界事件:'事',历史时间轴:'史',记忆:'忆',后宫:'家',人物档案:'人',经济与资产:'财'}[panel]} eyebrow="WORLD · ARCHIVE" returnFocus={()=>changeOpener.current?.isConnected?changeOpener.current:mobileReturnFocus(panel==='人物档案'||panel==='经济与资产'?'hero':'world')} className={`mobile-archive ${panel === 'NPC' ? 'npc-dialog' : panel === '物品栏' ? 'inventory-dialog' : panel === '历史时间轴' ? 'history-dialog' : panel === '世界事件' ? 'world-events-dialog' : panel === '势力组织' ? 'organization-dialog' : panel === '我的势力' ? 'faction-dialog' : ''}`} onClose={() => { setPanel(undefined); setArchiveTarget(undefined); }}>
           {panel === '人物档案' ? (
             <>
+            <ImageAvatar kind="player" id={hero.id}/><Portraits kind="player" id={hero.id}/>
             <dl className="profile-details">
               {Object.entries({
                 姓名: hero.name,
@@ -1102,6 +1271,7 @@ export function GameScreen({
                 </Detail>
               ))}
             </dl>
+            <ImageEntry kind="player" id={hero.id}/>
             <ProfessionProfile hero={hero} />
             <TalentProfile talentId={hero.talentId} />
             <h3>当前穿戴与装备</h3>
@@ -1168,6 +1338,6 @@ export function GameScreen({
           </div>
         </Dialog>
       )}
-    </main>
+    </main></ImageScope>
   );
 }

@@ -8,8 +8,16 @@ export type Protocol = z.infer<typeof ProtocolSchema>;
 /** DeepSeek 官方 Chat Completions 兼容 OpenAI 的传输与响应结构，保留独立协议标识。 */
 export const isOpenAiCompatible = (protocol: Protocol): protocol is 'openai' | 'deepseek' =>
   protocol === 'openai' || protocol === 'deepseek';
-export type AiStage = 'story' | 'variables' | 'world';
+export type AiStage = 'story' | 'entities' | 'variables' | 'world';
 export type AiTask = AiStage | 'memory';
+export type ModelUse = AiTask | 'phone';
+export const routeDefaults = {
+  entities: 'follow-story', variables: 'follow-story', world: 'follow-story', memory: 'follow-story',
+  phone: 'follow-variables', phoneGroup: 'follow-phone', blackbook: 'follow-phone',
+  theater: 'follow-story', imagePrompt: 'follow-variables',
+} as const;
+export type ModelRoute = 'story' | keyof typeof routeDefaults;
+export const followTargets = { 'follow-story': 'story', 'follow-variables': 'variables', 'follow-phone': 'phone' } as const;
 export const modelIdSchema = z
   .string()
   .min(1)
@@ -56,17 +64,28 @@ const direct = z.strictObject({
   channelId: z.string(),
   modelId: z.union([modelIdSchema, z.literal('')]),
 });
-const optionalRoute = z.discriminatedUnion('mode', [
-  // Keep a stage's own selection while it temporarily inherits Story. IDs only, no credentials.
-  z.strictObject({ mode: z.literal('follow-story'), independent: direct.optional() }),
-  direct.extend({ mode: z.literal('independent') }),
-]);
+function optionalRoute<M extends keyof typeof followTargets>(mode: M) {
+  return z.discriminatedUnion('mode', [
+    z.strictObject({ mode: z.literal(mode), independent: direct.optional() }),
+    direct.extend({ mode: z.literal('independent') }),
+  ]);
+}
 export const AiConfigSchema = z
   .strictObject({
     version: z.literal(1),
     channels: z.array(ChannelSchema),
-    routes: z.strictObject({ story: direct, variables: optionalRoute, world: optionalRoute,
-      memory: optionalRoute.default({ mode: 'follow-story' }) }),
+    routes: z.strictObject({
+      story: direct,
+      entities: optionalRoute(routeDefaults.entities).optional(),
+      variables: optionalRoute(routeDefaults.variables),
+      world: optionalRoute(routeDefaults.world),
+      phone: optionalRoute(routeDefaults.phone).default({ mode: routeDefaults.phone }),
+      memory: optionalRoute(routeDefaults.memory).default({ mode: routeDefaults.memory }),
+      phoneGroup: optionalRoute(routeDefaults.phoneGroup).default({ mode: routeDefaults.phoneGroup }),
+      blackbook: optionalRoute(routeDefaults.blackbook).default({ mode: routeDefaults.blackbook }),
+      theater: optionalRoute(routeDefaults.theater).default({ mode: routeDefaults.theater }),
+      imagePrompt: optionalRoute(routeDefaults.imagePrompt).default({ mode: routeDefaults.imagePrompt }),
+    }).transform(routes => ({ ...routes, entities: routes.entities ?? structuredClone(routes.variables) })),
   })
   .superRefine((config, ctx) => {
     if (new Set(config.channels.map((c) => c.id)).size !== config.channels.length)
@@ -85,16 +104,9 @@ export const AiConfigSchema = z
   });
 export type AiConfig = z.infer<typeof AiConfigSchema>;
 export function defaultAiConfig(): AiConfig {
-  return {
-    version: 1,
-    channels: [],
-    routes: {
-      story: { channelId: '', modelId: '' },
-      variables: { mode: 'follow-story' },
-      world: { mode: 'follow-story' },
-      memory: { mode: 'follow-story' },
-    },
-  };
+  return AiConfigSchema.parse({ version: 1, channels: [], routes: {
+    story: { channelId: '', modelId: '' }, variables: { mode: routeDefaults.variables }, world: { mode: routeDefaults.world },
+  } });
 }
 export const defaultUrls: Record<Protocol, string> = {
   openai: 'https://api.openai.com/v1',
@@ -125,29 +137,21 @@ export function readAiConfig(storage: Pick<Storage, 'getItem'>) {
 export function saveAiConfig(storage: Pick<Storage, 'setItem'>, config: AiConfig) {
   return writeDocument(storage, aiConfigKey, AiConfigSchema, config);
 }
-export function setModelRouteFollow(config: AiConfig, stage: Exclude<AiTask, 'story'>, follow: boolean): AiConfig {
+export function setModelRouteFollow(config: AiConfig, stage: Exclude<ModelRoute, 'story'>, follow: boolean): AiConfig {
   const route = config.routes[stage];
-  if ((route.mode === 'follow-story') === follow) return config;
+  if ((route.mode !== 'independent') === follow) return config;
   const next = route.mode === 'independent'
-    ? { mode: 'follow-story' as const, independent: { channelId: route.channelId, modelId: route.modelId } }
+    ? { mode: routeDefaults[stage], ...(route.channelId ? { independent: { channelId: route.channelId, modelId: route.modelId } } : {}) }
     : { mode: 'independent' as const, ...(route.independent ?? { channelId: '', modelId: '' }) };
   return { ...config, routes: { ...config.routes, [stage]: next } };
 }
 export function removeChannel(config: AiConfig, id: string): AiConfig {
-  const remainingRoute = (route: AiConfig['routes']['variables']): AiConfig['routes']['variables'] => {
-    if (route.mode === 'independent')
-      return route.channelId === id ? { mode: 'independent', channelId: '', modelId: '' } : route;
-    return route.independent?.channelId === id ? { mode: 'follow-story' } : route;
-  };
-  return AiConfigSchema.parse({
-    ...config,
-    channels: config.channels.filter((c) => c.id !== id),
-    routes: {
-      story:
-        config.routes.story.channelId === id ? { channelId: '', modelId: '' } : config.routes.story,
-      variables: remainingRoute(config.routes.variables),
-      world: remainingRoute(config.routes.world),
-      memory: remainingRoute(config.routes.memory),
-    },
-  });
+  const routes = { ...config.routes };
+  if (routes.story.channelId === id) routes.story = { channelId: '', modelId: '' };
+  for (const stage of Object.keys(routeDefaults) as (keyof typeof routeDefaults)[]) {
+    const route = routes[stage];
+    const uses = route.mode === 'independent' ? route.channelId === id : route.independent?.channelId === id;
+    if (uses) Object.assign(routes, { [stage]: { mode: routeDefaults[stage] } });
+  }
+  return { ...config, channels: config.channels.filter(channel => channel.id !== id), routes };
 }

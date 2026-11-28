@@ -1,0 +1,60 @@
+
+> heijinwangchao@1.0.0-beta test:e2e
+> playwright test e2e/image-finalization.spec.ts e2e/image-generation.spec.ts e2e/image-placements.spec.ts e2e/harem.spec.ts e2e/automatic-settlement.spec.ts --grep 跨标签配置|跨标签关闭自动|同版 V8|关闭时保持纯文字|人物档案上传|人物、居家|长正文与三百张|跨标签替换|手动重绘居家照|主角状态和资料共享头像|家庭名册 |旧 V10 空家庭|文生图等待不阻断|完整原文可读，开局 --workers=1 --reporter=list
+
+[WebServer] (node:60074) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:60087) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm notice
+[WebServer] npm notice New major version of npm available! 11.9.0 -> 12.2.3
+[WebServer] npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+[WebServer] npm notice To update run: npm install -g npm@12.2.3
+[WebServer] npm notice
+[WebServer] (node:60109) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 30 tests using 1 worker
+
+(node:60133) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [desktop] › e2e/automatic-settlement.spec.ts:56:1 › 完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型 (15.5s)
+  ✓   2 [desktop] › e2e/automatic-settlement.spec.ts:397:1 › 文生图等待不阻断正式结算，跨标签重复通知和关闭开关不重发付费请求 (11.4s)
+  ✓   3 [desktop] › e2e/harem.spec.ts:14:3 › 家庭名册 development：换行、重名档案、键盘返回与刷新 (8.4s)
+  ✓   4 [desktop] › e2e/harem.spec.ts:14:3 › 家庭名册 production：换行、重名档案、键盘返回与刷新 (9.2s)
+  ✓   5 [desktop] › e2e/harem.spec.ts:91:1 › 旧 V10 空家庭只展示占位，不生成候选或写入家庭字段 (5.7s)
+  ✓   6 [desktop] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (15.0s)
+  ✓   7 [desktop] › e2e/image-finalization.spec.ts:82:1 › 跨标签关闭自动子开关只取消该规则的等待任务，运行中和手动任务继续 (19.3s)
+  ✓   8 [desktop] › e2e/image-finalization.spec.ts:175:1 › 同版 V8 结构异常在首页显示可操作提示，并可重新读取原记录 (2.9s)
+  ✓   9 [desktop] › e2e/image-generation.spec.ts:51:1 › 关闭时保持纯文字；设置、结算插画、相册与备份贯通 (13.0s)
+  ✓  10 [desktop] › e2e/image-generation.spec.ts:106:1 › 人物档案上传、独立槽位、锚点和 NPC 入口 (9.2s)
+  ✓  11 [desktop] › e2e/image-placements.spec.ts:191:1 › 人物、居家与业务资料仅展示选图，退出家庭后可从图库导出 (15.1s)
+  ✓  12 [desktop] › e2e/image-placements.spec.ts:315:1 › 长正文与三百张插画按视口读取并释放缩略图 (17.2s)
+  ✓  13 [desktop] › e2e/image-placements.spec.ts:433:1 › 跨标签替换、同名切档和损坏资源回退 (8.9s)
+  ✓  14 [desktop] › e2e/image-placements.spec.ts:489:1 › 手动重绘居家照后上传、切换、删除及家庭预览均复用原资源 (5.9s)
+  ✓  15 [desktop] › e2e/image-placements.spec.ts:542:1 › 主角状态和资料共享头像缩略图，点击才读取原图 (4.1s)
+(node:64487) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  -  16 [mobile] › e2e/automatic-settlement.spec.ts:56:1 › 完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型
+  ✓  17 [mobile] › e2e/automatic-settlement.spec.ts:397:1 › 文生图等待不阻断正式结算，跨标签重复通知和关闭开关不重发付费请求 (6.7s)
+  ✓  18 [mobile] › e2e/harem.spec.ts:14:3 › 家庭名册 development：换行、重名档案、键盘返回与刷新 (6.4s)
+  ✓  19 [mobile] › e2e/harem.spec.ts:14:3 › 家庭名册 production：换行、重名档案、键盘返回与刷新 (6.7s)
+  ✓  20 [mobile] › e2e/harem.spec.ts:91:1 › 旧 V10 空家庭只展示占位，不生成候选或写入家庭字段 (3.3s)
+  ✓  21 [mobile] › e2e/image-finalization.spec.ts:13:1 › 跨标签配置保留独立字段和草稿，同字段冲突须显式选择 (4.7s)
+  ✓  22 [mobile] › e2e/image-finalization.spec.ts:82:1 › 跨标签关闭自动子开关只取消该规则的等待任务，运行中和手动任务继续 (13.2s)
+  ✓  23 [mobile] › e2e/image-finalization.spec.ts:175:1 › 同版 V8 结构异常在首页显示可操作提示，并可重新读取原记录 (1.3s)
+  ✓  24 [mobile] › e2e/image-generation.spec.ts:51:1 › 关闭时保持纯文字；设置、结算插画、相册与备份贯通 (8.2s)
+  ✓  25 [mobile] › e2e/image-generation.spec.ts:106:1 › 人物档案上传、独立槽位、锚点和 NPC 入口 (6.3s)
+  ✓  26 [mobile] › e2e/image-placements.spec.ts:191:1 › 人物、居家与业务资料仅展示选图，退出家庭后可从图库导出 (15.9s)
+  ✓  27 [mobile] › e2e/image-placements.spec.ts:315:1 › 长正文与三百张插画按视口读取并释放缩略图 (10.7s)
+  ✓  28 [mobile] › e2e/image-placements.spec.ts:433:1 › 跨标签替换、同名切档和损坏资源回退 (5.9s)
+  ✓  29 [mobile] › e2e/image-placements.spec.ts:489:1 › 手动重绘居家照后上传、切换、删除及家庭预览均复用原资源 (4.5s)
+  ✓  30 [mobile] › e2e/image-placements.spec.ts:542:1 › 主角状态和资料共享头像缩略图，点击才读取原图 (3.4s)
+
+  1 skipped
+  29 passed (4.4m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.3
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+npm notice To update run: npm install -g npm@12.2.3
+npm notice

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { openWorkflow } from './helpers/gameLayout';
-import { addChannel, backToList, openAiSettings, openChannel } from './helpers/aiSettings';
+import { addChannel, backToList, openAiSettings, settingsCategory } from './helpers/aiSettings';
 
 const cloud = readFileSync(new URL('../announcements/current.json', import.meta.url), 'utf8');
 const approved = readFileSync(new URL('../src/tests/fixtures/disclaimer-v1.md', import.meta.url), 'utf8');
@@ -23,7 +23,7 @@ async function mute(page: import('@playwright/test').Page) {
   });
 }
 
-test('中性须知第四章与云端公告：保留六章、完整隐私提醒、11条更新及本地备份告知', async ({ page }, info) => {
+test('中性须知第四章与云端公告：保留六章、完整隐私提醒、正式版更新及迁移提醒', async ({ page }, info) => {
   await page.goto('/');
   const dialog = page.getByRole('dialog', { name: '黑金王朝 · 游玩须知与免责声明', exact: true });
   await expect(dialog.getByRole('heading', { level: 3 })).toHaveCount(6);
@@ -38,11 +38,18 @@ test('中性须知第四章与云端公告：保留六章、完整隐私提醒�
   await page.screenshot({ path: info.outputPath('privacy.png'), animations: 'disabled' });
   await dialog.getByRole('button', { name: '关闭免责声明' }).click();
   const notice = page.getByRole('dialog', { name: '王朝公告', exact: true });
-  await expect(notice.getByRole('listitem')).toHaveCount(11);
-  await expect(notice).toContainText('请妥善保管并备份重要游戏数据。');
+  await expect(notice.getByRole('heading', { name: '《黑金王朝》1.0 正式版上线' })).toBeVisible();
+  await expect(notice.getByRole('listitem')).toHaveCount(16);
+  await expect(notice).toContainText('更新前先导出备份');
+  await expect(notice).toContainText('「独立文本模型」不再使用');
   await expect(notice).not.toContainText('服务商收取');
   await expect(notice).not.toContainText('收费的第三方');
-  await notice.getByRole('listitem').last().scrollIntoViewIfNeeded();
+  const lastUpdate = notice.getByText(/^【API 消耗说明】/);
+  await lastUpdate.scrollIntoViewIfNeeded();
+  await expect(lastUpdate).toBeInViewport();
+  const message = notice.getByText('感谢大家在 Beta 期间留下的每一条反馈，正式版里见！遇到问题，欢迎通过「设置 → 反馈建议」告诉我们，或者直接在群里说。', { exact: true });
+  await message.scrollIntoViewIfNeeded();
+  await expect(message).toBeInViewport({ ratio: 1 });
   await page.screenshot({ path: info.outputPath('announcement.png'), animations: 'disabled' });
 });
 
@@ -79,7 +86,8 @@ test('五站创角与模型设置：中性费用提示、技术字段及密钥�
   await expect(key).toHaveAttribute('type','password'); await expect(key).toHaveValue('');
   // 安全说明默认收起，点开后完整显示。
   await backToList(settings);
-  await settings.getByRole('button', { name: '安全说明', exact: true }).click();
+  await settingsCategory(page,'跨域与网络');
+  await page.getByRole('button',{name:'放弃本次修改'}).click();
   const disclosure = settings.locator('.ai-sec');
   await disclosure.scrollIntoViewIfNeeded();
   await expect(disclosure).toBeVisible();
@@ -89,7 +97,7 @@ test('五站创角与模型设置：中性费用提示、技术字段及密钥�
   await page.screenshot({ path: info.outputPath('ai-settings-security.png'), animations: 'disabled' });
   await expect(settings).toContainText('浏览器存储不是安全的密钥库');
   await expect(settings).toContainText('密钥不会进入游戏存档、提示词或诊断详情');
-  await openChannel(settings, 'OpenAI 兼容');
+  await addChannel(settings, { preset:'OpenAI 兼容' });
   const test = settings.getByRole('button', { name: '测试回复（可能产生少量费用）', exact: true });
   await expect(test).toHaveAttribute('title', '会真实调用一次模型，可能产生少量费用');
   await test.scrollIntoViewIfNeeded();

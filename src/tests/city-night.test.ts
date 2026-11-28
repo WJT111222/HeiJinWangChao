@@ -24,7 +24,7 @@ const put = (state: unknown) => transaction(db, ['saves'], 'readwrite', async tx
 const raw = () => transaction(db, ['saves'], 'readonly', tx => request(tx.objectStore('saves').get('save-a')));
 
 describe('固定城市身份：创建、兼容、原子补齐、并发和撤回', () => {
-  it.each(['chongqing', 'shanghai', 'harbin', 'guangzhou'] as const)('创角正式写入 %s，而非依赖生成后的地点', async city => {
+  it.each(['chongqing', 'shanghai', 'harbin', 'guangzhou', 'beijing', 'hangzhou', 'changsha', 'sanya'] as const)('创角正式写入 %s，而非依赖生成后的地点', async city => {
     const form = newCreation(); form.city = city; form.person = { name: '林舟', age: '30', gender: '男性', appearance: '', personality: '' }; form.customProfession = '记者';
     const state = buildCreationState(form, defaultSettings());
     expect(state.openingCityId).toBe(city);
@@ -32,9 +32,10 @@ describe('固定城市身份：创建、兼容、原子补齐、并发和撤回'
   });
   it('缺少开局城市的 V10 档按标题恢复一次，移动、标题和重载不再影响身份', async () => {
     const state = game(); delete state.openingCityId; state.title = '人物 · 上海';
-    await put({ ...state, schemaVersion: 10 });
+    const { phone, ...legacy } = state; void phone;
+    await put({ ...legacy, schemaVersion: 10 });
     const loaded = await repo.load('save-a');
-    expect(loaded.openingCityId).toBe('shanghai'); expect(loaded.schemaVersion).toBe(10);
+    expect(loaded.openingCityId).toBe('shanghai'); expect(loaded.schemaVersion).toBe(11);
     expect(await raw()).toEqual(loaded); expect(loaded.revision).toBe(0);
     await put({ ...loaded, title: '改名 · 广州' });
     expect((await repo.loadGame('save-a')).state.openingCityId).toBe('shanghai');
@@ -79,7 +80,8 @@ describe('固定城市身份：创建、兼容、原子补齐、并发和撤回'
     await put(state); await expect(repo.load('save-a')).rejects.toThrow(); expect(await raw()).toEqual(state);
   });
   it('已有未知身份、无美术 id 和 null 都原样保留', () => {
-    for (const id of ['hangzhou', 'unknown-city', null]) {
+    // 自定义城市身份缺少快照时同样按未知城市处理。
+    for (const id of ['suzhou', 'unknown-city', 'cn-320500', null]) {
       const state = { ...game(), title: '人物 · 重庆', openingCityId: id };
       expect(normalizeOpeningCity(state)).toBe(state);
       expect(deriveAtmosphere(state).city).toBe('other');
@@ -113,7 +115,7 @@ describe('固定城市身份：创建、兼容、原子补齐、并发和撤回'
 });
 
 describe('氛围与中文场景：只读正式身份和游戏时间', () => {
-  it.each([['chongqing','cq'],['shanghai','sh'],['harbin','hrb'],['guangzhou','gz']])('%s 对应 %s', (id, key) => {
+  it.each([['chongqing','cq'],['shanghai','sh'],['harbin','hrb'],['guangzhou','gz'],['beijing','bj'],['hangzhou','hz'],['changsha','cs'],['sanya','sy']])('%s 对应 %s', (id, key) => {
     const state = game(); state.openingCityId = id; state.protagonist.locationId = 'shanghai';
     expect(deriveAtmosphere(state).city).toBe(key);
   });

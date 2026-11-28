@@ -100,8 +100,8 @@ describe('渠道、凭证与请求快照', () => {
     expect(requestSnapshot(setup.config, 'variables', setup.vault).model).toBe('mock-model');
     expect(requestSnapshot(setup.config, 'world', setup.vault).model).toBe('override-model');
     const removed = removeChannel(setup.config, second.id);
-    expect(removed.routes.world).toEqual({ mode: 'independent', channelId: '', modelId: '' });
-    expect(() => requestSnapshot(removed, 'world', setup.vault)).toThrow(expect.objectContaining({ code: 'configuration' }));
+    expect(removed.routes.world).toEqual({ mode: 'follow-story' });
+    expect(requestSnapshot(removed, 'world', setup.vault).model).toBe('mock-model');
     expect(readAiConfig(store()).channels).toEqual([]);
   });
   it('凭证默认会话级，长期记住只在显式选择时；删除或撤回会清理持久副本', () => {

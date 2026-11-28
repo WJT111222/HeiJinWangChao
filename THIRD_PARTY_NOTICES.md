@@ -36,6 +36,10 @@ SOFTWARE.
 
 本仓分发已获二传许可的王朝适配正文与两份脚本。许可记录见[首批资源与授权说明](docs/tavernhelper-compat/BATCH1.md#资源与授权)。
 
+## 《我即浪潮 · 1124 anime》内置适配
+
+原作品署名为 ⁺✞ʚ界徐盛重度依赖ɞ✟，防截断相关技术署名为 S喵 昆仑。王朝沿用小猫之神的兼容技术指导署名。项目负责人确认 1124 的改编及随仓分发已获授权。潮汐控制台使用原件内嵌的「浪潮娘 · 港口」图；原作保留其他用途的权利。[原件指纹与逐项对照](docs/tavernhelper-compat/1124/inventory.md)
+
 ## 酒馆助手运行库
 
 jQuery 3.7.1 与 Lodash 4.17.23 随内置助手打包。以下为发行包附带的许可与署名。
@@ -106,3 +110,15 @@ Files located in the node_modules and vendor directories are externally
 maintained libraries used by this software which have their own
 licenses; we recommend you read them, as their terms may differ from the
 terms above.
+
+## 正式版文生图
+
+文生图技术源自墨染江湖 1.0.698，适用本页的 MikuLXK MIT 声明。感谢 MikuLXK 的原项目与基础架构、Bacon 的文生图贡献与技术支持。黑金王朝负责迁移适配、地点图片、人生相册和界面设计。文件与依赖对照见 [迁移审计](docs/image-generation/审计.md)。
+
+## SPreset 本地运行时实验（C2）
+
+SPreset 发行源码来自 SoliUmbra / starowo 的 `starowo/starowo.github.io` 仓库。
+C2 在 `experiments/spreset/` 提供修改后的可编辑组件、完整 GPL 第三版许可及对应源码清单。
+小猫之神文学预设仍在等待作者授权，V1.0 不分发其文学包、菜单及处理器。
+本地开发实验的入口、分发边界及验证记录见
+[SPreset 运行时原型](docs/tavernhelper-compat/SPRESET_C2.md)。

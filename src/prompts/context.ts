@@ -1,6 +1,9 @@
+import { frozenChatContext, phoneContext } from './phoneContext';
+import { checkEntityCommands, EntityDependencyError } from '../domain/entityCandidate';
+import { historyCatalogReason } from './historyCatalog';
 import { storyEventIndex } from '../domain/events/narration';
 import { stageResults } from '../domain/events/stages';
-import { worldNpcAllowed } from '../domain/npc/worldAccess';
+import { worldNpcAllowed, worldTaskNpcAllowed } from '../domain/npc/worldAccess';
 import { pendingEventEntries } from '../domain/events/interactions';
 import { worldEventSchedule } from '../domain/events/schedule';
 import { protagonistKnownEvent } from '../domain/events/knowledge';
@@ -12,7 +15,7 @@ import type { TurnDraft } from '../domain/drafts';
 import { authorizeLegacyNotificationRecovery } from '../domain/legacyNotificationRecovery';
 import type { LegacyNotificationRecovery } from '../domain/events/legacyNotification';
 import { fingerprint } from '../domain/commands';
-import { projectTurn } from '../domain/turnProjection';
+import { projectTurnCandidates } from '../domain/turnProjection';
 import { SettingsSchema } from '../ui/settings/model';
 import type { Settings } from '../ui/settings/model';
 import { initialCompanionProfile, matchesCompanion } from '../services/local/companionProfile';
@@ -63,11 +66,12 @@ export function checkedInput(input: ComposeInput): ComposeInput {
     )
       throw new Error();
     if (
-      (input.stage === 'variables' || input.stage === 'world') &&
+      (input.stage === 'entities' || input.stage === 'variables' || input.stage === 'world') &&
       (!draft?.story || draft.stageStatus.story !== 'ready')
     )
       throw new Error();
     if (
+      (input.stage === 'entities' && !draft?.useEntityStage) ||
       (input.stage === 'variables' && !draft?.useVariableStage) ||
       (input.stage === 'world' && !draft?.useWorldStage)
     )
@@ -88,6 +92,7 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
   const { stage, settings, draft } = input;
   const { variableGuideRaw, variableGuideRawTruncated, variableGuideReferences, ...story } = draft?.story ?? {};
   const original = input.state;
+  const frozenChat = draft?.phoneFreeze ? draft.phonePending : undefined;
   const candidateStage = stage === 'variables' || stage === 'world';
   const selected = candidateStage && original.openingTimePending && draft
     ? openingTimeSelection(original, draft, stage === 'variables' ? [] : undefined) : undefined;
@@ -103,6 +108,8 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
     const preflight = input.mode === 'regular' ? timePreflight(state, input.userInput) : undefined;
     return {
       ...sharedContext(state, settings.memory.immediateWindowSize, input.userInput, input.mode === 'regular'),
+      ...phoneContext(state, 'story', input.userInput, frozenChat),
+      ...frozenChatContext(state,draft,'story'),
       CREATION_PROFILE:
         input.mode === 'opening'
           ? {
@@ -140,7 +147,8 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       } : undefined,
     };
   }
-  if (stage === 'variables')
+  if (stage === 'variables' || stage === 'entities') {
+    const entities = stage === 'variables' && draft?.entities ? checkEntityCommands(state, draft, draft.entities.contactedNpcIds, draft.entities.result.commands) : state;
     return {
       TURN_CONTEXT: {
         turnId: draft!.turnId,
@@ -148,37 +156,44 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         baseSaveRevision: draft!.baseSaveRevision,
         storyRevision: draft!.storyRevision,
         executionRevision: draft!.executionRevision,
-        requestRevision: draft!.stageRequestRevisions.variables,
+        requestRevision: draft!.stageRequestRevisions[stage],
       },
       OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
       PLAYER_ACTION: draft!.userInput,
+      ...frozenChatContext(state,draft,stage),
+      ...(stage === 'entities' ? phoneContext(state, 'entities', draft!.userInput + '\n' + draft!.story!.narrative,frozenChat) : {}),
       SELECTED_VARIABLE_DOMAINS: input.domains ?? [],
-      ...sharedContext(selected ? { ...state, worldClock: selected.endAt } : state,
+      ...sharedContext(selected ? { ...entities, worldClock: selected.endAt } : entities,
         settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
-          stage: 'variables', playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: draft!.story!.variableGuide,
+          stage, playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: draft!.story!.variableGuide,
         }),
       STORY_RESULT: story,
       ...(variableGuideRaw !== undefined ? { VARIABLE_GUIDE_NOTES: variableGuideRaw,
         ...(variableGuideRawTruncated ? { VARIABLE_GUIDE_NOTES_TRUNCATED: true } : {}) } : {}),
       VARIABLE_GUIDE: draft!.story!.variableGuide,
       ...(variableGuideReferences ? { VARIABLE_GUIDE_REFERENCES: variableGuideReferences } : {}),
-      TEXT_COMMAND_CATALOG: textVariableCatalog(input.mode),
+      TEXT_COMMAND_CATALOG: textVariableCatalog(input.mode, stage === 'entities' ? 'entities' : 'scene'),
+      ...(stage === 'variables' && draft!.entities ? { ENTITY_CANDIDATE: draft!.entities.result.commands } : {}),
       NPC_IMPORTANCE: Object.values(state.npc).map(npc=>({npcId:npc.id,identityKey:npc.identityKey,kind:npc.kind,playerPreference:npc.importancePreference??'automatic',profilePending:npc.kind==='special'&&Boolean(npc.profilePending),canRestoreProfile:Boolean(state.dormantNpcProfiles?.[npc.id])})),
     };
+  }
   if (stage === 'world') {
     if (original.openingTimePending && !selected)
       throw new AiError('time_data', undefined, { storyRule: 'opening_missing', fieldPath: 'worldClock' });
-    const variablePending = !draft?.variables || draft.variables.validation !== 'validated';
-    let temporary = original.openingTimePending ? projectTurn(original, draft!) : state;
-    if (!variablePending) {
+    const variablePending = Boolean(draft?.useVariableStage && draft.variables?.validation !== 'validated');
+    const worldVariables = variablePending ? undefined : draft!.variables;
+    let projection: ReturnType<typeof projectTurnCandidates> | undefined;
+    if (!variablePending || original.openingTimePending) {
       try {
-        temporary = projectTurn(original, draft!);
-      } catch {
+        projection = projectTurnCandidates(original, draft!);
+      } catch (error) {
+        if (error instanceof EntityDependencyError) throw new AiError('candidate_conflict');
         throw new AiError('invalid_output');
       }
     }
+    const temporary = projection?.state ?? state;
     return {
       TURN_CONTEXT: {
         turnId: draft!.turnId,
@@ -192,6 +207,9 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       OPENING_TIME: opening,
       TURN_TIME_POLICY: turnTimePolicy,
       HISTORICAL_PERSPECTIVE: historicalPerspective(state, draft!),
+      ...(draft!.turnKind === 'regular' && !historicalPerspective(state,draft!) ? {
+        ...phoneContext(temporary, 'world', draft!.story!.narrative), ...frozenChatContext(temporary,draft,'world'),
+      } : {}),
       BASE_SAVE_REVISION: state.revision,
       worldClock: temporary.worldClock,
       TIME_WINDOW: { from: state.worldClock, to: temporary.worldClock },
@@ -199,22 +217,24 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
       variablePending,
       PLAYER_ACTION: draft!.userInput,
       STORY_RESULT: { ...storyForSubsequentStages(draft!.story!), eventInteractions: draft!.story!.variableGuide.filter(guide=>guide.eventInteraction), eventNarrations: draft!.story!.variableGuide.filter(guide=>guide.eventNarration) },
-      VARIABLE_RESULT: variablePending ? undefined : draft!.variables,
+      ENTITY_CANDIDATE: draft!.entities && projection?.entities?.commands,
+      VARIABLE_RESULT: worldVariables,
       // 投影提供候选内容，不产生新的正式版本；模型的expectedRevision仍须使用正式基线。
       ...sharedContext({ ...temporary, revision: original.revision }, settings.memory.immediateWindowSize, draft!.userInput, input.mode === 'regular', {
         stage: 'world', playerInput: draft!.userInput, storyText: draft!.story!.narrative, variableGuide: storyForSubsequentStages(draft!.story!).variableGuide,
-        validatedVariables: variablePending ? undefined : draft!.variables!.result, from: state.worldClock,
+        validatedVariables: worldVariables?.result, from: state.worldClock,
       }),
       PROTAGONIST_PROFILE: temporary.protagonist,
       PROTECTED_SCENE: {
         protagonistId: state.protagonist.id,
         initialCompanionId: state.initialCompanionId,
         sceneNpcIds: [
-          ...new Set(
-            Object.values(temporary.npc)
-              .filter((npc) => !worldNpcAllowed(temporary, draft!, npc.id))
+          ...new Set([
+            ...(draft!.entities?.contactedNpcIds ?? []),
+            ...Object.values(temporary.npc)
+              .filter((npc) => !worldNpcAllowed(temporary, draft!, npc.id, original))
               .map((npc) => npc.id),
-          ),
+          ]),
         ],
       },
       NPC_LIFECYCLE: { contactNpcIds: temporary.contactNpcIds, initialCompanionId: temporary.initialCompanionId,
@@ -223,21 +243,22 @@ export function contextFor(input: ComposeInput): Record<string, unknown> {
         .filter(e=>e.eventKind==='main').map(e=>[e.id,stageResults(temporary,e.id)])),
       OFFSCREEN_STATE: {
         npcIds: Object.values(temporary.npc).filter(
-          (npc) => worldNpcAllowed(temporary, draft!, npc.id),
+          (npc) => worldNpcAllowed(temporary, draft!, npc.id, original),
         ).map(npc=>npc.id),
+        taskNpcIds: Object.values(temporary.npc).filter(npc => worldTaskNpcAllowed(temporary, draft!, npc.id)).map(npc => npc.id),
         organizations: temporary.organizations,
         tasks: Object.values(temporary.tasks).filter(
           (task) =>
             (task.actorRef.kind === 'organization' ||
             (task.actorRef.kind === 'npc' &&
-              worldNpcAllowed(temporary, draft!, task.actorRef.id))),
+              worldTaskNpcAllowed(temporary, draft!, task.actorRef.id))),
         ),
         events: temporary.events,
         history: temporary.timeline,
         retiredEvents: Object.fromEntries(Object.entries(temporary.retiredEvents).filter(([,record])=>record.detail)),
         locations: temporary.locations,
       },
-      COMMAND_CATALOG: commandCatalog('world'),
+      COMMAND_CATALOG: commandCatalog('world', Boolean(historyCatalogReason(state, draft!)), draft!.turnKind === 'regular' && !historicalPerspective(state,draft!)),
     };
   }
   if (input.memoryTask === 'memory.npc_summarize') {

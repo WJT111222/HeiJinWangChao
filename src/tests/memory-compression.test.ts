@@ -65,7 +65,7 @@ describe('记忆模型路由及旧配置兼容', () => {
     saveAiConfig(storage, config);
     expect(readAiConfig(storage).routes.memory).toEqual(config.routes.memory);
     const removed = removeChannel(config, channel.id);
-    expect(removed.routes.memory).toEqual({ mode: 'independent', channelId: '', modelId: '' });
+    expect(removed.routes.memory).toEqual({ mode: 'follow-story' });
     expect(() => resolveModelRoute(removed, 'memory')).toThrow(expect.objectContaining({ code: 'configuration' }));
     expect(removed.channels).toHaveLength(0);
   });

@@ -2,7 +2,9 @@ import { expect, test } from './helpers/test';
 import type { Locator, Page } from '@playwright/test';
 import { openGameTools, openSettings, openStageRaw } from './helpers/gameLayout';
 import { settingsTextContrast } from './helpers/settingsContrast';
-import { writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { gunzipSync, gzipSync } from 'node:zlib';
+import { readFile, writeFile } from 'node:fs/promises';
 import controls from '../src/presets/resources/peinture-controls.json' with { type: 'json' };
 import fixture from './fixtures/peinture-game.json' with { type: 'json' };
 
@@ -89,7 +91,7 @@ function upstream(protocol: Protocol, stream: boolean, content = envelope) {
 }
 
 // Synthetic save and opening draft produced with game() and createTurnDraft(); no production test hooks.
-async function prepare(page: Page, protocol: Protocol, stream: boolean, active: boolean, actionOptions = false, action?: string, regular = false) {
+async function prepare(page: Page, protocol: Protocol, stream: boolean, active: boolean, actionOptions = false, action?: string, regular = false, tideMaterials = false) {
   const sent: string[] = [];
   await page.route('**/*', (route) => {
     const u = new URL(route.request().url());
@@ -113,7 +115,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
             ],
           },
         });
-      if (action !== undefined) {
+      if (action !== undefined && !tideMaterials) {
         if (regular && sent.length === 1) return route.fulfill({json: {error: {type: 'synthetic_failure'}}});
         const body = route.request().postDataJSON();
         const tools = protocol === 'gemini' ? body.tools[0].functionDeclarations
@@ -133,7 +135,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).first().waitFor();
   await page.evaluate(
-    async ({ fixture, protocol, stream, active, pack, actionOptions, action, regular, historicalAction }) => {
+    async ({ fixture, protocol, stream, active, pack, actionOptions, action, regular, historicalAction, tideMaterials }) => {
       const db = await new Promise<IDBDatabase>((ok, fail) => {
         const request = indexedDB.open('heijinwangchao');
         request.onsuccess = () => ok(request.result);
@@ -149,10 +151,19 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
               : { ...value, revision: 1, turnNumber: 1, journal: [{ turnId: 'previous-turn', revision: 1,
                 story: { turnKind: 'opening', narrative: historicalAction, summary: '此前询问仓库', variableGuide: [] },
                 relatedActorRefs: [] }] };
+            if (tideMaterials && 'protagonist' in seeded) {
+              Object.assign(seeded.npc, { 'c1-witness': { id: 'c1-witness', identityKey: 'identity-witness', kind: 'ordinary', name: '沈潮汐',
+                aliases: [], skills: [], onScene: true, affinity: 10, relationshipText: '码头同事', locationId: 'chongqing', memories: [], knownInformation: [] } });
+              Object.assign(seeded.memories, { long: [{ id: 'tide-memory', text: '铜铃封存在第三座灯塔', sourceTurnIds: ['previous-turn'],
+                affectedEntityRefs: [], visibility: 'player_known', createdAtGameTime: seeded.worldClock }] });
+            }
             tx.objectStore(name).put(seeded);
             const other = structuredClone(seeded);
             other.saveId = 'peinture-second';
-            if ('protagonist' in other) other.protagonist.name = '顾乙';
+            if ('protagonist' in other) {
+              other.protagonist.name = '顾乙';
+              if (tideMaterials) other.worldClock = '2031-03-09T08:00:00+08:00';
+            }
             tx.objectStore(name).put(other);
           }
         await new Promise<void>((ok, fail) => {
@@ -174,7 +185,7 @@ async function prepare(page: Page, protocol: Protocol, stream: boolean, active: 
           JSON.stringify({ enabled: true, selected: pack, packages: {} }),
         );
     },
-    { fixture, protocol, stream, active, pack, actionOptions, action, regular, historicalAction: playerAction },
+    { fixture, protocol, stream, active, pack, actionOptions, action, regular, historicalAction: playerAction, tideMaterials },
   );
   await page.reload();
   return sent;
@@ -206,7 +217,7 @@ async function copyStoryReport(page: Page, mobileFailure = false) {
   if (mobileFailure) {
     const dialog = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: '重试与变更详情' }) });
     await dialog.getByRole('tab', { name: '模型原文' }).click();
-    await dialog.getByText('查看三阶段模型完整原文与执行结果', { exact: true }).click();
+    await dialog.getByText('查看四阶段模型完整原文与执行结果', { exact: true }).click();
     await dialog.locator('summary').filter({ hasText: /^正文模型原文/ }).click();
   } else {
     await openStageRaw(page, 'story');
@@ -242,7 +253,7 @@ async function runtimeSettings(page: Page) {
   const dialog = page.getByRole('dialog', { name: '设置', exact: true });
   const back = dialog.getByRole('button', { name: '返回设置', exact: true });
   if (await back.isVisible()) await back.click();
-  await dialog.getByRole('button', { name: '运行', exact: true }).click();
+  await dialog.getByRole('button', { name: '文学预设', exact: true }).click();
   return dialog;
 }
 async function applyMode(page: Page, dialog: Locator) {
@@ -733,7 +744,7 @@ for (const appearance of ['night', 'day']) test('预设纸档布局与完整条�
       await expect(content.locator('textarea').last()).toHaveValue('合成测试文字');
     }
   }
-  expect(allDisplayed).toHaveLength(82);
+  expect(allDisplayed).toHaveLength(85);
   expect(allDisplayed.sort()).toEqual(controls.sections.flatMap(section => section.ids).sort());
   if (!mobile) {
     const search = panel.getByRole('searchbox', { name: '搜索预设条目' });
@@ -786,4 +797,333 @@ for (const appearance of ['night', 'day']) test('预设纸档布局与完整条�
   await expect(panel).not.toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('heijin.story-presets.v1'))).toBe(initialStorage);
   expect(sent).toHaveLength(0);
+});
+
+async function choose1124(page: Page) {
+  const settings = await runtimeSettings(page);
+  await settings.getByLabel('正文预设').selectOption('peinture-1124');
+  await applyMode(page, settings);
+  await expect(page.locator('iframe[data-tavern-script]')).toHaveCount(3);
+}
+
+function textDelivery(protocol: Protocol, stream: boolean, content: string) {
+  if (protocol === 'gemini') {
+    const json = {candidates:[{content:{role:'model',parts:[{text:content}]},finishReason:'STOP'}]};
+    return stream ? {contentType:'text/event-stream',body:'data: ' + JSON.stringify(json) + '\n\n'} : {json};
+  }
+  let frames: unknown[];
+  if (protocol === 'anthropic') {
+    if (!stream) return {json:{content:[{type:'text',text:content}],stop_reason:'end_turn'}};
+    frames = [{type:'content_block_start',index:0,content_block:{type:'text',text:''}},
+      {type:'content_block_delta',index:0,delta:{type:'text_delta',text:content}}, {type:'content_block_stop',index:0},
+      {type:'message_delta',delta:{stop_reason:'end_turn'},usage:{output_tokens:12}}, {type:'message_stop'}];
+  } else {
+    if (!stream) return {json:{choices:[{message:{content},finish_reason:'stop'}]}};
+    frames = [{choices:[{index:0,delta:{content},finish_reason:null}]},{choices:[{index:0,delta:{},finish_reason:'stop'}]}];
+  }
+  return {contentType:'text/event-stream',body:frames.map(frame => 'data: '+JSON.stringify(frame)+'\n\n').join('') +
+    (protocol === 'anthropic' ? '' : 'data: [DONE]\n\n')};
+}
+
+for (const protocol of ['openai','deepseek','gemini','anthropic'] as const) {
+  for (const stream of [false,true]) test(`C1 1124 空行动开局 ${protocol} ${stream ? 'SSE' : 'JSON'}`, async ({page}, info) => {
+    await prepare(page, protocol, stream, false);
+    await choose1124(page);
+    const received: string[] = [];
+    await page.route('https://peinture.mock.invalid/**', route => {
+      const wire = route.request().postData()!;
+      received.push(wire);
+      const body = JSON.parse(wire);
+      const declarations = protocol === 'gemini' ? body.tools?.[0]?.functionDeclarations : protocol === 'anthropic' ? body.tools :
+        body.tools?.map((t:{function:unknown}) => t.function);
+      if (declarations?.some((t:{name:string}) => t.name === toolName)) return route.fulfill(upstream(protocol,stream));
+      const content = wire.includes('<wave_delivery>') ? '<wave_delivery>'+envelope+'</wave_delivery>' : envelope;
+      return route.fulfill(textDelivery(protocol,stream,content));
+    });
+    await generate(page);
+    expect(received).toHaveLength(1);
+    const { tools, ...messages } = JSON.parse(received[0]);
+    for (const fact of ['林舟', '中国城市与地域差异']) expect(JSON.stringify(messages)).toContain(fact);
+    await writeFile(info.outputPath('opening.json'), JSON.stringify({protocol,stream,device:info.project.name,
+      bytes:Buffer.byteLength(received[0]),tools:tools ?? [],posts:received.length,saved:true}));
+  });
+}
+
+for (const version of ['1118', '1124']) {
+  for (const protocol of ['openai', 'deepseek', 'gemini', 'anthropic'] as const) {
+    for (const stream of [false, true]) test(`C1 出站对照 ${version} ${protocol} ${stream ? 'SSE' : 'JSON'}`, async ({page}, info) => {
+      test.slow();
+      const sent = await prepare(page, protocol, stream, version === '1118', false, museumAction, true, true);
+      if (version === '1124') await choose1124(page);
+      await generate(page, 'peinture-smoke', undefined, '生成本回合正文');
+      expect(sent).toHaveLength(1);
+      const { tools, ...messages } = JSON.parse(sent[0]);
+      const declarations = protocol === 'gemini' ? tools[0].functionDeclarations : protocol === 'anthropic' ? tools :
+        tools.map((tool: {function:unknown}) => tool.function);
+      const ref = declarations.find((t: {name:string}) => t.name === 'wave_context_reference').description as string;
+      expect(ref).toContain(museumAction);
+      expect(ref).toContain(playerAction);
+      const direct = JSON.stringify(messages);
+      const facts = ['林舟', '沈潮汐', '铜铃封存在第三座灯塔', '2026-10-18', '中国城市与地域差异'];
+      if (version === '1124') {
+        expect(direct).toContain('正文落点约900字');
+        expect(direct).toContain('上一楼可计正文约25字');
+      }
+      const fields = facts.map(value => ({ value, messages:direct.includes(value), reference:ref.includes(value) }));
+      for (const fact of fields) {
+        expect(fact.reference, fact.value).toBe(version === '1118');
+        if (version === '1124') expect(fact.messages, fact.value).toBe(true);
+      }
+      expect(declarations.map((t:{name:string}) => t.name)).toContain('actual_content');
+      const evidence = {version, protocol, stream, device:info.project.name, posts:sent.length,
+        sha256:createHash('sha256').update(sent[0]).digest('hex'), bytes:Buffer.byteLength(sent[0]),
+        fields, referenceHistory:playerAction, referenceAction:museumAction, saved:'船靠岸了，林舟沿着石阶往上走。'};
+      expect(sent[0].includes('fixture-only')).toBe(false);
+      await writeFile(info.outputPath('wire-proof.json'), JSON.stringify(evidence,null,2));
+      await writeFile(info.outputPath('mock-body.json.gz'), gzipSync(sent[0]));
+    });
+  }
+}
+
+test('C1 1124 潮汐控制台编辑、只读时序、Token 与独立配色', async ({page}, info) => {
+  test.slow();
+  const sent = await prepare(page,'openai',false,false,false,museumAction,true,true);
+  await choose1124(page);
+  await page.goto('/#game/peinture-smoke');
+  let panel = await editPreset(page);
+  await sectionButton(panel,'主线时序').click();
+  await expect(panel).toContainText('2026-10-18');
+  await page.evaluate(() => { location.hash = '#game/peinture-second'; });
+  await expect(panel).toContainText('2031-03-09');
+  await expect(panel).not.toContainText('2026-10-18');
+  await page.evaluate(() => { location.hash = '#game/peinture-smoke'; });
+  await expect(panel).toContainText('2026-10-18');
+  await sectionButton(panel,'兼容与预览').click();
+  await panel.getByRole('button',{name:'估算已保存配置'}).click();
+  await expect(panel.getByRole('status')).toContainText('Token');
+  await sectionButton(panel,'篇幅与文风').click();
+  const style = panel.getByRole('group',{name:'文风',exact:true});
+  await style.getByRole('button',{name:'意识流',exact:true}).click();
+  await expect(style.getByRole('button',{pressed:true})).toHaveCount(1);
+  await panel.getByText('编辑本组条目',{exact:true}).click();
+  await panel.getByLabel('文学条目',{exact:true}).selectOption('wave-style-stream-of-consciousness');
+  const editor = panel.getByLabel('条目正文',{exact:true});
+  await editor.fill((await editor.inputValue()) + '\n本场文风校样：灯火随潮。');
+  await sectionButton(panel,'互动与视角').click();
+  const view = panel.getByRole('group',{name:'视角',exact:true});
+  await expect(view.locator('[value="wave-person-first"]')).toHaveAttribute('aria-pressed','true');
+  await expect(view.locator('[value="wave-person-third"]')).toBeDisabled();
+  await sectionButton(panel,'我的方案').click();
+  await panel.getByLabel('方案名称').fill('海港校样');
+  await panel.getByRole('button',{name:'保存当前方案'}).click();
+  await panel.getByRole('button',{name:'调用',exact:true}).click();
+  await panel.getByRole('button',{name:'载入编辑区'}).click();
+  await expect(panel.getByRole('status')).toContainText('略过 0 项');
+  await sectionButton(panel,'潮汐外观').click();
+  await panel.getByLabel('浪潮标识').selectOption('classic');
+  await expect(panel.locator('svg.tide-mark')).toBeVisible();
+  await panel.getByLabel('浪潮标识').selectOption('harbor');
+  await sectionButton(panel,'采样与输出').click();
+  await panel.getByLabel('温度',{exact:true}).fill('0.63');
+  await panel.getByRole('button',{name:'保存调整'}).click();
+  await expect(panel.getByRole('status')).toContainText('已保存');
+  for (let n=0;n<2;n++) {
+    await panel.getByRole('button',{name:'切换潮汐明暗配色'}).click();
+    const theme = await panel.evaluate(el => el.classList.contains('tide-day') ? 'day' : 'night');
+    await page.screenshot({animations:'disabled',path:info.outputPath('tide-'+theme+'.png')});
+    expect(await panel.evaluate(el=>el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  }
+  await page.reload();
+  panel = await editPreset(page);
+  await sectionButton(panel,'篇幅与文风').click();
+  await expect(panel.getByRole('button',{name:'意识流',exact:true})).toHaveAttribute('aria-pressed','true');
+  expect(sent).toEqual([]);
+  await page.goto('/');
+  await generate(page,'peinture-smoke',undefined,'生成本回合正文');
+  expect(sent).toHaveLength(1);
+  expect(JSON.parse(sent[0]).temperature).toBe(0.63);
+  expect(sent[0]).toContain('本场文风校样：灯火随潮。');
+  await page.goto('/');
+  await generate(page,'peinture-second',undefined,'生成本回合正文');
+  expect(sent[1]).toContain('顾乙');
+  await page.goto('/');
+  const settings = await runtimeSettings(page);
+  await settings.getByLabel('正文预设').selectOption(pack);
+  await applyMode(page, settings);
+  await expect(page.locator('iframe[data-tavern-script]')).toHaveCount(2);
+  const previous = await editPreset(page);
+  await expect(previous.getByLabel('温度',{exact:true})).toHaveValue('1');
+});
+
+for (const failure of ['content_filter','stream_interrupted'] as const) test('C1 1124 上游失败保留正式状态 '+failure,async({page})=>{
+  const posted = await prepare(page,'openai',failure==='stream_interrupted',false,false,museumAction,true,true);
+  await choose1124(page);
+  let count = 0;
+  await page.route('https://peinture.mock.invalid/**', route=>{
+    count++;
+    if (failure==='content_filter') return route.fulfill({json:{choices:[{message:{refusal:'test refusal'},finish_reason:'content_filter'}]}});
+    return route.fulfill({contentType:'text/event-stream',body:'data: '+JSON.stringify({choices:[{index:0,delta:{content:'半段文字'},finish_reason:null}]})+'\n\n'});
+  });
+  await generate(page,'peinture-smoke',failure,'生成本回合正文');
+  const persisted=await page.evaluate(async()=>{
+    const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('heijinwangchao');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+    try {
+      const tx=db.transaction(['saves','drafts'],'readonly');
+      const [state,draft]=await Promise.all(['saves','drafts'].map(store=>new Promise((resolve,reject)=>{
+        const r=tx.objectStore(store).get('peinture-smoke');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);
+      }))) as [{revision:number},{story?:unknown;storyRevision:number}];
+      return {revision:state.revision,storyRevision:draft.storyRevision,story:draft.story??null};
+    } finally { db.close(); }
+  });
+  expect(persisted).toEqual({revision:1,storyRevision:0,story:null});
+  expect([posted.length,count]).toEqual([0,1]);
+});
+
+test('复审：1118 原控制台方案导入、保存、刷新，散文进入下一次实际请求', async ({page}, info) => {
+  test.slow();
+  const sent = await prepare(page,'openai',false,false,false,museumAction,true,true);
+  await choose1124(page);
+  await page.goto('/#game/peinture-smoke');
+  let panel = await editPreset(page);
+  await sectionButton(panel,'篇幅与文风').click();
+  await panel.getByRole('button',{name:'意识流',exact:true}).click();
+  await panel.getByRole('button',{name:'保存调整'}).click();
+  await expect(panel.getByRole('status')).toContainText('已保存');
+  await sectionButton(panel,'我的方案').click();
+  const buffer = gunzipSync(await readFile('e2e/fixtures/peinture-1118-essay.json.gz'));
+  const file = {name:'1118码头散文.json',mimeType:'application/json',buffer};
+  await panel.getByLabel('导入方案 JSON').setInputFiles(file);
+  await panel.getByRole('button',{name:'取消',exact:true}).click();
+  await sectionButton(panel,'篇幅与文风').click();
+  await expect(panel.getByRole('button',{name:'意识流',exact:true})).toHaveAttribute('aria-pressed','true');
+  await sectionButton(panel,'我的方案').click();
+  await panel.getByLabel('导入方案 JSON').setInputFiles(file);
+  await panel.getByRole('button',{name:'载入编辑区'}).click();
+  await expect(panel.getByRole('status')).toContainText('已载入 85 项');
+  await panel.getByRole('button',{name:'保存调整'}).click();
+  await expect(panel.getByRole('status').filter({hasText:'已保存'})).toBeVisible();
+  await page.reload();
+  panel = await editPreset(page);
+  await sectionButton(panel,'篇幅与文风').click();
+  await expect(panel.getByRole('button',{name:'散文随笔',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(panel.getByRole('button',{name:'意识流',exact:true})).toHaveAttribute('aria-pressed','false');
+  expect(sent).toHaveLength(0);
+  await page.goto('/');
+  await generate(page,'peinture-smoke',undefined,'生成本回合正文');
+  expect(sent).toHaveLength(1);
+  expect(sent[0]).toContain('当前文风：散文随笔');
+  expect(sent[0]).toContain('旧方案校样：渡船离岸。');
+  expect(sent[0]).not.toContain('当前文风：意识流');
+  await writeFile(info.outputPath('scheme-wire.json'),JSON.stringify({
+    device:info.project.name,schemeSha256:createHash('sha256').update(buffer).digest('hex'),
+    requestSha256:createHash('sha256').update(sent[0]).digest('hex'),posts:sent.length,style:'散文随笔',saved:true,
+  }));
+});
+
+test('下架预设必须显式重选，旧配置、存档和纸条历史完整保留', async ({page}) => {
+  const sent = await prepare(page, 'openai', false, false);
+  const key = 'heijin.story-presets.v1';
+  const prefs = { enabled: true, selected: 'meowssiah', globalVariables: { custom: '保留' },
+    packages: { meowssiah: { version: 'previous', scripts: {}, entries: { custom: {content: '玩家旧稿'} } } } };
+  const snapshot = () => page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve,reject) => {
+      const open = indexedDB.open('heijinwangchao');
+      open.onsuccess = () => resolve(open.result); open.onerror = () => reject(open.error);
+    });
+    try {
+      return await Promise.all(['saves','drafts','oracleNotes'].map(store => new Promise((resolve,reject) => {
+        const read = db.transaction(store).objectStore(store).getAll();
+        read.onsuccess = () => resolve(read.result); read.onerror = () => reject(read.error);
+      })));
+    } finally { db.close(); }
+  });
+  await page.evaluate(async ({key,prefs}) => {
+    localStorage.setItem(key,JSON.stringify(prefs));
+    const db = await new Promise<IDBDatabase>((resolve,reject) => {
+      const q = indexedDB.open('heijinwangchao'); q.onsuccess = () => resolve(q.result); q.onerror = () => reject(q.error);
+    });
+    try {
+      const tx = db.transaction('oracleNotes','readwrite');
+      tx.objectStore('oracleNotes').put({saveId:'peinture-smoke',version:'old',note:null,history:['旧纸条']});
+      await new Promise<void>((resolve,reject) => { tx.oncomplete=()=>resolve(); tx.onabort=()=>reject(tx.error); });
+    } finally { db.close(); }
+  },{key,prefs});
+  await page.reload();
+  const notice = page.locator('.app-error').filter({hasText:'重新选择正文预设'});
+  await expect(notice).toBeVisible();
+  await notice.getByRole('button',{name:'关闭提示'}).click();
+  const beforeEditing = await snapshot();
+  const dialog = await runtimeSettings(page);
+  await expect(dialog.getByRole('alert')).toContainText('重新选择正文预设');
+  const selector = dialog.getByLabel('正文预设');
+  await expect(selector.locator('option:checked')).toHaveText('请选择正文预设');
+  await expect(selector.locator('option[value="meowssiah"]')).toHaveCount(0);
+  await expect(dialog.getByRole('button',{name:'保存预设并刷新'})).toBeDisabled();
+  await expect(dialog.getByRole('button',{name:'神域控制台'})).toHaveCount(0);
+  await selector.selectOption('peinture-1124');
+  await page.reload(); // Discard the unconfirmed choice.
+  expect(await page.evaluate(k => JSON.parse(localStorage.getItem(k)!), key)).toEqual(prefs);
+  expect(await snapshot()).toEqual(beforeEditing);
+  await notice.getByRole('button',{name:'关闭提示'}).click();
+  await page.goto('/#game/peinture-smoke');
+  await openGameTools(page);
+  // Opening this V10 fixture performs the game's existing phone schema migration.
+  const before = await snapshot();
+  await page.getByRole('button',{name:'生成开局正文',exact:true}).click();
+  await expect(page.getByText(/tavern\.preset_withdrawn/).first()).toBeVisible();
+  expect(sent).toHaveLength(0);
+  expect(await snapshot()).toEqual(before);
+  await page.goto('/');
+  await notice.getByRole('button',{name:'关闭提示'}).click();
+  const next = await runtimeSettings(page);
+  await next.getByLabel('正文预设').selectOption('peinture-1118');
+  await applyMode(page,next);
+  expect(await page.evaluate(k => JSON.parse(localStorage.getItem(k)!),key)).toEqual({...prefs,selected:'peinture-1118'});
+  expect(await snapshot()).toEqual(before);
+  await generate(page);
+  expect(sent).toHaveLength(1);
+  expect(JSON.parse(sent[0]).tools.map((t:{function:{name:string}})=>t.function.name)).toContain('wave_context_reference');
+});
+
+test('另一标签写入已下架选择时，在途正文沿用原请求和归属', async ({page, context}) => {
+  const sent = await prepare(page, 'openai', false, true);
+  let release!: () => void;
+  const waiting = new Promise<void>(resolve => { release = resolve; });
+  await page.route('https://peinture.mock.invalid/**', async route => {
+    await waiting;
+    await route.fallback();
+  });
+  const arrival = page.waitForRequest(request => new URL(request.url()).hostname === 'peinture.mock.invalid' && request.method() === 'POST');
+  await page.goto('/#game/peinture-smoke');
+  await openGameTools(page);
+  await page.getByRole('button',{name:'生成开局正文',exact:true}).click();
+  await arrival;
+  try {
+    const other = await context.newPage();
+    await other.goto('/');
+    await other.evaluate(()=>localStorage.setItem('heijin.story-presets.v1',JSON.stringify({enabled:true,selected:'meowssiah',packages:{}})));
+    await other.close();
+  } finally { release(); }
+  await expect.poll(() => page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve,reject) => {
+      const q = indexedDB.open('heijinwangchao'); q.onsuccess = () => resolve(q.result); q.onerror = () => reject(q.error);
+    });
+    try {
+      return await new Promise(resolve => {
+        const q = db.transaction('drafts').objectStore('drafts').get('peinture-smoke');
+        q.onsuccess = () => resolve([q.result?.story?.narrative,q.result?.storyWriting?.id]);
+      });
+    } finally { db.close(); }
+  })).toEqual(['船靠岸了，林舟沿着石阶往上走。','peinture-1118']);
+  expect(sent).toHaveLength(1);
+});
+
+test('下架预设的沙箱和源码下载地址不再提供资源', async ({request}) => {
+  const shell = await (await request.get('/')).text();
+  for (const file of ['sandbox.html','source/frame.mjs','source/worker.mjs','source/pipeline.mjs','source/build.mjs','source/COPYING','source/SOURCES.json','source/AUTHOR.txt']) {
+    const response = await request.get('/literature/meowssiah/' + file);
+    if (response.status() === 404 || response.status() === 410) continue;
+    expect(response.status()).toBe(200);
+    expect(await response.text()).toBe(shell); // Static hosts can serve the SPA entry for missing paths.
+  }
 });

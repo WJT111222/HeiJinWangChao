@@ -7,7 +7,7 @@ async function settings(page: Page) {
   const dialog = page.getByRole('dialog', { name: '设置', exact: true });
   const back = dialog.getByRole('button', { name: '返回设置', exact: true });
   if (await back.isVisible()) await back.click();
-  await dialog.getByRole('button', { name: '运行', exact: true }).click();
+  await dialog.getByRole('button', { name: '文学预设', exact: true }).click();
   return dialog;
 }
 test('启用内置脚本：首次 Story、JSON/SSE、状态按钮、取消与刷新', async ({ page }, info) => {
@@ -58,7 +58,7 @@ test('启用内置脚本：首次 Story、JSON/SSE、状态按钮、取消与刷
     channel.baseUrl = 'https://assistant.mock.invalid/v1'; channel.defaultModel = 'fixture'; config.channels = [channel];
     config.routes.story = { channelId: channel.id, modelId: '' };
     vault.set(channel.id,'fixture-only');
-    const settings = defaultSettings(); settings.prompts.minNarrativeChars = 5; settings.prompts.actionOptions = false;
+    const settings = defaultSettings(); settings.prompts.minNarrativeChars = 4000; settings.prompts.maxNarrativeChars = 5678; settings.prompts.actionOptions = false;
     const sent = (window as unknown as { sent: { tools?: { function: { name: string; description: string } }[]; messages: { content: string }[]; temperature: number }[] }).sent;
     const observations = [];
     let current = draft;
@@ -70,7 +70,7 @@ test('启用内置脚本：首次 Story、JSON/SSE、状态按钮、取消与刷
         settings.runtime.streamStory = stream;
         current = await stage.generate({ draft: current, config, vault, settings });
         const wire = sent.at(-1)!;
-        observations.push({ text: current.story.narrative, saved: (await repo.loadDraft(state.saveId)).story.narrative,
+        observations.push({ nativeLength: JSON.stringify(wire).includes('4000～5678'), presetLength: JSON.stringify(wire).includes('800至1000字'), source:current.storyWriting?.source, text: current.story.narrative, saved: (await repo.loadDraft(state.saveId)).story.narrative,
           names: wire.tools?.map(t => t.function.name), moved: wire.tools?.some(t => t.function.name === 'wave_context_reference' && t.function.description.includes('林舟')),
           outputRule: wire.messages.some(m => m.content.includes('actual_content')), temperature: wire.temperature,
           trace: stageResponses.getSnapshot()[0].diagnostics.tavern });
@@ -118,11 +118,11 @@ test('启用内置脚本：首次 Story、JSON/SSE、状态按钮、取消与刷
   expect(result.temperatures.slice(0,4)).toEqual([1,1,1,0.23]);
   expect(result).toMatchObject({ cancelled:'cancelled', previous:true, revision:true });
   for (const [i, o] of result.observations.entries()) {
-    expect(o).toMatchObject({ text:'电车驶过石桥，林舟站在街口。', saved:'电车驶过石桥，林舟站在街口。', moved:true, outputRule:true,
+    expect(o).toMatchObject({ nativeLength:false, presetLength:true, source:'preset', text:'电车驶过石桥，林舟站在街口。', saved:'电车驶过石桥，林舟站在街口。', moved:true, outputRule:true,
       names:['wave_context_reference','actual_content'], trace:{ calls:1, upstreamUsage:{ outputTokens:i ? 19:17 },complete:true } });
   }
   await page.goto('/#game/assistant-qa');
-  if (info.project.name === 'mobile') await page.getByRole('button',{ name:'三阶段工作流详情' }).click();
+  if (info.project.name === 'mobile') await page.getByRole('button',{ name:'四阶段工作流详情' }).click();
   await page.getByRole('button',{name:'浪潮·状态', exact:true}).click();
   const panel = page.getByRole('dialog', { name: '浪潮状态面板' });
   const heading = panel.getByRole('heading', { name: '浪潮 · 状态面板' });

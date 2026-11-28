@@ -1587,8 +1587,6 @@ summary {
 .wide-field { grid-column: 1 / -1; }
 
 /* M3-P3: settings-only prompt inspector; ordinary game panels remain unchanged. */
-.prompt-settings-layout { display: block; }
-.prompt-settings-layout .settings-nav { flex-direction: row; flex-wrap: wrap; margin-bottom: 1.5rem; }
 .inspector-toolbar, .inspector-actions, .domain-choices { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
 .inspector-toolbar > label { flex: 1 1 180px; min-width: 0; }
 .prompt-inspector details { margin: 1rem 0; }

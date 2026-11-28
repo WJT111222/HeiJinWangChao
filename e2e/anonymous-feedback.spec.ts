@@ -20,16 +20,16 @@ async function seed(page: Page, daylight: boolean) {
   await page.goto('/');
   await page.evaluate(async ({ key, daylight }) => {
     const paths = ['/src/services/storage/saveRepository.ts', '/src/tests/fixtures/world.ts', '/src/ui/settings/model.ts',
-      '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/domain/drafts.ts'];
+      '/src/services/ai/configuration.ts', '/src/services/ai/credentials.ts', '/src/domain/drafts.ts', '/src/tests/fixtures/turn.ts'];
     const [{ SaveRepository }, { worldState, worldDraft }, { defaultSettings, settingsKey },
-      { newChannel, defaultAiConfig, saveAiConfig }, { CredentialVault }, { createTurnDraft }] = await Promise.all(paths.map(path => import(path)));
+      { newChannel, defaultAiConfig, saveAiConfig }, { CredentialVault }, { createTurnDraft }, { saveFixtureStory }] = await Promise.all(paths.map(path => import(path)));
     const repo = await SaveRepository.open();
     try {
       await repo.create(worldState());
-      await repo.saveDraft(createTurnDraft('save-a', 0, 'turn-a', 'opening', '合成动作不上传'), null);
-      await repo.saveDraft({ ...worldDraft(false, 'opening'), userInput: '合成动作不上传' }, 0);
+      await repo.saveDraft(createTurnDraft('save-a', 0, 'turn-a', 'opening', '合成动作不上传', true, true, false), null);
+      await saveFixtureStory(repo, { ...worldDraft(false, 'opening'), userInput: '合成动作不上传' }, 0);
     } finally { repo.close(); }
-    const settings = defaultSettings();
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false;
     settings.display.appearance = daylight ? 'day' : 'night';
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const channel = newChannel('deepseek'), config = defaultAiConfig();
@@ -118,7 +118,7 @@ test('错误日志统一上报：完整日志、可选字段严格分离、原�
   await form.getByRole('button', { name: '提交错误报告' }).click();
   await expect(form.getByRole('status')).toContainText(receipt);
   expect(uploads[0].feedback).toEqual(projected);
-  expect(uploads[0].feedback).toMatchObject({ version: 'V1.0 Beta', build: 'development' });
+  expect(uploads[0].feedback).toMatchObject({ version: 'V1.0', build: 'development' });
   for (const marker of [key, 'save-a', 'turn-a', 'saveRef', 'turnRef', '合成动作不上传', '公开思考', 'GAME_CONTEXT']) {
     expect(JSON.stringify(uploads)).not.toContain(marker);
   }
@@ -161,12 +161,12 @@ test('设置反馈不发送日志，网络失败保留输入，同一尝试使�
   await page.goto('/');
   await page.getByRole('button', { name: '设置', exact: true }).click();
   if (isMobile) {
-    await page.getByRole('button', { name: '外观', exact: true }).click();
+    await page.getByRole('button', { name: '外观与提示音', exact: true }).click();
     await page.getByRole('radio', { name: /日间/ }).check();
     await expect(page.locator('html')).toHaveAttribute('data-appearance', 'day');
     await page.getByRole('button', { name: '返回设置', exact: true }).click();
   }
-  await page.getByRole('button', { name: '运行', exact: true }).click();
+  await page.getByRole('button', { name: '生成阶段', exact: true }).click();
   const saveSettings = page.getByRole('button', { name: '保存本地设置', exact: true });
   await expect(saveSettings).toBeVisible();
   if (isMobile) await page.getByRole('button', { name: '返回设置', exact: true }).click();
@@ -189,7 +189,7 @@ test('设置反馈不发送日志，网络失败保留输入，同一尝试使�
   expect(Object.keys(uploads[0].feedback).sort()).toEqual(['browser', 'build', 'category', 'device', 'kind', 'text', 'version']);
   expect(uploads[0].feedback).toMatchObject({
     kind: 'suggestion', category: 'experience', text: '合成反馈：希望保留阅读进度。',
-    version: 'V1.0 Beta', build: 'development',
+    version: 'V1.0', build: 'development',
   });
   await expect(page.getByRole('button', { name: '提交反馈', exact: true })).toBeDisabled();
 });

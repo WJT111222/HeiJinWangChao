@@ -1,46 +1,53 @@
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
-// AI 连接设置（重设计）的测试操作。电脑端渠道列表与编辑器并排；手机端点开渠道进入编辑，返回后看到各阶段模型。
+// AI 连接设置（重设计）的测试操作。电脑端渠道列表与编辑器并排；手机端点开渠道后进入编辑，模型路由在独立页面。
 type Scope = Page | Locator;
 const pageOf = (scope: Scope): Page => ('page' in scope && typeof scope.page === 'function' ? scope.page() : scope) as Page;
 
 export async function openAiSettings(page: Page) {
   await page.getByRole('button', { name: '设置', exact: true }).first().click();
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  await settings.getByRole('button', { name: 'AI 连接', exact: true }).click();
+  await settings.getByRole('button', { name: '渠道与密钥', exact: true }).click();
   return settings;
 }
-/** 设置已打开时确保停在「AI 连接」分类（手机端可能停在分类菜单）。 */
+/** 设置已打开时确保停在「渠道与密钥」页面（手机端可能停在分类菜单）。 */
 export async function aiTab(page: Page) {
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await expect(settings).toBeVisible();
-  const entry = settings.getByRole('button', { name: 'AI 连接', exact: true });
+  const entry = settings.getByRole('button', { name: '渠道与密钥', exact: true });
   if (await entry.isVisible().catch(() => false)) await entry.click();
   return settings;
 }
 /** 沿用手机「返回设置 → 分类」导航；桌面直接切换分类。 */
 export async function settingsCategory(page: Page, name: string) {
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  const entry = settings.getByRole('button', { name, exact: true });
+  const entry = settings.getByRole('navigation', {name:'设置分类'}).getByRole('button', { name, exact: true });
   if (!await entry.isVisible()) {
     await backToList(settings);
     await settings.getByRole('button', { name: '返回设置', exact: true }).click();
   }
   await entry.click();
 }
-/** 手机端如果正在编辑渠道，先返回渠道列表（各阶段模型在列表页）。 */
+/** 手机端如果正在编辑渠道，先返回渠道列表。 */
+export async function aiPage(scope: Scope, page: 'channels' | 'routing') {
+  const browser = pageOf(scope);
+  if (await browser.locator('.settings-layout[data-tab="' + page + '"] .settings-content').isVisible()) return;
+  await settingsCategory(browser, page === 'routing' ? '模型分配' : '渠道与密钥');
+}
 export async function backToList(scope: Scope) {
   const back = scope.getByRole('button', { name: '返回渠道列表', exact: true });
   if (await back.isVisible().catch(() => false)) await back.click();
 }
 export async function openChannel(scope: Scope, name: string) {
+  await aiPage(scope, 'channels');
   await backToList(scope);
   await scope.getByRole('button', { name: `编辑渠道：${name}`, exact: true }).click();
 }
 export interface ChannelInput { preset?: string; name?: string; url?: string; format?: string; key?: string }
 /** 添加渠道：选服务商 → 地址 → 密钥。preset 为服务商按钮的主名称，如「OpenAI 兼容」「Gemini」。 */
 export async function addChannel(scope: Scope, input: ChannelInput = {}) {
+  await aiPage(scope, 'channels');
   await backToList(scope);
   await scope.getByRole('button', { name: '＋ 添加渠道', exact: true }).click();
   await choosePreset(scope, input.preset ?? 'OpenAI 兼容');
@@ -60,15 +67,18 @@ export async function setUrl(scope: Scope, url: string) {
 /** 选择下拉项（按显示文字）。 */
 export async function chooseText(scope: Scope, label: string, text: string | RegExp) {
   const page = pageOf(scope);
+  if (/(渠道|模型)$/.test(label)) await aiPage(scope, 'routing');
   await scope.getByRole('combobox', { name: label, exact: true }).click();
   await page.getByRole('listbox', { name: label, exact: true }).getByRole('option', { name: text }).first().click();
 }
 export async function follow(scope: Scope, stage: string, value: boolean) {
+  await aiPage(scope, 'routing');
   await backToList(scope);
   await scope.getByRole('group', { name: `${stage}模型来源`, exact: true }).getByRole('button', { name: value ? '跟随正文' : '单独指定', exact: true }).click();
 }
 /** 设置某个阶段：选渠道，再手动填写或从列表选模型。 */
 export async function stageModel(scope: Scope, stage: string, channel: string, model: string, from: 'list' | 'manual' = 'manual') {
+  await aiPage(scope, 'routing');
   await backToList(scope);
   if (stage !== '正文生成') {
     const independent = scope.getByRole('group', { name: `${stage}模型来源`, exact: true }).getByRole('button', { name: '单独指定', exact: true });
@@ -84,6 +94,11 @@ export async function stageModel(scope: Scope, stage: string, channel: string, m
     if (!(await input.isVisible().catch(() => false))) await scope.getByRole('button', { name: `列表里没有？手动填写${stage}模型 ID`, exact: true }).click();
     await input.fill(model);
   }
+}
+export async function confirmAiReload(scope: Scope) {
+  await scope.getByRole('button', { name: '重新读取最新配置', exact: true }).click();
+  const dialog = pageOf(scope).getByRole('dialog', { name: '重新读取最新配置？', exact: true });
+  await dialog.getByRole('button', { name: '确认放弃草稿并重新读取', exact: true }).click();
 }
 export async function saveAi(scope: Scope) {
   await scope.getByRole('button', { name: '保存 AI 配置', exact: true }).click();

@@ -1,4 +1,4 @@
-import type { Channel } from './configuration';
+import type { Channel, Protocol } from './configuration';
 import { AiError } from './errors';
 
 // 官方接口与中转站在「结束原因」上的写法并不统一：Claude 经 OpenAI 格式中转常原样返回 end_turn，
@@ -19,6 +19,27 @@ export function checkFinish(reason: unknown, allowOutputLimit = false): true | u
   if (truncated.has(value) && allowOutputLimit) return true;
   if (truncated.has(value)) throw new AiError('output_limit');
   if (filtered.has(value)) throw new AiError('content_filter');
+  throw new AiError('stream_interrupted');
+}
+
+/** Original provider frames, before a TavernHelper wrapper translates them to OpenAI. */
+const providerFinish = {
+  openai: { text: ['stop'], tool: 'tool_calls', limit: 'length' },
+  deepseek: { text: ['stop'], tool: 'tool_calls', limit: 'length' },
+  gemini: { text: ['STOP'], tool: 'STOP', limit: 'MAX_TOKENS' },
+  anthropic: { text: ['end_turn', 'stop_sequence'], tool: 'tool_use', limit: 'max_tokens' },
+} satisfies Record<Protocol, { text: string[]; tool: string; limit: string }>;
+
+export function providerToolFinish(protocol: Protocol, reason: unknown) {
+  return reason === providerFinish[protocol].tool;
+}
+
+export function checkProviderFinish(protocol: Protocol, reason: unknown) {
+  const accepted = providerFinish[protocol];
+  if (typeof reason === 'string') {
+    if (accepted.text.includes(reason) || reason === accepted.tool || reason === accepted.limit) return;
+    if (filtered.has(reason.toLowerCase())) throw new AiError('content_filter');
+  }
   throw new AiError('stream_interrupted');
 }
 

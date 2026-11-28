@@ -53,6 +53,9 @@ export const SettingsSchema = z.strictObject({
       return { ...memory, automaticMaintenance: memory.automaticMaintenance ?? true, summaries };
     }),
   runtime: z.strictObject({
+    phoneChat: z.boolean().optional(),
+    useEntityStage: z.boolean().optional(),
+    streamEntities: z.boolean().optional(),
     useVariableStage: z.boolean(),
     useWorldStage: z.boolean(),
     streamStory: z.boolean().default(true),
@@ -65,9 +68,23 @@ export const SettingsSchema = z.strictObject({
     failureAutoRetry: z.boolean().default(false),
     maxAutoRetries: z.union([z.literal(1), z.literal(3)]).default(3),
   }).refine(r => (r.streamTotalSeconds ?? Math.max(600, r.streamIdleSeconds ?? r.timeoutSeconds)) >=
-    (r.streamIdleSeconds ?? r.timeoutSeconds), { message: '正文流式总时限不能小于无有效输出时限', path: ['streamTotalSeconds'] }),
+    (r.streamIdleSeconds ?? r.timeoutSeconds), { message: '正文流式总时限不能小于无有效输出时限', path: ['streamTotalSeconds'] })
+    .transform(runtime => ({ ...runtime, useEntityStage: runtime.useEntityStage ?? runtime.useVariableStage,
+      streamEntities: runtime.streamEntities ?? runtime.streamVariables })),
   // 外观：夜间（原黑金）、日间（档案纸）、跟随系统。旧设置缺字段时为夜间，原样保持现有观感。
+  phone: z.strictObject({
+    groupReplyLimit: z.union([z.literal(2), z.literal(3), z.literal(5)]).optional(),
+    loanReminderDays: z.number().int().min(0).max(30).default(3),
+  }).optional(),
+  theater: z.strictObject({
+    length: z.enum(['short', 'medium', 'long', 'extra', 'custom']).default('medium'),
+    customChars: z.number().int().min(100).max(100000).optional(),
+    perspective: z.enum(['follow', 'first', 'second', 'third']).default('follow'),
+  }).optional(),
+  theaterPrompt: z.string().trim().min(1).max(8000).optional(),
   display: z.strictObject({ appearance: z.enum(['night', 'day', 'system']) }).default({ appearance: 'night' }),
+  // 生成完成提示音：关闭／切到别处时（默认）／总是。旧设置缺字段时按默认，点选即保存。
+  notifications: z.strictObject({ completionChime: z.enum(['off', 'background', 'always']) }).default({ completionChime: 'background' }),
 });
 export type Appearance = Settings['display']['appearance'];
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -89,8 +106,9 @@ export function defaultSettings(): Settings {
       realWorld: true,
     },
     memory: { immediateWindowSize: 10, automaticMaintenance: true, summaries: defaultSummarySettings() },
-    runtime: { useVariableStage: true, useWorldStage: true, streamStory: true, streamVariables: false, streamWorld: false, timeoutSeconds: 120, failureAutoRetry: false, maxAutoRetries: 3 },
+    runtime: { useEntityStage: true, streamEntities: false, useVariableStage: true, useWorldStage: true, streamStory: true, streamVariables: false, streamWorld: false, timeoutSeconds: 120, failureAutoRetry: false, maxAutoRetries: 3 },
     display: { appearance: 'night' },
+    notifications: { completionChime: 'background' },
   };
 }
 
@@ -105,9 +123,15 @@ export function mergeSettingsChanges(base: Settings, edited: Settings, latest: S
   }
   return {
     ...latest,
+    phone: edited.phone && JSON.stringify(base.phone) !== JSON.stringify(edited.phone)
+      ? section(base.phone ?? { loanReminderDays: 3 }, edited.phone, latest.phone ?? { loanReminderDays: 3 }) : latest.phone,
+    theater: edited.theater && JSON.stringify(base.theater) !== JSON.stringify(edited.theater)
+      ? section<NonNullable<Settings['theater']>>(base.theater ?? { length: 'medium', perspective: 'follow' }, edited.theater, latest.theater ?? { length: 'medium', perspective: 'follow' }) : latest.theater,
+    theaterPrompt: base.theaterPrompt === edited.theaterPrompt ? latest.theaterPrompt : edited.theaterPrompt,
     prompts: section(base.prompts, edited.prompts, latest.prompts),
     memory: section(base.memory, edited.memory, latest.memory),
     runtime: section(base.runtime, edited.runtime, latest.runtime),
     display: section(base.display, edited.display, latest.display),
+    notifications: section(base.notifications, edited.notifications, latest.notifications),
   };
 }

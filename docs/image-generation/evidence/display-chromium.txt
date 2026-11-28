@@ -1,0 +1,59 @@
+
+> heijinwangchao@1.0.0-beta test:e2e
+> playwright test e2e/image-placements.spec.ts e2e/image-generation.spec.ts e2e/automatic-settlement.spec.ts e2e/harem.spec.ts --grep 人物、居家|跨标签替换|手动重绘居家照|关闭时保持纯文字|人物档案上传|文生图等待|完整原文可读，开局|家庭名册|旧 V10 空家庭 --reporter=line
+
+[WebServer] (node:32960) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:32985) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:33007) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 20 tests using 2 workers
+
+(node:33037) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/20] [desktop] › e2e/automatic-settlement.spec.ts:397:1 › 文生图等待不阻断正式结算，跨标签重复通知和关闭开关不重发付费请求
+(node:33036) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/20] [desktop] › e2e/automatic-settlement.spec.ts:56:1 › 完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型
+[3/20] [desktop] › e2e/harem.spec.ts:14:3 › 家庭名册 development：换行、重名档案、键盘返回与刷新
+[4/20] [desktop] › e2e/harem.spec.ts:14:3 › 家庭名册 production：换行、重名档案、键盘返回与刷新
+[5/20] [desktop] › e2e/harem.spec.ts:91:1 › 旧 V10 空家庭只展示占位，不生成候选或写入家庭字段
+[6/20] [desktop] › e2e/image-generation.spec.ts:51:1 › 关闭时保持纯文字；设置、结算插画、相册与备份贯通
+[7/20] [desktop] › e2e/image-generation.spec.ts:106:1 › 人物档案上传、独立槽位、锚点和 NPC 入口
+[8/20] [desktop] › e2e/image-placements.spec.ts:191:1 › 人物、居家与业务资料仅展示选图，退出家庭后可从图库导出
+[9/20] [desktop] › e2e/image-placements.spec.ts:433:1 › 跨标签替换、同名切档和损坏资源回退
+[10/20] [desktop] › e2e/image-placements.spec.ts:489:1 › 手动重绘居家照后上传、切换、删除及家庭预览均复用原资源
+(node:34276) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[11/20] [mobile] › e2e/automatic-settlement.spec.ts:56:1 › 完整原文可读，开局与下一条行动各自动结算一次，刷新和空待输入不调用模型
+(node:34290) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[12/20] [mobile] › e2e/automatic-settlement.spec.ts:397:1 › 文生图等待不阻断正式结算，跨标签重复通知和关闭开关不重发付费请求
+[13/20] [mobile] › e2e/harem.spec.ts:14:3 › 家庭名册 development：换行、重名档案、键盘返回与刷新
+[14/20] [mobile] › e2e/harem.spec.ts:14:3 › 家庭名册 production：换行、重名档案、键盘返回与刷新
+[15/20] [mobile] › e2e/harem.spec.ts:91:1 › 旧 V10 空家庭只展示占位，不生成候选或写入家庭字段
+[16/20] [mobile] › e2e/image-generation.spec.ts:51:1 › 关闭时保持纯文字；设置、结算插画、相册与备份贯通
+[17/20] [mobile] › e2e/image-generation.spec.ts:106:1 › 人物档案上传、独立槽位、锚点和 NPC 入口
+[18/20] [mobile] › e2e/image-placements.spec.ts:191:1 › 人物、居家与业务资料仅展示选图，退出家庭后可从图库导出
+[19/20] [mobile] › e2e/image-placements.spec.ts:433:1 › 跨标签替换、同名切档和损坏资源回退
+[20/20] [mobile] › e2e/image-placements.spec.ts:489:1 › 手动重绘居家照后上传、切换、删除及家庭预览均复用原资源
+  1 skipped
+  19 passed (2.5m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.3
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+npm notice To update run: npm install -g npm@12.2.3
+npm notice

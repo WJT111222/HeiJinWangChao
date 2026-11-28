@@ -36,13 +36,23 @@
       "origin": "worldbooks-v2",
       "sourcePath": "prompts/worldbooks/heijin/01_worldview.md",
       "sourceSha256": "5c826154def8538373c875245ab2d1f78280a763e87b6aa9118b0496b39490b0",
-      "treatment": "verbatim"
+      "treatment": "city-expansion-v1",
+      "cityExpansionV1": {
+        "baseCommit": "55cdc6edf84dab533719dbcf6ef907b10058657a",
+        "notes": "开局城市扩展：解除四城限制，列出八座官方城市并允许中国大陆自选城市；四城逐段介绍改为每档由 OPENING_CITY 注入本城介绍，保留反刻板印象原则与跨城出行规则。",
+        "sha256": "e7df81630ac6a085ef46bae9daeb47bb316f0ccf0594e8b410969498b781b4b1"
+      }
     },
     "worldbooks/heijin/02_modern_underworld.md": {
       "origin": "worldbooks-v2",
       "sourcePath": "prompts/worldbooks/heijin/02_modern_underworld.md",
       "sourceSha256": "9f59b875c57705a2880697c7f071f9a363cf44f2dedace9011d1baf520658c22",
-      "treatment": "verbatim"
+      "treatment": "city-expansion-v1",
+      "cityExpansionV1": {
+        "baseCommit": "55cdc6edf84dab533719dbcf6ef907b10058657a",
+        "notes": "开局城市扩展：地盘示例不再点名原四城，原则不变。",
+        "sha256": "6654a1c2aba68aef34789e4b9934130e81703c63a46688e7f9ad8252619b011f"
+      }
     },
     "shared/02_knowledge.md": {
       "origin": "m3-review",
@@ -237,6 +247,16 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "1b32f888a7e000f65c715c15ce7e63e4b2d6de8010690029e543c8dac3f7a2ba"
+      },
+      "haremV1": {
+        "baseCommit": "4e14d924b75ffedcf95b876cda000ad90d0d8d78",
+        "notes": "H0 后宫 Variables 单批事务、成员资格及家庭事实；原来源记录保留；场外计划、成员间关系与总体局势交由 World 推进。",
+        "sha256": "10329eac059c7f74e176f90dc844d32f2df50a4c690766cfb14dbc63f0395bf3"
+      },
+      "threeStageVariables": {
+        "baseCommit": "f88480a8138f0f76586226512a08e7028346edfe",
+        "notes": "生成电话号码使用 phoneContact；兼容解析和重放保留。",
+        "sha256": "acc885943d44439d15b35c2d6824804786b341465081103960e68b943528e959"
       }
     },
     "variableGroups/npc_ordinary/update.md": {
@@ -286,6 +306,16 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "dd75c9bd7bfdb3bc503dc71f830c6987e542175d379369eb85104ffacd1a3a54"
+      },
+      "haremV1": {
+        "baseCommit": "4e14d924b75ffedcf95b876cda000ad90d0d8d78",
+        "notes": "H0 后宫 Variables 单批事务、成员资格及家庭事实；原来源记录保留；场外计划、成员间关系与总体局势交由 World 推进。",
+        "sha256": "81ef99821493f0b8f4c86aa7ac41e5d75f25b5abf03b1aa8f9f18752602155d6"
+      },
+      "threeStageVariables": {
+        "baseCommit": "f88480a8138f0f76586226512a08e7028346edfe",
+        "notes": "生成电话号码使用 phoneContact；兼容解析和重放保留。",
+        "sha256": "f7060c8e766b9c7fcc35bea944ef7adaa9a1c9ffe659d5067b4228a5d5a84e8c"
       }
     },
     "variableGroups/npc_ordinary/offscreen.md": {
@@ -366,6 +396,11 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "c3a15471a55015ac10150a6e281c4260c05c55c02262ae621479e024fa2bd147"
+      },
+      "threeStageVariables": {
+        "baseCommit": "f88480a8138f0f76586226512a08e7028346edfe",
+        "notes": "生成电话号码使用 phoneContact；兼容解析和重放保留。",
+        "sha256": "53aab355e6c50a0227035cbb3962bc1cdd682e0293d40924dc2fc56888728930"
       }
     },
     "variableGroups/npc_special/update.md": {
@@ -420,6 +455,11 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "aa4692daa7d22f9177773704a82877e115e6d45e1a96b0ab8e2a0e0462bd7a92"
+      },
+      "threeStageVariables": {
+        "baseCommit": "f88480a8138f0f76586226512a08e7028346edfe",
+        "notes": "生成电话号码使用 phoneContact；兼容解析和重放保留。",
+        "sha256": "1a4bdf5a380c8c8c08eeac8207b94c96df03edcd9885dc08d0ec6d8de296fc1d"
       }
     },
     "variableGroups/npc_special/offscreen.md": {
@@ -594,6 +634,10 @@
         "baseCommit": "801ff4b05e72b293fc4d98185ae1a87d80b22c57",
         "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
         "sha256": "cbbfdc67f8547a110f850c9f19ae5302a12201b482d78a177c5053573ffe4adb"
+      },
+      "literaryOwnership": {
+        "sha256": "7356e2fac5d8c21a607e6603f44a33ef67e549b52bb266f8a12f9adbb02ed27d",
+        "change": "仅标记原生篇幅条款；共用标签、摘要、开局时间及事件协议原样保留。"
       }
     },
     "shared/07_command_output.md": {
@@ -695,9 +739,12 @@
         "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
         "sha256": "73e9f2d96a04f1fd75d82a88b2fe7d4e15e5959072f2e806baaa3f19271a2fd5"
       },
+      "threeStageVariables": {
+        "sha256": "1acf8f87f5199fb21bbfb7b97a0129b6d398e1ad603f477e730cbae8b1bf03d6"
+      },
       "propertyAssetsV1": {
         "notes": "资产登记补齐：车辆、房产、其他资产的购买路径，以及原本持有或无偿得到的资产直接登记路径；车辆房产仍不进重要物品表。",
-        "sha256": "eca6dcc7714f07aa3cf5eb10a53c96f9fe2fac7cd3b9d771605ad7dcd35a0e2b"
+        "sha256": "f692b54d953c24b5838f1980d5d129ff32b772c631ef11849b6d8483b938b906"
       }
     },
     "shared/08_world_output.md": {
@@ -838,6 +885,14 @@
       "partialSettlement": {
         "notes": "三段输出、可执行命令隔离和正式提交的局部容错契约。",
         "sha256": "90ae47a9fd56db1e30266c465f7b11444f80e228260bcc48d5799630890f5fc2"
+      },
+      "protagonistFactionV1": {
+        "baseCommit": "4e14d92",
+        "notes": "World 可按白名单更新组织部门、成员及补齐的公开字段；主势力绑定与主角已知列表只读。原始来源及历次适配记录保留。",
+        "sha256": "b9433d3cad9e51ac23f3305a8fc074acc92fa62ab7d8771a49079b7c7c2d4ce0"
+      },
+      "threeStageVariables": {
+        "sha256": "b827884472d6284db9995c0a5c334a557c8a40d9133d1bf56cb5093824327031"
       }
     },
     "stages/opening/variables.md": {
@@ -873,9 +928,8 @@
         "notes": "变量规划为可选参考；Variables 独立核对事实及正式时钟。",
         "sha256": "0880d1cd44027f54eafd72b4cc6ddbe1f7568b26c27d12389fc3859fb28a2ef6"
       },
-      "propertyAssetsV1": {
-        "notes": "资产登记补齐：开局原本持有的房产、车辆和其他资产可直接登记，不虚构购买；移除已补齐能力的缺口说明，保留历史债务缺口。",
-        "sha256": "3f536035331ca924210bec7ae807dff5941670d1648f09265773251892041b29"
+      "threeStageVariables": {
+        "sha256": "b2fe612bebef7695f97f921e56de486d0c894cfe4508351358a72b1bf2f72ca3"
       }
     },
     "stages/opening/world.md": {
@@ -939,6 +993,9 @@
       "legacyCleanupV10": {
         "notes": "V10 测试期清理：移除旧JSON双轨与旧存档兼容说明（RetireNpc/旧retiredNpcs/旧联系人/旧JSON候选），好感统一为 set npc[id].affinityChange={to,reason,relationshipText}（前值由程序读取）；04/05 统一为三阶段共用版本；组织 init 的 World 建档变体移出 legacy 路径。",
         "sha256": "c622cb517ec456dd989e5dbe5975286845901bd6cd7d4428a11ef957ee21e864"
+      },
+      "threeStageVariables": {
+        "sha256": "e6278f9ce959129be871411df820d8ee8e168cba439f0e2d010d84c0a4541d83"
       }
     },
     "stages/regular/world.md": {
@@ -1154,6 +1211,11 @@
         "previousTreatment": "text-protocol-adaptation",
         "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
         "sha256": "f04073536a6b71cfa2c916834ffe5fde4fcadf8a85bec21cf12de73b00d74f85"
+      },
+      "protagonistFactionV1": {
+        "baseCommit": "4e14d92",
+        "notes": "Variables 仅在玩家剧情中明确入伙时绑定唯一主势力（开局孤身一人），并逐条记录主角真实得知的组织据点与内情。原始来源及历次适配记录保留。",
+        "sha256": "07e54f135c0590f0b86030181ac4c9cc0d41833fa4e002c07d7ddd0b5ff601d1"
       }
     },
     "variableGroups/org_gang/offscreen.md": {
@@ -1209,6 +1271,11 @@
         "previousTreatment": "text-protocol-adaptation",
         "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
         "sha256": "5e04e3c1f458c0c08b491b4ce9bb1d06220082816bfd00a5c7b37fb8055bb235"
+      },
+      "protagonistFactionV1": {
+        "baseCommit": "4e14d92",
+        "notes": "Variables 仅在玩家剧情中明确入伙时绑定唯一主势力（开局孤身一人），并逐条记录主角真实得知的组织据点与内情。原始来源及历次适配记录保留。",
+        "sha256": "4c0fa1ed7f236570e0418a760a83fb2d3ea389fa8899abf85d06495b285c4a37"
       }
     },
     "variableGroups/org_government/offscreen.md": {
@@ -1268,6 +1335,11 @@
         "previousTreatment": "text-protocol-adaptation",
         "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
         "sha256": "c47f73547d1a34d2e9d77895dd51fb59376693fe9b70e7925b49804575947775"
+      },
+      "protagonistFactionV1": {
+        "baseCommit": "4e14d92",
+        "notes": "Variables 仅在玩家剧情中明确入伙时绑定唯一主势力（开局孤身一人），并逐条记录主角真实得知的组织据点与内情。原始来源及历次适配记录保留。",
+        "sha256": "9f16e8520278c4cbb7a1e34962fe57d821fbb83f823a1406c11f7115ae555a0f"
       }
     },
     "variableGroups/org_civil/offscreen.md": {
@@ -1323,6 +1395,11 @@
         "previousTreatment": "text-protocol-adaptation",
         "notes": "玩家本轮组织最终完善：低频状态白名单更新、公开管理层、稳定ID关联和可选稀疏关系；保留原来源与历次适配，不增加地图、语义审查或模型阶段。",
         "sha256": "f5aab17b9dacd2f67cd8badd2c5bd6fd766d8234587af73fda5ceeeba6ff9023"
+      },
+      "protagonistFactionV1": {
+        "baseCommit": "4e14d92",
+        "notes": "Variables 仅在玩家剧情中明确入伙时绑定唯一主势力（开局孤身一人），并逐条记录主角真实得知的组织据点与内情。原始来源及历次适配记录保留。",
+        "sha256": "f80381e0c73e906a26a447245be6028a1b446cd4f8b389136f596e37f7ea824a"
       }
     },
     "variableGroups/org_business/offscreen.md": {
@@ -1488,6 +1565,11 @@
       "partialSettlement": {
         "notes": "三段输出、可执行命令隔离和正式提交的局部容错契约。",
         "sha256": "c4137e9b29c3241b1840c685fc827ec1e9e060cf8c346892aa3295d4eb88c083"
+      },
+      "haremV1": {
+        "baseCommit": "4e14d924b75ffedcf95b876cda000ad90d0d8d78",
+        "notes": "追加后宫文本协议及事务边界。",
+        "sha256": "c9cf0a0226a26122d15d9b51f5423eb19df302303c33df7aee58a7a46432ac23"
       }
     },
     "docs/ASSEMBLY.md": {
@@ -1738,6 +1820,61 @@
       "storyDifficultyV1": {
         "notes": "剧情难度「硬核」场外反制：项目原创规则；仅在硬核难度的普通回合动态世界阶段注入，反制须有已确立的人物、传播路径与因果，不凭空制造敌人；不改输出协议与命令目录。",
         "sha256": "4c0cf778b3fa95b6af0068199e32a29bddc15344b45dbfe6613d211656225f2b"
+      }
+    },
+    "theater/novel.md": {
+      "origin": "project",
+      "sourcePath": "prompts/theater/novel.md",
+      "sourceSha256": "a98cb1c3fd2601bd7cf60c69fe2f9dadfb9ff07631c3b8385c04748e598eaaee",
+      "treatment": "project-authored"
+    },
+    "creation/city.md": {
+      "origin": "project",
+      "treatment": "project-authored",
+      "sourcePath": "prompts/creation/city.md",
+      "sourceSha256": "02396732d00f7ff1ba2e7124d2116afab2e3a6a213bcb5b50ba8c20c21a2c7e1",
+      "cityExpansionV1": {
+        "baseCommit": "55cdc6edf84dab533719dbcf6ef907b10058657a",
+        "notes": "自定义开局城市的可选地域介绍补全：只写约 50–100 字介绍，不确认城市合法性，不预设人物、势力或剧情。",
+        "sha256": "02396732d00f7ff1ba2e7124d2116afab2e3a6a213bcb5b50ba8c20c21a2c7e1"
+      }
+    },
+    "stages/opening/entities.md": {
+      "origin": "project",
+      "sourceSha256": "d711606b6a89d4b4f239b40d8cce412dd466a48a55be9dc2a48e323ae0d05ce5",
+      "treatment": "three-variable-stages"
+    },
+    "stages/regular/entities.md": {
+      "origin": "project",
+      "sourceSha256": "083b24e8d3aa917d2258fc2804138e8b7f2a3b9ded3c1daf7c6fff65b57fdb86",
+      "treatment": "three-variable-stages"
+    },
+    "shared/entity_output.md": {
+      "origin": "project",
+      "sourceSha256": "a3a28dcd80ea155d1fbcdc7e0439a57bef9d7d7e6cabd8894766c31f203551a5",
+      "treatment": "project-authored",
+      "threeStageVariables": {
+        "baseCommit": "f88480a8138f0f76586226512a08e7028346edfe",
+        "notes": "生成电话号码使用 phoneContact；兼容解析和重放保留。",
+        "sha256": "4a4a854b87c302604de97018f2180de93da980de7bd9204ebb3ff302b605fd3d"
+      },
+      "phoneReadonlyV1": {
+        "baseCommit": "3be381f64808b16d46ed54c6cf1fb0065555c0ed",
+        "notes": "按手机定稿区分新建旧识与新认识的陌生人。",
+        "sha256": "4aca44119c6bfb10cd055e9016721e34456db7164e5bee2ac6a5f3f6d1c815eb"
+      },
+      "phoneStoryInbox": {
+        "baseCommit": "75e8abc2dee53078d126886058acbc2a0dce70de",
+        "notes": "人物与实体记录正文手机消息与通话，正文提及标记可独立写入。",
+        "sha256": "53d60c085739ce86301893f497fd21731972d165e2075f361edc47000e2ffb6a"
+      }
+    },
+    "shared/history_output.md": {
+      "origin": "project",
+      "sourceSha256": "ee49bf9535aefb5a43ace743daca645d3933a8aeb41dcac363b7c25f65dea544",
+      "treatment": "project-authored",
+      "threeStageVariables": {
+        "sha256": "ee49bf9535aefb5a43ace743daca645d3933a8aeb41dcac363b7c25f65dea544"
       }
     }
   },

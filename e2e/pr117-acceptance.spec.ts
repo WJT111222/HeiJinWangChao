@@ -50,7 +50,7 @@ test('最终验收：指定视口长正文、候选、输入与刷新不产生�
   await page.screenshot({path:`docs/pr117-acceptance/react-${width}.png`,fullPage:true});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   if(desktop){
-   const pop=page.getByRole('region',{name:'三阶段详情',exact:true}),p=(await pop.boundingBox())!,b=(await input.boundingBox())!;
+   const pop=page.getByRole('region',{name:'四阶段详情',exact:true}),p=(await pop.boundingBox())!,b=(await input.boundingBox())!;
    expect(p.x).toBeGreaterThanOrEqual(0);expect(p.x+p.width).toBeLessThanOrEqual(width);expect(p.y).toBeGreaterThanOrEqual(0);expect(p.y+p.height).toBeLessThanOrEqual(b.y+1);
    await page.keyboard.press('Escape');await expect(workflowTrigger(page)).toBeFocused();
   }

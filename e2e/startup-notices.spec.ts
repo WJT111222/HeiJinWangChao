@@ -1,8 +1,8 @@
-import { goHome } from './helpers/gameLayout';
 // 此文件故意不用 helpers/test：从未阅读公告的真实首次访问开始。
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import releaseNotice from '../announcements/current.json' with { type: 'json' };
 
 const key = 'heijin.notices.hidden-on.v1';
 const disclaimerTitle = '黑金王朝 · 游玩须知与免责声明';
@@ -19,10 +19,13 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://**/*', route => route.fulfill({ status: 503, body: 'offline mock' }));
 });
 
-async function finishNotices(page: Page) {
+async function finishNotices(page: Page, inGame = false) {
   await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
   await expect(announcement(page)).toBeVisible();
   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
+  await expect(announcement(page)).toHaveCount(0);
+  await expect(disclaimer(page)).toHaveCount(0);
+  if (inGame) await page.getByRole('textbox', { name: '你的行动' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 }
 
@@ -33,8 +36,8 @@ test('完整定稿实际分段渲染：开头、架空社会声明与开发者�
   const content = modal.getByLabel('免责声明内容');
   const expected = approvedDisclaimer.filter(block => !/^#{1,2} /.test(block) && block !== '---')
     .map(block => block.replace(/^### /, '').replaceAll('**', ''));
-  expect(await content.locator('p, h3').allTextContents()).toEqual(expected);
-  expect(await content.locator('strong').allTextContents()).toEqual(
+  expect(await content.locator('p, h3, .notice-age-block').allTextContents()).toEqual(expected);
+  expect(await content.locator('.notice-age-block, strong:not(.notice-age-block strong)').allTextContents()).toEqual(
     approvedDisclaimer.filter(block => block.startsWith('**')).map(block => block.replaceAll('**', '')),
   );
   await expect(content.getByText('欢迎来到《黑金王朝》。', { exact: true })).toBeInViewport();
@@ -48,13 +51,14 @@ test('完整定稿实际分段渲染：开头、架空社会声明与开发者�
   await expect(content.getByText('感谢你阅读以上说明。', { exact: true })).toBeInViewport();
   await expect(content.getByText('愿你在这个架空世界中，书写一段真正属于自己的人生。', { exact: true })).toBeInViewport();
   await expect(content.getByText('《黑金王朝》开发者', { exact: true })).toBeInViewport();
-  await expect(modal.locator('.notice-footer')).toHaveText('今日不再弹出');
+  await expect(modal.locator('.notice-footer').getByRole('checkbox', { name: '今日不再弹出', exact: true })).toBeVisible();
   await finishNotices(page);
 });
 
 test('首次访问按序展示完整内容；关闭后导航不重播，未勾选刷新会恢复', async ({ page }) => {
   const externalRequests: string[] = [];
   page.on('request', request => { if (request.url().startsWith('https://')) externalRequests.push(request.url()); });
+  await page.route('**/api/announcement', route => route.fulfill({ status: 503 }));
   await page.goto('/');
   await expect(disclaimer(page)).toBeVisible();
   await expect(disclaimer(page).getByText('18+', { exact: true })).toBeVisible();
@@ -62,18 +66,22 @@ test('首次访问按序展示完整内容；关闭后导航不重播，未勾�
   await expect(disclaimer(page).locator('label')).toHaveText('今日不再弹出');
   await expect(announcement(page)).toHaveCount(0);
   await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
-  await expect(announcement(page).getByRole('heading', { name: '《黑金王朝》1.0 Beta · 世界事件与历史更新' })).toBeVisible();
-  await expect(announcement(page).getByRole('listitem')).toHaveCount(5);
-  await expect(announcement(page).getByText('记忆总结 V2 已支持短期转中期、中期转长期和 NPC 个人经历总结；自动维护可关闭，手动「立即总结」仍可用，已提交的历史原文保留可追溯。')).toBeVisible();
-  await expect(announcement(page).getByText('新增多回合撤回：可按完整快照恢复最近已结算的回合，每份存档最多保留 5 个恢复点；没有重做功能，撤回不会撤销已发生的生成请求。')).toBeVisible();
-  await expect(announcement(page).getByText('重大纪事时间轴已区分世界与主角的人生历史；传闻仍是传闻，日期不明确的往事不会被伪装成精确时间。')).toBeVisible();
-  await expect(announcement(page).getByText('世界事件 V2 已支持主事件、多个并行子事件、固定时刻结算和后续阶段；Story 可根据剧情决定主角介入、获知或不参与，事件档案保留已结束阶段的结果。')).toBeVisible();
-  await expect(announcement(page).getByText('「夜幕金印」已更新桌面和手机阅读布局、角色对白气泡及只读世界事件档案；目前为 1.0 Beta 测试阶段，真实模型长篇试玩、手机真机体验和 1.0 正式版发行尚待验收。')).toBeVisible();
-  await expect(announcement(page).getByText('王朝还在建设，城市已经有了自己的生活。感谢你在这里留下每一段经历。')).toBeVisible();
+  const notice = announcement(page);
+  await expect(notice.getByRole('heading', { name: '《黑金王朝》1.0 正式版上线' })).toBeVisible();
+  const content = notice.getByLabel('公告内容');
+  const paragraphs = content.locator('ul > li, ol > li > p');
+  await expect(paragraphs).toHaveCount(16);
+  expect(await paragraphs.allTextContents()).toEqual(releaseNotice.updates);
+  await expect(paragraphs.first()).toBeInViewport();
+  const message = content.getByText(releaseNotice.message, { exact: true });
+  await expect(message).not.toBeInViewport();
+  await content.press('End');
+  await expect(message).toBeInViewport({ ratio: 1 });
   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
   await page.getByRole('button', { name: /开始新游戏/ }).click();
   await expect(page.getByLabel('姓名', { exact: true })).toBeVisible();
-  await goHome(page);
+  await page.getByRole('button', { name: /^(返回首页|‹ 首页)$/ }).click();
+  await expect(page.locator('.home-experience, .mobile-home')).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(externalRequests).toEqual([]);
   await page.reload();
@@ -128,7 +136,7 @@ test('首页与设置手动查看只开指定公告；返回保留设置内容�
   }
   await page.getByRole('button', { name: '设置', exact: true }).click();
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  await settings.getByRole('button', { name: '提示词', exact: true }).click();
+  await settings.getByRole('button', { name: '正文与风格', exact: true }).click();
   const length = settings.getByLabel('正文最低字数');
   await length.fill('2222');
   for (const label of ['游玩须知与免责声明', '王朝公告']) {
@@ -185,14 +193,19 @@ test('直接打开存档仍显示两步公告，关闭与从游戏设置查看�
   await page.goto(`/#game/${before.saveId}`);
   await page.reload();
   await expect(disclaimer(page)).toBeVisible();
-  await finishNotices(page);
   await expect(page.getByTestId('story-reader')).toBeVisible();
+  await finishNotices(page, true);
   await page.getByRole('button', { name: '设置', exact: true }).click();
   const settings = page.getByRole('dialog', { name: '设置', exact: true });
   await settings.getByRole('button', { name: '王朝公告', exact: true }).click();
   await announcement(page).getByRole('button', { name: '关闭王朝公告' }).click();
-  // Focus the close control before keyboard activation; an asynchronously hovered weather popover yields to archive focus.
-  const closeSettings=settings.getByRole('button', { name: '关闭资料界面' });await closeSettings.focus();await closeSettings.press('Enter');
+  await expect(announcement(page)).toHaveCount(0);
+  const closeSettings = settings.getByRole('button', { name: '关闭资料界面' });
+  await closeSettings.focus();
+  await closeSettings.press('Enter');
+  await expect(settings).toHaveCount(0);
+  // Returning focus to the game can open its nonmodal weather details.
+  await page.getByRole('textbox', { name: '你的行动' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   const after = await page.evaluate(async (saveId) => {
     const path = '/src/services/storage/saveRepository.ts', { SaveRepository } = await import(path);

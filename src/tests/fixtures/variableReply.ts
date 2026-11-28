@@ -50,3 +50,17 @@ export function variableReply(value:unknown):string{
 export function variableTextEnvelope(text: string): string {
   return text.trimStart().startsWith('<thinking>') ? text : `<thinking>变量分析结果：保持未变化字段。</thinking>\n${text.trimStart().startsWith('<说明>') ? '' : '<说明></说明>\n'}${text}`;
 }
+
+/** Split fixed, single-line test commands by the owner expected in a four-stage replay. */
+export function stageFixtureReply(stage: 'entities' | 'variables', text: string) {
+  const lines = /<命令>([\s\S]*?)<\/命令>/.exec(text)?.[1].split('\n') ?? [];
+  const entityLine = (line: string) => /^(?:set|push|delete|add) (?:npc\[|locations\[|organizations\[[^\]]+\] =|harem\.)/.test(line.trim());
+  const entities = lines.filter(entityLine);
+  if (stage === 'variables' && !entities.length) return text;
+  const selected = stage === 'entities' ? entities : lines.filter(line => !entityLine(line));
+  const contacts = [...new Set(entities.flatMap(line => /npc\[([^\]]+)\]/.exec(line)?.slice(1,2) ?? []))];
+  const declaration = stage === 'entities' ? '<接触者>'+JSON.stringify(contacts)+'</接触者>' : '';
+  const commands = '<命令>\n'+selected.join('\n')+'\n</命令>';
+  const template = /<命令>[\s\S]*?<\/命令>/.test(text) ? text.replace(/<命令>[\s\S]*?<\/命令>/, () => commands) : commands;
+  return declaration + variableTextEnvelope(template);
+}

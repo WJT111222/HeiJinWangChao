@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { commandCatalog, inlineCommandCatalog } from '../services/validation/commandCatalog';
-import { describeTimeFormats, factorRepeatedSchemas, resolveCatalogRefs } from '../services/validation/catalogCompaction';
+import { compactWorldCommandSchema, describeTimeFormats, factorRepeatedSchemas, resolveCatalogRefs } from '../services/validation/catalogCompaction';
 import { composePrompt } from '../prompts/composer';
 import { defaultSettings } from '../ui/settings/model';
 import { worldDraft, worldState } from './fixtures/world';
@@ -56,15 +56,27 @@ describe.each(['world', 'variables'] as const)('%s 命令目录只合并重复�
     for (const node of times) { expect(node).not.toHaveProperty('pattern'); expect(String(node.description)).toMatch(/2026-10-18/); }
     expect(JSON.stringify(commandCatalog(stage))).not.toContain('[2468][048]');
   });
-  it('体积上限：合并后不超过 46000 字符，且比内联目录至少少 40%', () => {
+  it('体积上限：合并后不超过上限（World 46000、Variables 50000 字符），且比内联目录至少少 40%', () => {
     // 加字段使目录超限时，请先确认新结构是否能复用公共定义，而不是直接放宽上限。
+    // 正式请求只发送 World 的 JSON 目录；人物与实体、主角与现场两段使用文本目录，这份 Variables JSON 目录不发给模型。
+    // 资产登记命令（#253）合入后上限调到 50000，World 上限不变。
     const compact = size(commandCatalog(stage)), inline = size(inlineCommandCatalog(stage));
-    expect(compact).toBeLessThan(46000);
+    expect(compact).toBeLessThan(stage === 'world' ? 46000 : 50000);
     expect(compact / inline).toBeLessThan(0.6);
   });
 });
 
 describe('合并与展开的工具行为', () => {
+  it('World 的字符串常量或枚举保留完整取值约束，混合枚举保留类型约束', () => {
+    const properties = { status: { type:'string', enum:['planned','active'] }, kind: { type:'string', const:'npc' },
+      mixed: { type:'string', enum:[1,'one'] }, text: { type:'string', minLength:1 } };
+    expect(compactWorldCommandSchema({ properties })).toEqual({ properties: {
+      ...properties, status: { enum: ['planned','active'] }, kind: { const:'npc' },
+    } });
+    const world = inlineCommandCatalog('world').schema;
+    expect(world.$schema).toBe('http://json-schema.org/draft-07/schema#');
+    expect(world.oneOf.every(command => command.$schema === undefined)).toBe(true);
+  });
   it('只抽取有明显收益的重复结构，展开后与原文相同', () => {
     const shared = { type: 'object', properties: { a: { type: 'string', minLength: 1, maxLength: 400 }, b: { type: 'string', minLength: 1, maxLength: 400 } }, required: ['a', 'b'], additionalProperties: false };
     const schema = { oneOf: [
@@ -92,7 +104,7 @@ describe.each(['opening', 'regular'] as const)('%s 实际发送的 World 上下�
     const state = worldState(), draft = worldDraft(true, mode);
     const prompt = await composePrompt({ stage: 'world', mode, state, draft, settings: defaultSettings(), userInput: '' });
     const catalog = prompt.context.COMMAND_CATALOG as ReturnType<typeof commandCatalog>;
-    expect(catalog).toEqual(commandCatalog('world'));
+    expect(catalog).toEqual(commandCatalog('world',true,mode==='regular'));
     expect(Object.keys(catalog.schema.definitions)).toEqual(expect.arrayContaining(['游戏时间', '稳定ID', '实体引用']));
     // Zod/贪心提取可以命名为 time 或各精度子结构；验证正式纪事结构而非依赖某个别名。
     const resolved = resolveCatalogRefs(catalog.schema);

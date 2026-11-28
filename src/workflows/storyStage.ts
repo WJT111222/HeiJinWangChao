@@ -1,3 +1,5 @@
+import type { LegacyContinuationConsent } from './legacyContinuation';
+import { usesSpreset } from '../presets/spreset/definition';
 import { withWorldbookLibrary, type StoryWorldview } from '../services/worldbook/mainWorldview';
 import { nativeDeliveryId } from '../presets/settings';
 import { StoryClock } from '../presets/tavern/timing';
@@ -19,7 +21,7 @@ import { AiConfigSchema } from '../services/ai/configuration';
 import { storyInspections } from '../services/ai/storyInspection';
 import type { AiConfig } from '../services/ai/configuration';
 import type { CredentialVault } from '../services/ai/credentials';
-import { AiError, safeAiError } from '../services/ai/errors';
+import { AiError, isContinuationDeliveryUnknown, safeAiError } from '../services/ai/errors';
 import { redactInspection } from '../services/ai/inspection';
 import { recordedRetryable } from './stageRetry';
 import { runStageRequest, storyFailureText } from '../services/ai/runtime';
@@ -32,7 +34,7 @@ import { StageGuard } from './stageGuard';
 import type { OrderPreferences } from '../prompts/order';
 
 type Repository = Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft' | 'prepareWorldview'>
-  & Partial<Pick<SaveRepository,'saveRecoveredStory' | 'recentStoryActions'>>;
+  & Partial<Pick<SaveRepository,'saveRecoveredStory' | 'recentStoryActions' | 'readOracleNote'>>;
 export interface StoryProgress {
   phase: 'generating' | 'saving' | 'retrying';
   narrative: string;
@@ -54,6 +56,7 @@ interface StoryInput {
   onFailureSaved?: (draft: TurnDraft) => void;
   /** 从草稿里保存的截断原文接着写（玩家点「续写正文」）。 */
   continuation?: boolean;
+  consent?: LegacyContinuationConsent;
   /** Explicit replacement starts from current settings, including recovery of an unbound draft. */
   freshWorldview?: boolean;
   automaticRetry?: boolean;
@@ -97,6 +100,9 @@ export class StoryStage {
     }
     const selection = input.legacyNotificationSelection && structuredClone(input.legacyNotificationSelection);
     const continuation = Boolean(input.continuation);
+    const { consent } = input;
+    consent?.claim(expected);
+    const confirmedWriting = consent?.writing;
     const captureInputs = () => {
       const config = AiConfigSchema.parse(input.config);
       return {
@@ -109,7 +115,7 @@ export class StoryStage {
       };
     };
     // 浏览器取得 Web Lock 本身也是异步的。预设、渠道与凭证在调用入口一起选定。
-    const frozen = presetSelection ? captureInputs() : undefined;
+    const frozen = captureInputs();
     return this.guard.run(expected.saveId, async (attempt) => {
       const current = attempt.check;
       if (presetSelection && waitingForScripts) {
@@ -125,7 +131,7 @@ export class StoryStage {
       if (input.automaticRetry && this.presetAtFirstAttempt !== presetIdentity)
         throw new AiError('configuration', undefined, { fieldPath: 'tavern.retry_changed' });
       this.presetAtFirstAttempt = presetIdentity;
-      const { config, settings, companionProfile, orderPreferences, frozenStoryChannel, secrets } = frozen ?? captureInputs();
+      const { config, settings, companionProfile, orderPreferences, frozenStoryChannel, secrets } = frozen;
       const streaming = settings.runtime.streamStory;
       const [state, draft] = await Promise.all([
         this.repository.load(expected.saveId),
@@ -143,14 +149,19 @@ export class StoryStage {
       const recovery = selection ? authorizeLegacyNotificationRecovery(state,draft,selection) : undefined;
       if (recovery && (!this.repository.saveRecoveredStory || continuation
         || !settings.runtime.useVariableStage || !settings.runtime.useWorldStage)) throw new AiError('configuration');
-      if (continuation && !canContinueStory(draft, settings.prompts.minNarrativeChars))
+      if (continuation && draft.storyPartial && !draft.storyPartial.writing && !confirmedWriting)
+        throw new AiError('configuration', undefined, { fieldPath: 'tavern.writing_unknown' });
+      const continuationDraft = continuation && draft.storyPartial && !draft.storyPartial.writing && confirmedWriting
+        ? { ...draft, storyPartial: { ...draft.storyPartial, writing: confirmedWriting } } : draft;
+      if (continuation && !canContinueStory(continuationDraft, settings.prompts.minNarrativeChars))
         throw new DataError('DRAFT_CONFLICT', '这段正文已不能续写，请重新生成。');
       const retry = !input.freshWorldview && draft.stageStatus.story === 'failed';
       const partial = continuation ? trimIncompleteTag(draft.storyPartial!.text) : '';
-      const stream = new StoryStream();
+      let stream = new StoryStream();
       // 续写：先把已写部分放进显示流；续写开头缓冲到能确定拼接方式，去掉重复后再显示。
       let narrative = continuation ? stream.push(partial) : '';
-      const preview = continuation ? new ContinuationPreview(partial) : undefined;
+      let preview = continuation ? new ContinuationPreview(partial) : undefined;
+      let showingProvisional = false;
       const pushDelta = (delta: string) => {
         const shown = preview ? preview.push(delta) : delta;
         return shown ? stream.push(shown) : narrative;
@@ -192,9 +203,23 @@ export class StoryStage {
             stream: streaming, storyClock: clock,
             presetSelection, frozenStoryChannel,
             signal: attempt.signal,
-            ...(continuation ? { continuation: { partial } } : {}),
+            ...(continuation ? { continuation: { partial, consent } } : {}),
+            onLiteraryPreview: (delta) => {
+              current();
+              showingProvisional = true;
+              narrative = pushDelta(delta);
+              progress();
+            },
             onDelta: (delta) => {
               current();
+              // The sandbox delivered its complete, validated output. Replace the temporary
+              // reading stream, including continuation overlap state, before displaying it.
+              if (showingProvisional) {
+                stream = new StoryStream();
+                narrative = continuation ? stream.push(partial) : '';
+                preview = continuation ? new ContinuationPreview(partial) : undefined;
+                showingProvisional = false;
+              }
               narrative = pushDelta(delta);
               progress();
               storyInspections.update(inspectionId, { planning: redactInspection(stream.planning, secrets), activity: 'content' });
@@ -251,8 +276,8 @@ export class StoryStage {
         input.onProgress?.({ phase: 'saving', readingPhase: streaming ? 'body' : 'waiting', narrative: streaming ? story.narrative : '' });
         // 网络从不放入 IDB 事务；整份草稿用现有乐观锁原子替换。
         const saved = selection
-          ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal,lease)
-          : await this.repository.saveDraft(rerollStory(draft,story), draft.draftRevision, attempt.signal, draft, lease);
+          ? await this.repository.saveRecoveredStory!(draft,story,selection,attempt.signal,lease,response.storyWriting)
+          : await this.repository.saveDraft(rerollStory(draft,story,response.storyWriting), draft.draftRevision, attempt.signal, draft, lease);
         published = true;
         if (responseInspectionId) {
           try { stageResponses.update(responseInspectionId, { candidateSaved: true, draftSavedMs: clock?.elapsed() }, secrets); } catch { /* Already persisted. */ }
@@ -268,8 +293,14 @@ export class StoryStage {
             error instanceof AiError && recordedRetryable(error, input.settings)) {
           input.replacementRetry.pending = lease;
         }
-        if (!saving && !recovery && !(draft.story && draft.stageStatus.story === 'ready') &&
-            input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled') {
+        // An unsuccessful explicit rewrite of an uncredited V10 fragment must leave its only copy intact.
+        const keepLegacyPartial = !continuation && draft.storyPartial && !draft.storyPartial.writing;
+        // 已有可用正文时重新生成失败，保留原正文，不把草稿标为失败。
+        if (!saving && (!consent || consent.sent) && !recovery && !keepLegacyPartial && !(draft.story && draft.stageStatus.story === 'ready')
+          && input.onFailureSaved && error instanceof AiError && error.code !== 'cancelled'
+          && !isContinuationDeliveryUnknown(error)
+          && !(draft.story && (usesSpreset(presetSelection) || error.details?.storyRule === 'narrative_empty'
+            || error.details?.fieldPath?.startsWith('tavern.upstream.')))) {
           current();
           const previousAttempt = draft.failures.filter(f => f.stage === 'story' && f.storyRevision === draft.storyRevision)
             .reduce((last, failure) => Math.max(last, failure.attempt), 0);

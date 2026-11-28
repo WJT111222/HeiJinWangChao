@@ -85,7 +85,7 @@ test('跨标签过期星标准确失败并同步正式状态，完整候选不�
   await expect(other.getByRole('status').filter({ hasText: '本次修改未保存' })).toBeVisible();
   await expect(stale.getByRole('button', { name: '取消特殊身份：林澄', exact: true })).toBeVisible();
   const saved = await rosterGame(other); expect(saved.state.npcManagementRevision).toBe(1);
-  for (const field of ['story', 'variables', 'world', 'userInput'] as const) expect(saved.draft![field]).toEqual(before.draft![field]);
+  for (const field of ['story', 'entities', 'variables', 'world', 'userInput'] as const) expect(saved.draft![field]).toEqual(before.draft![field]);
   expect(saved.draft!.draftRevision).toBe(before.draft!.draftRevision + 1); await other.close();
 });
 
@@ -99,7 +99,7 @@ test('真实Story请求中本页与其他标签管理均拒绝，不取消请求
   expect((await rosterGame(page)).state).toEqual(before.state); expect(mock.calls).toEqual(['story']); await other.close();
   await closeNpcRoster(page); mock.release();
   await expect.poll(async () => (await rosterGame(page)).state.turnNumber, { timeout: 20000 }).toBe(before.state.turnNumber + 1);
-  expect(mock.calls).toEqual(['story', 'variables', 'world']);
+  expect(mock.calls).toEqual(['story', 'entities', 'variables', 'world']);
 });
 
 test('IndexedDB中途写入失败原子回滚，星标不假成功，候选完整保留', async ({ page }) => {

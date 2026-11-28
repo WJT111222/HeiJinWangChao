@@ -1,3 +1,4 @@
+import { settingsCategory } from './helpers/aiSettings';
 import { createServer } from 'node:http';
 import { writeFile } from 'node:fs/promises';
 import type { Server, ServerResponse } from 'node:http';
@@ -64,7 +65,7 @@ async function seed(page: Page, stage: 'variables' | 'world', old = false) {
 }
 async function closeDiagnostics(page: Page) { if (await page.locator('dialog.mobile-diagnostics-sheet[open]').isVisible()) await page.keyboard.press('Escape'); }
 async function closeWorkflow(page: Page) {
-  const close = page.getByRole('button', { name: '收起三阶段详情', exact: true });
+  const close = page.getByRole('button', { name: '收起四阶段详情', exact: true });
   if (await close.isVisible()) await close.click(); else await workflowTrigger(page).click();
 }
 async function begin(page: Page, stage: 'variables' | 'world', label: string) {
@@ -75,22 +76,25 @@ async function begin(page: Page, stage: 'variables' | 'world', label: string) {
 test('旧运行设置不重置：两个独立开关默认关闭，显式保存、刷新和未保存取消', async ({ page }, info) => {
   await seed(page, 'variables', true);
   const original = await page.evaluate(() => localStorage.getItem('heijin.settings.v1'));
-  await openSettings(page); await page.getByRole('button', { name: '运行', exact: true }).click();
-  const variables = page.getByRole('checkbox', { name: '变量管理 · 流式传输', exact: true }), world = page.getByRole('checkbox', { name: '动态世界 · 流式传输', exact: true });
-  await expect(variables).not.toBeChecked(); await expect(world).not.toBeChecked(); await expect(page.getByLabel('请求超时（秒）')).toHaveValue('73');
+  await openSettings(page); await page.getByRole('button', { name: '生成阶段', exact: true }).click();
+  const variables = page.getByRole('checkbox', { name: '主角与现场 · 流式传输', exact: true }), world = page.getByRole('checkbox', { name: '场外与网络 · 流式传输', exact: true });
+  await expect(variables).not.toBeChecked(); await expect(world).not.toBeChecked();
+  await settingsCategory(page, '超时与重试');
+  await expect(page.getByLabel('请求超时（秒）')).toHaveValue('73');
+  await settingsCategory(page, '生成阶段');
   expect(await page.evaluate(() => localStorage.getItem('heijin.settings.v1'))).toBe(original);
   await variables.check(); await expect(world).not.toBeChecked(); await page.getByRole('button', { name: '保存本地设置', exact: true }).click();
-  await page.reload(); await openSettings(page); await page.getByRole('button', { name: '运行', exact: true }).click();
+  await page.reload(); await openSettings(page); await page.getByRole('button', { name: '生成阶段', exact: true }).click();
   await expect(variables).toBeChecked(); await expect(world).not.toBeChecked(); await world.check();
   await page.getByRole('button', { name: '保存本地设置', exact: true }).click(); await page.screenshot({ path: info.outputPath('stream-settings.png') });
-  await page.reload(); await openSettings(page); await page.getByRole('button', { name: '运行', exact: true }).click();
+  await page.reload(); await openSettings(page); await page.getByRole('button', { name: '生成阶段', exact: true }).click();
   await expect(variables).toBeChecked(); await expect(world).toBeChecked(); await variables.uncheck(); await page.reload();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('heijin.settings.v1')!));
   expect(saved.runtime).toMatchObject({ streamVariables: true, streamWorld: true, timeoutSeconds: 73 }); expect(saved.prompts.perspective).toBe('first'); expect(saved.version).toBe(1); expect(calls).toEqual([]);
 });
 
 for (const stage of ['variables', 'world'] as const) {
-  const label = stage === 'variables' ? '变量' : '世界', rawLabel = stage === 'variables' ? '变量' : '动态世界';
+  const label = stage === 'variables' ? '变量' : '世界', rawLabel = stage === 'variables' ? '主角与现场' : '场外与网络';
   test(`${stage} 实时只读、主动公开思考、跟随与复制、完整校验后结算`, async ({ page }, info) => {
     const before = await seed(page, stage); await begin(page, stage, label);
     await page.evaluate(async () => {

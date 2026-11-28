@@ -1,4 +1,5 @@
-import { fetchWithRelay, relayAttempt, relayMode } from './corsRelay';
+import type { LiterarySession } from '../../presets/spreset/literarySession';
+import { fetchWithRelay, relayAttempt, relayMode, type ConfirmedTransmission } from './corsRelay';
 import { relayUpstreamHeader } from './relayTarget';
 import { nativeFetch } from '../../presets/tavern/fetch';
 import type { GenerationType } from '../../presets/tavern/events';
@@ -31,16 +32,21 @@ import { FINISH_TAIL_MS, readSse } from './sse';
 import { rememberThinkingCapability, unsupportedThinkingParameter, blockThinkingCapability } from './thinking';
 import { checkFinish, normalTextFinish, LeadingThink, rememberPresetSamplingRejection, rememberUnsupported, splitLeadingThink, unsupportedParameter } from './compat';
 import { isOpenAiCompatible } from './configuration';
+import type { Protocol } from './configuration';
 import { rawResponseObservation, responseContent, responseDiagnostics, mergeResponseDiagnostics } from './responseContent';
 import type { RawResponseObservation, ResponseDiagnostics } from './responseContent';
 import { attachFailureDiagnostic, attachObservedRequest, carryFailureDiagnostic, classifyUpstreamPayload, diagnosticSecrets, failurePhase, readFailureDiagnostic } from './failureDiagnostic';
 
 export interface RequestOptions {
+  /** One-use dispatch gate for an explicitly confirmed, uncredited Story fragment. */
+  confirmedTransmission?: ConfirmedTransmission;
   storyClock?: import('../../presets/tavern/timing').StoryClock;
   presetSampling?: Sampling;
+  spresetPrototype?: boolean;
   tavernType?: GenerationType;
   /** Frozen reference records for checking the bundled script’s final tool declaration. */
   nativeDeliveryReference?: readonly AiMessage[];
+  storyDeliveryTool?: string;
   /** Internal Story-only handoff: caller must strictly validate received content. */
   validateStoryOutputLimit?: boolean;
   playerWorldbook?: PlayerWorldbook;
@@ -56,6 +62,10 @@ export interface RequestOptions {
   /** Read-only observations before compatibility extraction; not a second request. */
   onRawTextDelta?: (text: string) => void;
   onNativeReasoningDelta?: (text: string) => void;
+  /** Ephemeral Story reader. Only onDelta receives the final processor delivery. */
+  onLiteraryPreview?: (delta: string) => void;
+  /** Lazily snapshot partial arguments for the diagnostic viewer. Clear after successful verification. */
+  onUnverifiedTool?: (read?: () => string) => void;
   /** Read-only event observation; never used as accepted model text. */
   onRawResponse?: (event: RawResponseObservation) => void;
   /** Only public text actually extracted from a leading <think> block. */
@@ -211,21 +221,37 @@ function residualTool(data: unknown, delta: boolean) {
     return array(message.tool_calls).length > 0 || message.function_call != null || choice.finish_reason === 'tool_calls';
   });
 }
+function theaterResidualTool(data: unknown, protocol: Protocol, delta: boolean) {
+  if (isOpenAiCompatible(protocol)) return residualTool(data, delta);
+  const root = record(data);
+  if (protocol === 'gemini') return array(root.candidates).some(candidate =>
+    array(record(record(candidate).content).parts).some(part => record(part).functionCall != null));
+  if (delta) return record(root.content_block).type === 'tool_use' || record(root.delta).type === 'input_json_delta'
+    || record(root.delta).stop_reason === 'tool_use';
+  return root.stop_reason === 'tool_use' || array(root.content).some(block => record(block).type === 'tool_use');
+}
 export class AiClient {
   constructor(private transport: typeof fetch = nativeFetch) {}
   private async response(
     url: string, init: RequestInit, signal: AbortSignal, relay: ReturnType<typeof relayAttempt>, snapshot?: RequestSnapshot,
-    observe?: (value: ResponseDiagnostics) => void, presetSampling = false, trace?: UpstreamTrace, clock = trace?.clock,
+    observe?: (value: ResponseDiagnostics) => void, presetSampling = false, trace?: UpstreamTrace, confirmed?: ConfirmedTransmission, clock = trace?.clock,
   ) {
-    trace?.clock.first('sentMs');
-    const response = await fetchWithRelay(this.transport, url, {
+    const markSent = () => {
+      if (trace) { trace.calls++; trace.clock.first('sentMs'); }
+    };
+    if (!confirmed) markSent();
+    const transport: typeof fetch = confirmed ? (target, request) => {
+      markSent();
+      return this.transport(target, request);
+    } : this.transport;
+    const response = await fetchWithRelay(transport, url, {
       ...init,
       signal,
       credentials: 'omit',
       redirect: 'error',
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
-    }, relay);
+    }, relay, confirmed && { transmission: confirmed, signal });
     if (signal.aborted) {
       void response.body?.cancel().catch(() => {});
       throw new AiError('cancelled');
@@ -314,11 +340,17 @@ export class AiClient {
     messages: readonly AiMessage[],
     options: RequestOptions = {},
   ): Promise<AiResponse> {
-    const relay = relayAttempt(snapshot.channel.protocol);
+    const theater = snapshot.stage === 'theater' || snapshot.stage === 'imagePrompt';
+    const prototype = import.meta.env.DEV && options.spresetPrototype && snapshot.stage === 'story';
+    let session: LiterarySession | undefined;
+    // Theater keeps a single paid transport. A failed direct POST is not replayed through a relay.
+    const relay = theater || snapshot.stage === 'phone' || (prototype && !options.confirmedTransmission) ? { origin: undefined, eligible: false, used: false } : relayAttempt(snapshot.channel.protocol);
+    const allowOutputLimit = options.validateStoryOutputLimit === true || theater;
     const relayEnabled = relayMode() === 'auto';
     const started = performance.now();
     const compat = snapshot.stage === 'story' && options.tavernType !== undefined;
-    const limits = snapshot.stage === 'story' && options.stream ? options.streamTimeouts : undefined;
+    // 原型会话自行读取上游，不向本次时钟报告进度；沿用单一总时限，避免被无输出时限误判。
+    const limits = snapshot.stage === 'story' && options.stream && !prototype ? options.streamTimeouts : undefined;
     const clock = options.storyClock ?? (compat || limits ? new StoryClock() : undefined);
     const trace = compat ? newTrace(clock) : undefined;
     let terminalEvidence: UpstreamTrace['boundary'];
@@ -339,13 +371,13 @@ export class AiClient {
     let diagnostics: string[] = [];
     let inspectionId: string | undefined;
     let observedUsage: Usage | undefined;
-    let outputLimited = false, unhandledTool = false;
+    let outputLimited = false, unhandledTool = false, missingTheaterFinish = false;
     let lastHttp: number | undefined;
     let seen: ResponseDiagnostics = {};
     const finish = (reason: unknown) => {
-      if (options.validateStoryOutputLimit && typeof reason === 'string' && ['length', 'max_tokens'].includes(reason.toLowerCase())) outputLimited = true;
+      if (allowOutputLimit && typeof reason === 'string' && ['length', 'max_tokens'].includes(reason.toLowerCase())) outputLimited = true;
       if (trace && reason === 'tool_calls') return true;
-      return checkFinish(reason, options.validateStoryOutputLimit === true);
+      return checkFinish(reason, allowOutputLimit);
     };
     const observe = (value: ResponseDiagnostics) => {
       seen = mergeResponseDiagnostics(seen, value);
@@ -359,14 +391,20 @@ export class AiClient {
           diagnostics = wire.diagnostics;
           try { if (options.recordInspection !== false) inspectionId = requestInspections.start(snapshot, wire.init.body, options.inspection, wire.presetSamplingInspection); }
           catch { /* Inspection cannot affect transport. */ }
-          clock?.first('sentMs');
+          // 酒馆路径在真正发出时由 response() 记录；确认续写的请求也要等到实际发送。
+          if (!trace) clock?.first('sentMs');
           return this.response(wire.url, wire.init, requestSignal, relay, snapshot, observe,
-            wire.presetSamplingInspection !== undefined, trace, clock);
+            wire.presetSamplingInspection !== undefined, trace, options.confirmedTransmission, clock);
         };
         const playerWorldbook = snapshot.stage === 'story' ? options.playerWorldbook : undefined;
-        const response = trace && cleanup && options.tavernType
+        if (import.meta.env.DEV && prototype) {
+          const { PrototypeSession } = await import('../../presets/spreset/session');
+          session = new PrototypeSession(signal);
+        }
+        const response = session ? await send(await session.wire(snapshot, messages, options.stream === true, playerWorldbook), signal)
+          : trace && cleanup && options.tavernType
           ? await sendTavern(snapshot, options.tavernType, [...messages], options.nativeDeliveryReference !== undefined ? undefined : options.presetSampling ?? {}, options.stream === true,
-            AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryReference, playerWorldbook, options.retryableTavernHost)
+            AbortSignal.any([signal, cleanup.signal]), trace, send, options.nativeDeliveryReference, playerWorldbook, options.storyDeliveryTool, options.retryableTavernHost)
           : await send(wireRequest(snapshot, insertPlayerWorldbook(messages, playerWorldbook), options.stream === true, options.presetSampling), signal);
         const protocol = trace ? 'openai' : snapshot.channel.protocol;
         clock?.first('headersMs');
@@ -377,7 +415,16 @@ export class AiClient {
         // 部分中转忽略 stream:true 直接返回完整 JSON；按非流式读取，再一次性交给进度回调。
         const wholeJson = options.stream === true && /application\/json/i.test(response.headers.get('content-type') ?? '');
         const streaming = trace ? safeMime(response.headers) === 'text/event-stream' : options.stream && !wholeJson;
-        if (!streaming) {
+        if (session) {
+          const delivered = await session.read(response, snapshot, options);
+          text = delivered.text;
+          reasoning = delivered.reasoning;
+          observedUsage = usage = delivered.usage;
+          signal.throwIfAborted();
+          if (reasoning) options.onReasoningDelta?.(reasoning);
+          options.onDelta?.(text);
+          observe({ transport: delivered.transport, complete: true, finishReasons: [delivered.finish] });
+        } else if (!streaming) {
           // Inspect an unsolicited SSE copy without accepting it as a summary or
           // changing the ordinary JSON path (including mislabeled valid JSON).
           const observedSse = snapshot.stage === 'memory' && options.onResponseDiagnostics && safeMime(response.headers) === 'text/event-stream'
@@ -394,6 +441,8 @@ export class AiClient {
             throw failure;
           }
           if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol), httpStatus: response.status, complete: true });
+          if (theater && responseDiagnostics(data, protocol).errorPresent) throw rejectedUpstream(record(data), 'json', response.status);
+          if (theater && theaterResidualTool(data, protocol, false)) throw new AiError('invalid_output');
           if (trace && residualTool(data, false)) throw new AiError('invalid_output', undefined, { fieldPath: 'tavern.unhandled_tool' });
           usage = usageFrom(data, protocol); observedUsage = usage;
           if (!signal.aborted) {
@@ -402,16 +451,17 @@ export class AiClient {
             if (raw) options.onRawTextDelta?.(raw);
             if (native) options.onNativeReasoningDelta?.(native);
           }
-          if (options.validateStoryOutputLimit) {
+          if (allowOutputLimit) {
             const d = record(data);
-            finish(isOpenAiCompatible(protocol) ? record(array(d.choices)[0]).finish_reason : protocol === 'gemini' ? record(array(d.candidates)[0]).finishReason : d.stop_reason);
+            const terminal = finish(isOpenAiCompatible(protocol) ? record(array(d.choices)[0]).finish_reason : protocol === 'gemini' ? record(array(d.candidates)[0]).finishReason : d.stop_reason);
+            missingTheaterFinish = theater && !terminal;
           }
-          if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol).refusal) {
+          if (allowOutputLimit && responseDiagnostics(data, protocol).refusal) {
             const failure = new AiError('content_filter');
             attachFailureDiagnostic(failure, { phase: 'upstream_error', upstreamClass: 'content_filter' });
             throw failure;
           }
-          text = responseText(data, protocol, options.validateStoryOutputLimit === true);
+          text = responseText(data, protocol, allowOutputLimit);
           reasoning = nativeReasoning(data, protocol);
           if (isOpenAiCompatible(protocol)) {
             const split = splitLeadingThink(text);
@@ -419,7 +469,7 @@ export class AiClient {
             if (split.reasoning && !signal.aborted) options.onCompatibilityReasoningDelta?.(split.reasoning);
             if (!reasoning) reasoning = split.reasoning;
           }
-          if (wholeJson && !signal.aborted) {
+          if ((wholeJson || theater) && !signal.aborted) {
             if (reasoning) { options.onActivity?.('reasoning'); options.onReasoningDelta?.(reasoning); }
             if (text) { options.onActivity?.('content'); options.onDelta?.(text); }
           }
@@ -453,6 +503,7 @@ export class AiClient {
             if (!signal.aborted) observe({ ...responseDiagnostics(data, protocol, true), httpStatus: response.status, complete: false });
             if (data.error || data.type === 'error')
               throw rejectedUpstream(data, 'sse', response.status);
+            if (theater && theaterResidualTool(data, protocol, true)) throw new AiError('invalid_output');
             if (trace && residualTool(data, true)) unhandledTool = true;
             const rawDelta = responseContent(data, protocol, true), native = nativeReasoning(data, protocol, true);
             if (!signal.aborted) {
@@ -460,7 +511,7 @@ export class AiClient {
               if (rawDelta) options.onRawTextDelta?.(rawDelta);
               if (native) options.onNativeReasoningDelta?.(native);
             }
-            if (options.validateStoryOutputLimit && responseDiagnostics(data, protocol, true).refusal) {
+            if (allowOutputLimit && responseDiagnostics(data, protocol, true).refusal) {
               const failure = new AiError('content_filter');
               attachFailureDiagnostic(failure, { phase: 'upstream_error', upstreamClass: 'content_filter' });
               throw failure;
@@ -506,6 +557,7 @@ export class AiClient {
               if (data.type === 'message_stop') {
                 terminal = true;
                 if (original) terminalEvidence = 'message_stop';
+                if (theater) break;
               }
             }
             if (original) {
@@ -549,6 +601,7 @@ export class AiClient {
               outputLimited ? undefined : { fieldPath: 'tavern.native_delivery.response' });
         }
         if (!text.trim()) throw new AiError('empty');
+        if (missingTheaterFinish) throw new AiError('stream_interrupted');
         if (trace) {
           trace.restored = true;
           trace.clock.first('restoredMs');
@@ -573,9 +626,17 @@ export class AiClient {
         return result;
       }, clock, limits);
     } catch (error) {
-      const failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
-      // Relay policy follows the actual transport. The script host can only replay a failed original request.
-      if (relay.used && failure instanceof AiError) manualRetryOnly.add(failure);
+      let failure = options.signal?.aborted || (error instanceof AiError && error.code === 'timeout') ? error : trace?.error ?? error;
+      if (options.confirmedTransmission?.sent && failure instanceof AiError &&
+          (failure.code === 'network' || failure.code === 'timeout' ||
+           (failure.code === 'server' && failure.details?.fieldPath === 'channel.relay'))) {
+        const uncertain = new AiError(failure.code, failure.status, { fieldPath: 'channel.continuation_delivery_unknown' });
+        carryFailureDiagnostic(failure, uncertain);
+        failure = uncertain;
+      }
+      // Relay policy follows the actual transport. The script host can only replay a failed original request;
+      // 原型会话只允许手动重试，避免再付一笔。
+      if ((relay.used || prototype) && failure instanceof AiError) manualRetryOnly.add(failure);
       if (trace && failure instanceof AiError) {
         const upstreamTimeout = failure.code === 'timeout' && !trace.complete && trace.clock.marks.sentMs !== undefined &&
           (['awaiting_headers', 'awaiting_bytes', 'upstream_read'].includes(trace.clock.marks.deadlinePhase ?? ''));
@@ -621,6 +682,7 @@ export class AiClient {
         cancelled: trace.cancelled === true, readerEof: trace.readerEof === true, readError: trace.readError === true, rawFinish: trace.rawFinish,
         wrapperFormat: trace.wrapperFormat, wrapperBodyRead: trace.wrapperBodyRead === true, restored: trace.restored === true,
         boundary: trace.boundary, normalized: trace.normalized, wrapper: trace.wrapper } });
+      session?.dispose();
       cleanup?.abort();
     }
   }

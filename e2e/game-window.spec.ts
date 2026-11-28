@@ -90,7 +90,7 @@ test('顶部状态不挤压正文；完整人物资料独立滚动并恢复焦�
   await fit(page); expect(await stored(page)).toEqual(before);
 });
 
-test('滚轮在资料弹窗内滚动，不带动正文；七项世界入口可返回', async ({ page }, info) => {
+test('滚轮在资料弹窗内滚动，不带动正文；世界资料入口可返回', async ({ page }, info) => {
   await seed(page);
   await page.setViewportSize({ width: info.project.name === 'desktop' ? 1100 : 392, height: 480 });
   const reader = page.getByTestId('story-reader');
@@ -103,7 +103,7 @@ test('滚轮在资料弹窗内滚动，不带动正文；七项世界入口可�
   expect(await reader.evaluate(el => el.scrollTop)).toBe(260);
   await page.keyboard.press('Escape');
   await openWorldArchive(page);
-  await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(7);
+  await expect(page.getByRole('navigation', { name: '世界资料分类' }).getByRole('button')).toHaveCount(10);
   if (info.project.name === 'mobile') {
     await page.keyboard.press('Escape');
     await expect(page.getByRole('navigation', { name: '底部导航' }).getByRole('button', { name: '世界资料', exact: true })).toBeFocused();
@@ -123,10 +123,10 @@ test('默认紧凑工作流，键盘展开/折叠不改输入、草稿或正式�
   expect(await stored(page)).toEqual(before); await fit(page); await page.screenshot({ path: info.outputPath('reading.png') });
 });
 
-test('已完成草稿与V1.0 Beta展示刷新一致，不改变旧存档及npm/Schema含义', async ({ page }) => {
-  await page.goto('/'); await expect(page.locator('.version, .home-experience .ver')).toHaveText('V1.0 Beta');
+test('已完成草稿与V1.0展示刷新一致，不改变旧存档及npm/Schema含义', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('.home-experience .ver, .mobile-home .mh-version')).toHaveText('V1.0');
   const before = await seed(page, 'complete');
-  await expect(page.locator('.version, .home-experience .ver')).toHaveText('V1.0 Beta'); await expect(page.locator('.app-header')).not.toContainText('M5-P3');
+  await expect(page.locator('.game-corner-name small')).toHaveText('V1.0'); await expect(page.locator('.app-header')).not.toContainText('M5-P3');
   await expect(workflowSummary(page)).toContainText('候选已完成');
   await page.reload(); await expect(page.getByTestId('story-reader')).toBeVisible(); expect(await stored(page)).toEqual(before);
   await expect(page.locator('.workflow-disclosure')).not.toHaveAttribute('open');
@@ -226,7 +226,7 @@ test('设置、历史检索及创角长页仍可滚动，关闭资料保留阅�
   await seed(page, 'history'); await page.setViewportSize({ width: 392, height: 640 });
   const reader = page.getByTestId('story-reader'); await reader.evaluate((el) => { el.scrollTop = 220; });
   await page.getByRole('button', { name: '设置', exact: true }).click(); const settings = page.getByRole('dialog', { name: '设置', exact: true });
-  await settings.getByRole('button', { name: '提示词', exact: true }).click(); await settings.getByRole('button', { name: '保存本地设置', exact: true }).click();
+  await settings.getByRole('button', { name: '正文与风格', exact: true }).click(); await settings.getByRole('button', { name: '保存本地设置', exact: true }).click();
   expect(await settings.locator('.modal-body').evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   await page.keyboard.press('Escape'); expect(await reader.evaluate((el) => el.scrollTop)).toBe(220);
   await openWorldArchive(page); await page.getByRole('complementary', { name: '世界资料' }).getByRole('button', { name: /记忆/ }).click();
@@ -241,12 +241,12 @@ test('设置、历史检索及创角长页仍可滚动，关闭资料保留阅�
 });
 
 test('工作流默认一行且无外置工具与冗余说明，展开保留入口和输入空间', async ({ page }, info) => {
-  const before = await seed(page), workflow = page.getByRole('region', { name: '三阶段工作流', exact: true });
+  const before = await seed(page), workflow = page.getByRole('region', { name: '四阶段工作流', exact: true });
   const disclosure = page.locator('.workflow-disclosure'), summary = workflowSummary(page);
   await expect(disclosure).not.toHaveAttribute('open'); await expect(summary).toContainText('详情');
   expect((await workflow.boundingBox())!.height).toBeLessThanOrEqual(44);
   // PC 收起条：三段进度（可点击、可 Tab 聚焦，直达对应阶段）+ 详情按钮。
-  await expect(workflow.locator('button:visible')).toHaveCount(info.project.name === 'desktop' ? 4 : 0);
+  await expect(workflow.locator('button:visible')).toHaveCount(info.project.name === 'desktop' ? 5 : 1);
   await expect(page.locator('.composer-tools > .stage-responses, .composer-tools > .runtime-log')).toHaveCount(0);
   for (const text of ['三阶段校验完成后自动原子结算', '自动执行会保留已完成阶段', '高级手动操作：', '手动启动新尝试；', '保留正文及合法变量；', '仅保存后续尝试偏好'])
     await expect(page.getByText(text, { exact: false })).toHaveCount(0);
@@ -255,7 +255,7 @@ test('工作流默认一行且无外置工具与冗余说明，展开保留入�
   await fit(page); await page.screenshot({ path: `docs/screenshots/compact-workflow/after-${info.project.name}-collapsed.png` });
   await workflowTrigger(page).click();
   await expect(page.getByRole('button', { name: '继续未完成阶段', exact: true })).toBeVisible();
-  await expect(page.locator('.workflow-stages > li')).toHaveCount(3);
+  await expect(page.locator('.workflow-stages > li')).toHaveCount(4);
   if (info.project.name === 'desktop') await expect(page.locator('.wf-aux').getByText('运行诊断', { exact: true })).toBeVisible();
   else await expect(page.getByText('重试与变更详情', { exact: true })).toBeVisible();
   await fit(page); await page.screenshot({ path: `docs/screenshots/compact-workflow/after-${info.project.name}-expanded.png` });

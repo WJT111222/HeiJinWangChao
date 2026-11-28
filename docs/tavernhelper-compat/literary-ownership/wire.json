@@ -1,0 +1,310 @@
+[
+  {
+    "project": "desktop",
+    "mode": "原生",
+    "calls": 5,
+    "request": {
+      "nativeRange": true,
+      "nativePerspective": true,
+      "nativeStyle": true,
+      "presetRange": false,
+      "gameProtocol": true,
+      "tools": [],
+      "model": "mock-literature",
+      "maxOutput": 8192,
+      "matchedExcerpts": [
+        "4000～5678 字",
+        "本文叙事始终以主角的“我”为第一人称镜头",
+        "剧情风格：冷硬黑色"
+      ]
+    },
+    "outcomes": {
+      "rows": [
+        {
+          "code": "invalid_output",
+          "rule": "narrative_short",
+          "preserved": true
+        },
+        {
+          "code": "invalid_output",
+          "rule": "narrative_short",
+          "preserved": true
+        },
+        {
+          "code": "output_limit",
+          "preserved": true
+        },
+        {
+          "code": "content_filter",
+          "preserved": true
+        },
+        {
+          "code": "invalid_output",
+          "rule": "tag_missing",
+          "preserved": true
+        }
+      ],
+      "revisionUnchanged": true,
+      "committed": null
+    }
+  },
+  {
+    "project": "desktop",
+    "mode": "独立防截断",
+    "calls": 5,
+    "request": {
+      "nativeRange": true,
+      "nativePerspective": true,
+      "nativeStyle": true,
+      "presetRange": false,
+      "gameProtocol": true,
+      "tools": [
+        "wave_context_reference",
+        "actual_content"
+      ],
+      "model": "mock-literature",
+      "maxOutput": 8192,
+      "matchedExcerpts": [
+        "4000～5678 字",
+        "本文叙事始终以主角的“我”为第一人称镜头",
+        "剧情风格：冷硬黑色"
+      ]
+    },
+    "outcomes": {
+      "rows": [
+        {
+          "code": "invalid_output",
+          "rule": "narrative_short",
+          "preserved": true
+        },
+        {
+          "code": "invalid_output",
+          "rule": "narrative_short",
+          "preserved": true
+        },
+        {
+          "code": "output_limit",
+          "preserved": true
+        },
+        {
+          "code": "content_filter",
+          "preserved": true
+        },
+        {
+          "code": "invalid_output",
+          "rule": "tag_missing",
+          "preserved": true
+        }
+      ],
+      "revisionUnchanged": true,
+      "committed": null
+    }
+  },
+  {
+    "project": "desktop",
+    "mode": "文学预设",
+    "calls": 5,
+    "request": {
+      "nativeRange": false,
+      "nativePerspective": false,
+      "nativeStyle": false,
+      "presetRange": true,
+      "gameProtocol": true,
+      "tools": [
+        "wave_context_reference",
+        "actual_content"
+      ],
+      "model": "mock-literature",
+      "maxOutput": 8192,
+      "matchedExcerpts": [
+        "800至1000字"
+      ]
+    },
+    "outcomes": {
+      "rows": [
+        {
+          "saved": "林舟核对笔记，留在车站等车。",
+          "source": "preset"
+        },
+        {
+          "code": "invalid_output",
+          "rule": "story_schema",
+          "preserved": true
+        },
+        {
+          "code": "output_limit",
+          "preserved": true
+        },
+        {
+          "code": "content_filter",
+          "preserved": true
+        },
+        {
+          "code": "invalid_output",
+          "rule": "tag_missing",
+          "preserved": true
+        }
+      ],
+      "revisionUnchanged": true,
+      "committed": {
+        "narrative": "林舟核对笔记，留在车站等车。",
+        "advanced": 1,
+        "replayed": false
+      }
+    }
+  },
+  {
+    "project": "mobile",
+    "mode": "原生",
+    "calls": 5,
+    "request": {
+      "nativeRange": true,
+      "nativePerspective": true,
+      "nativeStyle": true,
+      "presetRange": false,
+      "gameProtocol": true,
+      "tools": [],
+      "model": "mock-literature",
+      "maxOutput": 8192,
+      "matchedExcerpts": [
+        "4000～5678 字",
+        "本文叙事始终以主角的“我”为第一人称镜头",
+        "剧情风格：冷硬黑色"
+      ]
+    },
+    "outcomes": {
+      "rows": [
+        {
+          "code": "invalid_output",
+          "rule": "narrative_short",
+          "preserved": true
+        },
+        {
+          "code": "invalid_output",
+          "rule": "narrative_short",
+          "preserved": true
+        },
+        {
+          "code": "output_limit",
+          "preserved": true
+        },
+        {
+          "code": "content_filter",
+          "preserved": true
+        },
+        {
+          "code": "invalid_output",
+          "rule": "tag_missing",
+          "preserved": true
+        }
+      ],
+      "revisionUnchanged": true,
+      "committed": null
+    }
+  },
+  {
+    "project": "mobile",
+    "mode": "独立防截断",
+    "calls": 5,
+    "request": {
+      "nativeRange": true,
+      "nativePerspective": true,
+      "nativeStyle": true,
+      "presetRange": false,
+      "gameProtocol": true,
+      "tools": [
+        "wave_context_reference",
+        "actual_content"
+      ],
+      "model": "mock-literature",
+      "maxOutput": 8192,
+      "matchedExcerpts": [
+        "4000～5678 字",
+        "本文叙事始终以主角的“我”为第一人称镜头",
+        "剧情风格：冷硬黑色"
+      ]
+    },
+    "outcomes": {
+      "rows": [
+        {
+          "code": "invalid_output",
+          "rule": "narrative_short",
+          "preserved": true
+        },
+        {
+          "code": "invalid_output",
+          "rule": "narrative_short",
+          "preserved": true
+        },
+        {
+          "code": "output_limit",
+          "preserved": true
+        },
+        {
+          "code": "content_filter",
+          "preserved": true
+        },
+        {
+          "code": "invalid_output",
+          "rule": "tag_missing",
+          "preserved": true
+        }
+      ],
+      "revisionUnchanged": true,
+      "committed": null
+    }
+  },
+  {
+    "project": "mobile",
+    "mode": "文学预设",
+    "calls": 5,
+    "request": {
+      "nativeRange": false,
+      "nativePerspective": false,
+      "nativeStyle": false,
+      "presetRange": true,
+      "gameProtocol": true,
+      "tools": [
+        "wave_context_reference",
+        "actual_content"
+      ],
+      "model": "mock-literature",
+      "maxOutput": 8192,
+      "matchedExcerpts": [
+        "800至1000字"
+      ]
+    },
+    "outcomes": {
+      "rows": [
+        {
+          "saved": "林舟核对笔记，留在车站等车。",
+          "source": "preset"
+        },
+        {
+          "code": "invalid_output",
+          "rule": "story_schema",
+          "preserved": true
+        },
+        {
+          "code": "output_limit",
+          "preserved": true
+        },
+        {
+          "code": "content_filter",
+          "preserved": true
+        },
+        {
+          "code": "invalid_output",
+          "rule": "tag_missing",
+          "preserved": true
+        }
+      ],
+      "revisionUnchanged": true,
+      "committed": {
+        "narrative": "林舟核对笔记，留在车站等车。",
+        "advanced": 1,
+        "replayed": false
+      }
+    }
+  }
+]

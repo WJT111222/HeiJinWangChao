@@ -1,13 +1,17 @@
+import { PhoneSchema, emptyPhone, validPhone } from './phone';
+import { HaremSchema } from './harem/schema';
+import { householdIssue } from './harem/validation';
 import { JournalSettlementSchema } from './updateSettlement';
 import { z } from 'zod';
 import { validateChronicles } from './history/validation';
 import { pendingOpeningClock } from './openingTime';
+import { OpeningCityProfileSchema, isCustomCityId } from './openingCity';
 import { ActorRefSchema, IdsSchema, CountSchema, GameTimeSchema, IdSchema, TextSchema, entityTable } from './common';
 import { ProtagonistSchema } from './protagonist/schema';
 import { NpcSchema, SpecialNpcSchema, DormantNpcProfileSchema, SpecialProfileSchema } from './npc/schema';
 import { ImportantItemSchema } from './items/schema';
 import { EconomySchema } from './economy/schema';
-import { OrganizationSchema } from './organizations/schema';
+import { OrganizationSchema, ProtagonistFactionSchema } from './organizations/schema';
 import { TimelineEntrySchema, StoredWorldEventSchema, WorldTaskSchema, RetiredEventSchema, EventInteractionSchema } from './events/schema';
 import { eventById, validateEventLinks } from './events/lifecycle';
 import { MemoryStateSchema, npcKnowledgeKind } from './memories/schema';
@@ -33,18 +37,24 @@ export const StorySchema = z.strictObject({
   actionOptions: z.array(TextSchema).optional(),
 });
 export const SaveShape = {
-  schemaVersion: z.literal(10), saveId: IdSchema, title: TextSchema,
+  schemaVersion: z.literal(11),
+  phone: PhoneSchema, saveId: IdSchema, title: TextSchema,
   openingCityId: IdSchema.nullable().optional(),
+  /** 自定义开局城市的名称、地区与可选介绍快照；官方城市不写。 */
+  openingCityProfile: OpeningCityProfileSchema.optional(),
   createdAt: GameTimeSchema, updatedAt: GameTimeSchema, revision: CountSchema, turnNumber: CountSchema,
   worldClock: GameTimeSchema, openingTimePending: z.literal(true).optional(), weatherText: z.string(), environmentText: z.string(),
   openingInitializationPending: z.literal(true).optional(),
   npcManagementRevision: CountSchema.optional(),
   protagonist: ProtagonistSchema, initialCompanionId: IdSchema.optional(),
   contactNpcIds: IdsSchema,
+  // 主角唯一的主势力绑定；缺省（含全部旧档）表示孤身一人。只能由Variables依剧情明确绑定。
+  protagonistFaction: ProtagonistFactionSchema.optional(),
   npc: entityTable(NpcSchema), items: entityTable(ImportantItemSchema), economy: EconomySchema,
   dormantNpcProfiles: entityTable(DormantNpcProfileSchema).optional(),
   organizations: entityTable(OrganizationSchema), locations: entityTable(LocationSchema),
   events: entityTable(StoredWorldEventSchema), retiredEvents: entityTable(RetiredEventSchema), tasks: entityTable(WorldTaskSchema), memories: MemoryStateSchema,
+  harem: HaremSchema.optional(),
   timeline: z.array(TimelineEntrySchema),
   journal: z.array(z.strictObject({
     turnId: IdSchema, revision: CountSchema, story: StorySchema, relatedActorRefs: z.array(ActorRefSchema),
@@ -59,6 +69,11 @@ export const SaveShape = {
 export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) => {
   function check(ok: unknown, message: string, path: (string | number)[] = [], integrityRule = 'domain_state') {
     if (!ok) ctx.addIssue({ code: 'custom', message, path, params: { integrityRule } });
+  }
+  check(validPhone(s), '手机会话人物引用或消息 ID 无效', ['phone']);
+  if (s.harem) {
+    const issue = householdIssue(s.harem,s.npc,s.worldClock);
+    if (issue) check(false,issue,['harem'],'harem_integrity');
   }
   // Absence means unavailable, including all older saves. Never infer this right from turnNumber.
   if (s.openingInitializationPending) check(s.revision === 0 && s.turnNumber === 0
@@ -167,6 +182,21 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
       check(relation.organizationId !== org.id && Object.hasOwn(s.organizations, relation.organizationId), '组织关系目标不存在或为自身', ['organizations', org.id, 'relations', index, 'organizationId'], 'actor_reference');
     for (const id of org.currentTaskIds) check(s.tasks[id]?.actorRef.kind === 'organization'
       && s.tasks[id]?.actorRef.id === org.id, '组织任务归属错误');
+    const departmentIds = new Set((org.departments ?? []).map(row => row.id));
+    for (const [index, row] of (org.departments ?? []).entries()) if (row.headNpcId)
+      check(Object.hasOwn(s.npc, row.headNpcId), '部门负责人不存在', ['organizations', org.id, 'departments', index, 'headNpcId'], 'actor_reference');
+    for (const [index, row] of (org.members ?? []).entries()) {
+      check(Object.hasOwn(s.npc, row.npcId), '组织成员不存在', ['organizations', org.id, 'members', index, 'npcId'], 'actor_reference');
+      if (row.departmentId) check(departmentIds.has(row.departmentId), '成员所属部门不存在', ['organizations', org.id, 'members', index, 'departmentId'], 'organization_department');
+    }
+    for (const [index, row] of (org.protagonistKnown ?? []).entries())
+      location(row.locationId, ['organizations', org.id, 'protagonistKnown', index, 'locationId']);
+  }
+  if (s.protagonistFaction) {
+    const faction = s.protagonistFaction, org = s.organizations[faction.organizationId];
+    check(org, '主角势力不存在', ['protagonistFaction', 'organizationId'], 'actor_reference');
+    if (org && faction.departmentId) check((org.departments ?? []).some(row => row.id === faction.departmentId),
+      '主角所属部门不存在', ['protagonistFaction', 'departmentId'], 'organization_department');
   }
   for (const event of Object.values(s.events)) {
     const path = (field: string) => ['events', event.id, field];
@@ -271,6 +301,7 @@ export const GameStateSchema = z.strictObject(SaveShape).superRefine((s, ctx) =>
   for (const memory of [...s.memories.short, ...s.memories.medium, ...s.memories.long, ...Object.values(s.memories.npcSummaries).flat()]) memory.affectedEntityRefs.forEach((ref) => actor(ref));
   check(new Set(s.journal.map((entry) => entry.turnId)).size === s.journal.length, '回合原文重复');
   check(s.turnNumber === s.journal.length, '已提交回合数与永久原文数量不一致');
+  check(!s.openingCityProfile || isCustomCityId(s.openingCityId), '自定义开局城市资料缺少城市身份', ['openingCityProfile']);
   for (const entry of s.journal) { check(entry.revision <= s.revision, '回合版本超前'); entry.relatedActorRefs.forEach((ref) => actor(ref)); }
   check(new Set(s.appliedCommands.map((c) => JSON.stringify([c.turnId, c.commandId]))).size === s.appliedCommands.length, '幂等凭据重复');
 });
@@ -278,19 +309,21 @@ export type GameState = z.infer<typeof GameStateSchema>;
 
 export function createGameState(input: {
   saveId: string; title: string; worldClock: string; openingCityId?: string | null;
+  openingCityProfile?: z.infer<typeof OpeningCityProfileSchema>;
   protagonist: z.infer<typeof ProtagonistSchema>;
   locations: Record<string, z.infer<typeof LocationSchema>>;
   cash?: number | null; onlineBalance?: number | null;
   companion?: z.infer<typeof SpecialNpcSchema>;
 }, now = new Date().toISOString()): GameState {
   return GameStateSchema.parse({
-    schemaVersion: 10, saveId: input.saveId, title: input.title, worldClock: input.worldClock,
+    schemaVersion: 11, phone: emptyPhone(), saveId: input.saveId, title: input.title, worldClock: input.worldClock,
     openingCityId: input.openingCityId ?? null,
+    ...(input.openingCityProfile ? { openingCityProfile: input.openingCityProfile } : {}),
     createdAt: now, updatedAt: now, revision: 0, turnNumber: 0,
     weatherText: '', environmentText: '', protagonist: input.protagonist,
     initialCompanionId: input.companion?.id,
     contactNpcIds: input.companion ? [input.companion.id] : [],
-    npc: input.companion ? { [input.companion.id]: input.companion } : {},
+    npc: input.companion ? { [input.companion.id]: { ...input.companion, phoneContact: input.companion.phoneContact ?? { status: 'known' } } } : {},
     locations: input.locations, items: {}, organizations: {}, events: {}, retiredEvents: {}, tasks: {},
     economy: { cash: input.cash ?? null, onlineBalance: input.onlineBalance ?? null,
       incomes: {}, debts: {}, properties: {}, vehicles: {}, otherAssets: {} },

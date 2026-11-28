@@ -45,8 +45,10 @@ export function useStoryGeneration(
     },
     [],
   );
-  async function generate(selection?: LegacyNotificationSelection, replaceWorldview = false) {
-    if (!draft || running.current || (!selection && !replaceWorldview && !mayStartStory(draft))) return;
+  // openingTime：开局时间异常时重新 Roll 开局正文；worldview：按当前世界观重新生成正文。
+  async function generate(selection?: LegacyNotificationSelection, replace?: 'openingTime' | 'worldview') {
+    if (!draft || running.current || (!selection && replace !== 'worldview' && !mayStartStory(draft)
+      && !(replace === 'openingTime' && draft.turnKind === 'opening'))) return;
     running.current = true;
     errorTurn.current = turnKey(draft);
     const id = ++token.current;
@@ -94,7 +96,7 @@ export function useStoryGeneration(
             run: attempt => stage.generate({
               automaticRetry: attempt > 1,
               draft: current, expectedInstance, replacementRetry,
-              freshWorldview: (replaceWorldview || !!selection) && current === draft,
+              freshWorldview: (replace === 'worldview' || !!selection) && current === draft,
               legacyNotificationSelection: selection,
               settings: frozen.settings,
               companionProfile: frozen.companionProfile,

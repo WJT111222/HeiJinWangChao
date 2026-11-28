@@ -64,15 +64,16 @@ export class WorldStage {
       if (!current.story || current.stageStatus.story !== 'ready')
         throw new AiError('configuration');
       requestSnapshot(config, 'world', input.vault);
-      // 不信任持久化的 validated 字样，执行前重新核验变量候选。
-      if (current.variables?.validation === 'validated')
-        parseVariables(JSON.stringify(current.variables.result), state, current);
       const lease = await this.repository.prepareWorldview(current, true, input.expectedInstance);
       attempt.check();
       const started = startStageAttempt(current, ['world'], {
+        useEntityStage: settings.runtime.useEntityStage,
         useVariableStage: settings.runtime.useVariableStage,
         useWorldStage: true,
       });
+      if (started.useEntityStage && !started.entities) throw new AiError('candidate_conflict');
+      if (started.variables?.validation === 'validated')
+        parseVariables(JSON.stringify(started.variables.result), state, started);
       const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal, current, lease);
       attempt.check();
       input.onDraft?.(draft);
@@ -99,7 +100,7 @@ export class WorldStage {
         responseInspectionId = response.responseInspectionId;
         attempt.check();
         const basis = response.requestBasis;
-        const preview = draft.variables?.validation !== 'validated';
+        const preview = draft.useVariableStage && draft.variables?.validation !== 'validated';
         if (
           basis.saveId !== draft.saveId ||
           basis.turnId !== draft.turnId ||
@@ -108,6 +109,7 @@ export class WorldStage {
           basis.storyRevision !== draft.storyRevision ||
           basis.executionRevision !== draft.executionRevision ||
           basis.stageRequestRevision !== draft.stageRequestRevisions.world ||
+          basis.basedOnEntityRevision !== draft.entities?.candidateRevision ||
           basis.basedOnVariableRevision !== draft.variables?.candidateRevision ||
           response.variablePending !== preview
         )
@@ -134,6 +136,7 @@ export class WorldStage {
               draft.executionRevision,
             ),
             requestRevision: draft.stageRequestRevisions.world,
+            basedOnEntityRevision: draft.entities?.candidateRevision,
             basedOnVariableRevision: draft.variables?.candidateRevision,
             validation: preview ? 'preview' : 'validated',
             result,

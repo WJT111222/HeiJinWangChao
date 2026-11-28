@@ -1,6 +1,9 @@
+import { oracleStore } from '../oracleNotes';
 import { z } from 'zod';
 import { DataError, IdSchema, requireData } from '../../../domain/common';
 import { fingerprint } from '../../../domain/commands';
+import { validatePendingChat } from '../../../domain/phone';
+import { freezeChat, restoreChat } from '../../../domain/phoneChat';
 import { createTurnDraft, TurnDraftSchema } from '../../../domain/drafts';
 import { GameStateSchema } from '../../../domain/state';
 import type { GameState } from '../../../domain/state';
@@ -8,6 +11,7 @@ import { reserveStageSession, withBrowserLock } from '../../../workflows/stageGu
 import { request, transaction } from '../idb';
 import { migrateSave } from '../migrations';
 import { clearUndoRecords, controlInstance, inspectUndo, newSaveControl, readControl, SnapshotSchema, timelineStores, writeControl } from '../turnUndo';
+import { notifyImages, imageTimelineChange } from '../../images/library';
 import { historyCodec } from './worker';
 import { historyStores, historySummary, ManualHistorySchema } from './model';
 import type { HistoryNode, ManualHistory } from './model';
@@ -15,15 +19,15 @@ import { maxHistoryBytes, PayloadSchema } from './codec';
 import type { HistoryPayload } from './codec';
 import { utf8ByteLength } from '../backup';
 
-const stores = [...timelineStores, ...historyStores];
+const stores = [...timelineStores, oracleStore, ...historyStores];
 const nameSchema = z.string().trim().min(1).max(100);
 export type HistorySelection = { kind: 'automatic' | 'manual'; id: string };
 declare const historyBrand: unique symbol;
 export interface HistoryConfirmation { readonly [historyBrand]: true }
 export interface HistoryPreview {
-  state: GameState; node: HistoryNode; confirmation: HistoryConfirmation; currentTurn: number; hasDraft: boolean;
+  state: GameState; node: HistoryNode; confirmation: HistoryConfirmation; currentTurn: number; hasDraft: boolean; hasPendingChat: boolean;
 }
-interface Current { state: unknown; draft: unknown; control: unknown }
+interface Current { state: unknown; draft: unknown; control: unknown; oracle: unknown }
 interface Selected { metadata?: unknown; record: unknown }
 interface Confirmation { owner: HistoryRepository; saveId: string; selection: HistorySelection; current: Current; source: Selected }
 const confirmations = new WeakMap<HistoryConfirmation, Confirmation>();
@@ -37,7 +41,7 @@ function sameSource(a: Selected, b: Selected) {
   return x.length === y.length && x.every((value, i) => value === y[i]);
 }
 async function current(tx: IDBTransaction, saveId: string): Promise<Current> {
-  return { state: await request(tx.objectStore('saves').get(saveId)),
+  return { oracle: await request(tx.objectStore(oracleStore).get(saveId)), state: await request(tx.objectStore('saves').get(saveId)),
     draft: await request(tx.objectStore('drafts').get(saveId)), control: await request(tx.objectStore('saveControls').get(saveId)) };
 }
 function checkedState(raw: unknown, saveId: string) {
@@ -126,7 +130,7 @@ export class HistoryRepository {
   async create(saveId: string, name: string): Promise<ManualHistory> {
     const checkedName = nameSchema.parse(name), session = reserveStageSession(saveId);
     try { return await withBrowserLock(saveId, async () => {
-      const captured = await transaction(this.database, ['saves', 'drafts', 'saveControls'], 'readonly', tx => current(tx, saveId));
+      const captured = await transaction(this.database, ['saves', 'drafts', 'saveControls', oracleStore], 'readonly', tx => current(tx, saveId));
       const state = checkedState(captured.state, saveId); settled(state);
       const payload = await historyCodec({ kind: 'encode', state });
       const now = new Date().toISOString();
@@ -188,39 +192,48 @@ export class HistoryRepository {
     const confirmation = Object.freeze({}) as HistoryConfirmation;
     confirmations.set(confirmation, { owner: this, saveId, selection: { ...selection }, current: captured.saved, source: captured.selected });
     return { state, node, confirmation, currentTurn: captured.state.turnNumber,
+      hasPendingChat: Boolean(TurnDraftSchema.safeParse(captured.saved.draft).data?.phonePending?.length),
       hasDraft: Boolean(captured.saved.draft && !same((captured.saved.draft as { userInput?: string }).userInput, '')) };
   }
   release(confirmation: HistoryConfirmation) { confirmations.delete(confirmation); }
 
   /** Fresh explicit confirmation. Paid generation starts in the UI only AFTER this transaction commits. */
-  async restore(confirmation: HistoryConfirmation, action: string, useVariableStage: boolean, useWorldStage: boolean) {
+  async restore(confirmation: HistoryConfirmation, action: string, useVariableStage: boolean, useWorldStage: boolean, useEntityStage = useVariableStage, chatChoice?: 'keep'|'discard') {
     const checked = confirmations.get(confirmation);
     confirmations.delete(confirmation); // one-shot: double click or replay cannot replace twice
     requireData(checked?.owner === this, 'HISTORY_CONFIRMATION_INVALID', '历史确认已失效，请重新预览');
     const { saveId, selection, current: expected, source: selected } = checked;
     const userInput = z.string().trim().min(1).max(100000).parse(action), session = reserveStageSession(saveId);
-    try { return await withBrowserLock(saveId, async () => {
-      const restored = await decode(selected, selection, saveId); settled(restored);
-      return transaction(this.database, stores, 'readwrite', async tx => {
-        session.check();
-        const observed = await current(tx, saveId);
-        requireData(same(observed, expected), 'HISTORY_CONFLICT', '正式存档、草稿或时间线已改变，请重新预览；本次没有覆盖，也没有请求模型');
-        requireData(sameSource(await source(tx, saveId, selection), selected), 'HISTORY_CONFLICT', '历史节点已改变或被删除，请重新预览');
-        const state = checkedState(observed.state, saveId), oldDraft = observed.draft === undefined ? undefined : TurnDraftSchema.parse(observed.draft);
-        const nextState = GameStateSchema.parse({ ...restored, revision: Math.max(state.revision, restored.revision) + 1, updatedAt: new Date().toISOString() });
-        const draft = TurnDraftSchema.parse({ ...createTurnDraft(saveId, nextState.revision, `turn-${crypto.randomUUID()}`, 'regular', userInput,
-          useVariableStage, useWorldStage), draftRevision: (oldDraft?.draftRevision ?? 0) + 1 });
-        const control = { ...newSaveControl(saveId), instanceId: `instance-${crypto.randomUUID()}` };
-        // Intentional new timeline root: no old automatic point or commit receipt survives.
-        await clearUndoRecords(tx, saveId);
-        const receipts = tx.objectStore('turnReceipts');
-        for (const key of await request(receipts.index('saveId').getAllKeys(saveId))) await request(receipts.delete(key));
-        await request(tx.objectStore('saves').put(nextState));
-        await request(tx.objectStore('drafts').put(draft));
-        await writeControl(tx, control);
-        return { state: nextState, draft, instance: control.instanceId, replayed: false };
-      });
-    }, { required: true }); } finally { session.release(); }
+    try {
+      const result = await withBrowserLock(saveId, async () => {
+        const restored = await decode(selected, selection, saveId); settled(restored);
+        return transaction(this.database, stores, 'readwrite', async tx => {
+          session.check();
+          const observed = await current(tx, saveId);
+          requireData(same(observed, expected), 'HISTORY_CONFLICT', '正式存档、草稿或时间线已改变，请重新预览；本次没有覆盖，也没有请求模型');
+          requireData(sameSource(await source(tx, saveId, selection), selected), 'HISTORY_CONFLICT', '历史节点已改变或被删除，请重新预览');
+          const state = checkedState(observed.state, saveId), oldDraft = observed.draft === undefined ? undefined : TurnDraftSchema.parse(observed.draft);
+          const nextState = GameStateSchema.parse({ ...restored, revision: Math.max(state.revision, restored.revision) + 1, updatedAt: new Date().toISOString() });
+          const original = selection.kind === 'automatic' ? SnapshotSchema.parse(selected.record).phonePending ?? [] : [];
+          const pending = restoreChat(nextState, oldDraft?.phonePending ?? [], chatChoice, original);
+          const draft = TurnDraftSchema.parse({ ...(pending.length ? { phonePending:pending,phoneFreeze:freezeChat(pending) } : {}), ...createTurnDraft(saveId, nextState.revision, `turn-${crypto.randomUUID()}`, 'regular', userInput,
+            useVariableStage, useWorldStage, useEntityStage), draftRevision: (oldDraft?.draftRevision ?? 0) + 1 });
+          validatePendingChat(nextState, draft);
+          const control = { ...newSaveControl(saveId), instanceId: `instance-${crypto.randomUUID()}` };
+          // Intentional new timeline root: no old automatic point or commit receipt survives.
+          await request(tx.objectStore(oracleStore).delete(saveId));
+          await clearUndoRecords(tx, saveId);
+          const receipts = tx.objectStore('turnReceipts');
+          for (const key of await request(receipts.index('saveId').getAllKeys(saveId))) await request(receipts.delete(key));
+          await request(tx.objectStore('saves').put(nextState));
+          await request(tx.objectStore('drafts').put(draft));
+          await writeControl(tx, control);
+          return { state: nextState, draft, instance: control.instanceId, replayed: false };
+        });
+      }, { required: true });
+      notifyImages(imageTimelineChange);
+      return result;
+    } finally { session.release(); }
   }
 
   async exportNode(saveId: string, selection: HistorySelection, app: string): Promise<{ text: string; name: string }> {

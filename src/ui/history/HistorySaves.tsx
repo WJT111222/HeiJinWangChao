@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ReadableSaveSummary } from '../../services/storage/saveManagement';
-import { CITY, saveCity } from '../home/skyline';
+import { cityVisual } from '../home/cityVisual';
 import type { SaveRepository } from '../../services/storage/saveRepository';
 import type { HistoryNode } from '../../services/storage/history/model';
 import type { HistoryPreview } from '../../services/storage/history/repository';
@@ -21,6 +21,7 @@ type Restored = Awaited<ReturnType<SaveRepository['history']['restore']>>;
 const size = (bytes: number) => bytes < 1024 ? `${bytes} B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KiB` : `${(bytes / 1024 / 1024).toFixed(2)} MiB`;
 const historyPanels = ['正文', '人物档案', '经济与资产', ...panelNames] as const;
 const historyKinds = { automatic: '自动历史', manual: '手动收藏', old: '旧时间线收藏' } as const;
+import { ChatTimelineChoice } from '../phone/ChatTimelineChoice';
 const legend = { automatic: '系统自动保留的恢复点', manual: '你手动保存的重要节点', old: '来自旧时间线的收藏' } as const;
 
 function HistoryTurn({ turn, kind }: { turn?: number; kind: keyof typeof historyKinds }) {
@@ -102,7 +103,7 @@ function HistoryStorage({ manualBytes, estimate }: { manualBytes: number; estima
 }
 
 export function HistorySaves({ repository, saveId, settings, summary, onClose, onRestored }: {
-  repository: SaveRepository; saveId: string; settings: Settings; summary?: Pick<ReadableSaveSummary, 'title' | 'turnNumber'>;
+  repository: SaveRepository; saveId: string; settings: Settings; summary?: Pick<ReadableSaveSummary, 'title' | 'turnNumber' | 'openingCityId' | 'openingCityProfile'>;
   onClose: () => void; onRestored: (result: Restored) => void;
 }) {
   const [list, setList] = useState<Awaited<ReturnType<SaveRepository['history']['list']>>>();
@@ -116,6 +117,7 @@ export function HistorySaves({ repository, saveId, settings, summary, onClose, o
   const [message, setMessage] = useState(''), [error, setError] = useState('');
   const [tab, setTab] = useState<'automatic' | 'manual'>('automatic'), [page, setPage] = useState(0);
   const [editing, setEditing] = useState<{ id?: string; name: string }>(), [deleting, setDeleting] = useState<HistoryNode>();
+  const [chatChoice,setChatChoice] = useState<'discard'|'keep'>('discard');
   const [input, setInput] = useState(''), [confirm, setConfirm] = useState(false);
   const [estimate, setEstimate] = useState<{ usage?: number; quota?: number }>();
   useEffect(() => {
@@ -164,8 +166,8 @@ export function HistorySaves({ repository, saveId, settings, summary, onClose, o
   const pages = Math.max(1, Math.ceil(nodes.length / 20)), pageIndex = Math.min(page, pages - 1);
   const latestName = list?.nodes.reduce<HistoryNode | undefined>((latest, node) =>
     node.summary && !node.oldTimeline && (!latest || latest.turnNumber < node.turnNumber) ? node : latest, undefined)?.summary?.protagonistName;
-  const city = summary && saveCity(summary.title);
-  const subtitle = [latestName, city && CITY[city][0], summary && `当前第 ${summary.turnNumber} 回合`].filter(Boolean).join(' · ');
+  const city = summary && cityVisual(summary);
+  const subtitle = [latestName, city?.name, summary && `当前第 ${summary.turnNumber} 回合`].filter(Boolean).join(' · ');
 
   function saveName() {
     if (!editing || !editing.name.trim()) return;
@@ -198,6 +200,7 @@ export function HistorySaves({ repository, saveId, settings, summary, onClose, o
         confirm ? <section className="history-warning" aria-label="覆盖时间线确认">
           <h3>确认覆盖并继续？</h3>
           <p>从第 {preview.state.turnNumber} 回合继续，将覆盖{preview.currentTurn > preview.state.turnNumber ? `第 ${preview.state.turnNumber + 1}～${preview.currentTurn} 回合的剧情与状态` : '当前进度'}，并清除现有恢复点和未结算内容。无法撤销，手动收藏会保留。</p>
+          {preview.hasPendingChat && <ChatTimelineChoice value={chatChoice} onChange={setChatChoice}/>}
           <p>确认后保存此进度并生成下一章；即使生成失败，也不会恢复被覆盖的时间线。</p>
           <div className="history-actions">
             <button aria-label="取消，保留原进度" autoFocus disabled={busy} onClick={() => {
@@ -205,7 +208,7 @@ export function HistorySaves({ repository, saveId, settings, summary, onClose, o
             }}>取消</button>
             <button aria-label="确认覆盖并继续" disabled={busy || !input.trim()} className="history-danger history-overwrite" onClick={() => void run(async () => {
               try {
-                const result = await repository.history.restore(preview.confirmation, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage);
+                const result = await repository.history.restore(preview.confirmation, input, settings.runtime.useVariableStage, settings.runtime.useWorldStage, settings.runtime.useEntityStage,chatChoice);
                 if (alive.current) onRestored(result);
               } catch (failure) {
                 // The one-shot authorization is consumed even on failure; require a fresh preview.
@@ -217,7 +220,7 @@ export function HistorySaves({ repository, saveId, settings, summary, onClose, o
           <h3>从此继续</h3>
           <label>下一步行动<textarea ref={restartInput} aria-label="从此历史节点开始的行动" value={input}
             maxLength={100000} disabled={busy} onChange={event => setInput(event.target.value)}/></label>
-          <button aria-label="发送新行动（先确认覆盖）" className="primary" disabled={busy || !input.trim()} onClick={() => setConfirm(true)}>从此继续</button>
+          <button aria-label="发送新行动（先确认覆盖）" className="primary" disabled={busy || !input.trim()} onClick={() => {setChatChoice('discard'); setConfirm(true);}}>从此继续</button>
           {preview.hasDraft && <p>当前有未结算内容，仅在确认覆盖后清除。</p>}
         </section>
       }/>

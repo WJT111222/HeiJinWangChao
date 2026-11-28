@@ -22,7 +22,7 @@ test.beforeEach(async ({ page }) => {
   calls = 0; response = undefined;
   await page.route('https://**', route => route.abort());
   server = createServer(async (request, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Headers', 'content-type,authorization');
+    res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Headers', request.headers['access-control-request-headers'] ?? 'content-type,authorization');
     if (request.method === 'OPTIONS') { res.writeHead(204).end(); return; }
     for await (const chunk of request) { void chunk; /* Never log credentials or prompt contents. */ }
     calls++; response = res;

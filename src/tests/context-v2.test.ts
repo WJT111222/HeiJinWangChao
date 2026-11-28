@@ -91,9 +91,9 @@ describe('三阶段上下文 V2：最终messages的世界资料/人物投影与�
     a.draft.variables!.result.commands.push({ type: 'UpdateNpc', commandId: 'leave', npcId: 'scene-ordinary', expectedRevision: a.state.revision, changes: { onScene: false }, evidence: '人物离开' });
     const context = sentContext((await composePrompt({ ...a, stage: 'world', mode: 'regular', userInput: a.draft.userInput })).messages);
     expectWorldWithNpcProjection(context, projectTurn(a.state, a.draft), a.state.revision);
-    expect(record(context.PROTECTED_SCENE).sceneNpcIds).toEqual(['scene-special']);
+    expect(record(context.PROTECTED_SCENE).sceneNpcIds).toEqual(['scene-ordinary','scene-special']);
     const update = (npcId: string) => ({ type: 'UpdateNpc' as const, commandId: 'world-health', npcId, expectedRevision: a.state.revision, changes: { healthText: '稍感疲倦' }, evidence: '工作后休息' });
-    expect(() => parseWorld(JSON.stringify(worldResult([update('scene-ordinary')])), a.state, a.draft)).not.toThrow();
+    expect(() => parseWorld(JSON.stringify(worldResult([update('scene-ordinary')])), a.state, a.draft)).toThrow();
     expect(() => parseWorld(JSON.stringify(worldResult([update('scene-special')])), a.state, a.draft)).toThrow();
     expect(() => parseWorld(JSON.stringify(worldResult([{ ...update('scene-ordinary'), changes: { onScene: true } }])), a.state, a.draft)).toThrow();
     expect(() => parseWorld(JSON.stringify(worldResult(a.draft.variables!.result.commands.filter(c => c.type === 'SpendFunds'))), a.state, a.draft)).toThrow();

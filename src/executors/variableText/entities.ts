@@ -1,3 +1,4 @@
+import { StoryPhoneInput } from '../../domain/phone';
 import { z } from 'zod';
 import { DomainCommandSchema } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
@@ -14,11 +15,20 @@ export const textInputSchema = z.string().trim().min(1).max(8192);
 export const affinityChangeInput = variableCommandSchemas[1].shape.affinityChange.unwrap().omit({ from: true }).extend({ relationshipText: textInputSchema });
 export const memoryInputSchema = z.strictObject({ text: textInputSchema, knowledgeKind: z.enum(['observed', 'reported', 'suspected']),
   knowledgeSource: textInputSchema, visibility: z.enum(['npc_private', 'internal', 'player_known']) });
+/** 主角已知的组织据点/内情；id与learnedAt由程序填写。 */
+export const orgKnowledgeInputSchema = z.strictObject({ category: z.enum(['holding', 'intel']), text: textInputSchema,
+  source: textInputSchema, knowledgeKind: z.enum(['observed', 'reported']), locationId: IdSchema.optional(), statusText: z.string().optional() });
 /** 有限实体操作；创建值使用原领域Schema，路径只绑定稳定ID，不是任意字段补丁。 */
 export function compileEntity(command: ParsedVariableCommand, common: { commandId: string; evidence: string },
   expectedRevision: number, identityKey?: string): ExecutionResult<DomainCommand> | undefined {
   const [root, id, field] = command.path.nodes;
   if (id?.kind !== 'id' || !IdSchema.safeParse(id.id).success) return;
+  if (command.path.nodes.length === 3 && root.name === 'npc' && field?.kind === 'field' && field.name === 'phoneMessages') {
+    if (command.operation !== 'push') return failed('unsupported_operation');
+    const input = StoryPhoneInput.safeParse(command.value);
+    return input.success ? { ok:true, value:{ ...common, type:'RecordPhoneMessage', npcId:id.id, ...input.data } }
+      : failed('type_mismatch', null, [], diagnosticForRule(command, 'domain_schema'));
+  }
   const creation = command.path.nodes.length === 2 && ['npc', 'organizations', 'tasks'].includes(root.name);
   const relation = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'protagonistRelation';
   const organizationState = command.path.nodes.length === 3 && root.name === 'organizations' && field?.kind === 'field' && field.name === 'state';
@@ -49,7 +59,7 @@ export function compileEntity(command: ParsedVariableCommand, common: { commandI
       const { financialBasis, ...changes } = data;
       raw = { ...common, type: 'UpdateOrganization', organizationId: id.id, expectedRevision, changes, ...(financialBasis === undefined ? {} : {financialBasis}) };
     } else if (relation) {
-      if (Object.keys(data).some((key) => !['relation', 'reason'].includes(key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));
+      if (Object.keys(data).some((key) => !['relation', 'reason', 'faction'].includes(key))) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));
       raw = { ...common, type: 'RecordOrgRelation', organizationId: id.id, ...data };
     } else if (field?.kind === 'field' && field.name === 'contact') {
       if (Object.keys(data).some((key) => key !== 'reason')) return failed('type_mismatch', null, [], diagnosticForRule(command, 'schema_constraint'));

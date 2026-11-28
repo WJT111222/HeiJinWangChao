@@ -26,6 +26,7 @@ export interface StageResponse {
   model?: string;
   requestedAt?: string;
   baseSaveRevision?: number; draftRevision?: number; executionRevision?: number; stageRequestRevision?: number;
+  basedOnEntityRevision?: number;
   basedOnVariableRevision?: number;
   diagnostics?: ResponseDiagnostics;
   validationEndMs?: number;
@@ -81,7 +82,7 @@ export class StageResponseStore {
   }
   clear = () => { this.epoch++; this.publish([]); };
   clearSave = (saveId: string) => { this.epoch++; this.publish(this.records.filter(item => item.saveId !== saveId)); };
-  begin(scope: Pick<StageResponse, 'saveId' | 'turnId' | 'stage' | 'storyRevision' | 'protocol' | 'baseSaveRevision' | 'draftRevision' | 'executionRevision' | 'stageRequestRevision' | 'basedOnVariableRevision' | 'memoryTask' | 'memoryRetryId' | 'model' | 'requestedAt'>, generation = this.epoch) {
+  begin(scope: Pick<StageResponse, 'saveId' | 'turnId' | 'stage' | 'storyRevision' | 'protocol' | 'baseSaveRevision' | 'draftRevision' | 'executionRevision' | 'stageRequestRevision' | 'basedOnEntityRevision' | 'basedOnVariableRevision' | 'memoryTask' | 'memoryRetryId' | 'model' | 'requestedAt'>, generation = this.epoch) {
     const id = crypto.randomUUID();
     if (generation !== this.epoch) return id; // A cleared/unmounted request cannot resurrect its record.
     this.publish([freeze({ ...scope, id, status: 'pending' as const }), ...this.records].slice(0, 6));
@@ -125,6 +126,7 @@ export function selectStageResponse(records: readonly StageResponse[], saveId: s
       || (item.status === 'validated' && item.storyRevision + 1 === draft.storyRevision);
     return (item.storyRevision === undefined || item.storyRevision === draft.storyRevision)
       && (item.stageRequestRevision === undefined || item.stageRequestRevision === draft.stageRequestRevisions[stage])
+      && (stage === 'entities' || item.basedOnEntityRevision === draft.entities?.candidateRevision)
       && (stage !== 'world' || item.basedOnVariableRevision === draft.variables?.candidateRevision);
   });
 }

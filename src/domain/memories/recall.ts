@@ -3,7 +3,7 @@ import type { ActorRef } from '../common';
 import { rawNpcMemories } from './npcMemory';
 
 export interface RecallCues {
-  stage: 'story' | 'variables' | 'world';
+  stage: 'story' | 'entities' | 'variables' | 'world';
   playerInput: string;
   storyText?: string;
   variableGuide?: unknown;

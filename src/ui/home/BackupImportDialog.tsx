@@ -16,7 +16,7 @@ interface Row {
   /** 比较失败、文件内重复、导入失败等，显示在该行。 */
   problem?: string; done?: boolean;
 }
-export interface ImportedBackup { saveId: string; revision: number; turnNumber: number; npcManagementRevision?: number; title: string }
+export interface ImportedBackup { saveId: string; revision: number; turnNumber: number; npcManagementRevision?: number; theaterVersion?: string; imageVersion?:string; title: string }
 type Stage = 'pick' | 'reading' | 'review' | 'confirm' | 'importing';
 
 const importable = (row: Row) => row.entry.ok && !row.done && !row.problem && row.comparison !== undefined && row.comparison.kind !== 'same';
@@ -32,6 +32,9 @@ function fileError(error: unknown) {
 function importError(error: unknown) {
   const code = error instanceof DataError ? error.code : '';
   if (code === 'IMPORT_CONFLICT') return '本机存档在确认后又有变化，这份没有导入。请点「重新比较」再确认。';
+  if (error instanceof DOMException && error.name==='QuotaExceededError') return '浏览器空间不足，本份备份没有写入。请释放空间或选择轻量备份。';
+  if (code === 'IMAGE_BACKUP') return '请先导出本机图片，备份与本机图片的存档身份不符。';
+  if (code === 'THEATER_BACKUP') return '无法核对小剧场的存档归属。本次未导入，请先导出本机存档。';
   if (code === 'STORY_BUSY') return '这份存档正在使用（可能在其他标签进行中），这份没有导入。';
   if (code === 'SAVE_EXISTS' || code === 'IMPORT_CONFIRMATION_INVALID') return '确认已失效，这份没有导入。请点「重新比较」再确认。';
   return '导入失败，这份没有导入，本机数据没有改动。';
@@ -44,6 +47,8 @@ function overwriteNote(entry: Readable, comparison: BackupComparison): { level: 
   if (comparison.kind === 'overwrite-orphaned') return { level: 'info', text: '本机没有这份存档，但留有它的残留记录（草稿、回执或撤回记录）。导入会先清除这些残留。' };
   if (comparison.kind !== 'overwrite') return { level: 'info', text: '' };
   const localTurn = comparison.local.turnNumber;
+  if (comparison.differences.images) return {level:'warn',text:'覆盖会替换本机图片、形象锚点及备份中不同的进度。请先导出要保留的内容。'};
+  if (comparison.differences.theaters) return { level: 'warn', text: '覆盖会按备份替换本机的小剧场及可能不同的主线进度和草稿。请先备份想保留的本机内容。' };
   if (!comparison.differences.state) return { level: 'info', text: '两边的正式进度相同，只有未结算的草稿不同。覆盖会用备份里的草稿替换本机草稿。' };
   if (localTurn > backupTurn) return { level: 'warn', text: <><b>本机进度比备份更新。</b>覆盖后会退回第 {backupTurn} 回合，之后的 {localTurn - backupTurn} 回合和本机的撤回记录都会丢失，无法恢复。</> };
   if (localTurn < backupTurn) return { level: 'info', text: `备份比本机进度更新。覆盖后会前进到第 ${backupTurn} 回合，本机的撤回记录会丢失。` };
@@ -58,7 +63,7 @@ function rowStatus(row: Row): { tag: string; tone: string; detail: string } {
   if (!c) return { tag: '比较中', tone: 'none', detail: '' };
   if (c.kind === 'new') return { tag: '新存档', tone: 'ok', detail: '' };
   if (c.kind === 'same') return { tag: '已是最新', tone: 'none', detail: '和本机完全相同' };
-  if (c.kind === 'overwrite') return { tag: '将覆盖本机', tone: 'warn', detail: c.differences.state ? `本机是第 ${c.local.turnNumber} 回合` : '只有草稿不同' };
+  if (c.kind === 'overwrite') return { tag: '将覆盖本机', tone: 'warn', detail: c.differences.state ? `本机是第 ${c.local.turnNumber} 回合` : c.differences.images ? '图片资源不同' : c.differences.theaters ? '小剧场或草稿不同' : '只有草稿不同' };
   if (c.kind === 'overwrite-unreadable') return { tag: '将覆盖本机', tone: 'warn', detail: '本机记录无法读取' };
   return { tag: '将覆盖本机', tone: 'warn', detail: '本机有残留记录' };
 }
@@ -113,8 +118,9 @@ export function BackupImportDialog({ repository, file, onClose, onImported }: {
       const entry = target.entry as Readable, comparison = target.comparison!;
       let patch: Partial<Row>;
       try {
-        const state = await repository.importBackup(entry, comparison.confirmation, { overwrite: comparison.kind !== 'new' });
-        imported.push({ saveId: state.saveId, revision: state.revision, turnNumber: state.turnNumber, npcManagementRevision: state.npcManagementRevision, title: state.title });
+        const { state, theaterVersion,imageVersion } = await repository.importBackupWithVersion(entry, comparison.confirmation, { overwrite: comparison.kind !== 'new' });
+        imported.push({ saveId: state.saveId, revision: state.revision, turnNumber: state.turnNumber,
+          npcManagementRevision: state.npcManagementRevision, theaterVersion,imageVersion, title: state.title });
         patch = { done: true, checked: false };
       } catch (reason) { patch = { problem: importError(reason), checked: false }; }
       updated = updated.map(row => row.key === target.key ? { ...row, ...patch } : row);

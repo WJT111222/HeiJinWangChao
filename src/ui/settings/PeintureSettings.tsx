@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
+import type { GameState } from '../../domain/state';
 import { Dialog } from '../Dialog';
-import { builtInPresets, resolveStoryPreset } from '../../presets/library';
+import { type builtInPresets, resolveStoryPreset } from '../../presets/library';
 import type { LoadedPreset, PackageOverride } from '../../presets/package';
 import {
   customSlot,
-  controls,
+  controlsFor,
+  lockedByWritingStyle,
   checkSelection,
   editOutput,
   emptyOverride,
@@ -23,10 +25,11 @@ import {
 } from '../../presets/tavern/hostState';
 import { estimateTokens } from '../../prompts/statistics';
 import { presetMacros } from '../../presets/macros';
+import { PeintureSchemes } from './PeintureSchemes';
+import { TideAppearance, TideMark, useTideAppearance } from './PeintureAppearance';
 import { ScriptStatusRows } from './TavernAssistant';
 import './peinture-settings.css';
 
-const definition = builtInPresets[0];
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const samplingSection = '采样与输出';
 const compatibilitySection = '兼容与预览';
@@ -38,8 +41,8 @@ const deliveryModes = [
   { id: 'off', label: '普通正文', description: '直接使用模型返回的正文。' },
 ] as const;
 const customSection = '自定义';
-const entrySection = new Map(controls.sections.flatMap(section => section.ids.map(id => [id, section.name] as const)));
-const groupedEntries = new Set(controls.groups.flatMap(group => group.ids));
+const clockSection = '主线时序';
+const themeKey = 'heijin.peinture-1124.theme';
 
 function EntryName({ name }: { name: string }) {
   const author = /^(.*?)\s+(@.+)$/u.exec(name);
@@ -60,11 +63,26 @@ function rangeValue(raw: string, fallback: number, min: number, max: number) {
   return raw.trim() && Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
 }
 
-export default function PeintureSettings({ close }: { close(): void }) {
+export default function PeintureSettings({ close, definition, state, showClock = false }: { close(): void; state?: GameState; showClock?: boolean; definition: (typeof builtInPresets)[number] }) {
+  const anime = definition.id === 'peinture-1124';
+  const controls = controlsFor(definition.id);
+  const entrySection = new Map(controls.sections.flatMap(section => section.ids.map(id => [id, section.name] as const)));
+  const groupedEntries = new Set(controls.groups.flatMap(group => group.ids));
+  const [editingEntry, setEditingEntry] = useState('');
+  const [theme, setTheme] = useState<'day' | 'night'>(() => {
+    if (anime) {
+      try {
+        const value = localStorage.getItem(themeKey);
+        if (value === 'day' || value === 'night') return value;
+      } catch { /* Use the game's palette when browser storage is unavailable. */ }
+    }
+    return document.documentElement.dataset.appearance === 'day' ? 'day' : 'night';
+  });
+  const appearance = useTideAppearance(anime, theme);
   const savedRefresh = useRef(false);
   const deliveryId = useId();
   const scripts = useSyncExternalStore(assistantView.subscribe, assistantView.snapshot);
-  const [sectionName, setSectionName] = useState(samplingSection);
+  const [sectionName, setSectionName] = useState(showClock ? clockSection : samplingSection);
   const [search, setSearch] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
   const resetButton = useRef<HTMLButtonElement>(null);
@@ -103,7 +121,7 @@ export default function PeintureSettings({ close }: { close(): void }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [definition]);
   useEffect(() => {
     if (!dirty) return;
     const guard = (event: BeforeUnloadEvent) => {
@@ -254,12 +272,13 @@ export default function PeintureSettings({ close }: { close(): void }) {
       <header><h3>{section.name}</h3><span className="peinture-count">已启用 {enabledCount(section.ids)} / {section.ids.length}</span></header>
       {groups.map(group => {
         const selected = group.ids.find(enabledNow);
+        const locked = group.ids.every(id => lockedByWritingStyle(preset, edit, id));
         return <div className="peinture-choice-group" key={group.name} role="group" aria-label={group.name}>
-          <div><strong>{group.name}</strong><small>单选 · 可不指定</small></div>
+          <div><strong>{group.name}</strong><small>{locked ? '意识流文风指定' : '单选 · 可不指定'}</small></div>
           <div className="peinture-chips">
-            <button type="button" className="peinture-none" aria-pressed={!selected}
-              onClick={() => change(group.ids.reduce((next, id) => toggleEntry(preset, next, id, false), edit))}>不指定</button>
-            {group.ids.map(id => <button type="button" key={id} value={id} aria-pressed={selected === id}
+            <button type="button" className="peinture-none" aria-pressed={!selected} disabled={locked}
+              onClick={() => change(group.ids.reduce((next, id) => lockedByWritingStyle(preset, next, id) ? next : toggleEntry(preset, next, id, false), edit))}>不指定</button>
+            {group.ids.map(id => <button type="button" key={id} value={id} aria-pressed={selected === id} disabled={lockedByWritingStyle(preset, edit, id)}
               onClick={() => change(toggleEntry(preset, edit, id, true))}>
               <EntryName name={label(id)}/>{isDefault(id) && <span className="peinture-default" aria-hidden="true">默认</span>}
               {entrySection.get(id) !== section.name && <span className="peinture-default" aria-hidden="true">{entrySection.get(id)}</span>}
@@ -286,24 +305,41 @@ export default function PeintureSettings({ close }: { close(): void }) {
           </label>;
         })}
       </div>}
+      {anime && section.name !== customSection && <details className="peinture-entry-editor">
+        <summary>编辑本组条目</summary>
+        <label>文学条目<select aria-label="文学条目" value={section.ids.includes(editingEntry) ? editingEntry : ''} onChange={event => setEditingEntry(event.target.value)}>
+          <option value="">选择条目</option>{section.ids.map(id => <option key={id} value={id}>{label(id)}</option>)}
+        </select></label>
+        {section.ids.includes(editingEntry) && <label>条目正文<textarea aria-label="条目正文" rows={6}
+          value={edit.entries[editingEntry]?.content ?? preset.entries.find(row => row.identifier === editingEntry)?.content ?? ''}
+          onChange={event => change({ ...edit, entries: { ...edit.entries, [editingEntry]: { ...edit.entries[editingEntry], content: event.target.value } } })}/></label>}
+      </details>}
     </section>;
   }
 
+  const clockState = anime && sectionName === clockSection ? state : undefined;
+  const lastScene = clockState?.journal.slice().reverse().find(entry => entry.scene)?.scene;
+  const elapsedMinutes = clockState && lastScene && !clockState.openingTimePending
+    ? Math.floor((Date.parse(clockState.worldClock) - Date.parse(lastScene.worldClock)) / 60000) : undefined;
   const searchMatches = term ? controls.sections.map(renderSection).filter(Boolean) : [];
   return <Dialog title="王朝预设设置" subtitle="内置正文预设 · 只作用于正文阶段" seal="设"
-    closeLabel="关闭预设设置" className="peinture-panel" mobileVariant="sheet" sheetFull fitVisualViewport
+    closeLabel="关闭预设设置" className={anime ? `peinture-panel peinture-anime tide-${theme}` : "peinture-panel"} mobileVariant="sheet" sheetFull fitVisualViewport
     onClose={() => {
       if (confirmReset) closeReset();
       else if (!dirty || window.confirm('放弃本次未保存的调整？')) close();
     }}>
-    <div className="peinture-frame">
+    <div className="peinture-frame" style={appearance.style}>
       <div className="peinture-identity">
-        <div className="peinture-name"><strong>{presetName}</strong><span>{subtitle.join(' · ')}</span></div>
+        <div className="peinture-name">{anime && <TideMark skin={appearance.value.skin}/>}<strong>{presetName}</strong><span>{subtitle.join(' · ')}</span></div>
         <div className="peinture-meta"><span>适配版 <b>{definition.version}</b></span><span>作者 <b>{definition.author}</b></span></div>
         <div className="peinture-badges">
           <span className="peinture-pill peinture-script" data-state={scriptState}>脚本{scriptState}</span>
           {preset && <span className="peinture-pill">已启用 <b>{enabledCount(allIds)} / {allIds.length}</b></span>}
           {delivery && <span className="peinture-pill">交付 <b>{delivery.label}</b></span>}
+          {anime && <button type="button" aria-label="切换潮汐明暗配色" onClick={() => {
+            const next = theme === 'day' ? 'night' : 'day'; setTheme(next);
+            try { localStorage.setItem(themeKey, next); } catch { /* Still apply for this visit. */ }
+          }}>{theme === 'day' ? '夜潮' : '日潮'}</button>}
           <button className="peinture-script-link" type="button" onClick={() => changeSection(compatibilitySection)}>浪潮 · 状态</button>
         </div>
       </div>
@@ -312,6 +348,7 @@ export default function PeintureSettings({ close }: { close(): void }) {
           <input type="search" aria-label="搜索预设条目" placeholder="搜索条目或选项" value={search} onChange={event => setSearch(event.target.value)}/>
           {sectionButton(samplingSection, undefined, samplingChanges > 0)}
           {controls.sections.map(section => sectionButton(section.name, section.ids, sectionChanged(section.ids) > 0))}
+          {anime && <>{sectionButton('我的方案')}{sectionButton('潮汐外观')}{sectionButton(clockSection)}</>}
           {sectionButton(compatibilitySection)}
         </nav>}
         <div className="peinture-content" key={sectionName} aria-label="预设分区内容">
@@ -342,10 +379,18 @@ export default function PeintureSettings({ close }: { close(): void }) {
               </div>
               <ToggleCard label="还原额外转义" checked={prefs.unescape} modified={prefs.unescape !== previousOutput?.unescape}
                 onChange={unescape => change(editOutput(edit, { ...prefs, unescape }))}/>
+            </section> : anime && preset && edit && sectionName === '我的方案' ? <PeintureSchemes preset={preset} edits={edit} change={change}/>
+              : anime && sectionName === '潮汐外观' ? <TideAppearance appearance={appearance} theme={theme}/>
+              : anime && sectionName === clockSection ? <section className="peinture-section">
+              <header><h3>主线时序</h3></header>
+              {clockState ? <><p>正式世界时间 · {clockState.openingTimePending ? '等待开局结算' : clockState.worldClock}</p>
+                {elapsedMinutes !== undefined && <p>{elapsedMinutes < 0 ? '当前正式时钟早于最近场景记录' : `距最近正式场景 ${elapsedMinutes} 分钟`}</p>}
+                {clockState.journal.slice(-3).map(entry => <p key={entry.turnId}>{entry.story.turnKind === 'opening' ? '开局' : '正式回合'} · 存档版本 {entry.revision} · {entry.scene?.worldClock ?? '该回合未记录场景时间'}</p>)}
+              </> : <p>进入存档后可核对最近回合的正式时间。</p>}
             </section> : sectionName === compatibilitySection && <section className="peinture-section">
               <header><h3>{compatibilitySection}</h3></header>
               <div className="peinture-compatibility">
-                <div><h4>王朝保留</h4><p>王朝保留正文篇幅、行动选项和资料边界。</p></div>
+                <div><h4>王朝保留</h4><p>王朝保留行动选项、资料边界和正文标签协议。</p></div>
                 <div><h4>本版未开放</h4><p>附页、HTML 卡片及预设导入未开放。</p></div>
               </div>
               <button type="button" onClick={() => void preview()}>估算已保存配置</button>

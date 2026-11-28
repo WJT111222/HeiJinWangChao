@@ -1,5 +1,6 @@
+import { stagedFixture } from './stageScope';
 import { GameStateSchema } from '../../domain/state';
-import { createTurnDraft, rerollStory, TurnDraftSchema } from '../../domain/drafts';
+import { createTurnDraft, rerollStory } from '../../domain/drafts';
 import type { TalentId } from '../../domain/protagonist/talents';
 import type { AiStage } from '../../services/ai/configuration';
 import type { ComposeInput } from '../../prompts/context';
@@ -32,7 +33,7 @@ export function talentPromptInput(stage: AiStage, mode: 'opening' | 'regular', i
   const selected = rerollStory(createTurnDraft(checked.saveId, checked.revision, `talent-${mode}-${index}`, mode, talentScenario), {
     turnKind: mode, narrative: talentNarrative, summary: '核对物流企业公开资料', variableGuide: [],
   });
-  const draft = stage === 'world' ? TurnDraftSchema.parse({
+  const draft = stage === 'world' ? stagedFixture({
     ...selected, variables: { storyRevision: selected.storyRevision, candidateRevision: 1, requestRevision: 0, validation: 'validated',
       result: { commands: [{ type: 'SetWorldClock', commandId: 'talent-time', worldClock: new Date(Date.parse(checked.worldClock) + 60_000).toISOString(), evidence: '经过一分钟' }], rejectedSuggestions: [], unresolved: [] } },
     stageStatus: { ...selected.stageStatus, variables: 'ready' },

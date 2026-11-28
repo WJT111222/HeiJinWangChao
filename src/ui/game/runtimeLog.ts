@@ -1,4 +1,4 @@
-import { isStoryRule, safeStoryDiagnostic, storyDiagnosticMessage } from '../../domain/storyDiagnostics';
+import { isStoryRule, storyRuleNames, safeStoryDiagnostic, storyDiagnosticMessage } from '../../domain/storyDiagnostics';
 import type { StoryDiagnostic } from '../../domain/storyDiagnostics';
 import { storyFailure } from '../../services/validation/storyDiagnostics';
 import { DataError, IdSchema } from '../../domain/common';
@@ -64,8 +64,8 @@ export interface RuntimeLogEntry extends Partial<StoryDiagnostic> {
 
 export const runtimeStageNames: Record<RuntimeLogStage, string> = {
   story: '正文生成',
-  variables: '变量管理',
-  world: '动态世界',
+  entities: '人物与实体', variables: '主角与现场',
+  world: '场外与网络',
   workflow: '自动工作流',
   commit: '正式结算',
   memory: '记忆总结',
@@ -112,7 +112,8 @@ export function runtimeLogEvent(
       const diagnostic = { storyRule: 'draft_conflict' as const };
       return { ...entry, code: failure.code, ...diagnostic, message: storyDiagnosticMessage(diagnostic) };
     }
-    return { ...entry, code: failure.code, message: safeCommitCodes[failure.code] };
+    const diagnostic = safeFailureDiagnostic(failure);
+    return { ...entry, code: failure.code, message: safeCommitCodes[failure.code], ...(diagnostic ? { diagnostic } : {}) };
   }
   const presented = stage === 'commit' ? variableFailure(failure, 'commit') : stage === 'variables' ? variableFailure(failure, 'context') : stage === 'story' ? storyFailure(failure, true) : failure;
   const safe = safeAiError(presented);
@@ -125,7 +126,9 @@ export function runtimeLogEvent(
   const entryReason = details?.worldRule === 'event_entry' && isEventEntryReason(details.eventEntryReason)
     ? eventEntryReasonNames[details.eventEntryReason] : undefined;
   return {
-    ...entry, code: safe.code, message: isStoryRule(details?.storyRule) ? safe.message : safe.message.split(' 字段：')[0] + (entryReason ? ` ${entryReason}。` : ''),
+    ...entry, code: safe.code, message: diagnostic?.openingTime
+      ? `${storyRuleNames[diagnostic.openingTime.reason]}，正文已保留，本回合未结算。`
+      : isStoryRule(details?.storyRule) ? safe.message : safe.message.split(' 字段：')[0] + (entryReason ? ` ${entryReason}。` : ''),
     ...(isStoryRule(details?.storyRule) ? safeStoryDiagnostic(details) : {}),
     ...(typeof status === 'number' && status >= 100 && status < 600
       ? { httpStatus: status } : {}),

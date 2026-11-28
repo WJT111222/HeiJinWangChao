@@ -1,5 +1,7 @@
+import { checkEntityCommands } from '../../domain/entityCandidate';
+import { HaremChangesSchema } from '../../domain/harem/schema';
 import { compileSourceOperation, normalizeSourcePath, sourceValues, trackSourceValues } from './sourceSemantics';
-import { SceneEventStateSchema } from '../../domain/events/schema';
+import { SceneEventCreationSchema, SceneEventStateSchema } from '../../domain/events/schema';
 import { OpeningInitialStateSchema } from '../../domain/openingInitialization';
 import { DomainCommandSchema, fingerprint } from '../../domain/commands';
 import type { DomainCommand } from '../../domain/commands';
@@ -12,7 +14,7 @@ import { openingTimeBase, openingTimeSelection } from '../../domain/openingTime'
 import { variableCommandsForTurn } from '../../domain/turnProjection';
 import type { ParsedVariableCommand } from '../../parsers/variableText';
 import { compileTransaction } from './transactions';
-import { compileEntity, memoryInputSchema, textInputSchema as textValue } from './entities';
+import { compileEntity, memoryInputSchema, orgKnowledgeInputSchema, textInputSchema as textValue } from './entities';
 import { validateAst } from './ast';
 import { digest, ExecutionContextSchema, failed } from './model';
 import { diagnosticForRule, diagnosticForSchema } from './diagnostics';
@@ -27,7 +29,7 @@ const fields = new Map<string, Mapping>([
   ['locations', { operation: 'set', kind: 'location', field: 'location' }],
   ['npc.relationshipText', { operation: 'set', kind: 'npc', field: 'relationshipText' }],
   ['npc.healthText', { operation: 'set', kind: 'npc', field: 'healthText' }],
-  ...['name', 'aliases', 'identity', 'locationId', 'onScene', 'lastInteractionAt', 'gender', 'privateProfile', 'addressing', 'phoneContact', 'usualLocations', 'detailedBackground', 'habits', 'relationshipNetwork'].map((field): [string, Mapping] =>
+  ...['name', 'aliases', 'identity', 'locationId', 'onScene', 'lastInteractionAt', 'gender', 'privateProfile', 'addressing', 'phoneContact', 'appearedInStory', 'usualLocations', 'detailedBackground', 'habits', 'relationshipNetwork'].map((field): [string, Mapping] =>
     [`npc.${field}`, { operation: 'set', kind: 'npc', field }]),
   ['npc.memories', { operation: 'push', kind: 'memory', field: 'memories' }],
   ['npc.longTermMemories', { operation: 'push', kind: 'memory', field: 'longTermMemories' }],
@@ -90,6 +92,7 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   let base: GameState, clock: string, systemCommands: DomainCommand[];
   try {
     base = openingTimeBase(current, draft, []);
+    if (context.phase !== 'entities' && draft.entities) base = checkEntityCommands(base, draft, draft.entities.contactedNpcIds, draft.entities.result.commands);
     clock = openingTimeSelection(current, draft, [])?.endAt ?? base.worldClock;
     systemCommands = variableCommandsForTurn(current, draft, []);
     // 开局投影的精确重放：占位标记已在模拟副本清除，但保留原程序时钟幂等凭据。
@@ -125,12 +128,13 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
   const sceneEvents = new Map(Object.entries(base.events));
   for (let i = 0; i < ast.length; i++) {
     const command = normalizeSourcePath(ast[i]), origin = { commandIndex: i + 1, source: command.source };
-    const commandId = `text-v1:s${draft.storyRevision}:c${i + 1}`;
+    const commandId = `${context.phase === 'entities' ? 'entity-v1' : 'text-v1'}:s${draft.storyRevision}:c${i + 1}`;
     const prior = priorCommand(current, draft.turnId, commandId);
     const common = { commandId, evidence: `文本变量指令第${i + 1}条` };
     let mapped: DomainCommand;
     const [root,node,field]=command.path.nodes;
     const sceneEvent=command.path.nodes.length===3 && root.name==='events' && node?.kind==='id' && field?.kind==='field'&&field.name==='sceneState';
+    const orgKnown=command.path.nodes.length===3 && root.name==='organizations' && node?.kind==='id' && field?.kind==='field'&&field.name==='protagonistKnown';
     const transaction = await compileSourceOperation(command, values, base, quantities, prior, common, context.expectedRevision)
       ?? compileTransaction(command, common, context.expectedRevision)
       ?? compileEntity(command, common, context.expectedRevision, node?.kind === 'id' ? npcIdentities.get(node.id) : undefined);
@@ -146,6 +150,19 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       const value = SaveShape[root.name].safeParse(command.value);
       if (!value.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, value.error));
       mapped = { ...common, type: 'SetSceneDescription', field: root.name, value: value.data };
+    } else if (command.path.nodes.length === 2 && root.name === 'harem' && node?.kind === 'field' && node.name === 'changes') {
+      if (command.operation !== 'set') return failed('unsupported_operation', origin);
+      const changes = HaremChangesSchema.safeParse(command.value);
+      if (!changes.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, changes.error));
+      if (commands.some(c => c.type === 'ApplyHaremChanges')) return failed('duplicate_or_conflicting_command', origin);
+      mapped = {...common,type:'ApplyHaremChanges',expectedRevision:context.expectedRevision,changes:changes.data};
+    } else if (root.name === 'events' && node?.kind === 'id' && command.path.nodes.length === 2) {
+      if (command.operation !== 'set') return failed('unsupported_operation', origin);
+      if (sceneEvents.has(node.id)) return failed('duplicate_or_conflicting_command', origin);
+      const event = SceneEventCreationSchema.safeParse(command.value);
+      if (!event.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, event.error));
+      mapped = { ...common, type: 'SaveEvent', event: { ...event.data, id: node.id, sourceTurnIds: [draft.turnId] } };
+      sceneEvents.set(node.id, mapped.event);
     } else if (sceneEvent && node.kind==='id') {
       if(command.operation!=='set')return failed('unsupported_operation',origin);
       const old=sceneEvents.get(node.id),delta=SceneEventStateSchema.safeParse(command.value);
@@ -153,6 +170,12 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
       if(!delta.success)return failed('type_mismatch',origin,[],diagnosticForSchema(command,delta.error));
       mapped={...common,type:'SaveEvent',event:{...old,...delta.data,sourceTurnIds:[...new Set([...old.sourceTurnIds,draft.turnId])]}};
       sceneEvents.set(node.id,mapped.event);
+    } else if (orgKnown && node.kind === 'id') {
+      if (command.operation !== 'push') return failed('unsupported_operation', origin);
+      const entry = orgKnowledgeInputSchema.safeParse(command.value);
+      if (!entry.success) return failed('type_mismatch', origin, [], diagnosticForSchema(command, entry.error));
+      const id = `text-orgknow:${await digest([base.saveId, draft.turnId, draft.storyRevision, i + 1, node.id])}`;
+      mapped = { ...common, type: 'RecordOrgKnowledge', organizationId: node.id, entry: { ...entry.data, id, learnedAt: clock } };
     } else if (transaction) {
       if (!transaction.ok) return failed(transaction.error.code, origin, [], transaction.error.diagnostic ?? diagnosticForRule(command, 'value_constraint'));
       mapped = transaction.value;
@@ -220,6 +243,8 @@ async function compileChecked(input: readonly ParsedVariableCommand[], state: Ga
     if (!parsed.success) return failed('domain_validation_failed', origin, [], diagnosticForRule(command, 'domain_schema'));
     if (prior && fingerprint(prior) !== fingerprint(parsed.data)) return failed('duplicate_or_conflicting_command', origin);
     const c = parsed.data;
+    // 开局一律孤身一人：主势力只能由玩家在后续剧情里明确建立。
+    if (c.type === 'RecordOrgRelation' && c.faction && draft.turnKind !== 'regular') return failed('permission_denied', origin);
     const created = c.type === 'AcquireItem' || c.type === 'PurchaseItem' ? c.item.id
       : c.type === 'PurchaseVehicle' ? c.vehicle.id : c.type === 'PurchaseProperty' ? c.property.id
       : c.type === 'PurchaseOtherAsset' || c.type === 'AcquireAsset' ? c.asset.id : c.type === 'ReceiveIncome' ? c.income.id

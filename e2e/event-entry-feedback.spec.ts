@@ -1,23 +1,24 @@
+import { stageFixtureReply } from '../src/tests/fixtures/variableReply';
 import { expect, test } from './helpers/test';
 import type { Page } from '@playwright/test';
 import { openGameTools, openWorldArchive } from './helpers/gameLayout';
 
-async function seed(page:Page) {
+async function seed(page:Page, entities = false) {
   await page.goto('/');
-  await page.evaluate(async()=>{
+  await page.evaluate(async entities=>{
     const p='/src/services/storage/saveRepository.ts',w='/src/tests/fixtures/world.ts',d='/src/domain/drafts.ts',c='/src/services/ai/configuration.ts',v='/src/services/ai/credentials.ts',s='/src/ui/settings/model.ts';
     const {SaveRepository}=await import(p),{worldState}=await import(w),{createTurnDraft}=await import(d),{defaultAiConfig,newChannel,saveAiConfig}=await import(c),{CredentialVault}=await import(v),{defaultSettings,settingsKey}=await import(s);
-    const settings=defaultSettings();settings.prompts.minNarrativeChars=1;settings.prompts.actionOptions=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
+    const settings=defaultSettings();settings.runtime.useEntityStage=entities;settings.prompts.minNarrativeChars=1;settings.prompts.actionOptions=false;localStorage.setItem(settingsKey,JSON.stringify(settings));
     const channel=newChannel(),config=defaultAiConfig();channel.baseUrl='https://entry-feedback.mock.invalid/v1';channel.defaultModel='story';
     config.channels=[channel];config.routes.story={channelId:channel.id,modelId:'story'};
-    config.routes.variables={mode:'independent',channelId:channel.id,modelId:'variables'};config.routes.world={mode:'independent',channelId:channel.id,modelId:'world'};
+    config.routes.entities={mode:'independent',channelId:channel.id,modelId:'entities'};config.routes.variables={mode:'independent',channelId:channel.id,modelId:'variables'};config.routes.world={mode:'independent',channelId:channel.id,modelId:'world'};
     saveAiConfig(localStorage,config);new CredentialVault(sessionStorage,localStorage).set(channel.id,'mock-entry-only-key');
-    const repo=await SaveRepository.open();try{const state=worldState();await repo.create(state);await repo.saveDraft(createTurnDraft('save-a',0,'entry-opening','opening',''),null);}finally{repo.close();}
-  });
+    const repo=await SaveRepository.open();try{const state=worldState();await repo.create(state);await repo.saveDraft(createTurnDraft('save-a',0,'entry-opening','opening','',true,true,entities),null);}finally{repo.close();}
+  }, entities);
   await page.goto('/#game/save-a');await page.reload();await openGameTools(page);
 }
 const stored=(page:Page)=>page.evaluate(async()=>{const p='/src/services/storage/saveRepository.ts',{SaveRepository}=await import(p),r=await SaveRepository.open();try{return await r.loadGame('save-a');}finally{r.close();}});
-const settled=(page:Page)=>expect(page.getByRole('region',{name:'三阶段工作流'}).getByRole('status')).toContainText('本回合已结算');
+const settled=(page:Page)=>expect(page.getByRole('region',{name:'四阶段工作流'}).getByRole('status')).toContainText('本回合已结算');
 const scene='林舟与现场人物在办公室发生争执。';
 const cue='值班室来电，请你说明情况。';
 const refusal='林舟明确拒绝继续约谈，但调查仍可由原单位继续。';
@@ -102,7 +103,7 @@ test('World失败与刷新不消费入场，恢复只请求World并原子确认�
 });
 
 test('两轮自动结算：选择性入场、留守离场、并行任务与独立模糊历史保存后刷新可读',async({page})=>{
-  await seed(page);
+  await seed(page,true);
   const baseline=(await stored(page)).state,calls:string[]=[];
   await page.route('https://entry-feedback.mock.invalid/**',async route=>{
     const body=route.request().postDataJSON(),stage=String(body.model);calls.push(stage);
@@ -116,8 +117,8 @@ test('两轮自动结算：选择性入场、留守离场、并行任务与独�
       if(turn===2)expect(ctx.EVENT_ENTRIES).toHaveLength(2);
       const guide=turn===1?[]:[{group:'event',observedFact:'只接听第一通来电',textEvidence:'林舟接听一通电话，随后出门。',eventInteraction:{eventId:entry.eventId,entryId:entry.entryId,action:'presented'}}];
       text=`<thinking>按本次行动叙事，其他来电等待。</thinking><正文>【旁白】${turn===1?'林舟在办公室整理材料。':'林舟接听一通电话，随后出门。'}</正文><短期记忆>整理材料并继续行动。</短期记忆><变量规划>${JSON.stringify(guide)}</变量规划>`;
-    }else if(stage==='variables'){
-      text=`<thinking>只更新已经发生的现场变化。</thinking><说明>其他人物留在原地。</说明><命令>set worldClock = "2026-10-18T08:${turn===1?'10':'20'}:00+08:00"${turn===1?'':'\nset locations[office-gate] = {"name":"办公楼门口"}\nset protagonist.locationId = "office-gate"'}</命令>`;
+    }else if(stage==='variables'||stage==='entities'){
+      text=stageFixtureReply(stage,`<thinking>只更新已经发生的现场变化。</thinking><说明>其他人物留在原地。</说明><命令>set worldClock = "2026-10-18T08:${turn===1?'10':'20'}:00+08:00"${turn===1?'':'\nset locations[office-gate] = {"name":"办公楼门口"}\nset protagonist.locationId = "office-gate"'}</命令>`);
     }else{
       const result={worldCommands:[] as unknown[],taskCommands:[] as unknown[],eventCommands:[] as unknown[],visibleHooks:[],unresolved:[]};
       if(turn===1)result.eventCommands=['one','two'].map(id=>({type:'SaveEvent',commandId:`queue-${id}`,evidence:'日常联系',event:{
@@ -148,12 +149,12 @@ test('两轮自动结算：选择性入场、留守离场、并行任务与独�
   expect(Object.keys(data.state.tasks)).toHaveLength(2);
   expect(data.state.timeline[0]).toMatchObject({knowledgeKind:'reported',occurredTimeText:'大学时期',recordedAt:data.state.worldClock});
   expect(data.state.timeline[0].eventId).toBeUndefined();expect(data.state.timeline[0].occurredAt).toBeUndefined();
-  expect(calls).toEqual(['story','variables','world','story','variables','world']);
+  expect(calls).toEqual(['story','entities','variables','world','story','entities','variables','world']);
   await page.reload();await openGameTools(page);
-  expect((await stored(page)).state).toEqual(data.state);expect(calls).toHaveLength(6);
+  expect((await stored(page)).state).toEqual(data.state);expect(calls).toHaveLength(8);
   await openWorldArchive(page);
   await page.getByRole('complementary',{name:'世界资料'}).getByRole('button',{name:/历史时间轴/}).click();
   const dialog=page.getByRole('dialog',{name:'历史时间轴',exact:true});await expect(dialog.getByText('大学时期的合作',{exact:true})).toBeVisible();
   await expect(dialog.getByText('人物陈述',{exact:true})).toBeVisible();await expect(dialog.getByText('大学时期',{exact:true})).toBeVisible();
-  expect(calls).toHaveLength(6);
+  expect(calls).toHaveLength(8);
 });

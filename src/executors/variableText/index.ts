@@ -76,7 +76,7 @@ async function simulateChecked(plan: VariableExecutionPlan, state: GameState,
       const code = ['REVISION_CONFLICT', 'ENTITY_CONFLICT'].includes(error.code) ? 'revision_conflict'
         : ['DUPLICATE_COMMAND', 'COMMAND_CONFLICT', 'DUPLICATE_MEMORY'].includes(error.code) ? 'duplicate_or_conflicting_command'
         : ['UNKNOWN_BALANCE', 'INSUFFICIENT_FUNDS'].includes(error.code) ? 'invalid_amount'
-        : ['OWNERSHIP', 'KNOWLEDGE_KIND', 'MEMORY_SOURCE', 'SCENE_PERMISSION'].includes(error.code) ? 'permission_denied'
+        : ['OWNERSHIP', 'KNOWLEDGE_KIND', 'MEMORY_SOURCE', 'SCENE_PERMISSION', 'STAGE_PERMISSION'].includes(error.code) ? 'permission_denied'
         : 'domain_validation_failed';
       // apply 已知的单条失败按实际执行命令映射回文本来源；程序注入命令没有来源。
       // 不信任异常中的自由类型/消息，也不把最终整体校验强行归到某一条。

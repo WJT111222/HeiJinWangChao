@@ -1,3 +1,6 @@
+import { TopicInput, seedTopic } from './phoneTopic';
+import { HaremBackgroundCommandSchema, HaremCommandSchema } from './harem/schema';
+import { applyHarem, applyHaremBackground } from './harem/apply';
 import type { SceneIntervention } from './events/narration';
 import { validateStageWrite } from './events/stages';
 import { z } from 'zod';
@@ -6,7 +9,7 @@ import { ActorRefSchema, CommandDataError, DataError, CountSchema, IdSchema, Mon
 import { EquipmentSchema } from './protagonist/schema';
 import { OwnedItemInputSchema } from './items/schema';
 import { NpcCreationSchema, NpcSchema } from './npc/schema';
-import { FinancialBasisSchema, OrganizationChangesSchema, OrganizationSchema, organizationChangeFields } from './organizations/schema';
+import { FactionBindingSchema, FinancialBasisSchema, OrganizationChangesSchema, OrganizationSchema, ProtagonistOrgKnowledgeSchema, organizationChangeFields } from './organizations/schema';
 import { StoredWorldEventSchema, WorldTaskSchema, HistoryRecordSchema } from './events/schema';
 import { GameStateSchema } from './state';
 import type { GameState } from './state';
@@ -16,6 +19,8 @@ import { deleteEvent, validateEventLinks, validateEventWrite } from './events/li
 import { maintainSceneTransition } from './sceneTransitions';
 import { completeTaskEventLinks } from './events/taskLinks';
 import { OpeningInitialStateSchema, initializeOpeningState } from './openingInitialization';
+
+import { recordPhone, schedulePhone, ScheduledPhoneInput, StoryPhoneInput } from './phone';
 
 const base = { commandId: IdSchema, evidence: TextSchema };
 const positiveMoney = MoneySchema.refine((amount) => amount > 0, '金额必须为正');
@@ -43,10 +48,16 @@ export const DomainCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ ...base, type: z.literal('SaveTask'), task: WorldTaskSchema }),
   z.strictObject({ ...base, type: z.literal('CreateOrganization'), organization: OrganizationSchema }),
   z.strictObject({ ...base, type: z.literal('UpdateOrganization'), organizationId: IdSchema, expectedRevision: CountSchema, changes: OrganizationChangesSchema, financialBasis: FinancialBasisSchema.optional() }),
-  z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema }),
+  z.strictObject({ ...base, type: z.literal('RecordOrgRelation'), organizationId: IdSchema, relation: TextSchema, reason: TextSchema, faction: FactionBindingSchema.optional() }),
+  z.strictObject({ ...base, type: z.literal('RecordOrgKnowledge'), organizationId: IdSchema, entry: ProtagonistOrgKnowledgeSchema }),
+  z.strictObject({ ...base, type: z.literal('RecordPhoneMessage'), npcId: IdSchema, ...StoryPhoneInput.shape }),
+  z.strictObject({ ...base, type: z.literal('SeedTopic'), ...TopicInput.shape }),
+  z.strictObject({ ...base, type: z.literal('SchedulePhoneMessage'), ...ScheduledPhoneInput.shape }),
   z.strictObject({ ...base, type: z.literal('RegisterContact'), npcId: IdSchema, reason: TextSchema }),
   // Parse historical drafts/receipts, but never authorize a fresh deletion.
   ...variableCommandSchemas,
+  HaremCommandSchema,
+  HaremBackgroundCommandSchema,
 ]);
 export type DomainCommand = z.infer<typeof DomainCommandSchema>;
 
@@ -84,8 +95,10 @@ function linkMortgages(s: GameState, commands: readonly DomainCommand[]) {
     if (property && debt && !debt.collateralAssetIds.includes(property.id)) debt.collateralAssetIds.push(property.id);
   }
 }
-function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedReceipts: ReadonlySet<string>) {
+function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedReceipts: ReadonlySet<string>, pendingSceneClock = false) {
   switch (c.type) {
+    case 'ApplyHaremChanges': applyHarem(s,c,turnId,pendingSceneClock); break;
+    case 'ApplyHaremBackground': applyHaremBackground(s,c,turnId); break;
     case 'InitializeOpeningState': initializeOpeningState(s, c.changes, (id) => newEntity(s, id)); break;
     case 'PurchaseItem':
       newEntity(s, c.item.id); ownedByProtagonist(s, c.item.ownerRef); assertImportantItem(s, c.item);
@@ -138,6 +151,9 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
         'AMBIGUOUS_NPC', '别名或初始同伴身份重叠，需先确认已有稳定 ID');
       s.npc[c.npc.id] = NpcSchema.parse(c.npc.kind === 'special'
         ? { ...c.npc, memories: [...c.npc.memories, ...(c.npc.longTermMemories ?? [])], longTermMemories: [] } : c.npc); break;
+    case 'RecordPhoneMessage': recordPhone(s, c.npcId, c, turnId, pendingSceneClock); break;
+    case 'SeedTopic': seedTopic(s,c,turnId); break;
+    case 'SchedulePhoneMessage': schedulePhone(s, c, turnId); break;
     case 'RegisterContact':
       requireData(s.npc[c.npcId], 'NOT_FOUND', '联系人不存在');
       if (!s.contactNpcIds.includes(c.npcId)) s.contactNpcIds.push(c.npcId);
@@ -191,6 +207,7 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
     }
     case 'CreateOrganization':
       newEntity(s, c.organization.id);
+      requireData(!c.organization.protagonistKnown?.length, 'ORGANIZATION_KNOWLEDGE', '主角已知条目只能用RecordOrgKnowledge逐条记录');
       requireData(!Object.values(s.organizations).some(org => org.kind === c.organization.kind && org.name === c.organization.name), 'DUPLICATE_ORGANIZATION', '同类组织名称已存在，应复用稳定ID');
       s.organizations[c.organization.id] = c.organization; break;
     case 'UpdateOrganization': {
@@ -203,27 +220,89 @@ function apply(s: GameState, c: DomainCommand, turnId: string, acknowledgedRecei
       requireData(!financial || c.financialBasis, 'ORGANIZATION_FINANCE', '组织金额更新需要结构化时间与依据说明');
       if (c.financialBasis) requireData(Date.parse(c.financialBasis.at) <= Date.parse(s.worldClock), 'FUTURE_ORGANIZATION_FINANCE', '组织财务依据时间不能晚于当前游戏时间');
       // These are organization-owned figures, never player transactions or income.
-      s.organizations[old.id] = OrganizationSchema.parse({ ...old, ...c.changes });
+      const changes = { ...c.changes };
+      if (changes.departments) {
+        // 部门撤销或重组：指向已撤销部门的成员与主角部门归属同步清空，职位保留，不让正常重组卡住整回合。
+        // 只处理原有、本次被撤销的部门；从未存在的部门引用仍按坏数据拒绝。
+        const kept = new Set(changes.departments.map(row => row.id));
+        const removed = new Set((old.departments ?? []).map(row => row.id).filter(id => !kept.has(id)));
+        const members = changes.members ?? old.members;
+        if (members && removed.size) changes.members = members.map(({ departmentId, ...row }) => departmentId && removed.has(departmentId) ? row : { ...row, ...(departmentId ? { departmentId } : {}) });
+        const faction = s.protagonistFaction;
+        if (faction?.organizationId === old.id && faction.departmentId && removed.has(faction.departmentId)) {
+          const { departmentId: _removed, ...rest } = faction; void _removed;
+          s.protagonistFaction = rest;
+        }
+      }
+      s.organizations[old.id] = OrganizationSchema.parse({ ...old, ...changes });
       break;
     }
     case 'RecordOrgRelation': {
       const org = s.organizations[c.organizationId];
       requireData(org, 'NOT_FOUND', '组织不存在');
-      org.protagonistRelation = c.relation; org.relationHistory.push(c.reason); break;
+      org.protagonistRelation = c.relation; org.relationHistory.push(c.reason);
+      if (c.faction) applyFactionBinding(s, org.id, c.faction);
+      break;
     }
-    default: applyVariableCommand(s, c, turnId, (id) => newEntity(s, id), (account, amount) => balance(s, account, -amount));
+    case 'RecordOrgKnowledge': {
+      const org = s.organizations[c.organizationId];
+      requireData(org, 'NOT_FOUND', '组织不存在');
+      requireData(!(org.protagonistKnown ?? []).some(row => row.id === c.entry.id), 'DUPLICATE_ORGANIZATION_KNOWLEDGE', '已知条目ID重复');
+      requireData(Date.parse(c.entry.learnedAt) <= Date.parse(s.worldClock), 'ORGANIZATION_KNOWLEDGE', '得知时间不能晚于当前游戏时间');
+      org.protagonistKnown = [...(org.protagonistKnown ?? []), c.entry];
+      break;
+    }
+    default: applyVariableCommand(s, c, turnId, (id) => newEntity(s, id), (account, amount) => balance(s, account, -amount), pendingSceneClock);
   }
+}
+
+/** 主势力绑定只有一份：绑定新势力即解除旧势力，旧组织关系历史留一条程序记录。 */
+function applyFactionBinding(s: GameState, organizationId: string, binding: z.infer<typeof FactionBindingSchema>) {
+  const current = s.protagonistFaction, org = s.organizations[organizationId];
+  if (binding.action === 'bind') {
+    if (current && current.organizationId !== organizationId)
+      s.organizations[current.organizationId]?.relationHistory.push(`主角改以「${org.name}」为主势力，不再以本组织为主势力`);
+    s.protagonistFaction = { organizationId, position: binding.position, bondText: binding.bondText,
+      ...(binding.departmentId ? { departmentId: binding.departmentId } : {}),
+      joinedAt: current?.organizationId === organizationId ? current.joinedAt : s.worldClock };
+    return;
+  }
+  requireData(current?.organizationId === organizationId, 'FACTION_BINDING', '主角当前不以该组织为主势力');
+  if (binding.action === 'unbind') { delete s.protagonistFaction; return; }
+  const { departmentId, ...rest } = current;
+  s.protagonistFaction = { ...rest,
+    ...(binding.position !== undefined ? { position: binding.position } : {}),
+    ...(binding.bondText !== undefined ? { bondText: binding.bondText } : {}),
+    ...(binding.departmentId === null ? {} : binding.departmentId !== undefined ? { departmentId: binding.departmentId } : departmentId ? { departmentId } : {}) };
+}
+
+/** Provisional entity state retains the formal revision. The scene supplies the upper time bound at settlement. */
+export function projectEntityChanges(state: GameState, turnId: string, commands: readonly DomainCommand[]) {
+  const projected = structuredClone(state);
+  const receipts = new Set<string>();
+  const family = commands.filter(command => command.type === 'ApplyHaremChanges');
+  requireData(family.length <= 1, 'HAREM_BATCH', '同阶段只能提交一组家庭变更');
+  for (const command of [...commands.filter(command => command.type !== 'ApplyHaremChanges'), ...family]) {
+    try {
+      apply(projected, structuredClone(command), turnId, receipts, true);
+    } catch (error) {
+      if (error instanceof DataError) throw new CommandDataError(error, commands.indexOf(command), command.type);
+      throw error;
+    }
+  }
+  return projected;
 }
 
 export function commitCommands(state: GameState, turnId: string, expectedRevision: number,
   commands: readonly DomainCommand[], now = new Date().toISOString(),
   sceneAuthority: ReadonlyMap<string,SceneIntervention> = new Map(),
-  acknowledgedReceipts: ReadonlySet<string> = new Set()): GameState {
+  acknowledgedReceipts: ReadonlySet<string> = new Set(),
+  worldCommands: readonly DomainCommand[] = []): GameState {
   const current = GameStateSchema.parse(state);
   requireData(!current.openingTimePending, 'OPENING_TIME', '开局时间待确认，不能将内部占位时钟用于命令执行');
   IdSchema.parse(turnId);
   CountSchema.parse(expectedRevision);
-  const parsed = z.array(DomainCommandSchema).parse(commands);
+  const parsed = z.array(DomainCommandSchema).parse([...commands, ...worldCommands]);
   requireData(new Set(parsed.map((c) => c.commandId)).size === parsed.length, 'DUPLICATE_COMMAND', '同批命令 ID 重复');
   const fresh = parsed.filter((command) => {
     const prior = current.appliedCommands.find((c) => c.turnId === turnId && c.commandId === command.commandId);
@@ -236,8 +315,12 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
   if (fresh.length === 0) return current;
   // 事件清理在引用写入后执行。
   const cleanup = (c: DomainCommand) => c.type==='DeleteEvent';
-  const ordered = [...fresh.filter((c) => !cleanup(c)), ...fresh.filter(cleanup)];
-  for (const command of ordered) {
+  // Family references and timestamps use the final NPCs and clock of this batch.
+  // Variables 的家庭变更先落地，World 的场外推进在其结果上执行。
+  const household = fresh.filter(c => c.type === 'ApplyHaremChanges'), background = fresh.filter(c => c.type === 'ApplyHaremBackground');
+  requireData(household.length <= 1 && background.length <= 1, 'HAREM_BATCH', '同一批次每个阶段只能提交一组家庭变更');
+  const ordinary = new Set<DomainCommand>(fresh.filter(c => !cleanup(c) && c.type !== 'ApplyHaremChanges' && c.type !== 'ApplyHaremBackground'));
+  function execute(command: DomainCommand) {
     try { apply(current, command, turnId, acknowledgedReceipts); }
     catch (error) {
       if (error instanceof DataError) throw new CommandDataError(error, parsed.indexOf(command), command.type);
@@ -245,6 +328,14 @@ export function commitCommands(state: GameState, turnId: string, expectedRevisio
     }
     current.appliedCommands.push({ turnId, commandId: command.commandId, fingerprint: fingerprint(command) });
   }
+  const scene = parsed.slice(0, commands.length).filter(c => ordinary.has(c));
+  scene.forEach(execute);
+  const world = parsed.slice(commands.length).filter(c => ordinary.has(c));
+  // 排期须看到场外提示词使用的现场状态。仍在本次私有投影内，后续命令照原顺序校验和记账。
+  if (world.some(c => c.type === 'SchedulePhoneMessage')) maintainSceneTransition(state, current, scene);
+  world.filter(c=>c.type!=='SeedTopic').forEach(execute);
+  world.filter(c=>c.type==='SeedTopic').forEach(execute);
+  [...household, ...background, ...fresh.filter(cleanup)].forEach(execute);
   linkMortgages(current, fresh);
   validateTaskTransitions(state, current, fresh.flatMap((c) => c.type === 'SaveTask' ? [c.task] : []));
   completeTaskEventLinks(state, current);

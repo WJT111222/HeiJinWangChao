@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { test, expect } from './helpers/test';
 import { openLibrary } from './helpers/home';
 
-for (const version of [6, 7, 8, 9]) test(`V${version}旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖V10，五仓库不变`, async ({ page }, info) => {
+for (const version of [6, 7, 8, 9]) test(`V${version}旧档重置：列表拒绝、下载原文保留、旧备份不能覆盖当前存档，五仓库不变`, async ({ page }, info) => {
   let posts = 0;
   await page.route('**/*', async route => {
     if (route.request().method() === 'POST') { posts++; await route.abort(); }
@@ -69,8 +69,8 @@ for (const version of [6, 7, 8, 9]) test(`V${version}旧档重置：列表拒绝
       return { parsed: parsed.entries[0], compareRejected, importRejected, loadCode, loadMessage, version: (await repo.load('current')).schemaVersion };
     } finally { repo.close(); }
   }, version);
-  expect(refused).toMatchObject({ parsed: { ok: false, code: 'UNSUPPORTED_VERSION' }, compareRejected: true, importRejected: true, loadCode: 'UNSUPPORTED_VERSION', version: 10 });
-  expect(refused.loadMessage).toContain('只支持 V10 存档');
+  expect(refused).toMatchObject({ parsed: { ok: false, code: 'UNSUPPORTED_VERSION' }, compareRejected: true, importRejected: true, loadCode: 'UNSUPPORTED_VERSION', version: 11 });
+  expect(refused.loadMessage).toContain('仅支持 V10、V11 存档');
   expect(await snapshot()).toEqual(before); expect(posts).toBe(0);
   await card.scrollIntoViewIfNeeded();
   await info.attach(`${info.project.name}-v${version}-raw-kept`, { body: await page.screenshot(), contentType: 'image/png' });

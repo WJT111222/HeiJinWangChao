@@ -15,7 +15,7 @@ describe('事件生命周期旧设计失败复现',()=>{
   it('条件不能代替新事件预计终止时间，目录及新事件Schema必须声明必填',()=>{
     const {estimatedEndAt:_old,...incident}=event();void _old;
     expect(WorldEventSchema.safeParse({...incident,completionCondition:'调查完成'}).success).toBe(false);
-    expect(textVariableCatalog().entries.some(e=>e.path==='events[id]')).toBe(false);
+    expect(textVariableCatalog('regular','scene').entries.find(e=>e.path==='events[id]')?.valueSchema).toHaveProperty('required',expect.arrayContaining(['estimatedEndAt']));
     expect(textVariableCatalog().entries.find(e=>e.path==='events[id].sceneState')?.valueSchema).toHaveProperty('required',expect.arrayContaining(['status']));
     expect(JSON.stringify(commandCatalog('world').schema)).toContain('estimatedEndAt');
   });

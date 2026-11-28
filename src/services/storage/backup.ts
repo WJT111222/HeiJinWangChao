@@ -1,25 +1,35 @@
+import { parseImages } from '../images/library';
+import type { PortableImages } from '../images/library';
+import { validatePendingChat } from '../../domain/phone';
 import { z } from 'zod';
 import { DataError } from '../../domain/common';
 import { TurnDraftSchema } from '../../domain/drafts';
 import type { TurnDraft } from '../../domain/drafts';
 import type { GameState } from '../../domain/state';
+import { parseTheaters } from '../../domain/theater/record';
+import type { TheaterRecord } from '../../domain/theater/record';
 import { migrateSave } from './migrations';
 
 /**
  * 玩家存档备份文件（.heijin.json）。
- * 只含游戏进度与未结算草稿；不含 AI 密钥、渠道、设置、提示词排序、撤回快照与提交回执。
+ * 含游戏进度、未结算草稿和独立小剧场；不含 AI 密钥、渠道配置、全局设置、提示词排序、撤回快照与提交回执。
  */
 export const backupFormat = 'heijin-backup';
-export const backupVersion = 1;
+export const backupVersion = 7;
 
 export interface BackupEntry {
   summary: { title: string; turnNumber: number; revision: number; schemaVersion: number; updatedAt: string };
   state: GameState;
   draft?: TurnDraft;
+  theaters?: TheaterRecord[];
+  /** Local export snapshot metadata. The portable backup omits it. */
+  theaterVersion?: string;
+  images?: PortableImages;
+  imageVersion?: string;
 }
 export interface BackupFile {
   format: typeof backupFormat;
-  version: typeof backupVersion;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | typeof backupVersion;
   app: string;
   exportedAt: string;
   saves: BackupEntry[];
@@ -35,7 +45,7 @@ export type BackupChecksumStatus = 'valid' | 'mismatch' | 'unverified';
 
 /** 已读入并逐份校验后的备份条目；单份存档损坏不影响同文件的其他存档。 */
 export type ParsedBackupEntry =
-  | { ok: true; title: string; state: GameState; draft?: TurnDraft; draftDropped?: string }
+  | { ok: true; title: string; state: GameState; draft?: TurnDraft; draftDropped?: string; images?: PortableImages; theaters?: TheaterRecord[] }
   | { ok: false; title: string; error: string; code: string };
 export interface ParsedBackup {
   app: string;
@@ -55,6 +65,8 @@ const EnvelopeSchema = z.object({
     summary: z.object({ title: z.string() }).passthrough().optional(),
     state: z.unknown(),
     draft: z.unknown().optional(),
+    theaters: z.unknown().optional(),
+    images: z.unknown().optional(),
   })).min(1).max(maxBackupEntries),
   checksum: z.string().max(100).optional(),
 });
@@ -85,28 +97,50 @@ async function sha256(text: string): Promise<string | undefined> {
   return 'sha256:' + Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-/** 草稿只有指向同一存档、且基于同一正式版本时才随备份恢复；否则跳过草稿，不影响存档。 */
+/** An obsolete candidate can be skipped. A draft containing player chat must stay with its save. */
 export function compatibleDraft(state: GameState, raw: unknown, exportLocalRecovery = false): { draft?: TurnDraft; dropped?: string } {
   if (raw === undefined || raw === null) return {};
+  function incompatible(reason: string, notice = '已跳过草稿。') {
+    if (raw && typeof raw === 'object') {
+      const pending = 'phonePending' in raw && raw.phonePending;
+      if ((Array.isArray(pending) ? pending.length : pending) || ('phoneFreeze' in raw && raw.phoneFreeze))
+        throw new DataError('PHONE_DRAFT_CONFLICT', `无法完整恢复待结算私聊：${reason}。`);
+    }
+    return { dropped: reason + '，' + notice };
+  }
   const parsed = TurnDraftSchema.safeParse(raw);
-  if (!parsed.success) return { dropped: '草稿结构无法通过校验，已跳过草稿。' };
-  if (parsed.data.saveId !== state.saveId) return { dropped: '草稿不属于这份存档，已跳过草稿。' };
-  if (parsed.data.baseSaveRevision !== state.revision) return { dropped: '草稿基于旧的回合，已过期，已跳过草稿。' };
+  if (!parsed.success) return incompatible('草稿结构无法通过校验');
+  if (parsed.data.saveId !== state.saveId) return incompatible('草稿不属于这份存档');
+  if (parsed.data.baseSaveRevision !== state.revision) return incompatible('草稿基于旧的回合，已过期');
+  validatePendingChat(state, parsed.data);
   if (parsed.data.legacyNotificationRecovery && !exportLocalRecovery)
-    return { dropped: '旧通知恢复授权只在原本机草稿有效，已跳过该未结算草稿，正式存档可导入。' };
+    return incompatible('旧通知恢复授权只在原本机草稿有效', '已跳过该未结算草稿，正式存档可导入。');
   return { draft: parsed.data };
 }
 
 export async function serializeBackup(entries: readonly BackupEntry[], app: string, now = new Date()): Promise<string> {
   if (!entries.length || entries.length > maxBackupEntries)
     throw new DataError('BACKUP_TOO_LARGE', `单个备份文件最多容纳 ${maxBackupEntries} 份存档。请分别导出，原存档保持完整。`);
-  const saves = entries.map((entry) => ({ summary: entry.summary, state: entry.state, ...(entry.draft ? { draft: entry.draft } : {}) }));
+  // A node without chat or side collections remains portable in the original format.
+  // V6 distinguishes an omitted collection from an explicitly exported empty one.
+  const hasGroupsOrTopics = entries.some(({ state, draft }) =>
+    state.phone.topics.length || state.phone.groups !== undefined ||
+    draft?.phonePending?.some(operation => 'kind' in operation) ||
+    [draft?.world, draft?.inactiveCandidates?.world].some(candidate =>
+      candidate?.result.worldCommands.some(command => command.type === 'SeedTopic')));
+  const needsCollectionFormat = entries.some(entry => entry.theaters !== undefined || entry.images ||
+    entry.draft?.phonePending?.length || Object.values(entry.state.phone.threads).some(thread => thread.messages.some(message => message.source === 'chat')));
+  const saves = entries.map(entry => ({ summary: entry.summary, state: entry.state,
+    ...(entry.images ? {images:entry.images} : {}),
+    ...(entry.draft ? { draft: entry.draft } : {}),
+    ...(entry.theaters !== undefined ? { theaters: parseTheaters(entry.theaters, entry.state.saveId) } : {}),
+  }));
   const serializedSaves = JSON.stringify(saves);
   const exportTooLarge = () => new DataError('BACKUP_TOO_LARGE', '备份文件超过可导入的容量上限。请分别导出，原存档保持完整。');
   if (utf8ByteLength(serializedSaves, maxBackupBytes) > maxBackupBytes) throw exportTooLarge();
   const checksum = await sha256(serializedSaves);
   const file: BackupFile = {
-    format: backupFormat, version: backupVersion, app, exportedAt: now.toISOString(),
+    format: backupFormat, version: hasGroupsOrTopics ? backupVersion : needsCollectionFormat ? 6 : 1, app, exportedAt: now.toISOString(),
     saves, ...(checksum ? { checksum } : {}),
   };
   const text = JSON.stringify(file);
@@ -141,7 +175,7 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
   if (format.success && format.data.format === backupFormat && format.data.version > backupVersion)
     throw new DataError('BACKUP_FUTURE', '这份备份来自更新的游戏版本，请先更新游戏再导入；本机存档没有任何改动。');
   const envelope = EnvelopeSchema.safeParse(raw);
-  if (!envelope.success || envelope.data.version !== backupVersion)
+  if (!envelope.success || ![1, 2, 3, 4, 5, 6, backupVersion].includes(envelope.data.version))
     throw new DataError('BACKUP_INVALID', '这不是黑金王朝的备份文件。请选择导出时得到的 .heijin.json 文件。');
   const { saves, checksum } = envelope.data;
   let checksumStatus: BackupChecksumStatus = 'unverified';
@@ -155,9 +189,22 @@ export async function parseBackup(text: string, maxBytes = maxBackupBytes): Prom
     try {
       const state = migrateSave(save.state);
       const { draft, dropped } = compatibleDraft(state, save.draft);
-      return { ok: true, title: state.title, state, ...(draft ? { draft } : {}), ...(dropped ? { draftDropped: dropped } : {}) };
+      let theaters: TheaterRecord[] | undefined;
+      if ((envelope.data.version >= 2 && envelope.data.version <= 5) || save.theaters !== undefined) {
+        try { theaters = parseTheaters(save.theaters, state.saveId); }
+        catch { return { ok: false, title, error: '小剧场数据无法校验，本份存档未导入。', code: 'THEATER_BACKUP' }; }
+      }
+      let images: PortableImages | undefined;
+      if(save.images!==undefined){
+        try { if(envelope.data.version < 3) throw new Error(); images=parseImages(save.images,state); }
+        catch { return {ok:false,title,error:'图片资源或关联校验失败，本份存档未导入。',code:'IMAGE_BACKUP'}; }
+      }
+      return { ok: true, ...(images?{images}:{}), title: state.title, state, ...(draft ? { draft } : {}), ...(dropped ? { draftDropped: dropped } : {}),
+        ...(theaters ? { theaters } : {}) };
     } catch (error) {
       const code = error instanceof DataError ? error.code : 'CORRUPT_SAVE';
+      if (error instanceof DataError && code.startsWith('PHONE_'))
+        return { ok: false, title, code, error: error.message };
       const message = code === 'FUTURE_VERSION'
         ? '这份存档来自更新的游戏版本，请先更新游戏再导入。'
         : code === 'UNSUPPORTED_VERSION' ? '这份存档版本太旧，当前程序无法读取。' : '这份存档的内容已损坏，无法导入。';

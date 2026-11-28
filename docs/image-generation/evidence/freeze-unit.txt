@@ -1,0 +1,87 @@
+
+ RUN  v5.0.5 /workspace/HeiJinWangChao
+
+ ✓ src/tests/save-backup-upgrade.test.ts > 备份导入的旧客户端连接边界 > 升级不改五个仓库；真正 V3 删除器失效，同 ID 同 revision 的导入及草稿完整保留，新版重载后可正常删除 193ms
+ ✓ src/tests/save-backup-upgrade.test.ts > 备份导入的旧客户端连接边界 > 旧删除器在升级之前仍按原逻辑工作，防止夹具退化成永远拒绝 9ms
+ ✓ src/tests/save-backup-upgrade.test.ts > 备份导入的旧客户端连接边界 > 不释放的 V3 连接阻塞升级，不能得到导入仓库；原记录不变，关闭旧连接后重试成功且无连接泄漏 13ms
+ ✓ src/tests/save-backup-upgrade.test.ts > 备份导入的旧客户端连接边界 > 升级事务中止保持 V3 与五仓库原始记录，之后可重新升级 52ms
+ ✓ src/tests/save-backup-upgrade.test.ts > 备份导入的旧客户端连接边界 > 已经排队的 V3 写入完成后才完成升级，不丢失升级前的最后一次修改 5ms
+ ✓ src/tests/save-backup-upgrade.test.ts > 备份文件名清理全部 ASCII 控制字符和非法符号，保留中文及日期格式 1ms
+ ✓ src/tests/image-generation.test.ts > 后端协议（Mock） > openai 单次生成及原生响应 102ms
+ ✓ src/tests/image-generation.test.ts > 后端协议（Mock） > sd 单次生成及原生响应 7ms
+ ✓ src/tests/image-generation.test.ts > 后端协议（Mock） > novelai 单次生成及原生响应 56ms
+ ✓ src/tests/image-generation.test.ts > 后端协议（Mock） > comfy 单次生成及原生响应 4ms
+ ✓ src/tests/image-generation.test.ts > 后端协议（Mock） > 拒绝非位图和超限 ZIP，文本错误不回显密钥，探测只读 9ms
+ ✓ src/tests/image-generation.test.ts > 旧版文生图配置保留用户设置并补齐居家照模板 22ms
+ ✓ src/tests/unreadable-saves.test.ts > unreadable saves stay individually manageable > distinct compound keys cannot share a display/React identity through punctuation in strings 42ms
+ ✓ src/tests/unreadable-saves.test.ts > unreadable saves stay individually manageable > lists two readable records and one unsupported record without mutating any data 96ms
+ ✓ src/tests/unreadable-saves.test.ts > unreadable saves stay individually manageable > uses a generic title for malformed metadata, without hiding the physical key 1ms
+ ✓ src/tests/unreadable-saves.test.ts > unreadable saves stay individually manageable > database read errors remain errors, never empty or unreadable save cards 6ms
+ ✓ src/tests/unreadable-saves.test.ts > unreadable saves stay individually manageable > a damaged GameState keeps safe metadata and cannot be loaded or mutated normally 9ms
+ ✓ src/tests/unreadable-saves.test.ts > unreadable saves stay individually manageable > listing unsupported test data marks its card unreadable without migration 6ms
+ ✓ src/tests/unreadable-saves.test.ts > unreadable saves stay individually manageable > unavailable database rejects instead of returning an empty list 1ms
+ ✓ src/tests/unreadable-saves.test.ts > unreadable saves stay individually manageable > a record-level parser exception is isolated, while new saves can still be created and played 12ms
+ ✓ src/tests/unreadable-saves.test.ts > raw export never validates or rewrites game data > exports exact save, draft and all own receipts including unknown fields and versions 7ms
+ ✓ src/tests/unreadable-saves.test.ts > raw export never validates or rewrites game data > absent related records remain absent; a missing save fails explicitly 3ms
+ ✓ src/tests/unreadable-saves.test.ts > raw export never validates or rewrites game data > cannot silently convert or discard non-JSON values (Wed Jan 01 2020 08:00:00 GMT+0800 (China Standard Time)) 2ms
+ ✓ src/tests/unreadable-saves.test.ts > raw export never validates or rewrites game data > cannot silently convert or discard non-JSON values (Map { 'x' => 1 }) 2ms
+ ✓ src/tests/unreadable-saves.test.ts > raw export never validates or rewrites game data > cannot silently convert or discard non-JSON values (Infinity) 1ms
+ ✓ src/tests/unreadable-saves.test.ts > raw export never validates or rewrites game data > cannot silently convert or discard non-JSON values (12n) 2ms
+ ✓ src/tests/unreadable-saves.test.ts > raw export never validates or rewrites game data > preserves existing draft undefined properties in explicit export metadata, without inventing null values 1ms
+ ✓ src/tests/unreadable-saves.test.ts > raw export never validates or rewrites game data > cyclic corruption explicitly fails JSON export, but still permits targeted deletion 4ms
+ ✓ src/tests/unreadable-saves.test.ts > raw export never validates or rewrites game data > a failed read of any associated store fails the entire export without writes 4ms
+ ✓ src/tests/unreadable-saves.test.ts > targeted unreadable deletion stays atomic > deletes only the chosen record and related draft/receipts, surviving database reopen 28ms
+ ✓ src/tests/unreadable-saves.test.ts > targeted unreadable deletion stays atomic > uses the physical key even when not a domain ID (42) 3ms
+ ✓ src/tests/unreadable-saves.test.ts > targeted unreadable deletion stays atomic > uses the physical key even when not a domain ID (invalid) 6ms
+ ✓ src/tests/unreadable-saves.test.ts > targeted unreadable deletion stays atomic > uses the physical key even when not a domain ID (not a valid / GameState ID) 3ms
+ ✓ src/tests/unreadable-saves.test.ts > targeted unreadable deletion stays atomic > refuses deletion if a selected unreadable record has become readable before confirmation 5ms
+ ✓ src/tests/unreadable-saves.test.ts > targeted unreadable deletion stays atomic > failure at drafts rolls back every delete 8ms
+ ✓ src/tests/unreadable-saves.test.ts > targeted unreadable deletion stays atomic > failure at turnReceipts rolls back every delete 5ms
+ ✓ src/tests/unreadable-saves.test.ts > targeted unreadable deletion stays atomic > failure at saves rolls back every delete 3ms
+ ✓ src/tests/unreadable-saves.test.ts > targeted unreadable deletion stays atomic > normal deletion retains its existing revision guard and also removes receipts 4ms
+ ✓ src/tests/unreadable-saves.test.ts > targeted unreadable deletion stays atomic > never uses a misleading payload saveId instead of the actual IndexedDB primary key 9ms
+ ✓ src/tests/image-generation.test.ts > 存档附属资源 > 同名隔离、锚点、槽位、去重和备份覆盖确认 112ms
+ ✓ src/tests/image-generation.test.ts > 存档附属资源 > 回溯标记历史、同名新 ID 不接管、相册只引用已有图片 13ms
+ ✓ src/tests/image-generation.test.ts > 存档附属资源 > 四种人物用途各自保存当前图、历史和备份；家庭退出后资源可导出、删除 56ms
+ ✓ src/tests/image-generation.test.ts > 存档附属资源 > 空间不足回滚文件与元数据 3ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > ordinary 等待期间错过关停与重启通知，取得执行锁时仍停止旧任务 163ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > special 等待期间错过关停与重启通知，取得执行锁时仍停止旧任务 118ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 新建完整结构，已有完整 V8 可重新打开且保留全部记录 28ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > V7 升级保留现有数据并在升级事务补齐图片结构（已有部分图片仓库 false） 12ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > V7 升级保留现有数据并在升级事务补齐图片结构（已有部分图片仓库 true） 7ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 同版本异常 imageCollections 明确拒绝并释放连接，所有剩余记录原样保留 6ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 同版本异常 imageFiles 明确拒绝并释放连接，所有剩余记录原样保留 5ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 同版本异常 imageJobs 明确拒绝并释放连接，所有剩余记录原样保留 3ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 同版本异常 imageVersions 明确拒绝并释放连接，所有剩余记录原样保留 23ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 同版本异常 imageFiles.saveId 明确拒绝并释放连接，所有剩余记录原样保留 4ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 同版本异常 imageJobs.saveId 明确拒绝并释放连接，所有剩余记录原样保留 4ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 同版本异常 imageJobs.subject 明确拒绝并释放连接，所有剩余记录原样保留 4ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 同版本异常 wrong index 明确拒绝并释放连接，所有剩余记录原样保留 4ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 同版本异常 wrong primary key 明确拒绝并释放连接，所有剩余记录原样保留 4ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 同版本异常 all stores 明确拒绝并释放连接，所有剩余记录原样保留 3ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 升级中遇到不兼容的旧图片主键时回滚整个升级，V7 记录可重新打开 3ms
+ ✓ src/tests/image-storage-upgrade.test.ts > 图片数据库 V8 的打开和升级 > 旧标签阻塞 V7 升级时返回提示；关闭旧连接后可重试并保留记录 4ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > item 等待期间错过关停与重启通知，取得执行锁时仍停止旧任务 114ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > story 等待期间错过关停与重启通知，取得执行锁时仍停止旧任务 123ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > 跨进程显示缓存仍旧时以事务记录为准，缓存写满则回滚并可重试 8ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > 同字段的过期写入在事务内被拒绝，保留已提交的值 5ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > player 仅向图片后端提供目标资料 37ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > npc 仅向图片后端提供目标资料 8ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > place 仅向图片后端提供目标资料 13ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > item 仅向图片后端提供目标资料 18ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > vehicle 仅向图片后端提供目标资料 10ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > 启用转换后只调用文本和图片接口各一次，图片使用转换后的提示词 14ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > 缺失同期快照的旧剧情只发送当时正文及场景，不发送当下年龄、外貌和锚点 37ms
+ ✓ src/tests/image-generation.test.ts > 任务费用与队列状态（Mock） > 转换失败仅请求文本一次，超时或取消不自动重发 12ms
+ ✓ src/tests/image-generation.test.ts > 正式撤回和历史节点覆盖保留原图，禁止旧任务越过存档实例 230ms
+
+ Test Files  4 passed (4)
+      Tests  73 passed (73)
+   Start at  11:29:25
+   Duration  2.85s (import 34%, transform 33%, tests 32%, worker 1%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.3
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.3
+npm notice To update run: npm install -g npm@12.2.3
+npm notice

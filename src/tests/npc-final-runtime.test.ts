@@ -1,3 +1,5 @@
+import { checkEntityCommands } from '../domain/entityCandidate';
+import { stageFixtureReply } from './fixtures/variableReply';
 import { afterEach, expect, it, vi } from 'vitest';
 import { resolveCatalogRefs } from '../services/validation/catalogCompaction';
 import { IDBFactory } from 'fake-indexeddb';
@@ -40,6 +42,7 @@ async function setup(raw: unknown, name: string) {
   await repo.saveDraft(initial, null);
   const config = defaultAiConfig(), channel = newChannel(); channel.defaultModel = 'story'; config.channels = [channel];
   config.routes.story = { channelId: channel.id, modelId: 'story' };
+  config.routes.entities = {mode:'independent',channelId:channel.id,modelId:'entities'};
   config.routes.variables = { mode: 'independent', channelId: channel.id, modelId: 'variables' };
   config.routes.world = { mode: 'independent', channelId: channel.id, modelId: 'world' };
   const data = new Map<string, string>(), store = { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => { data.set(k, v); }, removeItem: (k: string) => { data.delete(k); } };
@@ -64,7 +67,7 @@ it('百回合世界继续四轮：建档/改名/升级/离场任务结案/重逢
   const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
     const body = JSON.parse(String(init?.body)), stage = String(body.model); calls.push(stage);
     const context = sentContext(body.messages), state = await a.repo.load('save-a'), draft = (await a.repo.loadDraft('save-a'))!;
-    const projected = stage === 'world' ? projectTurn(state, draft) : state;
+    const projected = stage === 'world' ? projectTurn(state, draft) : stage === 'variables' && draft.entities ? checkEntityCommands(state,draft,draft.entities.contactedNpcIds,draft.entities.result.commands) : state;
     expectWorldWithNpcProjection(context, projected, state.revision);
     expect(context.NPC_KNOWLEDGE).toBeUndefined(); expect(context.SCENE_NPCS).toBeUndefined();
     if (round === 3) {
@@ -73,7 +76,7 @@ it('百回合世界继续四轮：建档/改名/升级/离场任务结案/重逢
     }
     if (stage === 'story') return new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: `<thinking>承接正式人物经历。</thinking><正文>${stories[round]}</正文><短期记忆>合作与个人经历持续发展。</短期记忆><变量规划>[]</变量规划>` } }] })}\n\ndata: [DONE]\n\n`, { headers: { 'content-type': 'text/event-stream' } });
     const now = record(context.SAVE_STATE).worldClock as string;
-    if (stage === 'variables') {
+    if (stage === 'entities' || stage === 'variables') {
       const lines = [textLine('worldClock', new Date(Date.parse(now) + 60000).toISOString())];
       if (round === 0) {
         const { id, ...fields } = npc('guest'); void id;
@@ -83,11 +86,12 @@ it('百回合世界继续四轮：建档/改名/升级/离场任务结案/重逢
         textLine('npc[guest].privateProfile', fullPrivateProfile), textLine('npc[guest].name', '林知遥'), textLine('npc[guest].aliases', ['林遥']), textLine('npc[guest].identity', '项目协调'),
         textLine('npc[guest].affinityChange', { to: 42, reason: '一起完成资料核验，对主角的可靠有了实感', relationshipText: '逐渐建立合作信任' }), memoryLine('guest', '接任协调职责，准备独立核验清单。'), textLine('npc[guest].onScene', false));
       if (round === 3) lines.push(textLine('npc[guest].onScene', true), textLine('npc[guest].affinityChange', { to: 48, reason: '主角在交接中守住承诺', relationshipText: '经过合作更为信任' }), memoryLine('guest', '返回工作室，说明核验结果已确认。'));
-      return reply(variables(lines));
+      return reply(stageFixtureReply(stage,variables(lines)));
     }
     const world = emptyWorld();
     if (round === 1) {
-      expect(record(context.PROTECTED_SCENE).sceneNpcIds).not.toContain('guest');
+      expect(record(context.PROTECTED_SCENE).sceneNpcIds).toContain('guest');
+      expect(record(context.OFFSCREEN_STATE).taskNpcIds).toContain('guest');
       world.taskCommands.push({ type: 'SaveTask', commandId: 'start-check', evidence: '离场独立处理工作', task: { id: 'guest-check', actorRef: { kind: 'npc', id: 'guest' }, goal: '核验社区合作清单', startAt: now, dueAt: new Date(Date.parse(now) + 3600000).toISOString(), status: 'active', prerequisites: [], blockers: [] } });
       world.eventCommands.push({ type: 'SaveEvent', commandId: 'start-cooperation', evidence: '共同安排后续合作', event: { id: 'cooperation', title: '清单核验合作', backgroundText: '社区合作需要核验资料', goalText: '核实清单', status: 'active', startAt: now, estimatedEndAt: new Date(Date.parse(now) + 3600000).toISOString(), actorRefs: [{ kind: 'npc', id: 'guest' }], linkedTaskIds: ['guest-check'], prerequisites: [], blockers: [], visibility: 'hidden', impact: 'minor', sourceTurnIds: [draft.turnId] } });
     }
@@ -120,7 +124,7 @@ it('百回合世界继续四轮：建档/改名/升级/离场任务结案/重逢
   const undo = await a.repo.undoTurn({ saveId: 'save-a', expectedRevision: final.revision, expectedDraft: draft, operationId: 'undo-reunion' });
   expect(undo.input).toBe('继续社区合作'); expect(undo.state.npc.guest.onScene).toBe(false); expect(undo.state.npc.guest.memories).toHaveLength(3);
   expect(undo.state.tasks['guest-check'].status).toBe('completed'); expect(undo.state.npc.guest).toMatchObject({ privateProfile: fullPrivateProfile });
-  expect(calls).toEqual(Array.from({ length: 4 }, () => ['story', 'variables', 'world']).flat());
+  expect(calls).toEqual(Array.from({ length: 4 }, () => ['story','entities','variables','world']).flat());
 }, 30000);
 
 it('V10真实读档→Runtime继续→Commit→旧快照按需恢复，来源与七字段不丢失', async () => {
@@ -129,6 +133,7 @@ it('V10真实读档→Runtime继续→Commit→旧快照按需恢复，来源与
   const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
     const body = JSON.parse(String(init?.body)), context = sentContext(body.messages);
     if (body.model === 'story') return stream('<thinking>保持既有经历。</thinking><正文>【旁白】主角整理当日工作，人物各自继续生活。</正文><短期记忆>继续工作。</短期记忆><变量规划>[]</变量规划>');
+    if (body.model === 'entities') return reply(variables([]));
     if (body.model === 'variables') return reply(variables([textLine('worldClock', new Date(Date.parse(record(context.SAVE_STATE).worldClock as string) + 60000).toISOString())]));
     return reply(JSON.stringify(emptyWorld()));
   });
@@ -142,9 +147,9 @@ it('V10真实读档→Runtime继续→Commit→旧快照按需恢复，来源与
   await rawStore(a.factory, a.name, 'saveControls', s => s.put(control));
   const reopened = await SaveRepository.open(a.name, a.factory); closed.push(() => reopened.close());
   const restored = await reopened.undoTurn({ saveId: 'save-a', expectedRevision: committed.state.revision, expectedDraft: committed.draft, operationId: 'old-restore' });
-  expect(restored.state.schemaVersion).toBe(10); expect(restored.state.npc).toEqual(baseline.npc); expect(restored.state.memories).toEqual(baseline.memories);
+  expect(restored.state.schemaVersion).toBe(11); expect(restored.state.npc).toEqual(baseline.npc); expect(restored.state.memories).toEqual(baseline.memories);
   expect(restored.state.journal).toEqual(baseline.journal); expect(restored.state.worldClock).toBe(baseline.worldClock);
-  expect(restored.state.npc['npc-a']).toMatchObject({ privateProfile: fullPrivateProfile }); expect(fetcher).toHaveBeenCalledTimes(3);
+  expect(restored.state.npc['npc-a']).toMatchObject({ privateProfile: fullPrivateProfile }); expect(fetcher).toHaveBeenCalledTimes(4);
   expect((await reopened.exportRaw('save-a')).records.turnUndo).toHaveLength(0);
 }, 15000);
 
@@ -187,9 +192,9 @@ it('姓名/别名/职业仅Variables正常更新；稳定身份不可赋值，�
       npcId: 'other', changes: { [field]: field === 'aliases' ? ['新别名'] : '新资料' }, evidence: '场外提议' });
     expect(() => parseWorld(JSON.stringify(world), a.state, draft)).toThrow();
   }
-  for (const stage of ['story', 'variables', 'world'] as const) {
+  for (const stage of ['story', 'entities', 'variables', 'world'] as const) {
     const prompt = await composePrompt({ settings: a.settings, draft, state: a.state, stage, mode: 'regular', userInput: draft.userInput });
-    if (stage === 'variables') {
+    if (stage === 'entities') {
       const catalog = record(prompt.context.TEXT_COMMAND_CATALOG), entries = catalog.entries as { path: string }[];
       for (const field of ['name', 'aliases', 'identity']) expect(entries.some(e => e.path === `npc[id].${field}`)).toBe(true);
     }

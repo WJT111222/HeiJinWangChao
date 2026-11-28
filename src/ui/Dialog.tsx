@@ -154,8 +154,8 @@ export function Dialog({
         }
       }}
       onCancel={(event) => {
-        // React bubbles cancel from a nested native candidate dialog. Only its owner closes.
-        if (!desktop && event.target !== event.currentTarget) return;
+        // React bubbles cancel from nested native dialogs. Only its owner closes.
+        if (event.target !== event.currentTarget) return;
         event.preventDefault();
         close.current();
       }}

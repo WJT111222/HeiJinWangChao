@@ -50,7 +50,7 @@ describe('创角数据、旧草稿、开局包 T03–T08', () => {
     expect(newCreation()).not.toHaveProperty('talentId');
     const form = talentForm();
     const state = buildCreationState(form, defaultSettings());
-    expect(state.schemaVersion).toBe(10); expectTalent(state.protagonist);
+    expect(state.schemaVersion).toBe(11); expectTalent(state.protagonist);
     const pending = { ...form, worldClock: newCreation().worldClock, openingTimePending: true as const };
     expect(buildCreationState(pending, defaultSettings()).openingTimePending).toBe(true);
   });

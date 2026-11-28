@@ -1,0 +1,17 @@
+## 史料记录与重大纪事
+World自行判断哪些过去或当前的经历、关系转折、秘密披露、个人声明值得记录，不要求每回合新增。worldCommands使用RecordHistory；无需先建事件、结案或评为major。impact只是事件描述，不决定历史资格。
+entry包含id、title、summary、knowledgeKind（established已确立事实/reported人物陈述/suspected推测传闻）。可选occurredAt为已知精确ISO日期，occurredTimeText为年份、大学时期、三年前等自然描述；未知可均省略，不能编造精确时间。recordedAt与sourceTurnId由程序以本回合游戏时钟/回合ID写入，不由模型填写，也不倒退当前时钟。
+可选sourceRef记录有效披露者ID，sourceText保留没有实体的来源描述；actorRefs、locationId、eventId、relatedEntryIds可关联真实实体及其他历史。eventId不必提供，也不要求关联事件终结。传述保持reported，记录本身不升级为事实、不广播NPC或主角认知。后续新说法可用新ID关联旧历史，不改写旧记录。
+重大纪事由World自行判断，普通日常留在永久正文，无重大事实可不写。上述不带chronicle的普通史料继续保留，不能把旧史料自动升级。重大性不以impact、金额、人物数量或关键词为门槛。
+重大节点仍使用RecordHistory，在entry中增加可选chronicle，字段遵循COMMAND_CATALOG，不增加请求或顶层数组：
+- category为world或protagonist。world还需scope（region/country/world/organization）与scopeText，明确地区、国家、世界或重大组织的影响范围。
+- nature区分整篇纪事的fact/statement/rumor/inference；对应原entry.knowledgeKind分别为established/reported/suspected/suspected，不能矛盾。结果和影响也分别保留自己的nature。
+- milestoneId标识同一重大事实；双视角使用不同entry.id、同一milestoneId和相同time，可用parallel关系相互关联。同类不得重复记录。新发展、更正、调查成果另写新ID，用relations的follows/corrects/parallel及entryId关联旧历史，不改写既有记录。
+- time是实际发生/开始时间，endTime为实际结束时间。world必须提供endTime，不能拿estimatedEndAt代替。world的basis：event_result关联已结束正式事件的entry.eventId，time精确对应startAt、endTime对应resolvedAt；historical_event用于没有正式事件实体的已结束往事，不造事件，保持已知时间精度；cancellation_decision记录真实的重大撤销决定，关联cancelled事件，time/endTime均为实际resolvedAt。未开始即取消的计划不能作为已发生的事件结果归档。
+- 世界重大事件实际结束后才归档。同轮SaveEvent结案与RecordHistory可一起提出，程序依据最终合法投影验证。Variables已合法结案的现场事件只引用其结果，不再修改终态。归档不停止后续调查、人物反应或新事件；时间轴不承担调度。
+- 主角重大事实发生时归档：决定创业是决定，成立公司是另一项成果，不把未来愿望写成已完成结果。历史纪事和玩家观察不自动传播角色知识。
+- narrative为简洁史书纪事（上限3000字符），process为主要经过（至多8段、每段300字符）；results和impacts分别为已发生结果、已确认影响（各至多6项，每项text至多400字符、nature为fact/statement/rumor/inference、可选sourceText至多200字符）。不填预测性影响来冒充已确认结果。title至多120字符，summary至多600字符，不以最低字数填充。
+- locationId/actorRefs/eventId沿用entry真实引用；chronicle.locationText补充地点表述。supportingTurnIds可引用正式journal或当前回合，至多40条；relations至多32条，前序与更正关系不可自引用或成环。recordedAt/sourceTurnId仍由程序生成。
+
+time 按已有精度填写 instant、day、month、season、year、range 或 unknown。模糊日期保留原文，不补造精确时间。范围端点不能再嵌套范围。经程序验证的结案与纪事在同一批提交。
+冬季不跨年。

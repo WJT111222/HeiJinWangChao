@@ -1,3 +1,4 @@
+import { projectTurn } from '../domain/turnProjection';
 import { stageResponses } from '../services/ai/stageResponses';
 import { DataError } from '../domain/common';
 import { fingerprint } from '../domain/commands';
@@ -28,6 +29,7 @@ export class VariableStage {
     private repository: Pick<SaveRepository, 'load' | 'loadDraft' | 'saveDraft' | 'prepareWorldview'>,
     private client = new AiClient(),
     private guard = new StageGuard(),
+    private stage: 'entities' | 'variables' = 'variables',
   ) {}
   cancel() {
     return this.guard.cancel();
@@ -45,6 +47,7 @@ export class VariableStage {
     onDraft?: (draft: TurnDraft) => void;
     onProgress?: (phase: 'generating' | 'saving') => void;
   }): Promise<TurnDraft> {
+    const stage = this.stage;
     let step: VariableStep = 'context';
     try {
     const expected = TurnDraftSchema.parse(input.draft);
@@ -52,7 +55,7 @@ export class VariableStage {
       const settings = SettingsSchema.parse(input.settings),
         config = AiConfigSchema.parse(input.config);
       const secrets = config.channels.map((channel) => input.vault.get(channel.id)).filter(Boolean);
-      if (!settings.runtime.useVariableStage) throw new AiError('configuration');
+      if (!(stage === 'entities' ? settings.runtime.useEntityStage : settings.runtime.useVariableStage)) throw new AiError('configuration');
       step = 'load';
       const [state, current] = await Promise.all([
         this.repository.load(expected.saveId),
@@ -71,14 +74,16 @@ export class VariableStage {
         throw new AiError('configuration');
       // 配置/凭证不完整时不清空已有候选。真实请求仍由 runtime 生成其不可变快照。
       step = 'context';
-      requestSnapshot(config, 'variables', input.vault);
+      requestSnapshot(config, stage, input.vault);
       // 每次手动启动都是显式尝试。正文/输入不变，清除旧变量及其世界依赖。
       const lease = await this.repository.prepareWorldview(current, true, input.expectedInstance);
       attempt.check();
-      const started = startStageAttempt(current, ['variables'], {
-        useVariableStage: true,
+      const started = startStageAttempt(current, [stage], {
+        useEntityStage: settings.runtime.useEntityStage, useVariableStage: settings.runtime.useVariableStage,
         useWorldStage: settings.runtime.useWorldStage,
       });
+      if (stage === 'variables' && started.useEntityStage && !started.entities)
+        throw new AiError('candidate_conflict');
       step = 'draft_start';
       const draft = await this.repository.saveDraft(started, current.draftRevision, attempt.signal, current, lease);
       attempt.check();
@@ -86,12 +91,12 @@ export class VariableStage {
       let responseInspectionId: string | undefined;
       try {
         input.onProgress?.('generating');
-        const selection = selectVariableDomains(state, draft);
+        const selection = selectVariableDomains(state, draft, stage);
         step = 'request';
         const response = await runStageRequest(
           {
-            stage: 'variables',
-            worldview:lease.worldview, mode: draft.turnKind,
+            stage,
+            worldview: lease.worldview, mode: draft.turnKind,
             state,
             draft,
             userInput: draft.userInput,
@@ -101,7 +106,7 @@ export class VariableStage {
           },
           config,
           input.vault,
-          { signal: attempt.signal, stream: settings.runtime.streamVariables },
+          { signal: attempt.signal, stream: stage === 'entities' ? settings.runtime.streamEntities : settings.runtime.streamVariables },
           this.client,
         );
         responseInspectionId = response.responseInspectionId;
@@ -112,14 +117,17 @@ export class VariableStage {
           basis.turnId !== draft.turnId ||
           basis.baseSaveRevision !== draft.baseSaveRevision ||
           basis.draftRevision !== draft.draftRevision ||
+          (stage === 'variables' && basis.basedOnEntityRevision !== draft.entities?.candidateRevision) ||
           basis.storyRevision !== draft.storyRevision ||
           basis.executionRevision !== draft.executionRevision ||
-          basis.stageRequestRevision !== draft.stageRequestRevisions.variables
+          basis.stageRequestRevision !== draft.stageRequestRevisions[stage]
         )
           throw new AiError('candidate_conflict');
         step = 'simulation';
-        const result = VariableResultSchema.parse(response.result);
-        const serialized = JSON.stringify(result);
+        const { contactedNpcIds, ...payload } = response.result && 'contactedNpcIds' in response.result
+          ? response.result : { ...response.result, contactedNpcIds: undefined };
+        const result = VariableResultSchema.parse(payload);
+        const serialized = JSON.stringify({result, contactedNpcIds});
         if (
           secrets.some((secret) =>
             [secret, encodeURIComponent(secret)].some((value) =>
@@ -131,18 +139,20 @@ export class VariableStage {
         const next = TurnDraftSchema.parse({
           ...draft,
           draftRevision: draft.draftRevision + 1,
-          variables: {
+          [stage]: {
+            ...(stage === 'entities' ? { contactedNpcIds } : { basedOnEntityRevision: draft.entities?.candidateRevision }),
             storyRevision: draft.storyRevision,
             candidateRevision: Math.max(
-              (current.variables?.candidateRevision ?? 0) + 1,
+              (current[stage]?.candidateRevision ?? 0) + 1,
               draft.executionRevision,
             ),
-            requestRevision: draft.stageRequestRevisions.variables,
-            validation: 'validated',
+            requestRevision: draft.stageRequestRevisions[stage],
+            validation: stage === 'entities' ? 'structural' : 'validated',
             result,
           },
-          stageStatus: { ...draft.stageStatus, variables: 'ready' },
+          stageStatus: { ...draft.stageStatus, [stage]: 'ready' },
         });
+        if (stage === 'entities' && !next.useVariableStage) projectTurn(state, next);
         attempt.saving();
         input.onProgress?.('saving');
         step = 'candidate_save';
@@ -159,11 +169,11 @@ export class VariableStage {
           const failed = TurnDraftSchema.parse({
             ...draft,
             draftRevision: draft.draftRevision + 1,
-            stageStatus: { ...draft.stageStatus, variables: 'failed' },
+            stageStatus: { ...draft.stageStatus, [stage]: 'failed' },
             failures: [
               ...draft.failures,
               {
-                stage: 'variables',
+                stage,
                 attempt: draft.executionRevision,
                 storyRevision: draft.storyRevision,
                 errorCode: safe.code,

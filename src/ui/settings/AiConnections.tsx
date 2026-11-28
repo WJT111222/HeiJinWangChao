@@ -1,16 +1,19 @@
 import { credentialScope } from '../../services/ai/compatibleEndpoints';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
-  AiConfigSchema,
+  aiConfigKey, AiConfigSchema,
   defaultAiConfig,
   newChannel,
   readAiConfig,
   saveAiConfig,
+  setModelRouteFollow, removeChannel, routeDefaults, followTargets,
 } from '../../services/ai/configuration';
-import type { AiConfig, AiTask, Channel, Protocol } from '../../services/ai/configuration';
+import type { SettingsPage } from './settingsPages';
+import type { ModelRoute, Channel, Protocol } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
+import { AiConfigConflict, AiSaveFailure, AiReloadRequired, LegacyReceiptConflict, readLatestAiSettings, effectiveRouteModel, mergeAiDraft, storedDraft, withAiSaveLock, type AiDraft as Draft } from './aiDraftMerge';
 import type { VaultSnapshot } from '../../services/ai/credentials';
-import { channelSnapshot } from '../../services/ai/snapshot';
+import { channelSnapshot, selectedModelRoute } from '../../services/ai/snapshot';
 import { AiClient } from '../../services/ai/client';
 import { safeAiError } from '../../services/ai/errors';
 import { ThemedSelect } from '../components/ThemedSelect';
@@ -19,63 +22,74 @@ import { Feedback, useDesktopFeedback } from '../Feedback';
 import type { FeedbackLevel } from '../Feedback';
 import { Dialog } from '../Dialog';
 import { OutputTokenLimit } from './OutputTokenLimit';
-import { detectPreset, presetById, presets, protocolNames, validEndpoint } from './aiPresets';
+import { presetById, presets, protocolNames, validEndpoint } from './aiPresets';
 import type { PresetId } from './aiPresets';
 import './ai-connections.css';
-import { relayMode, setRelayMode } from '../../services/ai/corsRelay';
 
-const stages: [AiTask, string, string][] = [
-  ['story', '正文生成', '写剧情，最需要好模型'],
-  ['variables', '变量管理', '整理金钱、物品、关系'],
-  ['world', '动态世界', '推进你不在场的世界'],
-  ['memory', '记忆维护', '定期整理长期记忆'],
+const stages: [ModelRoute, string, string, string][] = [
+  ['story', '正文生成', '写剧情，最需要好模型', '每回合 1 次'],
+  ['entities', '人物与实体', '记录人物、组织、地点和关系', '每回合 1 次'],
+  ['variables', '主角与现场', '记录主角的钱、物、时间和当场事务', '每回合 1 次'],
+  ['world', '场外与网络', '推进你不在场的世界、来信与话题', '每回合 1 次'],
+  ['phone', '私聊回复', '扮演 NPC 回复你的消息', '每发一条 1 次'],
+  ['phoneGroup', '群聊回复', '先定谁回，再逐人回复；建群和邀请也用它', '每条群消息调度 1 次，另加每位回复者 1 次；建群、邀请按人数各 1 次'],
+  ['blackbook', '小黑书刷新', '把话题展开成帖子、评论和楼中楼', '每次展开未缓存话题 1 次'],
+  ['memory', '记忆总结', '短期、中期和人物记忆的定期整理', '达到阈值时每批 1 次'],
+  ['theater', '小剧场', '新建小剧场时带入，每篇仍可另选', '每次生成 1 次'],
+  ['imagePrompt', '生图提示词', '把剧情写成画面描述，再交给图片接口', '开启转化器时每张图 1 次'],
 ];
-const short: Record<AiTask, string> = { story: '正文', variables: '变量', world: '动态世界', memory: '记忆' };
-type Optional = Exclude<AiTask, 'story'>;
-interface Draft { config: AiConfig; keys: Record<string, string>; remember: Record<string, boolean>; presets: Record<string, PresetId | ''> }
+const routingGroups = [['主线回合', stages.slice(0, 4)], ['手机', stages.slice(4, 7)], ['记忆', stages.slice(7, 8)], ['扩展功能', stages.slice(8)]] as const;
+const short: Record<ModelRoute, string> = { story: '正文', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', memory: '记忆总结', phone:'私聊', phoneGroup: '群聊', blackbook:'小黑书', theater:'小剧场', imagePrompt:'生图提示词' };
+type Optional = Exclude<ModelRoute, 'story'>;
 type TestState = { model: string; status: 'loading' | 'ok' | 'err'; text: string };
 
 function memoryStore() {
   const data = new Map<string, string>();
   return { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); }, removeItem: (key: string) => { data.delete(key); } };
 }
-function initial(): { draft: Draft; vault?: CredentialVault; notice: string } {
+function readStoredSettings() {
+  const config = readAiConfig(localStorage);
+  const vault = new CredentialVault(sessionStorage, localStorage);
+  const credentials = vault.snapshot(config.channels.map(channel => channel.id));
+  return { draft: storedDraft(config, credentials), vault, credentials, notice: '' };
+}
+function initial(): { draft: Draft; credentials: VaultSnapshot; vault?: CredentialVault; notice: string } {
   try {
-    const config = readAiConfig(localStorage);
-    const vault = new CredentialVault(sessionStorage, localStorage);
-    const keys: Record<string, string> = {}, remember: Record<string, boolean> = {}, chosen: Record<string, PresetId> = {};
-    for (const channel of config.channels) {
-      keys[channel.id] = vault.get(channel.id);
-      // 已有密钥沿用原来的保存方式；还没有密钥的渠道默认记住。
-      remember[channel.id] = keys[channel.id] ? vault.remembered(channel.id) : true;
-      chosen[channel.id] = detectPreset(channel);
-    }
-    return { draft: { config, keys, remember, presets: chosen }, vault, notice: '' };
+    return readStoredSettings();
   } catch {
-    return { draft: { config: defaultAiConfig(), keys: {}, remember: {}, presets: {} }, notice: 'AI 配置或浏览器存储无法读取；原始数据未被覆盖。' };
+    return { credentials: [], draft: { config: defaultAiConfig(), keys: {}, remember: {}, presets: {} }, notice: 'AI 配置或浏览器存储无法读取；原始数据未被覆盖。' };
   }
 }
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
-export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditingChange }: {
+export function useAiSettingsDraft() {
+  const [start] = useState(initial);
+  const [saved, setSaved] = useState<Draft>(() => clone(start.draft));
+  const [draft, setDraft] = useState<Draft>(() => clone(start.draft));
+  const credentials = useRef(start.credentials);
+  const [saving, setSaving] = useState(false);
+  const [reloadReason, setReloadReason] = useState('');
+  return { credentials, start, saved, setSaved, draft, setDraft, saving, setSaving, reloadReason, setReloadReason };
+}
+export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditingChange, onChannelName, page, navigate, workspace }: {
+  workspace: ReturnType<typeof useAiSettingsDraft>;
+  page: 'channels' | 'routing';
+  navigate: (page: SettingsPage) => void;
+  onChannelName: (name: string) => void;
   timeoutSeconds: number;
   onDirtyChange?: (dirty: boolean) => void;
   editing: boolean;
   onEditingChange: (editing: boolean) => void;
 }) {
   const desktop = useDesktopFeedback();
-  const [start] = useState(initial);
-  const [saved, setSaved] = useState<Draft>(() => clone(start.draft));
-  const [draft, setDraft] = useState<Draft>(() => clone(start.draft));
-  const [selectedId, setSelectedId] = useState(start.draft.config.channels[0]?.id ?? '');
+  const { start, draft, setDraft, saved, setSaved, saving, setSaving, reloadReason, setReloadReason } = workspace;
+  const [selectedId, setSelectedId] = useState(draft.config.channels[0]?.id ?? '');
   const [showKey, setShowKey] = useState(false);
   const [urlEditing, setUrlEditing] = useState<Record<string, boolean>>({});
-  const [manual, setManual] = useState<Partial<Record<AiTask, boolean>>>({});
-  const [spinStage, setSpinStage] = useState<AiTask>();
+  const [manual, setManual] = useState<Partial<Record<ModelRoute, boolean>>>({});
+  const [spinStage, setSpinStage] = useState<ModelRoute>();
   const [tests, setTests] = useState<Record<string, TestState>>({});
   const [confirm, setConfirm] = useState<{ kind: 'delete'; id: string } | { kind: 'preset'; id: string; preset: PresetId }>();
-  const [relay, setRelay] = useState(relayMode);
-  const [secOpen, setSecOpen] = useState(false);
   const [notice, setNoticeText] = useState(start.notice);
   const [noticeLevel, setNoticeLevel] = useState<FeedbackLevel>(start.notice ? 'err' : 'info');
   const [catalog] = useState(() => new ModelCatalog());
@@ -83,6 +97,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   const active = useRef<{id: string; controller: AbortController} | undefined>(undefined);
   const { config } = draft;
   const channel = config.channels.find((item) => item.id === selectedId);
+  useEffect(() => { onChannelName(channel?.name || '新渠道'); }, [channel?.name, onChannelName]);
   function setNotice(message: string, level: FeedbackLevel = 'err') { setNoticeText(message); setNoticeLevel(level); }
 
   // —— 未保存修改计数 ——
@@ -112,14 +127,11 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   useEffect(() => () => { active.current?.controller.abort(); catalog.dispose(); }, [catalog]);
 
   // —— 路由工具 ——
-  const routeOf = (stage: AiTask) => {
-    const route = config.routes[stage];
-    return 'channelId' in route ? route : config.routes.story;
-  };
-  const follows = (stage: AiTask) => stage !== 'story' && config.routes[stage as Optional].mode === 'follow-story';
+  const routeOf = (stage: ModelRoute) => selectedModelRoute(config, stage);
+  const follows = (stage: ModelRoute) => stage !== 'story' && config.routes[stage as Optional].mode !== 'independent';
   const effectiveModel = (route: { channelId: string; modelId: string }) =>
-    route.modelId || config.channels.find((item) => item.id === route.channelId)?.defaultModel || '';
-  const usedBy = (id: string) => stages.filter(([stage]) => (follows(stage) ? config.routes.story : routeOf(stage)).channelId === id).map(([stage]) => short[stage]);
+    effectiveRouteModel(config, route);
+  const usedBy = (id: string) => stages.filter(([stage]) => !follows(stage) && routeOf(stage).channelId === id).map(([stage]) => short[stage]);
 
   // —— 阻止保存的问题（缺密钥只提醒，不阻止） ——
   const problems = useMemo(() => {
@@ -138,7 +150,6 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     }
     return list;
   }, [config, draft.presets]);
-  const warnings = config.channels.filter((item) => draft.presets[item.id] && !draft.keys[item.id]?.trim()).map((item) => `「${item.name}」还没填密钥`);
 
   // —— 修改草稿 ——
   function update(mutator: (next: Draft) => void) {
@@ -163,7 +174,7 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     const target = config.channels.find((item) => item.id === id);
     return Boolean(target && draft.presets[id] && validEndpoint(target.baseUrl) && draft.keys[id]?.trim());
   }
-  function loadModels(id: string, force = false, stage?: AiTask) {
+  function loadModels(id: string, force = false, stage?: ModelRoute) {
     const target = config.channels.find((item) => item.id === id);
     if (!target || !canLoad(id)) return;
     if (stage) setSpinStage(stage);
@@ -180,10 +191,10 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     catalog.remove(channel.id);
     if (active.current?.id === channel.id) { active.current.controller.abort(); active.current = undefined; }
     setTests((current) => { const next = { ...current }; delete next[channel.id]; return next; });
-    if (!canLoad(channel.id)) return;
+    if (reloadReason || !canLoad(channel.id)) return;
     const timer = setTimeout(() => loadModels(channel.id), 600);
     return () => clearTimeout(timer);
-  }, [selectedKey]);
+  }, [selectedKey, reloadReason]);
 
   // 打开设置本身不联网：只有改了地址或密钥、点开模型下拉、或点「获取模型」「刷新」时才读取模型列表。
 
@@ -229,19 +240,13 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   }
   function removeDraftChannel(id: string) {
     update((next) => {
-      next.config.channels = next.config.channels.filter((item) => item.id !== id);
+      next.config = removeChannel(next.config, id);
       delete next.keys[id]; delete next.remember[id]; delete next.presets[id];
-      if (next.config.routes.story.channelId === id) next.config.routes.story = { channelId: '', modelId: '' };
-      for (const [stage] of stages.slice(1)) {
-        const route = next.config.routes[stage as Optional];
-        const uses = route.mode === 'independent' ? route.channelId === id : route.independent?.channelId === id;
-        if (uses) next.config.routes[stage as Optional] = { mode: 'follow-story' };
-      }
     });
     const rest = config.channels.filter((item) => item.id !== id);
     setSelectedId(rest[0]?.id ?? ''); onEditingChange(false);
   }
-  function setRoute(stage: AiTask, values: { channelId?: string; modelId?: string }) {
+  function setRoute(stage: ModelRoute, values: { channelId?: string; modelId?: string }) {
     update((next) => {
       if (stage === 'story') next.config.routes.story = { ...next.config.routes.story, ...values };
       else {
@@ -252,63 +257,125 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     });
   }
   function setFollow(stage: Optional, follow: boolean) {
-    update((next) => {
-      const route = next.config.routes[stage];
-      if ((route.mode === 'follow-story') === follow) return;
-      if (follow) next.config.routes[stage] = route.mode === 'independent'
-        ? { mode: 'follow-story', ...(route.channelId ? { independent: { channelId: route.channelId, modelId: route.modelId } } : {}) }
-        : route;
-      else {
-        // 恢复上次单独指定的渠道和模型；没有的话留空，让玩家先选渠道再选模型，不默默沿用正文的。
-        const kept = route.mode === 'follow-story' ? route.independent : undefined;
-        next.config.routes[stage] = { mode: 'independent', ...(kept?.channelId ? kept : { channelId: '', modelId: '' }) };
-      }
-    });
+    update(next => { next.config = setModelRouteFollow(next.config,stage,follow); });
   }
 
   // —— 保存 / 放弃 ——
-  function save() {
+  const [confirmReload, setConfirmReload] = useState(false);
+  const legacyConflict = useRef<LegacyReceiptConflict | undefined>(undefined);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+  async function save() {
+    if (saving || reloadReason) return;
     if (problems.length) { setNotice(problems[0], 'warn'); return; }
     const checked = AiConfigSchema.safeParse(config);
     if (!checked.success) { setNotice('配置无效：请核对名称、HTTPS 地址、模型 ID 和生成参数；地址不能含密钥或查询参数。'); return; }
     const vault = start.vault;
     if (!vault) { setNotice('保存失败，请检查浏览器存储权限或空间后重试。'); return; }
-    const removed = saved.config.channels.filter((item) => !config.channels.some((next) => next.id === item.id)).map((item) => item.id);
-    // 快照只在本次调用的内存中持有；读取失败时，不开始任何密钥或配置写入。
-    let before: VaultSnapshot | undefined;
+    setNotice('', 'info');
+    setSaving(true);
     try {
-      before = vault.snapshot([...removed, ...checked.data.channels.map((item) => item.id)]);
-      for (const id of removed) vault.delete(id);
-      for (const item of checked.data.channels) vault.set(item.id, draft.keys[item.id] ?? '', draft.remember[item.id] ?? true);
-      saveAiConfig(localStorage, checked.data);
-    } catch {
-      if (!before) {
-        setNotice('保存失败：无法读取密钥存储，尚未写入密钥或配置。请检查浏览器存储权限后重试。');
-        return;
+      const committed = await withAiSaveLock((publish, registerUndo) => {
+        if (!mounted.current) return;
+        const latest = readAiConfig(localStorage);
+        const ids = new Set([...latest.channels, ...config.channels, ...saved.config.channels].map(item => item.id));
+        const credentials = vault.snapshot(ids);
+        const merged = mergeAiDraft(saved, draft, storedDraft(latest, credentials), workspace.credentials.current, credentials);
+        // Snapshot both physical locations before touching either. Other channels need no write or rollback.
+        const touched = new Set([...merged.remove, ...merged.write]);
+        const before = credentials.filter(item => touched.has(item.id));
+        const originalConfig = localStorage.getItem(aiConfigKey);
+        registerUndo(() => {
+          const result = vault.restore(before);
+          let configRestored = false;
+          try {
+            if (localStorage.getItem(aiConfigKey) !== originalConfig) {
+              if (originalConfig === null) localStorage.removeItem(aiConfigKey);
+              else localStorage.setItem(aiConfigKey, originalConfig);
+            }
+            configRestored = localStorage.getItem(aiConfigKey) === originalConfig;
+          } catch { /* Report an unreadable or partially restored configuration below. */ }
+          if (!result.restored) {
+            const affected = result.failedIds.map(id => latest.channels.find(item => item.id === id)?.name
+              || config.channels.find(item => item.id === id)?.name || '未命名渠道');
+            return `保存失败：浏览器存储没能完全恢复或核验，请检查密钥存储状态（${affected.join('、')}）${configRestored ? '' : '及渠道配置'}。`;
+          }
+          if (!configRestored) return '保存失败：浏览器无法恢复原配置。';
+        });
+        for (const id of merged.remove) vault.delete(id);
+        for (const id of merged.write) vault.set(id, merged.draft.keys[id], merged.draft.remember[id]);
+        saveAiConfig(localStorage, merged.draft.config);
+        publish();
+        const savedCredentials = credentials.filter(item => !touched.has(item.id)).concat(merged.write.map(id => {
+          const key = merged.draft.keys[id] || null;
+          return { id, persistent: merged.draft.remember[id] ? key : null, session: merged.draft.remember[id] ? null : key };
+        }));
+        return { merged, savedCredentials };
+      });
+      if (!committed) return;
+      const { merged, savedCredentials } = committed;
+      for (const id of merged.remove) catalog.remove(id);
+      workspace.credentials.current = savedCredentials;
+      legacyConflict.current = undefined;
+      setSaved(merged.draft); setDraft(clone(merged.draft));
+      if (!merged.draft.config.channels.some(item => item.id === selectedId)) {
+        setSelectedId(merged.draft.config.channels[0]?.id ?? ''); onEditingChange(false);
       }
-      const result = vault.restore(before);
-      if (result.restored) setNotice('保存失败，请检查浏览器存储权限或空间后重试。密钥和配置都保持原样。已核对密钥值和原存放位置，修改仍未保存。');
-      else {
-        const affected = result.failedIds.map(id => saved.config.channels.find(item => item.id === id)?.name
-          || checked.data.channels.find(item => item.id === id)?.name || '未命名渠道');
-        setNotice(`保存失败：浏览器存储没能完全恢复或核验，请检查密钥存储状态（${affected.join('、')}）。保存未完成，编辑仍未保存。`);
-      }
-      return;
-    }
-    for (const id of removed) catalog.remove(id);
-    const next = { ...clone(draft), config: checked.data };
-    setSaved(next); setDraft(clone(next));
-    setNotice(warnings.length ? `已保存。${warnings[0]}，这个渠道暂时不能使用。` : '已保存，下一次生成开始生效。', warnings.length ? 'warn' : 'ok');
+      const missing = merged.draft.config.channels.find(item => !merged.draft.keys[item.id]);
+      setNotice(missing ? `已保存。「${missing.name}」还没填密钥，这个渠道暂时不能使用。` : '已保存，下一次生成开始生效。', missing ? 'warn' : 'ok');
+    } catch (error) {
+      if (error instanceof AiReloadRequired) setReloadReason(error.message);
+      legacyConflict.current = error instanceof LegacyReceiptConflict ? error : undefined;
+      setNotice(error instanceof AiConfigConflict || error instanceof AiSaveFailure ? error.message : '保存失败：无法读取密钥存储或最新配置，尚未写入密钥或配置。请检查浏览器存储权限后重试。');
+    } finally { setSaving(false); }
   }
-  function discard() {
-    setDraft(clone(saved));
-    if (!saved.config.channels.some((item) => item.id === selectedId)) { setSelectedId(saved.config.channels[0]?.id ?? ''); onEditingChange(false); }
-    setNotice('已放弃未保存的修改。', 'info');
+  async function discard() {
+    if (legacyConflict.current) {
+      setSaving(true);
+      try {
+        await legacyConflict.current.reconcile();
+        legacyConflict.current = undefined;
+      } catch {
+        setNotice('同步标记未能核验。编辑已保留，请检查浏览器存储权限后重新读取。');
+        return;
+      } finally { setSaving(false); }
+    }
+    const current = initial();
+    if (!current.vault) { setNotice(current.notice); return; }
+    loadDraft(current);
+  }
+
+  async function confirmReadLatest() {
+    setConfirmReload(false);
+    setSaving(true);
+    try {
+      const current = await readLatestAiSettings(readStoredSettings);
+      // A confirmed read starts a fresh editor snapshot, just like reopening settings.
+      for (const id of Object.keys(lists)) catalog.remove(id);
+      savedKey.current = {};
+      active.current?.controller.abort();
+      active.current = undefined;
+      setTests({});
+      loadDraft(current);
+      setReloadReason('');
+    } catch {
+      setReloadReason('最新配置、密钥或同步标记读取失败。当前草稿已保留，请检查浏览器存储权限后重新读取。');
+    } finally { setSaving(false); }
+  }
+
+  function loadDraft(current: { draft: Draft; credentials: VaultSnapshot }) {
+    workspace.credentials.current = current.credentials;
+    setSaved(current.draft); setDraft(clone(current.draft));
+    if (!current.draft.config.channels.some((item) => item.id === selectedId)) { setSelectedId(current.draft.config.channels[0]?.id ?? ''); onEditingChange(false); }
+    setNotice('已放弃未保存的修改，已载入最新配置。', 'info');
   }
 
   // —— 测试回复（真实调用一次模型） ——
   function replyModel(id: string) {
-    const routed = stages.map(([stage]) => (follows(stage) ? config.routes.story : routeOf(stage))).find((route) => route.channelId === id && effectiveModel(route));
+    const routed = stages.map(([stage]) => routeOf(stage)).find((route) => route.channelId === id && effectiveModel(route));
     return (routed && effectiveModel(routed)) || config.channels.find((item) => item.id === id)?.defaultModel || lists[id]?.models[0] || '';
   }
   async function testReply(id: string) {
@@ -355,9 +422,10 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
   }
   const listCount = (id: string) => lists[id]?.models.length ?? 0;
 
-  function stageRow([stage, label, hint]: [AiTask, string, string]) {
+  function stageRow([stage, label, hint, frequency]: typeof stages[number]) {
     const follow = follows(stage);
-    const route = follow ? config.routes.story : routeOf(stage);
+    const source = stage === 'story' ? '' : short[followTargets[routeDefaults[stage]]];
+    const route = routeOf(stage);
     const routeChannel = config.channels.find((item) => item.id === route.channelId);
     const model = effectiveModel(route);
     const list = routeChannel ? lists[routeChannel.id] : undefined;
@@ -366,14 +434,15 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     if (model && !options.some((option) => option.value === model)) options.unshift({ value: model, label: list?.models.length ? `${model}（手动）` : model });
     return <div className={`ai-use ${follow ? 'is-follow' : ''}`} key={stage}>
       <div className="ai-use-name"><strong>{label}</strong><small>{hint}</small></div>
-      {stage === 'story' ? <div className="ai-use-seg" /> : <div className="ai-seg" role="group" aria-label={`${label}模型来源`}>
-        <button type="button" aria-pressed={follow} onClick={() => setFollow(stage as Optional, true)}>跟随正文</button>
+      <span className="ai-frequency">{frequency}</span>
+      <div className="ai-use-controls">{stage === 'story' ? <span className="ai-pill">必填</span> : <div className="ai-seg" role="group" aria-label={`${label}模型来源`}>
+        <button type="button" aria-pressed={follow} onClick={() => setFollow(stage as Optional, true)}>跟随{source}</button>
         <button type="button" aria-pressed={!follow} onClick={() => setFollow(stage as Optional, false)}>单独指定</button>
       </div>}
-      {follow ? <p className="ai-inherit">同正文 · {routeChannel?.name || '未设置'} / {model || '未选模型'}</p> : <div className="ai-route-pick">
+      {follow ? <p className="ai-inherit">跟随{source} · {routeChannel?.name || '未设置'} / {model || '未选模型'}</p> : <div className="ai-route-pick">
         <div className="ai-route-channel">
           <ThemedSelect label={`${label}渠道`} value={route.channelId}
-            hint={config.channels.length ? undefined : '还没有渠道：先关闭这里，在设置页下方「我的渠道」点「＋ 添加渠道」，填好地址和密钥后再回来选择。'}
+            hint={config.channels.length ? undefined : '请先到「渠道与密钥」添加渠道。'}
             options={[{ value: '', label: '① 选择渠道' }, ...config.channels.map((item) => ({ value: item.id, label: `${item.name || '未命名渠道'}` }))]}
             onChange={(channelId) => { if (channelId !== route.channelId) setRoute(stage, { channelId, modelId: '' }); if (channelId && !lists[channelId]) loadModels(channelId, false, stage); }} />
         </div>
@@ -387,15 +456,15 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
           title="刷新这个渠道的模型列表（不产生费用）" disabled={!routeChannel || loading || !canLoad(routeChannel.id)}
           onClick={() => routeChannel && loadModels(routeChannel.id, true, stage)}>↻</button>
         <div className="ai-route-foot">
-          {!config.channels.length && <span className="ai-hint warn">还没有渠道：先在下方「我的渠道」点「＋ 添加渠道」，填好地址和密钥后再回来选择。</span>}
-          {routeChannel && !canLoad(routeChannel.id) && <span className="ai-hint warn">这个渠道还没填好地址或密钥，先在下方补全。</span>}
+          {!config.channels.length && <span className="ai-hint warn">还没有渠道，请先到「渠道与密钥」添加渠道。</span>}
+          {routeChannel && !canLoad(routeChannel.id) && <span className="ai-hint warn">这个渠道还没填好地址或密钥，请到「渠道与密钥」补全。</span>}
           {routeChannel && list?.status === 'error' && <span className="ai-hint err" role="status">{list.message}</span>}
           <button type="button" className="ai-link" disabled={!routeChannel} aria-expanded={Boolean(manual[stage])}
             onClick={() => setManual((current) => ({ ...current, [stage]: !current[stage] }))}>列表里没有？手动填写{label}模型 ID</button>
           {manual[stage] && routeChannel && <input className="ai-manual" aria-label={`${label}模型 ID`} value={route.modelId} spellCheck={false}
             placeholder="例如 deepseek-chat" onChange={(event) => setRoute(stage, { modelId: event.target.value.trim() })} />}
         </div>
-      </div>}
+      </div>}</div>
     </div>;
   }
 
@@ -500,30 +569,29 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
     </section>;
   }
 
+  const usage = new Map<string, { model: string; count: number }>();
+  for (const [stage] of stages) {
+    const route = routeOf(stage), model = effectiveModel(route);
+    if (!route.channelId || !model) continue;
+    const key = JSON.stringify([route.channelId, model]);
+    usage.set(key, { model, count: (usage.get(key)?.count ?? 0) + 1 });
+  }
   const blocked = problems[0];
   const confirmChannel = confirm ? config.channels.find((item) => item.id === confirm.id) : undefined;
   return (
-    <div className={`ai-conn ${desktop ? 'is-desktop' : 'is-mobile'} ${!desktop && editing ? 'is-editing' : ''}`}>
-      {!(!desktop && editing) && <>
-        <p className="ai-lede">游戏优先直连你填写的服务，密钥保存在本机，不进存档。{' '}
-          <button type="button" className="ai-link" aria-expanded={secOpen} onClick={() => setSecOpen(!secOpen)}>{secOpen ? '收起' : '安全说明'}</button></p>
-        {secOpen && <Feedback className="notice ai-sec" level="info" mobileAs="p">
-          直连时密钥只发往你填写的服务；启用中转时，本站服务器也会处理密钥和请求内容。服务方和同一网站的脚本可能接触到密钥。浏览器存储不是安全的密钥库，在公共电脑上请关闭「记住密钥」。密钥不会进入游戏存档、提示词或诊断详情。请求开始时会冻结渠道、模型、参数和密钥，更改配置不影响正在执行的请求。
-        </Feedback>}
-        <section className="ai-card" aria-label="网页版跨域自动中转">
-          <h4>网页版跨域自动中转</h4>
-          <label className="toggle"><input type="checkbox" checked={relay === 'auto'} onChange={event => {
-            const mode = event.target.checked ? 'auto' : 'off';
-            try { setRelayMode(mode); setRelay(mode); }
-            catch { setNotice('未能保存中转偏好，请检查本地存储权限。'); }
-          }}/>启用跨域自动中转（推荐开启）</label>
-          <p className="field-hint">部分第三方 API 不允许网页直接读取响应。开启后，直连发生疑似跨域网络错误时，系统会通过本站服务器自动重试一次。中转不保存密钥，但服务器在转发时会处理请求内容和密钥。个别情况下可能造成重复计费，可随时关闭。</p>
-        </section>
-        <section className="ai-card ai-uses" aria-label="各阶段使用的模型">
-          <div className="ai-uses-hd"><h4>各阶段使用的模型</h4><span>先选渠道，再从这个渠道的模型里选；变量、动态世界、记忆默认跟随正文</span></div>
-          {stages.map(stageRow)}
-        </section>
-      </>}
+    <div inert={saving || undefined} className={`ai-conn ${desktop ? 'is-desktop' : 'is-mobile'} ${!desktop && editing ? 'is-editing' : ''}`}>
+      <fieldset className="ai-draft-fields" disabled={Boolean(reloadReason)}>
+      {page === 'routing' ? <>
+        <p className="ai-lede">每项 AI 任务可以跟随另一项，也可以单独指定渠道和模型。按调用频率安排：正文用好模型，次数多的任务放便宜模型。</p>
+        <section className="route-summary"><div><h4>正在使用 {usage.size} 个模型</h4>
+          {Array.from(usage, ([key, item]) => <span className="route-chip" key={key}><i/>{item.model} · {item.count} 项</span>)}</div>
+          <button type="button" onClick={() => update(next => {
+            for (const [route] of stages) if (route !== 'story') next.config = setModelRouteFollow(next.config, route, true);
+          })}>恢复默认跟随</button></section>
+        {routingGroups.map(([group, rows]) => <section className="ai-uses" key={group}><h4>{group}</h4>{rows.map(stageRow)}</section>)}
+        <h4>图片生成</h4><p>图片接口在 <button className="ai-link" onClick={() => navigate('images')}>文生图</button> 里配置。</p>
+      </> : <>
+      {(!editing || desktop) && <p className="ai-lede">游戏优先直连你填写的服务，密钥保存在本机，不进存档。请求开始时会冻结渠道、模型、参数和密钥，改配置不影响正在进行的请求。</p>}
       <div className="ai-chan-wrap">
         {(desktop || !editing) && <section className="ai-chlist" aria-label="API 渠道列表">
           <h4>我的渠道{!desktop && ' · 点开编辑'}</h4>
@@ -536,24 +604,34 @@ export function AiConnections({ timeoutSeconds, onDirtyChange, editing, onEditin
               <span className="ai-chi-s"><span className={`ai-dot is-${status.tone}`} aria-hidden="true" />
                 {status.tone === 'ok' ? `${status.title}${listCount(item.id) ? ` · ${listCount(item.id)} 个模型` : ''}` : status.tone === 'err' ? status.title : status.tone === 'loading' ? '正在连接…'
                   : !draft.presets[item.id] ? '未完成：先选服务商' : !draft.keys[item.id] ? '还没填密钥' : '尚未连接'}</span>
-              <span className="ai-chi-s">{used.length ? `用于：${used.join(' · ')}` : '暂未被任何阶段使用'}</span>
+              <span className="ai-chi-s">{used.length ? `单独用于：${used.join(' · ')}` : '暂未被任何阶段使用'}</span>
             </button>;
           })}
           <button type="button" className="ai-chi ai-add" onClick={addChannel}>＋ 添加渠道</button>
         </section>}
         {(desktop || editing) && editor()}
       </div>
+      <p className="field-hint">每项任务用哪个渠道和模型，在 <button type="button" className="ai-link" onClick={() => navigate('routing')}>模型分配</button> 里设置。AI 配置单独保存。</p></>}
+      </fieldset>
       <div className="ai-save-bar">
-        <Feedback role="status" level={notice ? noticeLevel : dirty ? 'warn' : 'info'} className="ai-save-msg" mobileAs="p">
-          {notice || (dirty ? `有 ${changeCount} 处修改尚未保存${blocked ? `；${blocked}` : ''}` : desktop ? '设置本身不会发起生成请求。' : '')}
+        <Feedback role="status" level={reloadReason ? 'err' : notice ? noticeLevel : dirty ? 'warn' : 'info'} className="ai-save-msg" mobileAs="p">
+          {reloadReason || notice || (dirty ? `有 ${changeCount} 处修改尚未保存${blocked ? `；${blocked}` : ''}` : desktop ? '设置本身不会发起生成请求。' : '')}
         </Feedback>
-        <button type="button" className="ai-btn ghost" disabled={!dirty} onClick={discard}>放弃修改</button>
-        <button type="button" className="primary" disabled={!dirty || Boolean(blocked) || !start.vault} title={blocked} onClick={save}>保存 AI 配置</button>
+        <button type="button" className="ai-btn ghost" disabled={!dirty && !reloadReason}
+          onClick={reloadReason ? () => setConfirmReload(true) : discard}>{reloadReason ? '重新读取最新配置' : '放弃修改'}</button>
+        <button type="button" className="primary" disabled={Boolean(reloadReason) || !dirty || Boolean(blocked) || !start.vault} title={blocked} onClick={save}>保存 AI 配置</button>
       </div>
+      {confirmReload && <Dialog small title="重新读取最新配置？" feedback="warn" mobileVariant="confirm" onClose={() => setConfirmReload(false)}>
+        <p>确认后，当前未保存的 AI 配置和密钥草稿将由浏览器中最新保存的值替换。你可以取消并保留草稿。</p>
+        <div className="dialog-actions feedback-dialog-actions">
+          <button type="button" onClick={() => setConfirmReload(false)}>取消</button>
+          <button type="button" onClick={confirmReadLatest}>确认放弃草稿并重新读取</button>
+        </div>
+      </Dialog>}
       {confirm && confirmChannel && <Dialog small title={confirm.kind === 'delete' ? `删除「${confirmChannel.name || '未命名渠道'}」？` : '替换服务地址？'}
         feedback="warn" seal={confirm.kind === 'delete' ? '删' : '换'} mobileVariant="confirm" onClose={() => setConfirm(undefined)}>
         <p>{confirm.kind === 'delete'
-          ? <>{usedBy(confirmChannel.id).length ? `它正被「${usedBy(confirmChannel.id).join('、')}」使用。删除后正文需要重新选择模型，其他阶段改回跟随正文。` : '这个渠道没有被任何阶段使用。'}密钥会一并删除。点「保存 AI 配置」后才真正生效，在那之前可以「放弃修改」。</>
+          ? <>{usedBy(confirmChannel.id).length ? `它正被「${usedBy(confirmChannel.id).join('、')}」使用。使用该渠道的正文模型需要重新选择；受影响的任务改回各自的默认跟随。` : '这个渠道没有被任何阶段使用。'}密钥会一并删除。点「保存 AI 配置」后才真正生效，在那之前可以「放弃修改」。</>
           : '切换到官方服务商会把你填写的地址换成官方地址。'}</p>
         <div className="dialog-actions feedback-dialog-actions">
           <button type="button" onClick={() => setConfirm(undefined)}>取消</button>

@@ -21,7 +21,7 @@ export class FeedbackCorrelation {
   private linked = new Map<string, Set<string>>();
 
   record(entry: RuntimeLogEntry, saveId: string, turnId?: string) {
-    if (!turnId || !entry.scope || !['story', 'variables', 'world'].includes(entry.stage)) return;
+    if (!turnId || !entry.scope || !['story', 'entities', 'variables', 'world'].includes(entry.stage)) return;
     const key = `${entry.scope.turnRef}:${entry.stage}`;
     const records = stageResponses.getSnapshot().filter(record =>
       record.saveId === saveId && record.turnId === turnId && record.stage === entry.stage);

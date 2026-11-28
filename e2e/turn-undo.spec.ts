@@ -24,7 +24,7 @@ async function seed(page: Page, turns = 7, automaticMemory = false) {
     localStorage.setItem(settingsKey, JSON.stringify(settings));
     const config = defaultAiConfig(), channel = newChannel(); channel.baseUrl = 'https://undo.mock.invalid/v1';
     config.channels = [channel]; config.routes.story = { channelId: channel.id, modelId: 'story' };
-    for (const stage of ['variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
+    for (const stage of ['entities', 'variables', 'world', 'memory']) config.routes[stage] = { mode: 'independent', channelId: channel.id, modelId: stage };
     saveAiConfig(localStorage, config); new CredentialVault(sessionStorage, localStorage).set(channel.id, 'undo-mock-key');
   }, { turns, automaticMemory });
   await page.goto('/#game/save-a'); await page.reload();
@@ -44,7 +44,7 @@ async function mock(page: Page) {
     const state = (await read(page)).state;
     const text = stage === 'story'
       ? '<thinking>继续当前行动。</thinking><正文>【旁白】主角来到公园，沿着小路慢慢散步。</正文><短期记忆>在公园散步。</短期记忆><变量规划>[]</变量规划>'
-      : stage === 'variables' ? `<thinking>记录时间与支出。</thinking><说明>更新现场。</说明><命令>\nset worldClock = "${new Date(Date.parse(state.worldClock) + 60000).toISOString()}"\nadd economy.cash = -100\n</命令>`
+      : stage === 'entities' ? '<接触者>[]</接触者><thinking>没有人物变更。</thinking><说明></说明><命令></命令>' : stage === 'variables' ? `<thinking>记录时间与支出。</thinking><说明>更新现场。</说明><命令>\nset worldClock = "${new Date(Date.parse(state.worldClock) + 60000).toISOString()}"\nadd economy.cash = -100\n</命令>`
         : control.failWorld ? '{broken' : JSON.stringify({ worldCommands: [], taskCommands: [], eventCommands: [], visibleHooks: [], unresolved: [] });
     if (control.hold) await control.hold;
     await route.fulfill({ contentType: stage === 'story' ? 'text/event-stream' : 'application/json', body: stage === 'story'
@@ -81,7 +81,7 @@ test('撤回后编辑发送才开始三阶段，失败可恢复且只保存新�
   await undo(page, 2); expect(server.calls).toHaveLength(0);
   await page.getByLabel('你的行动', { exact: true }).fill('改去公园'); server.control.failWorld = true;
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(() => server.calls).toEqual(['story', 'variables', 'world']);
+  await expect.poll(() => server.calls).toEqual(['story', 'entities', 'variables', 'world']);
   await expect.poll(async () => (await read(page)).draft.stageStatus.world).toBe('failed');
   expect((await read(page)).state.turnNumber).toBe(2);
   if ((page.viewportSize()?.width ?? 1440) <= 900) {
@@ -95,8 +95,8 @@ test('撤回后编辑发送才开始三阶段，失败可恢复且只保存新�
   await expect.poll(async () => (await read(page)).state.turnNumber).toBe(3);
   const fresh = await read(page); expect(fresh.state.economy.cash).toBe(original.state.economy.cash - 100);
   expect(fresh.state.journal.at(-1).turnId).not.toBe(original.state.journal.at(-1).turnId);
-  expect(server.calls).toEqual(['story', 'variables', 'world', 'world']);
-  await page.reload(); expect((await read(page)).state).toEqual(fresh.state); expect(server.calls).toHaveLength(4);
+  expect(server.calls).toEqual(['story', 'entities', 'variables', 'world', 'world']);
+  await page.reload(); expect((await read(page)).state).toEqual(fresh.state); expect(server.calls).toHaveLength(5);
   await undo(page, 2); await expect(page.getByLabel('你的行动', { exact: true })).toHaveValue('改去公园');
 });
 test('取消撤回不修改任何数据；部分草稿需明确确认，旧候选退出', async ({ page }) => {
@@ -133,11 +133,11 @@ test('开局不撤回，生成期间按钮禁用；取消后可以撤回且没�
   await expect.poll(async () => (await read(page)).state.turnNumber).toBe(2);
   let release!: () => void; server.control.hold = new Promise(resolve => { release = resolve; });
   await page.getByLabel('你的行动', { exact: true }).fill('再走一步'); await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect.poll(() => server.calls.length).toBe(4);
+  await expect.poll(() => server.calls.length).toBe(5);
   await expect(page.getByRole('button', { name: '撤回（1）' })).toBeDisabled();
   await openWorkflow(page); await page.getByRole('button', { name: '取消自动执行', exact: true }).click(); release();
   await expect(page.getByRole('button', { name: '撤回（1）' })).toBeEnabled();
-  await undo(page, 1); expect((await read(page)).state.turnNumber).toBe(1); expect(server.calls).toHaveLength(4);
+  await undo(page, 1); expect((await read(page)).state.turnNumber).toBe(1); expect(server.calls).toHaveLength(5);
 });
 test('后台总结在撤回时取消，刷新后不自动收费或复活旧总结', async ({ page }) => {
   const server = await mock(page); let release!: () => void;
@@ -165,7 +165,7 @@ test('快照写满时正式回合可保存，明确提示不可撤回，刷新�
   await expect(page.getByText('回合已正式保存；受存储容量限制，本回合不支持撤回。')).toBeVisible();
   await expect(page.getByRole('button', { name: '撤回', exact: true })).toBeDisabled();
   const before = await read(page); expect(before.undo.available).toBe(0);
-  await page.reload(); expect((await read(page)).state).toEqual(before.state); expect(server.calls).toEqual(['story', 'variables', 'world']);
+  await page.reload(); expect((await read(page)).state).toEqual(before.state); expect(server.calls).toEqual(['story', 'entities', 'variables', 'world']);
 });
 test('另一个标签仍在生成时撤回明确拒绝，取消后重新读取才可撤回', async ({ page, context }) => {
   await seed(page, 3); const server = await mock(page), second = await context.newPage();

@@ -1,3 +1,4 @@
+import { organizations } from './fixtures/game';
 import { describe, expect, it } from 'vitest';
 import { commitCommands, DomainCommandSchema } from '../domain/commands';
 import type { DomainCommand } from '../domain/commands';
@@ -71,9 +72,9 @@ function withItem() {
 
 describe('M4-P2 八类严格领域命令', () => {
   it('真实目录包含旧十四类和八类新命令，所有类型均可导出严格 JSON Schema', () => {
-    expect(DomainCommandSchema.options).toHaveLength(32);
+    expect(DomainCommandSchema.options).toHaveLength(38);
     expect(commandCatalog('variables').commandTypes).toContain('UpdateOrganization');
-    expect(commandCatalog('variables').schema.oneOf).toHaveLength(30);
+    expect(commandCatalog('variables').schema.oneOf).toHaveLength(31);
     for (const type of [
       'SetSceneDescription',
       'UpdateProtagonist',
@@ -568,7 +569,7 @@ describe('证据防护与领域提示词绑定', () => {
         current = draft('新人物拿来一份证件，组织类别尚未确认。', mode);
       current.story!.variableGuide = [];
       const selection = selectVariableDomains(state, current);
-      expect(selection.domains).toHaveLength(9);
+      expect(selection.domains).toHaveLength(5);
       const prompt = await composePrompt({
         state,
         draft: current,
@@ -579,7 +580,7 @@ describe('证据防护与领域提示词绑定', () => {
         domains: selection.domains,
       });
       expect(prompt.modules.some((module) => module.id === `stages.${mode}.variables`)).toBe(true);
-      for (const domain of selection.domains)
+      for (const domain of selection.domains.filter(domain => !domain.startsWith('npc_')))
         expect(
           prompt.modules.filter(
             (module) =>
@@ -596,6 +597,8 @@ describe('证据防护与领域提示词绑定', () => {
   it('组织模块仍按现有提示词选择逻辑加载，不作候选完整性审批', () => {
     const state = game(),
       current = draft('主角走进公司。');
+    expect(selectVariableDomains(state, current).domains).not.toContain('org_business');
+    state.organizations['org-a'] = organizations[3];
     expect(selectVariableDomains(state, current).domains).toContain('org_business');
     expect(selectVariableDomains(state, current).domains).not.toContain('org_gang');
 

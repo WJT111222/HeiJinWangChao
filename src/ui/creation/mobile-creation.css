@@ -51,3 +51,19 @@
  .mobile-opening-pack .modal-body>button.opening-pack-confirm-overwrite{min-height:2.8rem;border:0;border-radius:12px;background:linear-gradient(180deg,#f0dba2,#c5a45a);color:#171810;font-weight:650;}
  .mobile-opening-pack .modal-body>button.opening-pack-confirm-cancel{min-height:2.8rem;border:1px solid var(--line-2,#ffffff22);border-radius:12px;background:#ffffff06;color:var(--muted);font-weight:400;}
 }
+
+/* 手机：九张城市卡竖排，选中的卡展开介绍；自定义城市在卡片下方展开详情。 */
+@media (max-width: 900px) {
+  .mobile-creation .city-card.custom { border-style: dashed; }
+  .mobile-creation .creation-city-new { margin-left: .4rem; padding: 0 .3rem; border-radius: 2px; background: #c9a961; color: #15120c; font: 600 .5rem var(--font-mono); letter-spacing: .1em; vertical-align: .35em; }
+  .mobile-creation .creation-city-detail { display: grid; gap: .65rem; margin-top: .6rem; padding: .8rem; border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); border-radius: 14px; background: #ffffff04; }
+  .mobile-creation .creation-city-detail:not(.custom) { display: none; }
+  .mobile-creation .creation-city-detail > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; }
+  .mobile-creation .creation-city-detail > header strong { font: 600 1.15rem var(--font-title); letter-spacing: .2em; }
+  .mobile-creation .creation-city-detail > header small { font-size: .72rem; color: var(--c); }
+  .mobile-creation .creation-city-detail > header em { display: none; }
+  .mobile-creation .creation-city-picker { grid-template-columns: minmax(0, 1fr); }
+  .mobile-creation .creation-city-province select { width: 100%; }
+  .mobile-creation .creation-city-results ul { max-height: 240px; }
+  .mobile-creation .creation-city-results button { min-height: 2.6rem; font-size: .9rem; }
+}

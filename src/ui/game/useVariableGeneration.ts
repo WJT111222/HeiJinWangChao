@@ -18,6 +18,7 @@ export function useVariableGeneration(
   settings: Settings,
   onSaved: (draft: TurnDraft) => void,
   onRuntimeEvent?: RuntimeLogReporter,
+  phaseName: 'variables' | 'entities' = 'variables',
   expectedInstance?: string | null,
 ) {
   const [phase, setPhase] = useState<'generating' | 'saving' | 'retrying'>();
@@ -46,7 +47,7 @@ export function useVariableGeneration(
     const id = ++token.current;
     setError('');
     setRetry(undefined);
-    onRuntimeEvent?.('variables', 'started');
+    onRuntimeEvent?.(phaseName, 'started');
     setPhase('generating');
     const controller = new AbortController();
     waitAbort.current = controller;
@@ -59,7 +60,7 @@ export function useVariableGeneration(
         vault: new CredentialVault(sessionStorage, localStorage),
       });
       const saved = await withHeldStageLock(draft.saveId, async (guard) => {
-        const stage = new VariableStage(repository, new AiClient(), guard);
+        const stage = new VariableStage(repository, new AiClient(), guard, phaseName);
         activeStage.current = stage;
         try {
           return await executeWithAutoRetry({
@@ -67,7 +68,7 @@ export function useVariableGeneration(
             signal: controller.signal,
             onFailure: (failure) => {
               reported = failure;
-              if (token.current === id) onRuntimeEvent?.('variables', 'failed', failure, current.turnId, { retain: true });
+              if (token.current === id) onRuntimeEvent?.(phaseName, 'failed', failure, current.turnId, { retain: true });
             },
             onRetry: (notice) => {
               if (token.current !== id) return;
@@ -98,12 +99,12 @@ export function useVariableGeneration(
       });
       if (token.current === id) {
         onSaved(saved);
-        onRuntimeEvent?.('variables', 'completed');
+        onRuntimeEvent?.(phaseName, 'completed');
       }
     } catch (failure) {
       if (token.current === id) {
         setError(storyError(failure));
-        if (failure !== reported) onRuntimeEvent?.('variables', 'failed', failure);
+        if (failure !== reported) onRuntimeEvent?.(phaseName, 'failed', failure);
       }
     } finally {
       if (waitAbort.current === controller) waitAbort.current = undefined;
@@ -119,7 +120,7 @@ export function useVariableGeneration(
     waitAbort.current?.abort();
     token.current++;
     setError('变量请求已取消，正文与正式世界状态保持不变。');
-    onRuntimeEvent?.('variables', 'cancelled');
+    onRuntimeEvent?.(phaseName, 'cancelled');
   }
   return {
     generate,

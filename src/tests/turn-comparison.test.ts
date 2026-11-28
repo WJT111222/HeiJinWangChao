@@ -73,7 +73,7 @@ test('只读事务不能发起 put；读取异常不会作为可靠数据返回'
 
 test('缺少可选字段的恢复点只读规范化，不回写存储或开局身份',async()=>{
  const p=await seed();
- const old=(state:GameState)=>{const {npcManagementRevision:management,openingCityId:city,...rest}=structuredClone(state);void management;void city;return {...rest,schemaVersion:10 as const};};
+ const old=(state:GameState)=>{const {npcManagementRevision:management,openingCityId:city,phone,...rest}=structuredClone(state);void management;void city;void phone;return {...rest,schemaVersion:10 as const};};
  const before=old(p.before),after=old(p.after),snapshot={...p.snapshot,stateJSON:JSON.stringify(before)};p.control.records[0].bytes=new TextEncoder().encode(JSON.stringify(snapshot)).byteLength;
  await raw(tx=>{tx.objectStore('saves').put(after);tx.objectStore('turnUndo').put(snapshot);tx.objectStore('saveControls').put(p.control);});const original=await repo.exportRaw('save-a');
  const current=normalizeOpeningCity(migrateSave(after));expect(await repo.turnComparison(current)).toEqual({available:true,before:migrateSave(before)});expect(await repo.exportRaw('save-a')).toEqual(original);

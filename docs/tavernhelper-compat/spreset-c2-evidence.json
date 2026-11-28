@@ -1,0 +1,887 @@
+{
+  "base": "607ebdbfc986115ebea5f22fb5759d2b8a2bb1d2",
+  "environment": {
+    "node": "24.19.0",
+    "playwright": "1.64.1",
+    "chromium": "154.0.8037.57",
+    "port": 5174,
+    "workers": 1,
+    "retries": 0,
+    "models": "synthetic HTTP fixtures, no paid model"
+  },
+  "vitest": {
+    "files": 231,
+    "passed": 5501,
+    "prototype": 20,
+    "promptSubset": 93
+  },
+  "deliveryChromium": {
+    "overall": {
+      "expected": 22,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "suites": {
+      "spreset-prototype.spec.ts": {
+        "expected": 22
+      }
+    }
+  },
+  "releaseChromium": {
+    "overall": {
+      "expected": 94,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "suites": {
+      "backup-ui.spec.ts": {
+        "expected": 2
+      },
+      "city-expansion.spec.ts": {
+        "expected": 2
+      },
+      "completion-chime.spec.ts": {
+        "expected": 2
+      },
+      "continuous-turns.spec.ts": {
+        "expected": 6
+      },
+      "dynasty-theater.spec.ts": {
+        "expected": 2
+      },
+      "faction-panel.spec.ts": {
+        "expected": 2
+      },
+      "harem.spec.ts": {
+        "expected": 2
+      },
+      "narrative-length.spec.ts": {
+        "expected": 2
+      },
+      "opening-time-recovery.spec.ts": {
+        "expected": 6
+      },
+      "peinture-settings.spec.ts": {
+        "expected": 4
+      },
+      "settings-readability.spec.ts": {
+        "expected": 4
+      },
+      "settings-stage-sync.spec.ts": {
+        "expected": 2
+      },
+      "story-continuation-consent.spec.ts": {
+        "expected": 36
+      },
+      "story-legacy-writing.spec.ts": {
+        "expected": 8
+      },
+      "story-literary-ownership.spec.ts": {
+        "expected": 6
+      },
+      "tavern-assistant.spec.ts": {
+        "expected": 6
+      },
+      "worldbook-library-tabs.spec.ts": {
+        "expected": 2
+      }
+    }
+  },
+  "extraTransportAndFocusedChromium": {
+    "overall": {
+      "expected": 40,
+      "unexpected": 2,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "suites": {
+      "spreset-prototype.spec.ts": {
+        "expected": 22
+      },
+      "story-continuation-transport.spec.ts": {
+        "expected": 14,
+        "unexpected": 2
+      },
+      "tavern-assistant.spec.ts": {
+        "expected": 4
+      }
+    },
+    "strictFailures": [
+      {
+        "case": "直连受理后断开连接",
+        "project": "desktop",
+        "direct": 1,
+        "worker": 0,
+        "model": 2,
+        "workerUpstream": 0
+      },
+      {
+        "case": "直连受理后断开连接",
+        "project": "mobile",
+        "direct": 1,
+        "worker": 0,
+        "model": 2,
+        "workerUpstream": 0
+      }
+    ]
+  },
+  "developmentRun": {
+    "overall": {
+      "expected": 109,
+      "unexpected": 5,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "unexpected": [
+      {
+        "suite": "spreset-prototype.spec.ts",
+        "title": "gemini SSE 正式正文及结算",
+        "project": "desktop"
+      },
+      {
+        "suite": "tavern-assistant.spec.ts",
+        "title": "独立主脚本启用前后其他三阶段实际请求逐字节一致",
+        "project": "desktop"
+      },
+      {
+        "suite": "tavern-assistant.spec.ts",
+        "title": "真实脚本保存采样后刷新生效，预览与恢复启动零传输，原生请求逐字段相同",
+        "project": "desktop"
+      },
+      {
+        "suite": "tavern-assistant.spec.ts",
+        "title": "独立主脚本启用前后其他三阶段实际请求逐字节一致",
+        "project": "mobile"
+      },
+      {
+        "suite": "tavern-assistant.spec.ts",
+        "title": "真实脚本保存采样后刷新生效，预览与恢复启动零传输，原生请求逐字段相同",
+        "project": "mobile"
+      }
+    ]
+  },
+  "wire": [
+    {
+      "project": "desktop",
+      "protocol": "openai",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/chat/completions",
+      "responseBytes": 362,
+      "responseSha256": "44394cba2ea2ba34bc57eeb0ad60e6e2465c1ac4fff59bae725cf4dbb1362d34",
+      "bytes": 62193,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "35efea1ec6cec06babf762890853756ef4700e65aa91f12522961fae8d73f2b0",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "json",
+        "finish": [
+          "tool_calls"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "desktop",
+      "protocol": "openai",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/chat/completions",
+      "responseBytes": 461,
+      "responseSha256": "cf939a658dda8a2839e6a5e83692d87e5dbd7c028ac5c634400dd8ecddbb1829",
+      "bytes": 62192,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "d714f2234fed8d356c8f146ce93151cba71c2517fcda4bdbc107605018fbc528",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "sse",
+        "finish": [
+          "tool_calls"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "desktop",
+      "protocol": "deepseek",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/chat/completions",
+      "responseBytes": 362,
+      "responseSha256": "44394cba2ea2ba34bc57eeb0ad60e6e2465c1ac4fff59bae725cf4dbb1362d34",
+      "bytes": 62193,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "35efea1ec6cec06babf762890853756ef4700e65aa91f12522961fae8d73f2b0",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "json",
+        "finish": [
+          "tool_calls"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "desktop",
+      "protocol": "deepseek",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/chat/completions",
+      "responseBytes": 461,
+      "responseSha256": "cf939a658dda8a2839e6a5e83692d87e5dbd7c028ac5c634400dd8ecddbb1829",
+      "bytes": 62192,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "d714f2234fed8d356c8f146ce93151cba71c2517fcda4bdbc107605018fbc528",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "sse",
+        "finish": [
+          "tool_calls"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "desktop",
+      "protocol": "gemini",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "AUTO",
+      "posts": 1,
+      "endpoint": "/models/c2-synthetic:generateContent",
+      "responseBytes": 304,
+      "responseSha256": "8b9c2c5b269b5f2dd5d0ff64fd28c35c3164b4d76a7d1cb235a160ba3f36cb92",
+      "bytes": 61893,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 82,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28455,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "33547c13386b93d2e8df70a8cac1ba1d511162a974b8a015c86f89329c393f03",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "json",
+        "finish": [
+          "STOP"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "desktop",
+      "protocol": "gemini",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "AUTO",
+      "posts": 1,
+      "endpoint": "/models/c2-synthetic:streamGenerateContent",
+      "responseBytes": 312,
+      "responseSha256": "55aa4174ba82594c3aed90d755a7d349b9f127051df7b207f809d42dc107ba44",
+      "bytes": 61893,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 82,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28455,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "33547c13386b93d2e8df70a8cac1ba1d511162a974b8a015c86f89329c393f03",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "sse",
+        "finish": [
+          "STOP"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "desktop",
+      "protocol": "anthropic",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/messages",
+      "responseBytes": 304,
+      "responseSha256": "b4c8ae72b49ac412a6e65f46c9c98f4d601639f3b2e13eb5cc3f019e04e4f359",
+      "bytes": 61749,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 73,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28419,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "176da022196538c797aac8be17882e6909d619b8308af9bf321cd3c2add0af77",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "json",
+        "finish": [
+          "tool_use"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "desktop",
+      "protocol": "anthropic",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/messages",
+      "responseBytes": 744,
+      "responseSha256": "03ad96fffe4259cec2de686d15fb23437cfb1100469f1f8643d4fa3b1c613525",
+      "bytes": 61748,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 73,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28419,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "31d5ddd9726b388a78865af963d88d2fb90829a363d995ace8788ee2d9bac074",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "sse",
+        "finish": [
+          "tool_use"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "mobile",
+      "protocol": "openai",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/chat/completions",
+      "responseBytes": 362,
+      "responseSha256": "44394cba2ea2ba34bc57eeb0ad60e6e2465c1ac4fff59bae725cf4dbb1362d34",
+      "bytes": 62193,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "35efea1ec6cec06babf762890853756ef4700e65aa91f12522961fae8d73f2b0",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "json",
+        "finish": [
+          "tool_calls"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "mobile",
+      "protocol": "openai",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/chat/completions",
+      "responseBytes": 461,
+      "responseSha256": "cf939a658dda8a2839e6a5e83692d87e5dbd7c028ac5c634400dd8ecddbb1829",
+      "bytes": 62192,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "d714f2234fed8d356c8f146ce93151cba71c2517fcda4bdbc107605018fbc528",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "sse",
+        "finish": [
+          "tool_calls"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "mobile",
+      "protocol": "deepseek",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/chat/completions",
+      "responseBytes": 362,
+      "responseSha256": "44394cba2ea2ba34bc57eeb0ad60e6e2465c1ac4fff59bae725cf4dbb1362d34",
+      "bytes": 62193,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "35efea1ec6cec06babf762890853756ef4700e65aa91f12522961fae8d73f2b0",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "json",
+        "finish": [
+          "tool_calls"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "mobile",
+      "protocol": "deepseek",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/chat/completions",
+      "responseBytes": 461,
+      "responseSha256": "cf939a658dda8a2839e6a5e83692d87e5dbd7c028ac5c634400dd8ecddbb1829",
+      "bytes": 62192,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 80,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28530,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "d714f2234fed8d356c8f146ce93151cba71c2517fcda4bdbc107605018fbc528",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "sse",
+        "finish": [
+          "tool_calls"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "mobile",
+      "protocol": "gemini",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "AUTO",
+      "posts": 1,
+      "endpoint": "/models/c2-synthetic:generateContent",
+      "responseBytes": 304,
+      "responseSha256": "8b9c2c5b269b5f2dd5d0ff64fd28c35c3164b4d76a7d1cb235a160ba3f36cb92",
+      "bytes": 61893,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 82,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28455,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "33547c13386b93d2e8df70a8cac1ba1d511162a974b8a015c86f89329c393f03",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "json",
+        "finish": [
+          "STOP"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "mobile",
+      "protocol": "gemini",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "AUTO",
+      "posts": 1,
+      "endpoint": "/models/c2-synthetic:streamGenerateContent",
+      "responseBytes": 312,
+      "responseSha256": "55aa4174ba82594c3aed90d755a7d349b9f127051df7b207f809d42dc107ba44",
+      "bytes": 61893,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 82,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28455,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "33547c13386b93d2e8df70a8cac1ba1d511162a974b8a015c86f89329c393f03",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "sse",
+        "finish": [
+          "STOP"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "mobile",
+      "protocol": "anthropic",
+      "stream": false,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/messages",
+      "responseBytes": 304,
+      "responseSha256": "b4c8ae72b49ac412a6e65f46c9c98f4d601639f3b2e13eb5cc3f019e04e4f359",
+      "bytes": 61749,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 73,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28419,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "176da022196538c797aac8be17882e6909d619b8308af9bf321cd3c2add0af77",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "json",
+        "finish": [
+          "tool_use"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    },
+    {
+      "project": "mobile",
+      "protocol": "anthropic",
+      "stream": true,
+      "name": "submit_scene",
+      "choice": "auto",
+      "posts": 1,
+      "endpoint": "/messages",
+      "responseBytes": 744,
+      "responseSha256": "03ad96fffe4259cec2de686d15fb23437cfb1100469f1f8643d4fa3b1c613525",
+      "bytes": 61748,
+      "toolSchemaEstimate": {
+        "estimatedTokens": 73,
+        "method": "unicode-heuristic-v1"
+      },
+      "requestEstimate": {
+        "estimatedTokens": 28419,
+        "method": "unicode-heuristic-v1"
+      },
+      "sha256": "31d5ddd9726b388a78865af963d88d2fb90829a363d995ace8788ee2d9bac074",
+      "before": 1,
+      "afterCandidate": 1,
+      "turnDelta": 1,
+      "revisionDelta": 1,
+      "writing": {
+        "source": "preset",
+        "id": "spreset-c2",
+        "version": "c2.1-992e68afec42ebe0dfba5485445a801c93b0e38acf8620bb869a04a7838c2c30",
+        "configurationVersion": 3,
+        "configuration": "06523fcf99d280baccce420e9ab2bd83306c1f034f2dc3bd07cabbe12461c97b"
+      },
+      "observed": {
+        "transport": "sse",
+        "finish": [
+          "tool_use"
+        ],
+        "complete": true,
+        "saved": true,
+        "rawUtf8Bytes": 164,
+        "rawSha256": "f54fdaa8745cff802b9165b835e54a896e7783d8fa9ba9abe52f592009fb7f0d"
+      },
+      "candidate": "林舟在博物馆核对蓝釉瓷杯。",
+      "committed": "林舟在博物馆核对蓝釉瓷杯。",
+      "replayed": false
+    }
+  ]
+}

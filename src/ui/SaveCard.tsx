@@ -1,4 +1,6 @@
-import { CITY, saveCity, skyline } from './home/skyline';
+import { cityVisual, citySkyline } from './home/cityVisual';
+import { skyline } from './home/skyline';
+import type { CSSProperties } from 'react';
 import { useRawSaveExport } from './home/useRawSaveExport';
 import type { SaveRepository } from '../services/storage/saveRepository';
 import { rawSaveHistoryNotice, saveKeyText } from '../services/storage/saveManagement';
@@ -13,13 +15,14 @@ export function SaveCard({ save, index, selected, repository, backup, exporting:
   onOpen: (id: string) => void; onSelect: (id: string) => void; onDelete: () => void; onExport?: () => void; onHistory?: () => void;
 }) {
   const {exporting,notice,exportRaw} = useRawSaveExport(repository, save.storageKey);
-  const city = saveCity(save.title);
-  return <article className={`save-card dossier ${selected ? 'selected sel' : ''} ${save.status === 'unreadable' ? 'bad' : ''}`} data-city={city}>
+  const city = save.status === 'readable' ? cityVisual(save) : undefined;
+  return <article className={`save-card dossier ${selected ? 'selected sel' : ''} ${save.status === 'unreadable' ? 'bad' : ''}`} data-city={city?.key}
+    style={city ? { '--tint': city.tint } as CSSProperties : undefined}>
     <div className="tabline"><span className="tab">ARCHIVE {String(index + 1).padStart(2,'0')}</span><span className="clip" aria-hidden="true" /></div>
     <div className="body"><div className={`thumb ${!city ? 'neutral' : ''}`}>
       {save.status === 'unreadable' ? <span className="city">未知</span> : <>
-        {city && <span className="city">{CITY[city][0]}</span>}
-        <div aria-hidden="true" dangerouslySetInnerHTML={{__html:skyline(city ?? 'cq','aria-hidden="true"')}} />
+        {city && <span className="city">{city.name}</span>}
+        <div aria-hidden="true" dangerouslySetInnerHTML={{__html:city ? citySkyline(city,'aria-hidden="true"') : skyline('cq','aria-hidden="true"')}} />
       </>}
       <span className="tag">{save.status === 'unreadable' ? '无法读取' : selected ? '已选择' : '本地存档'}</span>
     </div><div className="info">

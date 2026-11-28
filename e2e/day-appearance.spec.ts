@@ -28,7 +28,7 @@ test('默认夜间；在设置「外观」中切换后立即生效、刷新后�
   await seed(page);
   await expect(html(page)).toHaveAttribute('data-appearance', 'night');
   await openSettings(page);
-  await page.getByRole('button', { name: '外观', exact: true }).click();
+  await page.getByRole('button', { name: '外观与提示音', exact: true }).click();
   await expect(page.getByRole('radio', { name: /夜间/ })).toBeChecked();
   await page.getByRole('radio', { name: /日间/ }).check();
   await expect(html(page)).toHaveAttribute('data-appearance', 'day');
@@ -39,7 +39,7 @@ test('默认夜间；在设置「外观」中切换后立即生效、刷新后�
   expect(await shellBackground(page)).toBe('#f1eee7');
   expect(await textLuminance(page, '.story-narration')).toBeLessThan(0.35);
   await openSettings(page);
-  await page.getByRole('button', { name: '外观', exact: true }).click();
+  await page.getByRole('button', { name: '外观与提示音', exact: true }).click();
   await page.getByRole('radio', { name: /夜间/ }).check();
   await expect(html(page)).toHaveAttribute('data-appearance', 'night');
   expect(await stored(page)).toBe('night');
@@ -70,7 +70,7 @@ test('日间下游戏内弹出内容换成纸色：浅色底、深色字；夜�
     expect(await backgroundLuminance(page, sheet)).toBeGreaterThan(0.75);
     expect(await textLuminance(page, `${sheet} .st-place h3`)).toBeLessThan(0.35);
     await page.keyboard.press('Escape'); await expect(page.locator(sheet)).toHaveCount(0);
-    await page.getByRole('button', { name: '三阶段工作流详情', exact: true }).click();
+    await page.getByRole('button', { name: '四阶段工作流详情', exact: true }).click();
     await expect(page.locator('.workflow-floating-drawer')).toBeVisible();
     expect(await backgroundLuminance(page, '.workflow-floating-drawer')).toBeGreaterThan(0.75);
     expect(await textLuminance(page, '.workflow-floating-drawer .modal-heading h2, .workflow-floating-drawer h2, .workflow-floating-drawer strong')).toBeLessThan(0.35);

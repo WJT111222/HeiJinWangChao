@@ -29,7 +29,7 @@ async function seed(page: Page, mode: 'opening' | 'regular' = 'opening') {
       { defaultAiConfig, newChannel, saveAiConfig } = await import(configPath),
       { CredentialVault } = await import(credentialPath),
       { defaultSettings, settingsKey } = await import(settingsPath);
-    const settings = defaultSettings();
+    const settings = defaultSettings(); settings.runtime.useEntityStage = false;
     settings.prompts.minNarrativeChars = 5;
     settings.prompts.actionOptions = false;
     localStorage.setItem(settingsKey, JSON.stringify(settings));
@@ -53,13 +53,13 @@ async function seed(page: Page, mode: 'opening' | 'regular' = 'opening') {
       state = committed.state;
       await repo.deleteDraft(state.saveId, committed.draft.draftRevision);
     }
-    await repo.saveDraft(createTurnDraft('save-a', state.revision, 'turn-a', mode, mode === 'regular' ? '主角完成用餐' : ''), null);
+    await repo.saveDraft(createTurnDraft('save-a', state.revision, 'turn-a', mode, mode === 'regular' ? '主角完成用餐' : '', true, true, false), null);
     repo.close();
     return JSON.stringify(state);
   }, mode);
   await page.goto('/#game/save-a'); await openGameTools(page);
   await page.reload(); await openGameTools(page);
-  await expect(page.getByRole('region', { name: '三阶段工作流' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '四阶段工作流' })).toBeVisible();
   return before;
 }
 async function stored(page: Page) {
@@ -141,7 +141,7 @@ async function mock(
   });
   return { calls, options };
 }
-const workflow = (page: Page) => page.getByRole('region', { name: '三阶段工作流' });
+const workflow = (page: Page) => page.getByRole('region', { name: '四阶段工作流' });
 async function complete(page: Page) {
   await expect(workflow(page)).toContainText('本回合已结算');
   await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled();
@@ -157,7 +157,7 @@ for (const mode of ['opening', 'regular'] as const) {
         exact: true,
       })
       .click();
-    await expect(workflow(page).getByRole('status')).toContainText('变量生成中 · 2/3');
+    await expect(workflow(page).getByRole('status')).toContainText('主角与现场生成中 · 3/4');
     await expect(page.getByTestId('story-reader')).toContainText(narrative);
     waiting.release();
     await complete(page);
@@ -194,7 +194,7 @@ for (const failed of ['variables', 'world'] as const) {
       plan = await mock(page, { bad: failed });
     await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
     await expect(workflow(page).getByRole('alert')).toContainText(
-      failed === 'variables' ? '变量管理' : '动态世界',
+      failed === 'variables' ? '主角与现场' : '场外与网络',
     );
     expect(plan.calls).toEqual(
       failed === 'variables' ? ['story', 'variables'] : ['story', 'variables', 'world'],
@@ -255,13 +255,16 @@ test('取消世界后保留上游；快速双击不重复，旧回包不能推�
 test('关闭两个阶段只生成并结算正文，重新启用不会重算已结算回合', async ({ page }) => {
   const before = await seed(page),
     plan = await mock(page);
-  await page.getByLabel('变量管理', { exact: true }).uncheck();
-  await page.getByLabel('动态世界', { exact: true }).uncheck();
+  await page.getByLabel('主角与现场', { exact: true }).uncheck();
+  await page.getByLabel('场外与网络', { exact: true }).uncheck();
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await complete(page);
   expect(plan.calls).toEqual(['story']);
-  await page.getByLabel('变量管理', { exact: true }).check();
-  await page.getByLabel('动态世界', { exact: true }).check();
+  await page.getByLabel('主角与现场', { exact: true }).check();
+  await page.getByLabel('场外与网络', { exact: true }).check();
+  await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
+  await complete(page);
+  expect(plan.calls).toEqual(['story', 'variables', 'world']);
   expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
   expect(plan.calls).toEqual(['story']);
 });
@@ -271,8 +274,8 @@ test('运行中切换开关不会改变本次冻结配置', async ({ page }) => 
   const plan = await mock(page, { slow: 'story', hold: waiting.hold });
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await expect.poll(() => plan.calls.length).toBe(1);
-  await page.getByLabel('变量管理', { exact: true }).uncheck();
-  await page.getByLabel('动态世界', { exact: true }).uncheck();
+  await page.getByLabel('主角与现场', { exact: true }).uncheck();
+  await page.getByLabel('场外与网络', { exact: true }).uncheck();
   waiting.release();
   await complete(page);
   expect(plan.calls).toEqual(['story', 'variables', 'world']);
@@ -330,18 +333,14 @@ test('正文失败不启动下游，安全失败状态刷新后仍保留并可�
   expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
 });
 
-test('只开启世界时明确预览；补开变量会失效旧世界并顺序重算', async ({ page }) => {
+test('只开启场外时按已有合法时钟结算，现场不请求', async ({ page }) => {
   const before = await seed(page),
     plan = await mock(page);
-  await page.getByLabel('变量管理', { exact: true }).uncheck();
+  await page.getByLabel('主角与现场', { exact: true }).uncheck();
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
-  await expect(workflow(page).getByRole('status')).toContainText('世界仅为预览');
-  expect(plan.calls).toEqual(['story', 'world']);
-  expect((await stored(page)).draft.world.validation).toBe('preview');
-  await page.getByLabel('变量管理', { exact: true }).check();
-  await workflow(page).getByRole('button', { name: '继续未完成阶段', exact: true }).click();
   await complete(page);
-  expect(plan.calls).toEqual(['story', 'world', 'variables', 'world']);
+  expect(plan.calls).toEqual(['story', 'world']);
+  expect((await stored(page)).draft.world).toBeUndefined();
   expect(JSON.parse((await stored(page)).formal).revision).toBe(JSON.parse(before).revision + 1);
 });
 
@@ -360,7 +359,7 @@ test('P6完善：生成附近逐请求显示完整输入估算、真实usage与�
   await workflow(page).getByRole('button', { name: '自动生成开局', exact: true }).click();
   await openWorkflowDiagnostics(page);
   const usage = page.getByRole('region', { name: '本次请求 Token 用量', exact: true });
-  await expect(usage).toContainText('动态世界 · world · 请求中');
+  await expect(usage).toContainText('场外与网络 · world · 请求中');
   await expect(usage).toContainText('估算输入 Token'); await expect(usage).toContainText('8,192');
   await expect(usage.locator(':scope > div').first()).toContainText('实际输入：未提供');
   gate.release(); await complete(page); await expect(usage.locator(':scope > div')).toHaveCount(3);

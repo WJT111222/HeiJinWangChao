@@ -1,7 +1,8 @@
+import { sceneWorldSettings as defaultSettings, sceneWorldDraft as createTurnDraft } from './fixtures/stageScope';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { GameStateSchema } from '../domain/state';
-import { createTurnDraft, rerollStory, TurnDraftSchema } from '../domain/drafts';
+import { rerollStory, TurnDraftSchema } from '../domain/drafts';
 import type { TurnDraft } from '../domain/drafts';
 import type { DomainCommand } from '../domain/commands';
 import { projectTurn, preparedVariableCommands } from '../domain/turnProjection';
@@ -14,7 +15,7 @@ import { AiError } from '../services/ai/errors';
 import { AiClient } from '../services/ai/client';
 import { CredentialVault } from '../services/ai/credentials';
 import { defaultAiConfig, newChannel } from '../services/ai/configuration';
-import { defaultSettings } from '../ui/settings/model';
+
 import { event, task } from './fixtures/game';
 import { worldState, worldResult, proof } from './fixtures/world';
 import { saveFixtureStory, completeDraft, submission } from './fixtures/turn';

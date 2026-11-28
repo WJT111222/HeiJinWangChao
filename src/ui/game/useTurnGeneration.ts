@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import type { LegacyContinuationConsent } from '../../workflows/legacyContinuation';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { TurnDraft } from '../../domain/drafts';
 import { readAiConfig } from '../../services/ai/configuration';
 import { CredentialVault } from '../../services/ai/credentials';
@@ -11,7 +12,9 @@ import type { Settings } from '../settings/model';
 import type { RuntimeLogReporter } from './runtimeLog';
 import { generateAndSettleTurn } from '../../workflows/automaticTurn';
 import type { TurnCommitResult } from '../../services/storage/saveRepository';
-import { AiError } from '../../services/ai/errors';
+import { AiError, isContinuationDeliveryUnknown } from '../../services/ai/errors';
+import { readFailureDiagnostic } from '../../services/ai/failureDiagnostic';
+import { chimeForFailure, chimeForTurn, chimeIfWanted, primeChime } from './completionChime';
 
 export function useTurnGeneration(
   repository: SaveRepository,
@@ -38,17 +41,25 @@ export function useTurnGeneration(
   const pending = useRef<TurnProgress | undefined>(undefined);
   const lastLoggedStage = useRef<TurnProgress['stage'] | undefined>(undefined);
   const lastProgress = () => pending.current;
-  useEffect(
-    () => () => {
+  // 提示音按播放当时的最新设置判断（包括生成中修改、跨标签同步），不冻结开始时的快照。
+  const latestSettings = useRef(settings);
+  latestSettings.current = settings;
+  const chimeMode = () => latestSettings.current.notifications.completionChime;
+  const mounted = useRef(false);
+  useLayoutEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
       token.current++;
       runner.dispose();
       clearTimeout(timer.current);
-    },
-    [runner],
-  );
-  async function generate(expected = draft) {
-    if (!expected || active.current) return;
+    };
+  }, [runner]);
+  async function generate(expected = draft, consent?: LegacyContinuationConsent) {
+    if (!mounted.current || !expected || active.current) return;
     active.current = true;
+    // 开始生成多由玩家点击触发：此时启用声音，之后异步完成才能出声；关闭提示音时不初始化音频。
+    primeChime(chimeMode());
     errorTurn.current = turnKey(expected);
     const id = ++token.current;
     setRunning(true);
@@ -62,7 +73,7 @@ export function useTurnGeneration(
     let reported: unknown;
     try {
       const result = await generateAndSettleTurn(runner, repository, {
-        draft: expected, expectedInstance,
+        draft: expected, consent, expectedInstance,
         settings,
         companionProfile,
         config: readAiConfig(localStorage),
@@ -75,7 +86,7 @@ export function useTurnGeneration(
           if (token.current === id) {
             // Only a newly saved ready stage retires its earlier diagnostic errors.
             // A ready candidate by itself must not hide a later failed preflight.
-            for (const stage of ['story', 'variables', 'world'] as const)
+            for (const stage of ['story', 'entities', 'variables', 'world'] as const)
               if (next.stageStatus[stage] === 'ready' && observed.stageStatus[stage] !== 'ready')
                 onRuntimeEvent?.(stage, 'completed', undefined, expected.turnId);
             observed = next;
@@ -107,15 +118,19 @@ export function useTurnGeneration(
         setOutcome(result.outcome);
         if (result.committed) { onRuntimeEvent?.('commit', 'completed'); onSettled?.(result.committed); }
         onRuntimeEvent?.('workflow', 'completed');
+        chimeIfWanted(chimeMode(), chimeForTurn(result));
       }
     } catch (failure) {
       if (token.current === id) {
         errorTurn.current = turnKey(observed);
-        const stage = saving.current ? 'commit' : lastProgress()?.stage;
+        const diagnostic = readFailureDiagnostic(failure);
+        const stage = saving.current || diagnostic?.phase === 'commit_validation' ? 'commit' : lastProgress()?.stage;
         if (failure !== reported) onRuntimeEvent?.(stage ?? 'workflow', 'failed', failure, expected.turnId);
-        setError(
-          `${stage ? { story: '正文生成', variables: '变量管理', world: '动态世界', commit: '正式结算' }[stage] + '：' : ''}${storyError(failure)}`,
+        if (!diagnostic?.openingTime) setError(
+          `${stage ? { story: '正文生成', entities: '人物与实体', variables: '主角与现场', world: '场外与网络', commit: '正式结算' }[stage] + '：' : ''}${storyError(failure)}`,
         );
+        chimeIfWanted(chimeMode(), chimeForFailure(failure));
+        if (consent && (!consent.sent || isContinuationDeliveryUnknown(failure))) return storyError(failure);
       }
     } finally {
       if (token.current === id) {

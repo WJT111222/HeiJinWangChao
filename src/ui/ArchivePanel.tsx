@@ -5,13 +5,14 @@ import { Dialog } from './Dialog';
 import { useDesktopFeedback } from './Feedback';
 import './archive.css';
 import './archive-map.css';
+import './city-art.css';
 import './archive-records.css';
 import './archive-assets.css';
 import './archive-reading.css';
 import './mobile-archives.css';
 
 /** Nonmodal desktop host. Content and navigation remain owned by the caller. */
-function ArchiveReader({ title, seal, subtitle, children, onClose, returnFocus, index = 1, total = 7, eyebrow,className }: {
+function ArchiveReader({ title, seal, subtitle, children, onClose, returnFocus, index = 1, total = 10, eyebrow,className }: {
   title: string; seal: string; subtitle: string; children: ReactNode; index?: number; total?: number;
   onClose: () => void; returnFocus?: () => HTMLElement | null; eyebrow?: string;className?:string;
 }) {

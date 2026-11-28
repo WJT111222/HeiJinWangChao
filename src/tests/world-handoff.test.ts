@@ -244,7 +244,7 @@ describe('真实WorldStage、候选保存和原子正式结算', () => {
     const d = await completeDraft(repo, { narrative: fact, variables: { ...await elapsedVariables(repo, fact, 60), commands: [...(await elapsedVariables(repo, fact, 60)).commands,
       { type: 'RegisterContact', commandId: 'contact', npcId: 'scene', reason: '交换联络方式', evidence: fact }] } });
     const result = await repo.commitTurn(submission(d)); expect(result.state.contactNpcIds).toContain('scene');
-    expect((await repo.load('save-a')).npc.scene).toEqual(before.npc.scene);
+    expect((await repo.load('save-a')).npc.scene).toEqual({...before.npc.scene,appearedInStory:true});
     const world = worldResult([{ type: 'RegisterContact', commandId: 'forged-contact', npcId: 'npc-a', reason: '任意', evidence: proof() }]);
     expect(() => parse(before, world)).toThrow();
   });
@@ -386,7 +386,7 @@ describe('历史只读回合的生命周期边界', () => {
 describe('真实IndexedDB存档与回执', () => {
   it('存档和回执重载后可重放并继续，正式revision和原文不变',async()=>{
  const repo=await SaveRepository.open('new-v6',new IDBFactory());resources.push(repo);await repo.create(handoffState());
- const draft=await completeDraft(repo),first=await repo.commitTurn(submission(draft));expect(await repo.load('save-a')).toEqual(first.state);expect(first.state.schemaVersion).toBe(10);
+ const draft=await completeDraft(repo),first=await repo.commitTurn(submission(draft));expect(await repo.load('save-a')).toEqual(first.state);expect(first.state.schemaVersion).toBe(11);
  expect((await repo.commitTurn(submission(draft))).replayed).toBe(true);const next=await completeDraft(repo,{variables:await elapsedVariables(repo,worldDraft().story!.narrative,600)});expect((await repo.commitTurn(submission(next))).state.turnNumber).toBe(2);
 });
 });

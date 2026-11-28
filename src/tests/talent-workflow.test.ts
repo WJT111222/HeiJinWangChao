@@ -30,6 +30,7 @@ async function setup(id: TalentId = 'cyber_tyrant', action = talentScenario, sta
     const body = JSON.parse(String(init!.body)), stage = body.model as string, context = sentContext(payloadMessages(body, 'deepseek'));
     calls.push({ stage, context });
     const text = stage === 'story' ? talentStory(narrative)
+      : stage === 'entities' ? variableTextEnvelope('<命令></命令>')
       : stage === 'variables' ? variableTextEnvelope(`<命令>set worldClock = "2026-10-18T08:01:00+08:00"\nset protagonist.emotionText = "审慎"${stake ? '\nadd economy.cash = -800000' : ''}${failure === 'variables' ? '\nset protagonist.talentId = "underworld_aura"' : ''}</命令>`)
         : JSON.stringify({ worldCommands: [{ type: 'UpdateNpc', commandId: 'world-intent', npcId: 'npc-a', expectedRevision: 0,
           changes: failure === 'world' ? { talentId: 'underworld_aura' } : {}, activeGoals: ['核对物流企业公开资料，之后自主决定是否提出接触'],
@@ -47,7 +48,7 @@ it.each(talentDefinitions)('$name：同一危机的独有 Mock 路径进入真�
     if (definition.id === 'cyber_tyrant') test.options.settings.runtime.streamStory = true;
     const original = await test.repo.load('save-a'), reading: string[] = [];
     const outcome = await test.coordinator.generate({ ...test.options, draft: test.draft, onProgress: p => { if (p.narrative) reading.push(p.narrative); } });
-    expect(outcome.status).toBe('complete'); expect(test.calls.map(c => c.stage)).toEqual(['story', 'variables', 'world']);
+    expect(outcome.status).toBe('complete'); expect(test.calls.map(c => c.stage)).toEqual(['story', 'entities', 'variables', 'world']);
     for (const row of test.calls) expect(row.context.PROTAGONIST_TALENT).toMatchObject({ stage: row.stage, definition });
     expect(outcome.draft.story!.narrative).toBe(test.narrative);
     expect(await test.repo.load('save-a')).toEqual(original);
@@ -61,7 +62,7 @@ it.each(talentDefinitions)('$name：同一危机的独有 Mock 路径进入真�
     expect(committed.state.npc['npc-a'].relationshipText).toBe(original.npc['npc-a'].relationshipText);
     expect(Object.keys(committed.state.npc)).toEqual(Object.keys(original.npc));
     if (committed.state.npc['npc-a'].kind === 'special') expect(committed.state.npc['npc-a'].activeGoals).toEqual(['核对物流企业公开资料，之后自主决定是否提出接触']);
-    expect((await test.repo.commitTurn(input)).replayed).toBe(true); expect(test.fetcher).toHaveBeenCalledTimes(3);
+    expect((await test.repo.commitTurn(input)).replayed).toBe(true); expect(test.fetcher).toHaveBeenCalledTimes(4);
     if (definition.id === 'cyber_tyrant') expect(reading.some(text => text.length > 0 && text.length < test.narrative.length)).toBe(true);
     // Opening turns are intentionally not undoable. Establish the existing regular
     // turn recovery point with the approved fixture, without another model request.
@@ -70,7 +71,7 @@ it.each(talentDefinitions)('$name：同一危机的独有 Mock 路径进入真�
     const next = await test.repo.commitTurn({ draft: nextDraft, nextAction: '', useVariableStage: true, useWorldStage: true });
     const undone = await test.repo.undoTurn({ saveId: 'save-a', expectedRevision: next.state.revision, expectedDraft: next.draft, operationId: 'talent-undo' });
     expect(undone.state.protagonist.talentId).toBe(definition.id); expect(undone.state.turnNumber).toBe(1);
-    expect(undone.state.economy).toEqual(original.economy); expect(test.fetcher).toHaveBeenCalledTimes(3);
+    expect(undone.state.economy).toEqual(original.economy); expect(test.fetcher).toHaveBeenCalledTimes(4);
   } finally { await dispose(test); }
 });
 
@@ -88,7 +89,7 @@ it('绝命赌徒主动押上真实筹码：只记录已支付保证金，不保�
     expect(paid).toHaveLength(1); expect(paid[0]).toHaveProperty('amount', 800000);
     const result = await test.repo.commitTurn({ draft: outcome.draft, nextAction: '', useVariableStage: true, useWorldStage: true });
     expect(result.state.economy.cash).toBe(before.economy.cash! - 800000); expect(result.state.economy.incomes).toEqual(before.economy.incomes);
-    expect(result.state.items).toEqual(before.items); expect(result.state.protagonist.talentId).toBe('desperate_gambler'); expect(test.fetcher).toHaveBeenCalledTimes(3);
+    expect(result.state.items).toEqual(before.items); expect(result.state.protagonist.talentId).toBe('desperate_gambler'); expect(test.fetcher).toHaveBeenCalledTimes(4);
     expect(test.narrative).not.toMatch(/\d+%/);
   } finally { await dispose(test); }
 });
@@ -103,7 +104,7 @@ it.each(['variables', 'world'] as const)('%s 模型试图改写天赋会被跳�
     expect(completed.draft[stage]?.result.settlement?.skipped).toHaveLength(1);
     const saved = await test.repo.commitTurn({draft:completed.draft,nextAction:'',useVariableStage:true,useWorldStage:true});
     expect(saved.state.protagonist.talentId).toBe('golden_edict');
-    expect(test.fetcher).toHaveBeenCalledTimes(3);
+    expect(test.fetcher).toHaveBeenCalledTimes(4);
   } finally { await dispose(test); }
 });
 
@@ -121,7 +122,7 @@ it.each(['CAS', 'IDB'] as const)('带天赋候选遇到 %s 故障，不能部分
       });
     }
     await expect(test.repo.commitTurn({ draft: outcome.draft, nextAction: '', useVariableStage: true, useWorldStage: true })).rejects.toBeDefined();
-    expect(await test.repo.exportRaw('save-a')).toEqual(before); expect(test.fetcher).toHaveBeenCalledTimes(3);
+    expect(await test.repo.exportRaw('save-a')).toEqual(before); expect(test.fetcher).toHaveBeenCalledTimes(4);
   } finally { await dispose(test); }
 });
 

@@ -1,3 +1,4 @@
+import { usesSpreset } from '../presets/spreset/definition';
 import { captureAssistantSelection } from '../presets/library';
 import { promptReady, tavernGeneration, type GenerationType } from '../presets/tavern/events';
 import { prepareStoryWorldbook, storyTriggerInput } from '../services/worldbook/storyWorldbook';
@@ -11,7 +12,7 @@ import type { AiConfig, AiStage } from '../services/ai/configuration';
 import { cotSupported, resolveModelRoute } from '../services/ai/snapshot';
 import { safeAiError } from '../services/ai/errors';
 
-export const inspectionStages: AiStage[] = ['story', 'variables', 'world'];
+export const inspectionStages: AiStage[] = ['story', 'entities', 'variables', 'world'];
 export function previewRoute(config: AiConfig, stage: AiStage) {
   try {
     const { channel, model } = resolveModelRoute(config, stage);
@@ -55,6 +56,7 @@ export function previewRequirement(
   if (input.draft.turnKind !== input.mode)
     return '现有草稿的回合模式不匹配，不能伪造另一种模式的阶段数据。';
   if (
+    (input.stage === 'entities' && !input.draft.useEntityStage) ||
     (input.stage === 'variables' && !input.draft.useVariableStage) ||
     (input.stage === 'world' && !input.draft.useWorldStage)
   )
@@ -86,7 +88,7 @@ export async function buildStagePreviews(input: Omit<ComposeInput, 'stage'>, con
         const prompt = await composePrompt(captured, preset);
         if (stage === 'story') {
           const type = draft?.story || draft?.storyPartial || draft?.failures.some(f => f.stage === 'story') ? 'regenerate' : 'normal';
-          prompt.messages = await previewStoryMessages(captured, prompt, type, !!preset);
+          prompt.messages = await previewStoryMessages(captured, prompt, type, !!preset && !usesSpreset(preset));
         }
         return [stage, { ok: true, prompt, route, statistics: contextStatistics(prompt.messages) }];
       } catch (error) {

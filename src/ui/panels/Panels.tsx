@@ -1,6 +1,8 @@
+import { HaremPanel } from './HaremPanel';
 import { WorldEventsPanel } from './WorldEventsPanel';
 import { MapPanel } from './MapPanel';
 import { OrganizationPanel } from './OrganizationPanel';
+import { FactionPanel } from './FactionPanel';
 import type { ArchiveLinks } from './OrganizationPanel';
 import type { PlayerView } from './playerView';
 import { InventoryPanel } from './InventoryPanel';
@@ -9,9 +11,12 @@ import { MemoryPanel } from './MemoryPanel';
 import { NpcPanel } from './NpcPanel';
 import type { NpcManagement } from './NpcPanel';
 
+// 右侧世界资料栏、手机世界资料目录与历史回看共用这一顺序：先人与势力，再地图、物品，其余在后。
 export const panelNames = [
   'NPC',
   '势力组织',
+  '我的势力',
+  '后宫',
   '地图',
   '物品栏',
   '世界事件',
@@ -20,8 +25,10 @@ export const panelNames = [
 ] as const;
 export type PanelName = (typeof panelNames)[number];
 export function Panels({ name, view, onOpenHistory, npcManagement, initialId, links }: { name: PanelName; view: PlayerView; onOpenHistory?:()=>void; npcManagement?: NpcManagement; initialId?: string; links?: ArchiveLinks }) {
+  if (name === '后宫') return <HaremPanel view={view} management={npcManagement}/>;
   if (name === 'NPC') return <NpcPanel view={view} management={npcManagement} initialId={initialId} onOpenOrganization={links?.organization} />;
   if (name === '势力组织') return <OrganizationPanel view={view} initialId={initialId} links={links}/>;
+  if (name === '我的势力') return <FactionPanel view={view} links={links}/>;
   if (name === '地图') return <MapPanel view={view} mobile initialId={initialId} onNpc={id=>links?.npc(id)} onEvent={id=>links?.event(id)} />;
   if (name === '物品栏') return <InventoryPanel view={view} initialId={initialId} />;
   if (name === '世界事件') return <WorldEventsPanel view={view} links={links} onOpenHistory={onOpenHistory} initialId={initialId}/>;
