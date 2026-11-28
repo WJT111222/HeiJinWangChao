@@ -67,10 +67,10 @@ test('首次访问按序展示完整内容；关闭后导航不重播，未勾�
   await expect(announcement(page)).toHaveCount(0);
   await disclaimer(page).getByRole('button', { name: '关闭免责声明' }).click();
   const notice = announcement(page);
-  await expect(notice.getByRole('heading', { name: '《黑金王朝》1.0 正式版上线' })).toBeVisible();
+  await expect(notice.getByRole('heading', { name: '《黑金王朝》1.0 正式版 · 首个热补丁' })).toBeVisible();
   const content = notice.getByLabel('公告内容');
   const paragraphs = content.locator('ul > li, ol > li > p');
-  await expect(paragraphs).toHaveCount(16);
+  await expect(paragraphs).toHaveCount(17);
   expect(await paragraphs.allTextContents()).toEqual(releaseNotice.updates);
   await expect(paragraphs.first()).toBeInViewport();
   const message = content.getByText(releaseNotice.message, { exact: true });
